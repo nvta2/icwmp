@@ -142,11 +142,19 @@ stop_msg="Stop icwmpd ..."
 
 cwmp_wait_net() {
 	local tm=1
-	while [ "$(nvram get wlmngr)" != "done" ]; do
-		sleep $tm
-		[ $tm -ge 10 ] && break
-		tm=$((tm+1))
-	done
+	if [ -f /usr/sbin/nvram ]; then
+		while [ "$(nvram get wlmngr)" != "done" ]; do
+			sleep $tm
+			[ $tm -ge 10 ] && break
+			tm=$((tm+1))
+		done
+	elif [ -n "$(ubus list led.wifi_5g 2>/dev/null)" ]; then
+		while [ "$(ubus call led.wifi_5g status | grep -c ok)" == "0" ]; do
+			sleep $tm
+			[ $tm -ge 5 ] && break
+			tm=$((tm+1))
+		done
+	fi
 }
 
 cwmp_wait_dnsmasq() {
