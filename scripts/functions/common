@@ -33,8 +33,14 @@ icwmp_fault_output() {
 
 icwmp_check_image()
 {
-	. /lib/functions.sh; include /lib/upgrade; platform_check_image /tmp/firmware_upgrade_image
-	return $?
+	. /lib/functions.sh; include /lib/upgrade
+	if [ -e /lib/upgrade/platform.sh ];then
+		platform_check_image /tmp/firmware_upgrade_image
+		return $?
+	else 
+		iopsys_check_image /tmp/firmware_upgrade_image
+		return $?
+	fi	
 }
 
 icwmp_check_flash_size()
