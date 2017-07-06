@@ -18,6 +18,8 @@
 #include "dmcommon.h"
 #include "dhcp.h"
 
+#include "dmjson.h"
+#define DELIMITOR ","
 
 struct dhcp_args cur_dhcp_args = {0};
 struct client_args cur_dhcp_client_args = {0};
@@ -139,7 +141,9 @@ int get_dns_server(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 	if(res)
-	json_parse_array(res, "dns-server", -1, NULL, value);
+	{
+		*value = dmjson_get_value_array_all(res, DELIMITOR, 1, "dns-server");
+	}	
 	else
 		*value = "";
 	if ((*value)[0] == '\0') {
@@ -268,7 +272,7 @@ enum enum_lanip_interval_address {
 
 int get_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 {
-	json_object *res;
+	json_object *res, *jobj;
 	char *ipaddr = "" , *mask = "", *start , *limit;
 	struct uci_section *s = NULL;
 	char bufipstart[16], bufipend[16];
@@ -288,7 +292,10 @@ int get_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 	if (ipaddr[0] == '\0') {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 		if (res)
-			json_select(res, "ipv4-address", 0, "address", &ipaddr, NULL);
+		{
+			jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+			ipaddr = dmjson_get_value(jobj, 1, "address");			
+		}
 	}
 	if (ipaddr[0] == '\0') {
 		return 0;
@@ -297,7 +304,8 @@ int get_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 	if (mask[0] == '\0') {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 		if (res) {
-			json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+			jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+			mask = dmjson_get_value(jobj, 1, "mask");
 			if (mask[0] == '\0') {
 				return 0;
 			}
@@ -331,7 +339,7 @@ int get_dhcp_interval_address_max(char *refparam, struct dmctx *ctx, char **valu
 
 int set_dhcp_address_min(char *refparam, struct dmctx *ctx, int action, char *value)
 {
-	json_object *res;
+	json_object *res, *jobj;
 	char *ipaddr = "", *mask = "", *start , *limit, buf[16];
 	struct uci_section *s = NULL;
 
@@ -343,7 +351,8 @@ int set_dhcp_address_min(char *refparam, struct dmctx *ctx, int action, char *va
 			if (ipaddr[0] == '\0') {
 				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 				if (res) {
-					json_select(res, "ipv4-address", 0, "address", &ipaddr, NULL);
+					jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+					ipaddr = dmjson_get_value(jobj, 1, "address");					
 				}
 			}
 			if (ipaddr[0] == '\0')
@@ -353,7 +362,8 @@ int set_dhcp_address_min(char *refparam, struct dmctx *ctx, int action, char *va
 			if (mask[0] == '\0') {
 				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 				if (res) {
-					json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+					jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+					mask = dmjson_get_value(jobj, 1, "mask");
 					if (mask[0] == '\0')
 						return 0;
 					mask = cidr2netmask(atoi(mask));
@@ -376,7 +386,7 @@ int set_dhcp_address_min(char *refparam, struct dmctx *ctx, int action, char *va
 int set_dhcp_address_max(char *refparam, struct dmctx *ctx, int action, char *value)
 {
 	int i_val;
-	json_object *res;
+	json_object *res, *jobj;
 	char *ipaddr = "", *mask = "", *start, buf[16];
 	struct uci_section *s = NULL;
 
@@ -394,8 +404,8 @@ int set_dhcp_address_max(char *refparam, struct dmctx *ctx, int action, char *va
 			if (ipaddr[0] == '\0') {
 				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 				if (res) {
-					json_select(res, "ipv4-address", 0, "address", &ipaddr, NULL);
-				}
+					jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+					ipaddr = dmjson_get_value(jobj, 1, "address");									}
 			}
 			if (ipaddr[0] == '\0')
 				return 0;
@@ -404,7 +414,8 @@ int set_dhcp_address_max(char *refparam, struct dmctx *ctx, int action, char *va
 			if (mask[0] == '\0') {
 				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 				if (res) {
-					json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+					jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+					mask = dmjson_get_value(jobj, 1, "mask");
 					if (mask[0] == '\0')
 						return 0;
 					mask = cidr2netmask(atoi(mask));
@@ -501,7 +512,7 @@ int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, int action, c
 int get_dhcp_subnetmask(char *refparam, struct dmctx *ctx, char **value)
 {
 	char *mask;
-	json_object *res;
+	json_object *res, *jobj;
 	struct uci_section *s = NULL;
 	char *val;
 	*value = "";
@@ -515,7 +526,8 @@ int get_dhcp_subnetmask(char *refparam, struct dmctx *ctx, char **value)
 	if ((*value)[0] == '\0') {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", cur_dhcp_args.interface, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+		jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+		mask = dmjson_get_value(jobj, 1, "mask");
 		int i_mask = atoi(mask);
 		val = cidr2netmask(i_mask);
 		*value = dmstrdup(val);// MEM WILL BE FREED IN DMMEMCLEAN
@@ -808,7 +820,7 @@ int set_dhcp_staticaddress_yiaddr(char *refparam, struct dmctx *ctx, int action,
 
 int get_dhcp_client_chaddr(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_select(cur_dhcp_client_args.client, "macaddr", 0, NULL, value, NULL);
+	*value = dmjson_get_value(cur_dhcp_client_args.client, 1, "macaddr");
 	return 0;
 }
 
@@ -899,10 +911,10 @@ inline int entry_dhcp_client(struct dmctx *ctx, char *interface, char *idev )
 	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
 	if (res) {
 		json_object_object_foreach(res, key, client_obj) {
-			json_select(client_obj, "dhcp", 0, NULL, &dhcp, NULL);
+			dhcp = dmjson_get_value(client_obj, 1, "dhcp");
 			if(strcmp(dhcp, "true") == 0)
 			{
-				json_select(client_obj, "network", 0, NULL, &network, NULL);
+				network = dmjson_get_value(client_obj, 1, "network");
 				if(strcmp(network, interface) == 0)
 				{
 					init_dhcp_client_args(ctx, client_obj);

@@ -22,6 +22,7 @@ icwmpd_SOURCES =			\
 	../dm/dmentry.c			\
 	../dm/dmmem.c			\
 	../dm/dmubus.c			\
+	../dm/dmjson.c			\
 	../dm/dmuci.c			\
 	../dm/dmcommon.c		\
 	../dm/wepkey.c			\

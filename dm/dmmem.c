@@ -41,6 +41,30 @@ int n, size_t size
 	return (void *)m->mem;
 }
 
+inline void *__dmrealloc
+(
+#ifdef WITH_MEMTRACK
+const char *file, const char *func, int line,
+#endif /*WITH_MEMTRACK*/
+void *old, size_t size
+)
+{
+	struct dmmem *m = NULL;
+	if (old != NULL) {
+		m = container_of(old, struct dmmem, mem);
+		list_del(&m->list);
+	}
+	m = realloc(m, sizeof(struct dmmem) + size);
+	if (m == NULL) return NULL;
+	list_add(&m->list, &memhead);
+#ifdef WITH_MEMTRACK
+	m->file = (char *)file;
+	m->func = (char *)func;
+	m->line = line;
+#endif /*WITH_MEMTRACK*/
+	return (void *)m->mem;
+}
+
 inline void dmfree(void *m)
 {
 	if (m == NULL) return;

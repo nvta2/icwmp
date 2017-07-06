@@ -16,6 +16,7 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "routing.h"
+#include "dmjson.h"
 
 enum enum_route_type {
 	ROUTE_STATIC,
@@ -416,7 +417,7 @@ char *get_router_ipv4forwarding_interface(struct dmctx *ctx)
 				ifname = section_name(ss);
 				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", ifname, String}}, 1, &res);
 				if (res) {
-					json_select(res, "device", 0, NULL, &device, NULL);
+					device = dmjson_get_value(res, 1, "device");
 					if (strcmp(bval, device) == 0) {
 						return ifname;
 					}

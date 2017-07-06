@@ -15,6 +15,7 @@
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcwmp.h"
+#include "dmjson.h"
 #include "dmcommon.h"
 #include "ppp.h"
 
@@ -78,17 +79,19 @@ int get_ppp_status(char *refparam, struct dmctx *ctx, char **value)
 	char *status = NULL;
 	char *uptime = NULL;
 	char *pending = NULL;
-	json_object *res = NULL;
+	json_object *res = NULL, *jobj = NULL;
 	bool bstatus = false, bpend = false;
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(cur_ppp_args.ppp_sec), String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	if (json_select(res, "up", 0, NULL, &status, NULL) != -1)
+	jobj = dmjson_get_obj(res, 1, "up");
+	if(jobj)
 	{
+		status = dmjson_get_value(res, 1, "up");
 		string_to_bool(status, &bstatus);
 		if (bstatus) {
-			json_select(res, "uptime", 0, NULL, &uptime, NULL);
-			json_select(res, "pending", 0, NULL, &pending, NULL);
+			uptime = dmjson_get_value(res, 1, "uptime");
+			pending = dmjson_get_value(res, 1, "pending");			
 			string_to_bool(pending, &bpend);
 		}
 	}
@@ -139,7 +142,7 @@ inline int ubus_get_wan_stats(json_object *res, char **value, char *stat_mod)
 	if (strcmp(proto, "pppoe") == 0) {
 		dmubus_call("network.device", "status", UBUS_ARGS{{"name", ifname, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "statistics", 0, stat_mod, value, NULL);
+		*value = dmjson_get_value(res, 2, "statistics", stat_mod);
 	}
 	return 0;
 }

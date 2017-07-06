@@ -26,6 +26,7 @@
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
+#include "dmjson.h"
 
 int set_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char *option, char *value)
 {
@@ -197,7 +198,7 @@ int get_interface_enable_ubus(char *iface, char *refparam, struct dmctx *ctx, ch
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", iface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "up", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	return 0;
 }
 
@@ -445,13 +446,15 @@ int ipcalc_rev_end(char *ip_str, char *mask_str, char *start_str, char *ipend_st
 
 int network_get_ipaddr(char **value, char *iface)
 {
-	json_object *res;
+	json_object *res, *jobj;
 	char *ipv6_value = "";
 	
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", iface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "ipv4-address", 0, "address", value, NULL);
-	json_select(res, "ipv6-address", 0, "address", &ipv6_value, NULL);
+	jobj = dmjson_select_obj_in_array_idx(jobj, 0, 1, "ipv4-address");
+	*value = dm_ubus_get_value(jobj, 1, "address");
+	jobj = dmjson_select_obj_in_array_idx(jobj, 0, 1, "ipv6-address");
+	ipv6_value = dm_ubus_get_value(jobj, 1, "address");
 
 	if((*value)[0] == '\0' || ipv6_value[0] == '\0') {
 		if ((*value)[0] == '\0')
@@ -615,7 +618,7 @@ char *get_nvram_wpakey() {
 	char *wpakey = "";
 	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
 	if (res)
-		json_select(res, "keys", 0, "wpa", &wpakey, NULL);
+		wpakey = dmjson_get_value(res, 2, "keys", "wpa");
 	return dmstrdup(wpakey);
 }
 

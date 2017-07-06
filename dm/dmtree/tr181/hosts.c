@@ -17,6 +17,7 @@
 #include "dmcwmp.h"
 #include "dmcommon.h"
 #include "hosts.h"
+#include "dmjson.h"
 
 struct host_args cur_host_args = {0};
 
@@ -36,32 +37,32 @@ inline int init_host_args(struct dmctx *ctx, json_object *clients, char *key)
 /*************************************************************/
 int get_host_ipaddress(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_select(cur_host_args.client, "ipaddr", 0, NULL, value, NULL);
+	*value = dmjson_get_value(cur_host_args.client, 1, "ipaddr");
 	return 0;
 }
 
 int get_host_hostname(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_select(cur_host_args.client, "hostname", 0, NULL, value, NULL);
+	*value = dmjson_get_value(cur_host_args.client, 1, "hostname");
 	return 0;
 }
 
 int get_host_active(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_select(cur_host_args.client, "connected", 0, NULL, value, NULL);
+	*value = dmjson_get_value(cur_host_args.client, 1, "connected");
 	return 0;
 }
 
 int get_host_phy_address(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_select(cur_host_args.client, "macaddr", 0, NULL, value, NULL);
+	*value = dmjson_get_value(cur_host_args.client, 1, "macaddr");
 	return 0;
 }
 
 int get_host_address_source(char *refparam, struct dmctx *ctx, char **value) {
 	char *dhcp;
 
-	json_select(cur_host_args.client, "dhcp", 0, NULL, &dhcp, NULL);
+	dhcp = dmjson_get_value(cur_host_args.client, 1, "dhcp");
 	if (strcasecmp(dhcp, "true") == 0)
 		*value = "DHCP";
 	else
@@ -78,13 +79,12 @@ int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, char **value
 	char *leasetime, *mac_f, *mac, *line1;
 	char delimiter[] = " \t";
 
-	json_select(cur_host_args.client, "dhcp", 0, NULL, &dhcp, NULL);
+	dhcp = dmjson_get_value(cur_host_args.client, 1, "dhcp");
 	if (strcmp(dhcp, "false") == 0) {
 		*value = "0";
 	}
 	else {
-		json_select(cur_host_args.client, "macaddr", 0, NULL, &mac, NULL);
-		//
+		mac = dmjson_get_value(cur_host_args.client, 1, "macaddr");
 		fp = fopen(ARP_FILE, "r");
 		if ( fp != NULL)
 		{
@@ -147,7 +147,7 @@ char *get_interface_type(char *mac, char *ndev)
 				dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", p, String}}, 1, &res);
 				if(res) {
 					json_object_object_foreach(res, key, val) {
-						json_select(val, "macaddr", 0, NULL, &value, NULL);
+						value = dmjson_get_value(res, 1, "macaddr");
 						if (strcasecmp(value, mac) == 0)
 							return "802.11";
 					}
@@ -163,8 +163,8 @@ int get_host_interfacetype(char *refparam, struct dmctx *ctx, char **value)
 {
 	char *mac, *network;
 	
-	json_select(cur_host_args.client, "macaddr", 0, NULL, &mac, NULL);
-	json_select(cur_host_args.client, "network", 0, NULL, &network, NULL);
+	mac = dmjson_get_value(cur_host_args.client, 1, "macaddr");
+	network = dmjson_get_value(cur_host_args.client, 1, "network");
 	*value = get_interface_type(mac, network);
 	return 0;
 }

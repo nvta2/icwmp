@@ -17,6 +17,7 @@
 #include "dmcwmp.h"
 #include "dmcommon.h"
 #include "ethernet.h"
+#include "dmjson.h"
 
 struct eth_port_args cur_eth_port_args = {0};
 char *wan_ifname = NULL;
@@ -61,7 +62,7 @@ int get_eth_port_enable(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "up", -1, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	dmfree(ifname);
 	return 0;
 }
@@ -168,7 +169,7 @@ int get_eth_port_mac_address(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_eth_port_args.ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "macaddr", -1, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "macaddr");
 	return 0;
 }
 
@@ -234,7 +235,7 @@ int get_eth_port_stats_tx_bytes(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_eth_port_args.ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "tx_bytes");
 	return 0;
 }
 
@@ -244,7 +245,7 @@ int get_eth_port_stats_rx_bytes(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_eth_port_args.ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "rx_bytes");
 	return 0;
 }
 
@@ -254,7 +255,7 @@ int get_eth_port_stats_tx_packets(char *refparam, struct dmctx *ctx, char **valu
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_eth_port_args.ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "tx_packets");
 	return 0;
 }
 
@@ -264,7 +265,7 @@ int get_eth_port_stats_rx_packets(char *refparam, struct dmctx *ctx, char **valu
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_eth_port_args.ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "rx_packets");
 	return 0;
 }
 

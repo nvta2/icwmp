@@ -20,6 +20,7 @@
 #include "ip.h"
 #include "diagnostic.h"
 
+#include "dmjson.h"
 struct ip_args cur_ip_args = {0};
 struct ipv4_args cur_ipv4_args = {0};
 
@@ -418,7 +419,7 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, char **value)
 		dmuci_get_value_by_section_string(cur_ip_args.ip_sec, "ifname", &wifname);
 		strcpy (linker, wifname);
 		if (res) {
-			json_select(res, "device", -1, NULL, &device, NULL);
+			device = dmjson_get_value(res, 1, "device");
 			strcpy(linker, device);
 			if(device[0] == '\0') {
 				strncpy(buf, wifname, 6);
@@ -687,7 +688,7 @@ inline int entry_ip_interface(struct dmctx *ctx)
 	struct uci_section *net_sec = NULL;
 	char *ip_int = NULL, *ip_int_last = NULL;
 	char *type, *ipv4addr = "", *ipv6addr = "", *proto, *inst;
-	json_object *res;
+	json_object *res, *jobj;
 
 	uci_foreach_sections("network", "interface", net_sec) {
 		dmuci_get_value_by_section_string(net_sec, "type", &type);
@@ -697,13 +698,19 @@ inline int entry_ip_interface(struct dmctx *ctx)
 		if (ipv4addr[0] == '\0') {
 			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(net_sec), String}}, 1, &res);
 			if (res)
-				json_select(res, "ipv4-address", 0, "address", &ipv4addr, NULL);
+			{
+				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+				ipv4addr = dmjson_get_value(jobj, 1, "address");
+			}
 		}
 		dmuci_get_value_by_section_string(net_sec, "ip6addr", &ipv6addr);
 		if (ipv6addr[0] == '\0') {
 			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(net_sec), String}}, 1, &res);
 			if (res)
-				json_select(res, "ipv6-address", 0, "address", &ipv6addr, NULL);
+			{
+				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv6-address");
+				ipv6addr = dmjson_get_value(jobj, 1, "address");				
+			}
 		}
 		dmuci_get_value_by_section_string(net_sec, "proto", &proto);
 		dmuci_get_value_by_section_string(net_sec, "ip_int_instance", &inst);

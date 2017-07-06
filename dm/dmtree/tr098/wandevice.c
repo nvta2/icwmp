@@ -17,6 +17,7 @@
 #include "dmcommon.h"
 #include "wandevice.h"
 #include "landevice.h"
+#include "dmjson.h"
 
 #define WAN_DEVICE 3
 #define WAN_INST_ETH 1
@@ -187,7 +188,7 @@ int check_multiwan_interface(struct uci_section *interface_section, char *fwan)
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(interface_section), String}}, 1, &res);
 	if (res) {
-		json_select(res, "device", -1, NULL, &device, NULL);
+		device = dmjson_get_value(res, 1, "device");
 	}
 	if (!res || device[0] == '\0') {
 		cn = 0;
@@ -461,7 +462,7 @@ int get_wan_device_wan_dsl_traffic()
 	dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 	if (!res) 
 		return dsl;
-	json_select(res, "dslstats", -1, "traffic", &str, NULL);
+	str = dmjson_get_value(res, 2, "dslstats", "traffic");
 	if (str) {
 		if (strstr(str, "ATM")) {
 			dsl = WAN_DSL_ADSL;
@@ -512,7 +513,7 @@ int get_wan_device_wan_dsl_interface_config_status(char *refparam, struct dmctx 
 
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "dslstats", -1, "status", &status, NULL);
+		status = dmjson_get_value(res, 2, "dslstats", "status");
 		if (strcmp(status, "Showtime") == 0)
 			*value = "Up";
 		else if (strcmp(status, "Training") == 0)
@@ -547,7 +548,7 @@ int get_wan_device_wan_dsl_interface_config_modulation_type(char *refparam, stru
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "dslstats", -1, "mode", &mode, NULL);
+		mode = dmjson_get_value(res, 2, "dslstats", "mode");
 		if (strcmp(mode, "G.Dmt") == 0)
 			*value = "ADSL_G.dmt";
 		else if (strcmp(mode, "G.lite") == 0)
@@ -618,6 +619,7 @@ int get_wan_device_dsl_downstreamcurrrate(char *refparam, struct dmctx *ctx, cha
 	int dsl;
 	json_object *res = NULL;
 	json_object *sub_obj= NULL;
+	json_object *sub_obj_2= NULL;
 	*value = "0";
 
 	if (wandargs->instance == WAN_INST_ETH)
@@ -630,9 +632,12 @@ int get_wan_device_dsl_downstreamcurrrate(char *refparam, struct dmctx *ctx, cha
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, NULL, NULL, &sub_obj);	
+		sub_obj = dmjson_get_obj(res, 1, "dslstats");
 		if (sub_obj)
-			json_select(sub_obj, "bearers", 0, "rate_down", &rate_down, NULL);
+		{
+			sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
+			rate_down = dmjson_get_value(sub_obj_2, 1, "rate_down");
+		}
 		else 
 			return 0;
 		if (rate_down && rate_down[0] != '\0') {
@@ -649,6 +654,7 @@ int get_wan_device_dsl_downstreammaxrate(char *refparam, struct dmctx *ctx, char
 	int dsl;
 	json_object *res = NULL;
 	json_object *sub_obj = NULL;
+	json_object *sub_obj_2 = NULL;
 	*value = "0";
 	if (wandargs->instance == WAN_INST_ETH)
 		return 0;
@@ -660,9 +666,12 @@ int get_wan_device_dsl_downstreammaxrate(char *refparam, struct dmctx *ctx, char
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, NULL, NULL, &sub_obj);	
+		sub_obj = dmjson_get_obj(res, 1, "dslstats");
 		if (sub_obj)
-			json_select(sub_obj, "bearers", 0, "max_rate_down", &max_down, NULL);
+		{
+			sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
+			max_down = dmjson_get_value(sub_obj_2, 1, "max_rate_down");
+		}
 		else 
 			return 0;
 		if (max_down && max_down[0] != '\0') {
@@ -689,7 +698,7 @@ int get_wan_device_dsl_downstreamattenuation(char *refparam, struct dmctx *ctx, 
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, "attn_down_x100", &attn_down_x100, NULL);
+		attn_down_x100 = dmjson_get_value(res, 2, "dslstats", "attn_down_x100");
 		if (attn_down_x100) {
 			dmasprintf(&attn_down_x100, "%d", (atoi(attn_down_x100) / 10));// MEM WILL BE FREED IN DMMEMCLEAN
 			*value = attn_down_x100;
@@ -715,7 +724,7 @@ int get_wan_device_dsl_downstreamnoisemargin(char *refparam, struct dmctx *ctx, 
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, "snr_down_x100", &snr_down_x100, NULL);
+		snr_down_x100 = dmjson_get_value(res, 2, "dslstats", "snr_down_x100");
 		if (snr_down_x100) {
 			dmasprintf(&snr_down_x100, "%d", (atoi(snr_down_x100) / 10));// MEM WILL BE FREED IN DMMEMCLEAN
 			*value = snr_down_x100;
@@ -731,6 +740,7 @@ int get_wan_device_dsl_upstreamcurrrate(char *refparam, struct dmctx *ctx, char 
 	int dsl;
 	json_object *res = NULL;
 	json_object *sub_obj = NULL;
+	json_object *sub_obj_2 = NULL;
 	*value = "0";
 	if (wandargs->instance == WAN_INST_ETH)
 		return 0;
@@ -742,9 +752,12 @@ int get_wan_device_dsl_upstreamcurrrate(char *refparam, struct dmctx *ctx, char 
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, NULL, NULL, &sub_obj);	
+		sub_obj = dmjson_get_obj(res, 1, "dslstats");
 		if (sub_obj)
-			json_select(sub_obj, "bearers", 0, "rate_up", &rate_up, NULL);
+		{
+			sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
+			rate_up = dmjson_get_value(sub_obj_2, 1, "rate_up");
+		}
 		else 
 			return 0;
 		*value = rate_up;
@@ -759,6 +772,7 @@ int get_wan_device_dsl_upstreammaxrate(char *refparam, struct dmctx *ctx, char *
 	int dsl;
 	json_object *res = NULL; 
 	json_object *sub_obj = NULL;
+	json_object *sub_obj_2 = NULL;
 	*value = "0";
 	if (wandargs->instance == WAN_INST_ETH)
 		return 0;
@@ -770,9 +784,12 @@ int get_wan_device_dsl_upstreammaxrate(char *refparam, struct dmctx *ctx, char *
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, NULL, NULL, &sub_obj);
+		sub_obj = dmjson_get_obj(res, 1, "dslstats");
 		if (sub_obj)
-			json_select(sub_obj, "bearers", 0, "max_rate_up", &max_up, NULL);
+		{
+			sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
+			max_up = dmjson_get_value(sub_obj_2, 1, "max_rate_up");
+		}
 		else 
 			return 0;
 		*value = max_up;
@@ -797,7 +814,7 @@ int get_wan_device_dsl_upstreamattenuation(char *refparam, struct dmctx *ctx, ch
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, "attn_up_x100", &attn_up_x100, NULL);
+		attn_up_x100 = dmjson_get_value(res, 2, "dslstats", "attn_up_x100");
 		if (attn_up_x100) {
 			dmasprintf(&attn_up_x100, "%d", (atoi(attn_up_x100) / 10)); // MEM WILL BE FREED IN DMMEMCLEAN
 			*value = attn_up_x100;
@@ -825,7 +842,7 @@ int get_wan_device_dsl_upstreamnoisemargin(char *refparam, struct dmctx *ctx, ch
 		}
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
-		json_select(res, "dslstats", -1, "snr_up_x100", &snr_up_x100, NULL);
+		snr_up_x100 = dmjson_get_value(res, 2, "dslstats", "snr_up_x100");
 		if (snr_up_x100) {
 			dmasprintf(&snr_up_x100, "%d", (atoi(snr_up_x100) / 10));// MEM WILL BE FREED IN DMMEMCLEAN
 			*value = snr_up_x100;
@@ -890,7 +907,7 @@ int get_wan_eth_intf_enable(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
-	json_select(res, "up", -1, NULL, &val, NULL);
+	val = dmjson_get_value(res, 1, "up");
 	if (val) {
 		string_to_bool(val, &b);
 		if (b)
@@ -919,7 +936,7 @@ int set_wan_eth_intf_enable(char *refparam, struct dmctx *ctx, int action, char 
 			string_to_bool(value, &b);
 			dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 			if (res) {
-				json_select(res, "up", 0, NULL, &enable, NULL);
+				enable = dmjson_get_value(res, 1, "up");
 				string_to_bool(enable, &enable_b);
 				if (b == enable_b)
 					return 0;
@@ -941,7 +958,7 @@ int set_wan_eth_intf_enable(char *refparam, struct dmctx *ctx, int action, char 
 					else {
 						dmubus_call("network.interface", "status", UBUS_ARGS{{"name", section_name(s), String}}, 1, &res);
 						if (res) {
-							json_select(res, "device", -1, NULL, &device, NULL);
+							device = dmjson_get_value(res, 1, "device");
 							if (strstr(device, wandargs->fdev)) {
 								sprintf(json_name, "network.interface.%s", section_name(s));
 								dmubus_call_set(json_name, "down", UBUS_ARGS{}, 0);
@@ -964,7 +981,7 @@ int get_wan_eth_intf_status(char *refparam, struct dmctx *ctx, char **value)
 	bool b;
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "Disabled");
-	json_select(res, "up", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	if (*value) {
 		string_to_bool(*value, &b);
 		if (!b)
@@ -981,7 +998,7 @@ int get_wan_eth_intf_mac(char *refparam, struct dmctx *ctx, char **value)
 	json_object *res;
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "00:00:00:00:00:00");
-	json_select(res, "macaddr", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "macaddr");
 	if (!(*value) || (*value)[0] == '\0') {
 		*value = "00:00:00:00:00:00";
 	}
@@ -995,7 +1012,7 @@ int get_wan_eth_intf_stats_tx_bytes(char *refparam, struct dmctx *ctx, char **va
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
-	json_select(res, "statistics", 0, "tx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "tx_bytes");
 	if (!(*value) || (*value)[0] == '\0') {
 		*value = "0";
 	}
@@ -1009,7 +1026,7 @@ int get_wan_eth_intf_stats_rx_bytes(char *refparam, struct dmctx *ctx, char **va
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
-	json_select(res, "statistics", 0, "rx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "rx_bytes");
 	if (!(*value) || (*value)[0] == '\0') {
 		*value = "0";
 	}
@@ -1023,7 +1040,7 @@ int get_wan_eth_intf_stats_tx_packets(char *refparam, struct dmctx *ctx, char **
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
-	json_select(res, "statistics", 0, "tx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "tx_packets");
 	if (!(*value) || (*value)[0] == '\0') {
 		*value = "0";
 	}
@@ -1037,7 +1054,7 @@ int get_wan_eth_intf_stats_rx_packets(char *refparam, struct dmctx *ctx, char **
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wandargs->fdev, String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
-	json_select(res, "statistics", 0, "rx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "rx_packets");
 	if (!(*value) || (*value)[0] == '\0') {
 		*value = "0";
 	}
@@ -1210,7 +1227,7 @@ int set_interface_firewall_enabled_wanproto(char *refparam, struct dmctx *ctx, i
 //THE same as get_wan_device_ppp_status WHY DO WE CREATE A SEPARATED FUNCTION
 int get_wan_device_mng_status(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_object *res = NULL;
+	json_object *res = NULL, *jobj = NULL;
 	char *pending = NULL;
 	char *intf;
 	char *status = NULL;
@@ -1221,11 +1238,13 @@ int get_wan_device_mng_status(char *refparam, struct dmctx *ctx, char **value)
 	intf = section_name(wandcprotoargs->wancprotosection);
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", intf, String}}, 1, &res);
 	DM_ASSERT(res, *value = "Disconnected");
-	if (json_select(res, "up", 0, NULL, &status, NULL) != -1)
+	jobj = dmjson_get_obj(res, 1, "up");
+	if (jobj)
 	{
+		status = dmjson_get_value(res, 1, "up");	
 		if (strcasecmp(status, "true") == 0) {
-			json_select(res, "uptime", 0, NULL, &uptime, NULL);
-			json_select(res, "pending", 0, NULL, &pending, NULL);
+			uptime = dmjson_get_value(res, 1, "uptime");
+			pending = dmjson_get_value(res, 1, "pending");			
 			string_to_bool(pending, &b);
 		}
 	}
@@ -1523,19 +1542,21 @@ int get_wan_device_ppp_status(char *refparam, struct dmctx *ctx, char **value)
 	char *status = NULL;
 	char *uptime = NULL;
 	char *pending = NULL;
-	json_object *res = NULL;
+	json_object *res = NULL, *jobj = NULL;
 	bool bstatus = false, bpend = false;
 	struct wancprotoargs *wandcprotoargs = (struct wancprotoargs *) (ctx->args);
 
 	intf = section_name(wandcprotoargs->wancprotosection);
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", intf, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	if (json_select(res, "up", 0, NULL, &status, NULL) != -1)
+	jobj = dmjson_get_obj(res, 1, "up");
+	if (jobj)
 	{
+		status = dmjson_get_value(res, 1, "up");
 		string_to_bool(status, &bstatus);
 		if (bstatus) {
-			json_select(res, "uptime", 0, NULL, &uptime, NULL);
-			json_select(res, "pending", 0, NULL, &pending, NULL);
+			uptime = dmjson_get_value(res, 1, "uptime");
+			pending = dmjson_get_value(res, 1, "pending");
 			string_to_bool(pending, &bpend);
 		}
 	}
@@ -1561,17 +1582,19 @@ int get_wan_device_ppp_interface_ip(char *refparam, struct dmctx *ctx, char **va
 int get_wan_device_mng_interface_mac(char *refparam, struct dmctx *ctx, char **value)
 {
 	char *intf, *device;
-	json_object *res;
+	json_object *res, *jobj;
 	struct wancprotoargs *wandcprotoargs = (struct wancprotoargs *) (ctx->args);
 	*value = "";
 	intf = section_name(wandcprotoargs->wancprotosection);
 	
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", intf, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	if (json_select(res, "device", 0, NULL, &device, NULL) != -1) {
+	jobj = dmjson_get_obj(res, 1, "device");
+	if (jobj) {
+		device = dmjson_get_value(res, 1, "device");
 		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &res);
 		if (res) {
-			json_select(res, "macaddr", 0, NULL, value, NULL);
+			*value = dmjson_get_value(res, 1, "macaddr");
 			return 0;
 		}
 	}
@@ -1650,7 +1673,7 @@ int get_layer2_interface(char *wan_name, char **ifname)
 	{
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", wan_name, String}}, 1, &res);
 		if (res) {
-			json_select(res, "device", -1, NULL, &device, NULL);
+			device = dmjson_get_value(res, 1, "device");
 			if(device[0] != '\0') {
 				if (atoi(device + 5) > 1) {
 					*ifname = device;
@@ -1948,7 +1971,7 @@ inline int ubus_get_wan_stats(json_object *res, char **value, char *stat_mod)
 	{
 		dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_wancdevargs.wan_ifname, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "statistics", 0, stat_mod, value, NULL);
+		*value = dmjson_get_value(res, 2, "statistics", stat_mod);
 		return 0;
 	}
 	*value = "";

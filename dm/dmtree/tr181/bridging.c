@@ -15,6 +15,7 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "bridging.h"
+#include "dmjson.h"
 
 struct bridging_args cur_bridging_args = {0};
 struct bridging_port_args cur_bridging_port_args = {0};
@@ -316,7 +317,7 @@ int get_br_enable(char *refparam, struct dmctx *ctx, char **value)
 	dmastrcat(&br_name, "br-", section_name(cur_bridging_args.bridge_sec));
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", br_name, String}}, 1, &res);
 	DM_ASSERT(res, *value = "false");
-	json_select(res, "up", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	return 0;
 }
 
@@ -325,7 +326,7 @@ int get_br_status(char *refparam, struct dmctx *ctx, char **value)
 	json_object *res;
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(cur_bridging_args.bridge_sec), String}}, 1, &res);
 	DM_ASSERT(res, *value = "Disabled");
-	json_select(res, "up", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	if(strcmp(*value,"true") == 0)
 		*value = "Enabled";
 	return 0;
@@ -377,7 +378,7 @@ int get_br_port_status(char *refparam, struct dmctx *ctx, char **value)
 	dmuci_get_value_by_section_string(cur_bridging_port_args.bridge_port_sec, "ifname", value);
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", *value, String}}, 1, &res);
 	DM_ASSERT(res, *value = "Down");
-	json_select(res, "up", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	if (strcmp(*value,"true") == 0)
 		*value = "Up";
 	return 0;
@@ -411,7 +412,7 @@ int get_br_port_stats_tx_bytes(char *refparam, struct dmctx *ctx, char **value)
 	dmuci_get_value_by_section_string(cur_bridging_port_args.bridge_port_sec, "ifname", value);
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", *value, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "tx_bytes");
 	return 0;
 }
 
@@ -423,7 +424,7 @@ int get_br_port_stats_rx_bytes(char *refparam, struct dmctx *ctx, char **value)
 	dmuci_get_value_by_section_string(cur_bridging_port_args.bridge_port_sec, "ifname", value);
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", *value, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "rx_bytes");
 	return 0;
 }
 
@@ -435,7 +436,7 @@ int get_br_port_stats_tx_packets(char *refparam, struct dmctx *ctx, char **value
 	dmuci_get_value_by_section_string(cur_bridging_port_args.bridge_port_sec, "ifname", value);
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", *value, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "tx_packets");
 	return 0;
 }
 
@@ -447,7 +448,7 @@ int get_br_port_stats_rx_packets(char *refparam, struct dmctx *ctx, char **value
 	dmuci_get_value_by_section_string(cur_bridging_port_args.bridge_port_sec, "ifname", value);
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", *value, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics", "rx_packets");
 	return 0;
 }
 

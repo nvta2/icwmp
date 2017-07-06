@@ -17,6 +17,7 @@
 #include "dmcwmp.h"
 #include "dmcommon.h"
 #include "x_inteno_se_wifi.h"
+#include "dmjson.h"
 
 struct sewifiargs cur_wifiargs = {0};
 
@@ -39,7 +40,7 @@ int get_wifi_frequency(char *refparam, struct dmctx *ctx, char **value)
 	
 	dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", wlan_name, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "frequency", 0, NULL, &freq, NULL);
+	freq = dmjson_get_value(res, 1, "frequency");
 	dmastrcat(value, freq, "GHz");  // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }

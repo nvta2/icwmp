@@ -20,6 +20,7 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "deviceinfo.h"
+#include "dmjson.h"
 
 inline int entry_method_device_info_vcf(struct dmctx *ctx);
 inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf);
@@ -50,7 +51,7 @@ char *get_deviceid_manufactureroui()
 	
 	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
 	if(!(res)) goto not_found;
-	json_select(res, "system", 0, "basemac", &mac, NULL);
+	mac = dm_ubus_get_value(res, 2, "system", "basemac");
 	if(mac)
 	{
 		size_t ln = strlen(mac);
@@ -221,7 +222,7 @@ int get_base_mac_addr(char *refparam, struct dmctx *ctx, char **value)
 	
 	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "system", 0, "basemac", value, NULL);
+	*value = dm_ubus_get_value(res, 2, "system", "basemac");
 	return 0;
 }
 
@@ -231,7 +232,7 @@ int get_device_memory_bank(char *refparam, struct dmctx *ctx, char **value)
 
 	dmubus_call("router.system", "memory_bank", UBUS_ARGS{{}}, 0, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "code", 0, NULL, value, NULL);
+	*value = dm_ubus_get_value(res, 1, "code");
 	return 0;
 }
 
@@ -287,7 +288,7 @@ int get_catv_optical_input_level(char *refparam, struct dmctx *ctx, char **value
 	dmubus_call("catv", "vpd", UBUS_ARGS{}, 0, &res);
 	if (!res)
 		return 0;
-	json_select(res, "VPD", -1, NULL, value, NULL);
+	*value = dm_ubus_get_value(res, 1, "VPD");
 	return 0;
 }
 
@@ -299,7 +300,7 @@ int get_catv_rf_output_level(char *refparam, struct dmctx *ctx, char **value)
 	dmubus_call("catv", "rf", UBUS_ARGS{}, 0, &res);
 	if (!res)
 		return 0;
-	json_select(res, "RF", -1, NULL, value, NULL);
+	*value = dm_ubus_get_value(res, 1, "RF");
 	return 0;
 }
 
@@ -311,7 +312,7 @@ int get_catv_temperature(char *refparam, struct dmctx *ctx, char **value)
 	dmubus_call("catv", "temp", UBUS_ARGS{}, 0, &res);
 	if (!res)
 		return 0;
-	json_select(res, "Temperature", -1, NULL, value, NULL);
+	*value = dm_ubus_get_value(res, 1, "Temperature");
 	return 0;
 }
 
@@ -323,7 +324,7 @@ int get_catv_voltage(char *refparam, struct dmctx *ctx, char **value)
 	dmubus_call("catv", "vcc", UBUS_ARGS{}, 0, &res);
 	if (!res)
 		return 0;
-	json_select(res, "VCC", -1, NULL, value, NULL);
+	*value = dm_ubus_get_value(res, 1, "VCC");
 	return 0;
 }
 

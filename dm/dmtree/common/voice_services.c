@@ -17,6 +17,7 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "voice_services.h"
+#include "dmjson.h"
 
 #define MAX_ALLOWED_SIP_CODECS 20
 struct service_args cur_service_args = {0};
@@ -612,7 +613,7 @@ int get_voice_service_max_line()
   //dmubus_call("asterisk.brcm", "dump", UBUS_ARGS{}, 0, &res);
 	dmubus_call("asterisk", "status", UBUS_ARGS{}, 0, &res);
 	if(res)
-		json_select(res, "brcm", -1, NULL, NULL, &brcm);
+		brcm = dmjson_get_obj(res, 1, "brcm");
 	if(brcm) {
 		json_object_object_foreach(brcm, key, val) {
 			if (strstr(key, "brcm"))
@@ -701,8 +702,8 @@ int get_voice_profile_max_sessions(char *refparam, struct dmctx *ctx, char **val
 	char *sub_channel = NULL, *num_lines = NULL;
 	dmubus_call("asterisk.brcm", "dump", UBUS_ARGS{}, 0, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "num_subchannels", -1, NULL, &sub_channel, NULL);
-	json_select(res, "num_lines", -1, NULL, &num_lines, NULL);
+	sub_channel = dm_ubus_get_value(res, 1, "num_subchannels");
+	num_lines =  dm_ubus_get_value(res, 1, "num_lines");
 	dmasprintf(value, "%d", atoi(sub_channel) * atoi(num_lines)); // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
@@ -719,7 +720,7 @@ int get_voice_profile_number_of_lines(char *refparam, struct dmctx *ctx, char **
 	if (!res)
 		return 0;
 	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", section_name(sipargs->sip_section), b_section) {
-		json_select(res, "brcm", -1, section_name(b_section), NULL, &jobj);
+		jobj = dmjson_get_obj(res, 2, "brcm", section_name(b_section));
 		if (jobj)
 			num++;
 	}
@@ -1342,12 +1343,12 @@ int get_voice_profile_line_status(char *refparam, struct dmctx *ctx,  char **val
 		dmubus_call(buf, "status", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "Disabled");
 		if(res) {
-			json_select(res, "registered", -1, NULL, &status, NULL);
+			status = dmjson_get_value(res, 1, "registered");
 			if (strcasecmp(status, "true") == 0) {
 				*value = "Up";
 			}
 			else {
-				json_select(res, "registry_request_sent", -1, NULL, &status, NULL);
+				status = dmjson_get_value(res, 1, "registry_request_sent");
 				if(strcasecmp(status, "true") == 0)
 					*value = "Registering";
 				else

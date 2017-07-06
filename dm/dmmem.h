@@ -45,6 +45,14 @@ const char *file, const char *func, int line,
 int n, size_t size
 );
 
+void *__dmrealloc
+(
+#ifdef WITH_MEMTRACK
+const char *file, const char *func, int line,
+#endif /*WITH_MEMTRACK*/
+void *n, size_t size
+);
+
 char *__dmstrdup
 (
 #ifdef WITH_MEMTRACK
@@ -75,12 +83,14 @@ char **s, char *obj, char *lastname
 #ifdef WITH_MEMTRACK
 #define dmmalloc(x) __dmmalloc(__FILE__, __func__, __LINE__, x)
 #define dmcalloc(n, x) __dmcalloc(__FILE__, __func__, __LINE__, n, x)
+#define dmrealloc(x, n) __dmrealloc(__FILE__, __func__, __LINE__, x, n)
 #define dmstrdup(x) __dmstrdup(__FILE__, __func__, __LINE__, x)
 #define dmasprintf(s, format, ...) __dmasprintf(__FILE__, __func__, __LINE__, s, format, ## __VA_ARGS__)
 #define dmastrcat(s, b, m) __dmastrcat(__FILE__, __func__, __LINE__, s, b, m)
 #else
 #define dmmalloc(x) __dmmalloc(x)
 #define dmcalloc(n, x) __dmcalloc(n, x)
+#define dmrealloc(x, n) __dmrealloc(x, n)
 #define dmstrdup(x) __dmstrdup(x)
 #define dmasprintf(s, format, ...) __dmasprintf(s, format, ## __VA_ARGS__)
 #define dmastrcat(s, b, m) __dmastrcat(s, b, m)

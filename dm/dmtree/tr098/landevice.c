@@ -22,6 +22,8 @@
 #include "dmentry.h"
 #include "landevice.h"
 #include "wepkey.h"
+#include "dmubus.h"
+#include "dmjson.h"
 #define DELIMITOR ","
 #define TAILLE 10
 #define MAX_PROC_ARP 256
@@ -157,7 +159,7 @@ inline int init_wlan_wep_args(struct dmctx *ctx, struct uci_section *s)
 
 void update_dhcp_conf_start(int i, void *data)
 {
-		json_object *res;
+		json_object *res, *jobj;
 		struct dmctx dmctx = {0};
 		struct dhcp_param *dhcp_param = (struct dhcp_param *)(data);
 		char *mask, *start, *dhcp_name, *ipaddr, buf[16];
@@ -167,7 +169,8 @@ void update_dhcp_conf_start(int i, void *data)
 		if (ipaddr[0] == '\0') {
 			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", dhcp_param->interface, String}}, 1, &res);
 			if (res) {
-				json_select(res, "ipv4-address", 0, "address", &ipaddr, NULL);
+				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+				ipaddr = dmjson_get_value(jobj, 1, "address");
 			}
 		}
 		if (ipaddr[0] == '\0')
@@ -177,7 +180,8 @@ void update_dhcp_conf_start(int i, void *data)
 		if (mask[0] == '\0') {
 			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", dhcp_param->interface, String}}, 1, &res);
 			if (res) {
-				json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+				mask = dmjson_get_value(jobj, 1, "mask");
 				if (mask[0] == '\0')
 					goto end;
 				mask = cidr2netmask(atoi(mask));
@@ -198,7 +202,7 @@ end:
 
 void update_dhcp_conf_end(int i, void *data)
 {
-		json_object *res;
+		json_object *res, *jobj;
 		char *ipaddr, *mask, *start, *dhcp_name, *limit, buf[16], buf_start[16] = "";
 		struct dhcp_param *dhcp_param = (struct dhcp_param *)(data);
 		struct dmctx dmctx = {0};
@@ -208,7 +212,8 @@ void update_dhcp_conf_end(int i, void *data)
 		if (ipaddr[0] == '\0') {
 			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", dhcp_param->interface, String}}, 1, &res);
 			if (res) {
-				json_select(res, "ipv4-address", 0, "address", &ipaddr, NULL);
+				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+				ipaddr = dmjson_get_value(jobj, 1, "address");
 			}
 		}
 		if (ipaddr[0] == '\0')
@@ -218,7 +223,8 @@ void update_dhcp_conf_end(int i, void *data)
 		if (mask[0] == '\0') {
 			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", dhcp_param->interface, String}}, 1, &res);
 			if (res) {
-				json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+				mask = dmjson_get_value(jobj, 1, "mask");
 				if (mask[0] == '\0')
 					goto end;
 				mask = cidr2netmask(atoi(mask));
@@ -550,7 +556,7 @@ int get_lan_dns(char *refparam, struct dmctx *ctx, char **value)
 	
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_parse_array(res, "dns-server", -1, NULL, value);
+	*value = dmjson_get_value_array_all(res, DELIMITOR, 1, "dns-server");
 	if ((*value)[0] == '\0') {
 		dmuci_get_value_by_section_string(lanargs->ldlansection, "dns", value);
 		*value = dmstrdup(*value); // MEM WILL BE FREED IN DMMEMCLEAN
@@ -685,7 +691,7 @@ enum enum_lanip_interval_address {
 
 int get_lan_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 {
-	json_object *res;
+	json_object *res, *jobj;
 	char *ipaddr = "" , *mask = "", *start , *limit;
 	struct ldlanargs *lanargs = (struct ldlanargs *)ctx->args;
 	char *lan_name = section_name(lanargs->ldlansection);
@@ -707,7 +713,10 @@ int get_lan_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 	if (ipaddr[0] == '\0') {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 		if (res)
-			json_select(res, "ipv4-address", 0, "address", &ipaddr, NULL);
+		{
+			jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+			ipaddr = dmjson_get_value(jobj, 1, "address");
+		}
 	}
 	if (ipaddr[0] == '\0') {
 		goto end;
@@ -716,7 +725,8 @@ int get_lan_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 	if (mask[0] == '\0') {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 		if (res) {
-			json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+			jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+			mask = dmjson_get_value(jobj, 1, "mask");
 			if (mask[0] == '\0') {
 				goto end;
 			}
@@ -940,7 +950,7 @@ int get_lan_dhcp_subnetmask(char *refparam, struct dmctx *ctx, char **value)
 	struct ldlanargs *lanargs = (struct ldlanargs *)ctx->args;
 	char *lan_name = section_name(lanargs->ldlansection);
 	char *mask;
-	json_object *res;
+	json_object *res, *jobj;
 	struct uci_section *s = NULL;
 	char *val;
 	*value = "";
@@ -954,7 +964,8 @@ int get_lan_dhcp_subnetmask(char *refparam, struct dmctx *ctx, char **value)
 	if ((*value)[0] == '\0') {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "ipv4-address", 0, "mask", &mask, NULL);
+		jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+		mask = dmjson_get_value(jobj, 1, "mask");
 		int i_mask = atoi(mask);
 		val = cidr2netmask(i_mask);
 		*value = dmstrdup(val);// MEM WILL BE FREED IN DMMEMCLEAN
@@ -1167,7 +1178,7 @@ int get_lan_host_nbr_entries(char *refparam, struct dmctx *ctx, char **value)
 	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
 	DM_ASSERT(res, *value = "0");
 	json_object_object_foreach(res, key, val) {
-		json_select(val, "network", 0, NULL, &network, NULL);
+		network = dmjson_get_value(val, 1, "network");
 		if (strcmp(network, lan_name) == 0)
 			entries++;
 	}
@@ -1212,7 +1223,7 @@ int set_interface_firewall_enabled_ipinterface(char *refparam, struct dmctx *ctx
 int get_interface_ipaddress(char *refparam, struct dmctx *ctx, char **value)
 {
 	char *proto;
-	json_object *res;
+	json_object *res, *jobj;
 	struct ldipargs *ipargs = (struct ldipargs *)ctx->args;//TO CHECK
 	char *lan_name = section_name(ipargs->ldipsection);
 	
@@ -1222,7 +1233,8 @@ int get_interface_ipaddress(char *refparam, struct dmctx *ctx, char **value)
 	else {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, "ipv4-address", 0, "address", value, NULL);
+		jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+		*value = dmjson_get_value(jobj, 1, "address");
 	}
 	return 0;
 }
@@ -1249,7 +1261,7 @@ int get_interface_subnetmask(char *refparam, struct dmctx *ctx, char **value)
 	struct ldipargs *ipargs = (struct ldipargs *)ctx->args;
 	char *proto;
 	char *val = NULL;
-	json_object *res;
+	json_object *res, *jobj;
 	char *tmp;
 	char *lan_name = section_name(ipargs->ldipsection);
 	
@@ -1259,7 +1271,8 @@ int get_interface_subnetmask(char *refparam, struct dmctx *ctx, char **value)
 	else {
 		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-    json_select(res, "ipv4-address", 0, "mask", &val, NULL);
+		jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
+    	val = dmjson_get_value(jobj, 1, "mask");
 		tmp = cidr2netmask(atoi(val));
 		*value = dmstrdup(tmp); // MEM WILL BE FREED IN DMMEMCLEAN
 	}
@@ -1433,7 +1446,7 @@ int get_lan_eth_iface_cfg_enable(char *refparam, struct dmctx *ctx, char **value
 		
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ethargs->eth, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "up", -1, NULL, value, NULL);
+	*value = dm_ubus_get_value(res, 1, "up");
 	return 0;
 }
 
@@ -1615,7 +1628,7 @@ int get_lan_eth_iface_cfg_stats_tx_bytes(char *refparam, struct dmctx *ctx, char
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ethargs->eth, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_bytes", value, NULL);	
+	*value = dm_ubus_get_value(res, 2, "statistics", "tx_bytes");
 	return 0;
 }
 
@@ -1626,7 +1639,7 @@ int get_lan_eth_iface_cfg_stats_rx_bytes(char *refparam, struct dmctx *ctx, char
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ethargs->eth, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_bytes", value, NULL);	
+	*value = dm_ubus_get_value(res, 2, "statistics", "rx_bytes");
 	return 0;
 }
 
@@ -1637,7 +1650,7 @@ int get_lan_eth_iface_cfg_stats_tx_packets(char *refparam, struct dmctx *ctx, ch
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ethargs->eth, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_packets", value, NULL);
+	*value = dm_ubus_get_value(res, 2, "statistics", "tx_packets");
 	return 0;
 }
 
@@ -1648,7 +1661,7 @@ int get_lan_eth_iface_cfg_stats_rx_packets(char *refparam, struct dmctx *ctx, ch
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ethargs->eth, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_packets", value, NULL);	
+	*value = dm_ubus_get_value(res, 2, "statistics", "rx_packets");
 	return 0;
 }
 
@@ -1677,7 +1690,7 @@ char *get_interface_type(char *mac, char *ndev)
 				dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", p, String}}, 1, &res);
 				if(res) {
 					json_object_object_foreach(res, key, val) {
-						json_select(val, "assoc_mac", 0, NULL, &value, NULL);
+						value = dmjson_get_value(val, 1, "assoc_mac");
 						if (strcasecmp(value, mac) == 0)
 							return "802.11";
 					}
@@ -1692,28 +1705,28 @@ char *get_interface_type(char *mac, char *ndev)
 int get_lan_host_ipaddress(char *refparam, struct dmctx *ctx, char **value) {
 	struct clientargs *clienlargs = (struct clientargs *)ctx->args;
 	
-	json_select(clienlargs->client, "ipaddr", 0, NULL, value, NULL);
+	*value = dm_ubus_get_value(clienlargs->client, 1, "ipaddr");
 	return 0;	
 }
 
 int get_lan_host_hostname(char *refparam, struct dmctx *ctx, char **value) {
 	struct clientargs *clienlargs = (struct clientargs *)ctx->args;
 	
-	json_select(clienlargs->client, "hostname", 0, NULL, value, NULL);
+	*value = dm_ubus_get_value(clienlargs->client, 1, "hostname");
 	return 0;	
 }
 
 int get_lan_host_active(char *refparam, struct dmctx *ctx, char **value) {
 	struct clientargs *clienlargs = (struct clientargs *)ctx->args;
 	
-	json_select(clienlargs->client, "connected", 0, NULL, value, NULL);
+	*value = dm_ubus_get_value(clienlargs->client, 1, "connected");
 	return 0;	
 }
 
 int get_lan_host_macaddress(char *refparam, struct dmctx *ctx, char **value) {
 	struct clientargs *clienlargs = (struct clientargs *)ctx->args;
 	
-	json_select(clienlargs->client, "macaddr", 0, NULL, value, NULL);
+	*value = dm_ubus_get_value(clienlargs->client, 1, "macaddr");
 	return 0;	
 }
 
@@ -1722,7 +1735,7 @@ int get_lan_host_interfacetype(char *refparam, struct dmctx *ctx, char **value)
 	char *mac;
 	struct clientargs *clienlargs = (struct clientargs *)ctx->args;
 	
-	json_select(clienlargs->client, "macaddr", 0, NULL, &mac, NULL);
+	mac = dm_ubus_get_value(clienlargs->client, 1, "macaddr");
 	*value = get_interface_type(mac, clienlargs->lan_name);
 	return 0;	
 }
@@ -1731,7 +1744,7 @@ int get_lan_host_addresssource(char *refparam, struct dmctx *ctx, char **value) 
 	char *dhcp;
 	struct clientargs *clienlargs = (struct clientargs *)ctx->args;
 	
-	json_select(clienlargs->client, "dhcp", 0, NULL, &dhcp, NULL);
+	dhcp = dm_ubus_get_value(clienlargs->client, 1, "dhcp");
 	if (strcasecmp(dhcp, "true") == 0)
 		*value = "DHCP";
 	else 
@@ -1749,13 +1762,12 @@ int get_lan_host_leasetimeremaining(char *refparam, struct dmctx *ctx, char **va
 	struct clientargs *clientlargs = (struct clientargs *)ctx->args;
 	char delimiter[] = " \t";
 	
-	json_select(clientlargs->client, "dhcp", 0, NULL, &dhcp, NULL);
+	dhcp = dm_ubus_get_value(clientlargs->client, 1, "dhcp");
 	if (strcmp(dhcp, "false") == 0) {
 		*value = "0";
 	}
 	else {
-		json_select(clientlargs->client, "macaddr", 0, NULL, &mac, NULL);		
-		//
+		mac = dm_ubus_get_value(clientlargs->client, 1, "macaddr");
 		fp = fopen(ARP_FILE, "r");
 		if ( fp != NULL)
 		{
@@ -1837,7 +1849,7 @@ int get_wlan_bssid(char *refparam, struct dmctx *ctx, char **value)
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)ctx->args;
 
 	DM_ASSERT(wlanargs->res, *value = "");
-	json_select(wlanargs->res, "bssid", 0, NULL, value, NULL);
+	*value = dmjson_get_value(wlanargs->res, 1, "bssid");
 	return 0;
 }
 
@@ -1868,7 +1880,7 @@ int get_wlan_channel(char *refparam, struct dmctx *ctx, char **value)
 	dmuci_get_value_by_section_string(wlanargs->device_section, "channel", value);
 	if (strcmp(*value, "auto") == 0 || (*value)[0] == '\0') {
 		DM_ASSERT(wlanargs->res, *value ="");
-		json_select(wlanargs->res, "channel", 0, NULL, value, NULL);
+		*value = dmjson_get_value(wlanargs->res, 1, "channel");
 	}
 	return 0;
 }
@@ -1915,7 +1927,7 @@ int set_wlan_auto_channel_enable(char *refparam, struct dmctx *ctx, int action, 
 				if(wlanargs->res == NULL)
 					return 0;
 				else
-					json_select(wlanargs->res, "channel", 0, NULL, &value, NULL);
+					value = dmjson_get_value(wlanargs->res, 1, "channel");
 			}
 			dmuci_set_value_by_section(wlanargs->device_section, "channel", value);
 			return 0;
@@ -2110,13 +2122,13 @@ int set_wlan_standard(char *refparam, struct dmctx *ctx, int action, char *value
 
 int get_wlan_possible_channels(char *refparam, struct dmctx *ctx, char **value)
 {
-	json_object *res;
+	json_object *res, *jobj;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)ctx->args;
 
 	*value = "";
 	dmubus_call("router.wireless", "radios", UBUS_ARGS{}, 0, &res);
 	if(res)
-		json_select(res, wlanargs->wunit, -1, "channels", value, NULL);
+	*value = dmjson_get_value_array_all(res, DELIMITOR, 2, wlanargs->wunit, "channels");
 	return 0;
 }
 
@@ -2655,7 +2667,7 @@ int get_wlan_devstatus_statistics_tx_bytes(char *refparam, struct dmctx *ctx, ch
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", wlanargs->wiface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", -1, "tx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics","tx_bytes");
 	return 0;
 }
 
@@ -2666,7 +2678,7 @@ int get_wlan_devstatus_statistics_rx_bytes(char *refparam, struct dmctx *ctx, ch
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name",  wlanargs->wiface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_bytes", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics","rx_bytes");
 	return 0;
 }
 
@@ -2677,7 +2689,7 @@ int get_wlan_devstatus_statistics_tx_packets(char *refparam, struct dmctx *ctx, 
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name",  wlanargs->wiface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "tx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics","tx_packets");
 	return 0;
 }
 
@@ -2689,7 +2701,7 @@ int get_wlan_devstatus_statistics_rx_packets(char *refparam, struct dmctx *ctx, 
 	
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name",  wlanargs->wiface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	json_select(res, "statistics", 0, "rx_packets", value, NULL);
+	*value = dmjson_get_value(res, 2, "statistics","rx_packets");
 	return 0;
 }
 
@@ -2784,7 +2796,7 @@ int set_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, int action, c
 				dmuci_set_value_by_section(wlanargs->device_section, "channel", "auto");
 			else if (strcmp(value, "Manual") == 0) {
 				if (wlanargs->res != NULL) {
-					json_select(wlanargs->res, "channel", 0, NULL, &channel, NULL);
+					channel = dmjson_get_value(wlanargs->res, 1, "channel");
 					if (channel[0] != '\0')
 						dmuci_set_value_by_section(wlanargs->device_section, "channel", channel);
 				}
@@ -2800,7 +2812,7 @@ int get_x_inteno_se_supported_standard(char *refparam, struct dmctx *ctx, char *
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)ctx->args;
 	
 	DM_ASSERT(wlanargs->res, *value = "b, g, n, gst, lrs");
-	json_select(wlanargs->res, "frequency", 0, NULL, &freq, NULL);
+	freq = dmjson_get_value(wlanargs->res, 1, "frequency");
 	if (strcmp(freq, "5") == 0)
 		*value = "a, n, ac";
 	else
@@ -2817,7 +2829,7 @@ int get_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ct
 	if (value[0] == '\0')
 	{
 		DM_ASSERT(wlanargs->res, *value ="");
-		json_select(wlanargs->res, "bandwidth", 0, NULL, &bandwith, NULL);
+		bandwith = dmjson_get_value(wlanargs->res, 1, "bandwidth");
 		dmastrcat(value, bandwith, "MHz"); // MEM WILL BE FREED IN DMMEMCLEAN
 	}
 	return 0;
@@ -2969,7 +2981,7 @@ int get_wlan_psk_assoc_MACAddress(char *refparam, struct dmctx *ctx, char **valu
 		sprintf(sta_pki, "sta-%d", wlanargs->pki);
 		dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", wlanargs->wiface, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
-		json_select(res, sta_pki, -1, "macaddr", value, NULL);
+		*value = dmjson_get_value(res, 2, sta_pki, "macaddr");
 		return 0;
 	}
 	*value = "";
@@ -3019,7 +3031,7 @@ int get_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, char **value)
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)ctx->args;
 
 	DM_ASSERT(wlanargs->res, *value = "");
-	json_select(wlanargs->res, "frequency", 0, NULL, &freq, NULL);
+	freq = dmjson_get_value(wlanargs->res, 1, "frequency");
 	dmastrcat(value, freq, "GHz");
 	return 0;
 }
@@ -3036,7 +3048,7 @@ int set_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, int action, cha
 			return 0;
 		case VALUESET:
 			if(wlanargs->res)
-				json_select(wlanargs->res, "frequency", 0, NULL, &freq, NULL);
+				freq = dm_ubus_get_value(wlanargs->res, 1, "frequency");
 			if (freq && strcmp(freq, value) == 0)
 			{
 				return 0;
@@ -3047,7 +3059,7 @@ int set_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, int action, cha
 					dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", section_name(s), String}}, 1, &res);
 					if(res)
 					{
-						json_select(res, "frequency", 0, NULL, &freq, NULL);
+						freq = dmjson_get_value(res, 1, "frequency");
 						if (strcmp(freq, value) == 0)
 						{
 							dmuci_set_value_by_section(wlanargs->lwlansection, "device", section_name(s));
@@ -3502,7 +3514,7 @@ inline int entry_landevice_wlanconfiguration_associateddevice(struct dmctx *ctx,
 		char *value;
 		json_object_object_foreach(res, key, wl_client_obj) {
 			idx = handle_update_instance(3, ctx, &idx_last, update_instance_without_section, 1, ++id);
-			json_select(wl_client_obj, "macaddr", 0, NULL, &value, NULL);
+			value = dmjson_get_value(wl_client_obj, 1, "macaddr");
 			init_wl_client_args(ctx, value, wlanargs->wiface);
 			SUBENTRY(entry_landevice_wlanconfiguration_associateddevice_instance, ctx, idev, iwlan, idx);
 		}
@@ -3540,7 +3552,7 @@ inline int entry_landevice_host(struct dmctx *ctx, struct uci_section *landevice
 	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
 	if (res) {
 		json_object_object_foreach(res, key, client_obj) {
-			json_select(client_obj, "network", 0, NULL, &network, NULL);
+			network = dmjson_get_value(client_obj, 1, "network");
 			if (strcmp(network, section_name(landevice_section)) == 0) {
 				init_client_args(ctx, client_obj, section_name(landevice_section));
 				idx = handle_update_instance(2, ctx, &idx_last, update_instance_without_section, 1, ++id);

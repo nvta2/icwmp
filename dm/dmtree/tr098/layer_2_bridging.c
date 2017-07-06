@@ -16,6 +16,7 @@
 #include "dmmem.h"
 #include "dmubus.h"
 #include "dmcommon.h"
+#include "dmjson.h"
 #include "layer_2_bridging.h"
 
 inline int entry_layer2_availableinterface_instance(struct dmctx *ctx, char *int_instance);
@@ -631,7 +632,7 @@ int get_bridge_status(char *refparam, struct dmctx *ctx, char **value)
 	struct args_layer2 *args = (struct args_layer2 *)ctx->args;
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(args->layer2section), String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
-	json_select(res, "up", 0, NULL, value, NULL);
+	*value = dmjson_get_value(res, 1, "up");
 	return 0;
 }
 
