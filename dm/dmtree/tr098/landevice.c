@@ -411,20 +411,33 @@ int delete_dhcp_conditional_serving_pool_all(struct dmctx *ctx)
 		{
 			uci_path_foreach_sections(icwmpd, "dmmap", section_name(ss), dmmap_s)
 			{
-				if (dmmap)
+				if (dmmap != 0)
 					DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
 				dmmap_ss = dmmap_s;
 				dmmap++;
 			}
 			if (dmmap_ss != NULL)
 				DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
+			dmmap = 0;
+			dmmap_ss = NULL;
 			dmuci_delete_by_section(ss, NULL, NULL);
 		}
 		ss = s;
 		found++;
 	}
 	if (ss != NULL)
+	{
+		uci_path_foreach_sections(icwmpd, "dmmap", section_name(ss), dmmap_s)
+		{
+			if (dmmap != 0)
+				DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
+			dmmap_ss = dmmap_s;
+			dmmap++;
+		}
+		if (dmmap_ss != NULL)
+			DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
 		dmuci_delete_by_section(ss, NULL, NULL);
+	}
 	return 0;
 }
 
