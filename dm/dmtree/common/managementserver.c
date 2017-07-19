@@ -23,7 +23,49 @@
 
 int get_management_server_url(char *refparam, struct dmctx *ctx, char **value)
 {
-	dmuci_get_varstate_string("cwmp", "acs", "url", value);
+	int i = 1;
+	char *dhcp = NULL, *pch = NULL, *spch = NULL;
+	char *url = NULL;
+	char *path = NULL;
+	char *provisioning_value = NULL;
+	char package[64] = "", section[64] = "", option[64] = "";
+
+	dmuci_get_option_value_string("cwmp", "acs", "dhcp_discovery", &dhcp);
+	dmuci_get_option_value_string("cwmp", "acs", "url", &url);
+	dmuci_get_option_value_string("cwmp", "acs", "dhcp_url_path", &path);
+
+	if (path && path[0] != '\0')
+	{
+		pch = strtok_r(path, ".", &spch);
+		while (pch != NULL) {
+			switch(i)
+			{
+				case 1:
+					sprintf(package, "%s", pch);
+					i++;
+					break;
+				case 2:
+					sprintf(section, "%s", pch);
+					i++;
+					break;
+				case 3:
+					sprintf(option, "%s", pch);
+					i++;
+					break;
+			}
+			pch = strtok_r(NULL, ".", &spch);
+		}
+		if ( (package && package[0] != '\0') && (section && section[0] != '\0') && (option && option[0] != '\0'))
+		dmuci_get_varstate_string(package, section, option, &provisioning_value);
+	}
+	if ( ((dhcp && strcmp(dhcp, "enable") == 0 ) || ((url == NULL) || (url[0] == '\0'))) && ((provisioning_value != NULL) && (provisioning_value[0] != '\0')) )
+	{
+		*value = provisioning_value;
+	}
+	else if ((url != NULL) && (url[0] != '\0'))
+			*value = url;
+	else
+		*value = dmstrdup(DEFAULT_ACSURL);
 	return 0;	
 }
 
