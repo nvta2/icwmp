@@ -970,6 +970,34 @@ int get_ap_ssid_ref(char *refparam, struct dmctx *ctx, char **value)
 		*value = "";
 	return 0;
 }
+
+int get_wifi_bandsteering_enable(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_option_value_string("wireless", "bandsteering", "enabled", value);
+	return 0;
+}
+
+int set_wifi_bandsteering_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+
+	switch (action) {
+		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
+			return 0;
+		case VALUESET:
+			string_to_bool(value, &b);
+			if (b) {
+				dmuci_set_value("wireless", "bandsteering", "enabled", "1");
+			}
+			else {
+				dmuci_set_value("wireless", "bandsteering", "enabled", "0");
+			}
+			return 0;
+	}
+	return 0;
+}
 ////////////////ADD DEL OBJ//////////////////////////
 int add_wifi_ssid(struct dmctx *ctx, char **new_instance)
 {
@@ -1051,6 +1079,7 @@ int entry_method_root_Wifi(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"WiFi.") {
 		DMOBJECT(DMROOT"WiFi.", ctx, "0", 1, NULL, NULL, NULL);
+		DMPARAM("X_INTENO_SE_Bandsteering_Enable", ctx, "1", get_wifi_bandsteering_enable, set_wifi_bandsteering_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMOBJECT(DMROOT"WiFi.Radio.", ctx, "0", 1, NULL, NULL, NULL);
 		DMOBJECT(DMROOT"WiFi.SSID.", ctx, "1", 1, add_wifi_ssid, delete_wifi_ssid_all, NULL);
 		DMOBJECT(DMROOT"WiFi.AccessPoint.", ctx, "0", 1, NULL, NULL, NULL);
