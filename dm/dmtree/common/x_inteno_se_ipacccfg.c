@@ -81,6 +81,72 @@ int set_x_bcm_com_ip_acc_list_cfgobj_enable(char *refparam, struct dmctx *ctx, i
 	return 0;
 }
 
+int get_x_bcm_com_ip_acc_list_cfgobj_ipversion(char *refparam, struct dmctx *ctx, char **value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	dmuci_get_value_by_section_string(accargs->ipaccsection, "family", value);
+	return 0;
+}
+
+int set_x_bcm_com_ip_acc_list_cfgobj_ipversion(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(accargs->ipaccsection, "family", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_x_bcm_com_ip_acc_list_cfgobj_protocol(char *refparam, struct dmctx *ctx, char **value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	dmuci_get_value_by_section_string(accargs->ipaccsection, "proto", value);
+	return 0;
+}
+
+int set_x_bcm_com_ip_acc_list_cfgobj_protocol(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(accargs->ipaccsection, "proto", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, char **value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	dmuci_get_value_by_section_string(accargs->ipaccsection, "name", value);
+	return 0;
+}
+
+int set_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(accargs->ipaccsection, "name", value);
+			return 0;
+	}
+	return 0;
+}
+
 int get_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, char **value)
 {
 	struct uci_list *val;
@@ -520,7 +586,7 @@ int add_ipacccfg_port_forwarding(struct dmctx *ctx, char **instancepara)
 {
 	char *value;
 	char *instance;
-	struct uci_section *redirect = NULL;	
+	struct uci_section *redirect = NULL;
 	
 	instance = get_last_instance_lev2("firewall", "redirect", "forwardinstance", "target", "DNAT");
 	dmuci_add_section("firewall", "redirect", &redirect, &value);
@@ -534,11 +600,11 @@ int add_ipacccfg_port_forwarding(struct dmctx *ctx, char **instancepara)
 
 int delete_ipacccfg_port_forwarding_all(struct dmctx *ctx)
 {
-	struct uci_section *s = NULL; 
+	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	int found = 0;
 	
-	uci_foreach_option_eq("firewall", "redirect", "target", "DNAT", s) {	
+	uci_foreach_option_eq("firewall", "redirect", "target", "DNAT", s) {
 		if (found != 0)
 			dmuci_delete_by_section(ss, NULL, NULL);
 		ss = s;
@@ -551,10 +617,55 @@ int delete_ipacccfg_port_forwarding_all(struct dmctx *ctx)
 
 
 int delete_ipacccfg_port_forwarding_instance(struct dmctx *ctx)
-{	
+{
 	struct pforwardrgs *forwardargs = (struct pforwardrgs *)ctx->args;
 	
 	dmuci_delete_by_section(forwardargs->forwardsection, NULL, NULL);
+	return 0;
+}
+
+int add_ipacccfg_rule(struct dmctx *ctx, char **instancepara)
+{
+	char *value;
+	char *instance;
+	struct uci_section *rule = NULL;
+	
+	instance = get_last_instance("firewall", "rule", "fruleinstance");
+	dmuci_add_section("firewall", "rule", &rule, &value);
+	dmuci_set_value_by_section(rule, "type", "generic");
+	dmuci_set_value_by_section(rule, "name", "new_rule");
+	dmuci_set_value_by_section(rule, "proto", "all");
+	dmuci_set_value_by_section(rule, "target", "REJECT");
+	dmuci_set_value_by_section(rule, "family", "ipv4");
+	dmuci_set_value_by_section(rule, "enabled", "1");
+	dmuci_set_value_by_section(rule, "hidden", "1");
+	dmuci_set_value_by_section(rule, "parental", "0");
+	*instancepara = update_instance(rule, instance, "fruleinstance");
+	return 0;
+}
+
+int delete_ipacccfg_rule_all(struct dmctx *ctx)
+{
+	struct uci_section *s = NULL; 
+	struct uci_section *ss = NULL;
+	int found = 0;
+	
+	uci_foreach_sections("firewall", "rule", s) {
+		if (found != 0)
+			dmuci_delete_by_section(ss, NULL, NULL);
+		ss = s;
+		found++;
+	}
+	if (ss != NULL)
+		dmuci_delete_by_section(ss, NULL, NULL);
+	return 0;
+}
+
+int delete_ipacccfg_rule_instance(struct dmctx *ctx)
+{	
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	dmuci_delete_by_section(accargs->ipaccsection, NULL, NULL);
 	return 0;
 }
 
@@ -626,7 +737,7 @@ int entry_method_root_X_INTENO_SE_IpAccCfg(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"X_INTENO_SE_IpAccCfg.") {
 		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.", ctx, "0", 1, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_IpAccListCfgObj.", ctx, "0", 1, NULL, NULL, NULL);
+		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_IpAccListCfgObj.", ctx, "1", 1, add_ipacccfg_rule, delete_ipacccfg_rule_all, NULL);
 		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_PortForwarding.", ctx, "1", 1, add_ipacccfg_port_forwarding, delete_ipacccfg_port_forwarding_all, NULL);
 		SUBENTRY(entry_xinteno_ipacccfg_listcfgobj, ctx);
 		SUBENTRY(entry_xinteno_ipacccfg_portforwarding, ctx);
@@ -638,9 +749,12 @@ int entry_method_root_X_INTENO_SE_IpAccCfg(struct dmctx *ctx)
 inline int entry_xinteno_ipacccfg_listcfgobj_instance(struct dmctx *ctx, char *irule)
 {
 	IF_MATCH(ctx, DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_IpAccListCfgObj.%s.", irule) {
-		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_IpAccListCfgObj.%s.", ctx, "0", 1, NULL, NULL, NULL, irule);
+		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_IpAccListCfgObj.%s.", ctx, "1", 1, NULL, delete_ipacccfg_rule_instance, NULL, irule);
 		DMPARAM("Alias", ctx, "1", get_x_inteno_cfgobj_address_alias, set_x_inteno_cfgobj_address_alias, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Enable", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_enable, set_x_bcm_com_ip_acc_list_cfgobj_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
+		DMPARAM("IPVersion", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_ipversion, set_x_bcm_com_ip_acc_list_cfgobj_ipversion, "xsd:string", 0, 1, UNDEF, NULL);
+		DMPARAM("Protocol", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_protocol, set_x_bcm_com_ip_acc_list_cfgobj_protocol, "xsd:string", 0, 1, UNDEF, NULL);
+		DMPARAM("FilterName", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_name, set_x_bcm_com_ip_acc_list_cfgobj_name, "xsd:string", 0, 1, UNDEF, NULL);
 		DMPARAM("AccAddressAndNetMask", ctx, "1", get_x_inteno_cfgobj_address_netmask, set_x_inteno_cfgobj_address_netmask, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("AccPort", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_acc_port, set_x_bcm_com_ip_acc_list_cfgobj_acc_port, NULL, 0, 1, UNDEF, NULL);
 		return 0;
