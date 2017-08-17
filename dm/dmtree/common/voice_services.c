@@ -1466,6 +1466,36 @@ int set_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, int action, c
 	return 0;
 }
 
+int get_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx,  char **value)
+{
+	struct brcm_args *brcmargs = (struct brcm_args *)(ctx->args);
+
+	dmuci_get_value_by_section_string(brcmargs->brcm_section, "echo_cancel", value);
+	return 0;
+}
+
+
+int set_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+	struct brcm_args *brcmargs = (struct brcm_args *)(ctx->args);
+
+	switch (action) {
+		case VALUECHECK:
+			if(string_to_bool(value, &b))
+				return FAULT_9007;
+			return 0;
+		case VALUESET:
+			string_to_bool(value, &b);
+			if(b)
+				dmuci_set_value_by_section(brcmargs->brcm_section, "echo_cancel", "1");
+			else
+				dmuci_set_value_by_section(brcmargs->brcm_section, "echo_cancel", "0");
+			return 0;
+	}
+	return 0;
+}
+
 int get_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx,  char **value)
 {
 	struct brcm_args *brcmargs = (struct brcm_args *)(ctx->args);
@@ -2172,6 +2202,8 @@ inline int entry_services_voice_service_line_instance(struct dmctx *ctx, char *i
 		DMPARAM("CallState", ctx, "0", get_voice_profile_line_callstate, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("X_002207_LineProfile", ctx, "1", get_line_x_002207_line_profile, set_line_x_002207_line_profile, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("X_002207_BRCMLine", ctx, "1", get_line_x_002207_brcm_line, set_line_x_002207_brcm_line, NULL, 0, 1, UNDEF, NULL);
+		DMOBJECT(DMROOT"Services.VoiceService.%s.VoiceProfile.%s.Line.%s.VoiceProcessing.", ctx, "0", 1, NULL, NULL, NULL, ivoice, profile_num, line_num);
+		DMPARAM("EchoCancellationEnable", ctx, "1", get_line_voice_processing_cancellation_enable, set_line_voice_processing_cancellation_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMOBJECT(DMROOT"Services.VoiceService.%s.VoiceProfile.%s.Line.%s.CallingFeatures.", ctx, "0", 1, NULL, NULL, NULL, ivoice, profile_num, line_num);
 		DMPARAM("CallerIDName", ctx, "1", get_line_calling_features_caller_id_name, set_line_calling_features_caller_id_name, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("CallWaitingEnable", ctx, "1", get_line_calling_features_callwaiting, set_line_calling_features_callwaiting, "xsd:boolean", 0, 1, UNDEF, NULL);
