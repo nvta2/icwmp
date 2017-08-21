@@ -9,10 +9,10 @@
 
 NEW_LINE='\n'
 CWMP_PROMPT="icwmp>"
-UCI_GET="/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get -q"
-UCI_SHOW="/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show -q"
-UCI_IMPORT="/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} import -q"
-UCI_EXPORT="/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} export -q"
+UCI_GET="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get"
+UCI_SHOW="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show"
+UCI_IMPORT="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} import"
+UCI_EXPORT="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} export"
 TMP_SET_VALUE="/tmp/.tmp_set_value"
 TMP_SET_NOTIFICATION="/tmp/.tmp_set_notification"
 
