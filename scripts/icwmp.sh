@@ -356,10 +356,7 @@ handle_action() {
 		esac
 	fi
 	if [ "$action" = "factory_reset" ]; then
-		jffs2_mark_erase "rootfs_data"
-		sync
-		ACTION=add INTERFACE=resetbutton /sbin/hotplug-call button
-		reboot
+		/sbin/defaultreset
 	fi
 
 	if [ "$action" = "reboot" ]; then
