@@ -59,6 +59,7 @@ icwmpd_SOURCES += 									\
 	../dm/dmtree/tr098/ippingdiagnostics.c			\
 	../dm/dmtree/tr098/downloaddiagnostic.c			\
 	../dm/dmtree/tr098/uploaddiagnostic.c			\
+	../dm/dmtree/tr098/deviceconfig.c				\
 	../dm/dmtree/tr098/layer_3_forwarding.c	
 endif
 if DATAMODEL_TR181

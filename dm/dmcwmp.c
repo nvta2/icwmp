@@ -50,6 +50,7 @@
 #include "uploaddiagnostic.h"
 #include "x_inteno_se_dropbear.h"
 #include "x_inteno_se_buttons.h"
+#include "deviceconfig.h"
 
 static char *get_parameter_notification (struct dmctx *ctx, char *param);
 static int remove_parameter_notification(char *param);
@@ -120,6 +121,7 @@ struct prefix_method prefix_methods[] = {
 	{ DMROOT"IPPingDiagnostics.", 1, NULL, 0, &entry_method_root_IPPingDiagnostics },
 	{ DMROOT"DownloadDiagnostics.", 1, NULL, 0, &entry_method_root_Download_Diagnostics },
 	{ DMROOT"UploadDiagnostics.", 1, NULL, 0, &entry_method_root_Upload_Diagnostics },
+	{ DMROOT"DeviceConfig.", 1, NULL, 0, &entry_method_root_device_config },
 #endif
 	{ DMROOT"Services.", 1, dm_service_enable_set, 0, &entry_method_root_Service },
 	{ DMROOT"UPnP.", 1, NULL, 0, &entry_method_root_upnp },

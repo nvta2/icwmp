@@ -1,0 +1,27 @@
+#!/bin/sh
+# Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
+# 	Author: imen BHIRI <imen.bhiri@pivasoftware.com>
+
+
+UCI_CONFIG_DIR="/etc/config/"
+BACKUP_FILE="/etc/backup"
+RESTORED_CONFIG_FILE="dropbear firewall mcpd multiwan network dhcp owsd samba system voice_client wireless"
+
+export_config() {
+	rm $BACKUP_FILE
+	for i in `echo ${RESTORED_CONFIG_FILE}`; do 
+		/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q export /etc/config/$i >> $BACKUP_FILE
+	done			
+}
+
+import_config() {
+	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q import < $BACKUP_FILE
+}
+
+if [ "$1" == "export_conf" ] ; then
+	export_config  
+	return
+else
+	import_config
+	return 
+fi
