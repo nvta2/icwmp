@@ -1200,8 +1200,8 @@ static int set_value_check_param(DMPARAM_API_ARGS)
 	}
 	else if (ctx->setaction == VALUESET) {
 		(set_cmd)(full_param, ctx, VALUESET, ctx->in_value);
-		(get_cmd)(full_param, ctx, &v);
-		dm_update_enabled_notify_byname(full_param, v);
+		//(get_cmd)(full_param, ctx, &v);
+		dm_update_enabled_notify_byname(full_param, ctx->in_value);
 	}
 
 	dmfree(full_param);
