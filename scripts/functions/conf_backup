@@ -8,7 +8,7 @@ BACKUP_FILE="/etc/backup"
 RESTORED_CONFIG_FILE="dropbear firewall mcpd multiwan network dhcp owsd samba system voice_client wireless"
 
 export_config() {
-	rm $BACKUP_FILE
+	rm -f $BACKUP_FILE
 	for i in `echo ${RESTORED_CONFIG_FILE}`; do 
 		/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q export /etc/config/$i >> $BACKUP_FILE
 	done			
