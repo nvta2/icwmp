@@ -10,12 +10,12 @@ RESTORED_CONFIG_FILE="dropbear firewall mcpd multiwan network dhcp owsd samba sy
 export_config() {
 	rm -f $BACKUP_FILE
 	for i in `echo ${RESTORED_CONFIG_FILE}`; do 
-		/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q export /etc/config/$i >> $BACKUP_FILE
+		/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} export /etc/config/$i >> $BACKUP_FILE
 	done			
 }
 
 import_config() {
-	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q import < $BACKUP_FILE
+	/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} import < $BACKUP_FILE
 }
 
 if [ "$1" == "export_conf" ] ; then
