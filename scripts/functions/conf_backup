@@ -21,7 +21,9 @@ import_config() {
 if [ "$1" == "export_conf" ] ; then
 	export_config  
 	return
-else
+elif [ "$1" == "import_conf" ] ; then
 	import_config
-	return 
+	return
+else
+	return
 fi
