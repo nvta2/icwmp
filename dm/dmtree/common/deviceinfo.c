@@ -47,14 +47,31 @@ char *get_deviceid_manufactureroui()
 	char str[16];
 	char *mac = NULL;	
 	json_object *res;
+	FILE *nvrammac=NULL;
+	char macreadfile[18]={0};
 
-	
 	dmuci_get_option_value_string("cwmp", "cpe", "override_oui", &v);
 	if (v[0] == '\0')
 	{
 		dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
-		if(!(res))
+		if(!(res)){
 			db_get_value_string("hw", "board", "BaseMacAddr", &mac);
+			if(!mac || strlen(mac)==0 ){
+				if ((nvrammac = fopen("/proc/nvram/BaseMacAddr", "r")) == NULL)
+				{
+					mac = NULL;
+				}
+				else{
+					fscanf(nvrammac,"%[^\n]", macreadfile);
+					macreadfile[17]='\0';
+					sscanf(macreadfile,"%2c %2c %2c", str, str+2, str+4);
+					str[6]='\0';
+					v = dmstrdup(str); // MEM WILL BE FREED IN DMMEMCLEAN
+					fclose(nvrammac);
+					return v;
+				}
+			}
+		}
 		else
 			mac = dm_ubus_get_value(res, 2, "system", "basemac");
 		if(mac)
