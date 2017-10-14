@@ -93,6 +93,7 @@ int get_br_port_last_inst(char *br_key)
 			break;
 		buf[1] = atoi(tmp);
 	}
+#ifndef EX400
 	uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
@@ -106,6 +107,9 @@ int get_br_port_last_inst(char *br_key)
 		buf[3] = atoi(tmp);
 	}
 	uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "bridge_key", br_key, s) {
+#else
+	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
+#endif
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
 			break;
@@ -214,6 +218,7 @@ int reset_br_port(char *br_key)
 		dmuci_set_value_by_section(s, "bridge_key", "");
 		dmuci_set_value_by_section(s, "penable", "0");
 	}
+#ifndef EX400
 	uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "bridge_key", br_key, s) {
 		dmuci_set_value_by_section(s, "bridge_port_instance", "");
 		dmuci_set_value_by_section(s, "bridge_port_alias", "");
@@ -227,6 +232,9 @@ int reset_br_port(char *br_key)
 		dmuci_set_value_by_section(s, "penable", "0");
 	}
 	uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "bridge_key", br_key, s) {
+#else
+	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
+#endif
 		dmuci_set_value_by_section(s, "bridge_port_instance", "");
 		dmuci_set_value_by_section(s, "bridge_port_alias", "");
 		dmuci_set_value_by_section(s, "bridge_key", "");
@@ -269,6 +277,7 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
+#ifndef EX400
 	} else if (strncmp(linker, "ptm", 3) == 0) {
 		uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "ifname", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
@@ -283,6 +292,7 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
+#endif
 	} else if (strncmp(linker, "wl", 2) == 0) {
 		uci_foreach_option_eq("wireless", "wifi-iface", "ifname", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
@@ -297,12 +307,14 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
+#ifndef EX400
 		uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
 			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
+#endif
 	}
 	return 0;
 }
@@ -845,6 +857,7 @@ int check_port_with_ifname (char * ifname, struct uci_section **ss)
 			*ss = s;
 			break;
 		}
+#ifndef EX400
 	} else if (strncmp(ifname, "ptm", 3) == 0) {
 		uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "ifname", ifname, s) {
 			*ss = s;
@@ -855,6 +868,7 @@ int check_port_with_ifname (char * ifname, struct uci_section **ss)
 			*ss = s;
 			break;
 		}
+#endif
 	} else if (strncmp(ifname, "wl", 2) == 0) {
 		uci_foreach_option_eq("wireless", "wifi-iface", "ifname", ifname, s) {
 			*ss = s;
@@ -865,10 +879,12 @@ int check_port_with_ifname (char * ifname, struct uci_section **ss)
 			*ss = s;
 			break;
 		}
+#ifndef EX400
 		uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", ifname, s) {
 			*ss = s;
 			break;
 		}
+#endif
 	}
 	return 0;
 }
@@ -1088,8 +1104,11 @@ inline int entry_bridging_sub(struct dmctx *ctx)
 {
 	struct uci_section *br_s = NULL;
 	char *br_inst = NULL, *br_inst_last = NULL, *ifname;
-
+#ifdef EX400
+	dmuci_get_option_value_string("layer2_interface_ethernet", "WAN", "baseifname", &wan_baseifname);
+#else
 	dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &wan_baseifname);
+#endif
 	uci_foreach_option_eq("network", "interface", "type", "bridge", br_s) {
 		br_inst = handle_update_instance(1, ctx, &br_inst_last, update_instance_alias, 3, br_s, "bridge_instance", "bridge_alias");
 		init_bridging_args(ctx, br_s, br_inst_last);
@@ -1143,6 +1162,7 @@ inline int entry_bridge_port_sub(struct dmctx *ctx, char *ifname, char *idev, ch
 			SUBENTRY(entry_bridge_port_instance, ctx, idev, port);
 			break;
 		}
+#ifndef EX400
 		uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "ifname", pch, atm_s) {
 			dmuci_set_value_by_section(atm_s, "bridge_key", last_br_inst);
 			dmuci_set_value_by_section(atm_s, "mg_port", "false");
@@ -1162,6 +1182,9 @@ inline int entry_bridge_port_sub(struct dmctx *ctx, char *ifname, char *idev, ch
 			break;
 		}
 		uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", pch, w_eth_s) {
+#else
+		uci_foreach_option_eq("network", "interface", "ifname", pch, w_eth_s) {
+#endif
 			dmuci_set_value_by_section(w_eth_s, "bridge_key", last_br_inst);
 			dmuci_set_value_by_section(w_eth_s, "mg_port", "false");
 			dmuci_set_value_by_section(w_eth_s, "penable", "1");

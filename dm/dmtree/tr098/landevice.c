@@ -3542,8 +3542,13 @@ inline int entry_landevice_lanethernetinterfaceconfig(struct dmctx *ctx, struct 
 	char *ifname, *wan_eth, *baseifname;
 	char *ieth = NULL, *ieth_last = NULL;
 	struct uci_section *s = NULL;
-
+#ifdef EX400
+	uci_foreach_option_eq("ports", "ethport", "name", "WAN", s) {
+		dmuci_get_value_by_section_string(s, "ifname", &wan_eth);
+	}
+#else
 	dmuci_get_option_value_string("layer2_interface_ethernet", "ethernet_interface", "baseifname", &wan_eth);
+#endif
 	dmuci_get_value_by_section_string(landevice_section, "ifname", &ifname);
 	lan_eth_update_section_option_list(ifname, section_name(landevice_section), wan_eth);
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "lan_eth", "network", section_name(landevice_section), s) {

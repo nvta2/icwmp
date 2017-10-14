@@ -285,8 +285,11 @@ inline int entry_method_eth_interface(struct dmctx *ctx)
 {
 	char *int_num = NULL, *int_num_last = NULL, *ifname;
 	struct uci_section *ss = NULL;
-
+#ifndef EX400
 	dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &wan_ifname);
+#else
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_ifname);
+#endif
 	uci_foreach_sections("ports", "ethport", ss) {
 		dmuci_get_value_by_section_string(ss, "ifname", &ifname);
 		if (strcmp(ifname, wan_ifname) == 0) {

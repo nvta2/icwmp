@@ -49,11 +49,14 @@ struct args_layer2
 	char *oface;
 };
 const char *vlan_ifname[3] = {"eth","atm", "ptm"};
+
+#ifndef EX400
 struct wan_interface wan_interface_tab[3] = {
 {"1", "ethernet", "layer2_interface_ethernet", "ethernet_interface"},
 {"2", "adsl", "layer2_interface_adsl", "atm_bridge"},
 {"3", "vdsl", "layer2_interface_vdsl", "vdsl_interface"}
 };
+#endif
 
 struct args_layer2 cur_args = {0};
 char *wan_baseifname = NULL;
@@ -1110,7 +1113,7 @@ inline int entry_layer2_availableinterface(struct dmctx *ctx)
 	char *base_ifname, *available_inst = NULL;
 	struct uci_section *wifi_s , *wan_s, *ai_s;
 	char *instance_last = NULL;
-
+#ifndef EX400
 	for (i=0; i<3; i++) {
 		uci_foreach_sections(wan_interface_tab[i].package, wan_interface_tab[i].section, wan_s) {
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
@@ -1121,6 +1124,18 @@ inline int entry_layer2_availableinterface(struct dmctx *ctx)
 			SUBENTRY(entry_layer2_availableinterface_instance, ctx, available_inst);
 		}
 	}
+#else
+	uci_foreach_sections("ports", "ethport", wan_s) {
+		if(!strcmp(wan_s->e.name, "WAN")){
+			waninstance = update_instance(wan_s, waninstance, "waninstance");
+			dmasprintf(&oface, DMROOT"WANDevice.1.WANConnectionDevice.%s.", waninstance); // MEM WILL BE FREED IN DMMEMCLEAN
+			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
+			ai_s = update_availableinterface_list(ctx, base_ifname, &available_inst, &instance_last);
+			init_args_layer2(ctx, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
+			SUBENTRY(entry_layer2_availableinterface_instance, ctx, available_inst);
+		}
+	}
+#endif
 	db_get_value_string("hw", "board", "ethernetLanPorts", &phy_interface);
 	ch_ptr = strtok_r(phy_interface, " ", &saveptr);
 	i = 0;
@@ -1189,7 +1204,11 @@ inline int entry_layer2_bridge_vlan(struct dmctx *ctx, char *bridge_instance, ch
 int entry_method_root_Layer2Bridging(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"Layer2Bridging.") {
+#ifdef EX400
+		dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname);
+#else
 		dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &wan_baseifname);
+#endif
 		DMOBJECT(DMROOT"Layer2Bridging.", ctx, "0", 1, NULL, NULL, NULL);
 		DMOBJECT(DMROOT"Layer2Bridging.AvailableInterface.", ctx, "0", 0, NULL, NULL, NULL);
 		DMOBJECT(DMROOT"Layer2Bridging.Marking.", ctx, "1", 1, add_layer2bridging_marking, delete_layer2bridging_marking_all, NULL);
