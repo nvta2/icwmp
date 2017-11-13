@@ -2236,8 +2236,32 @@ int entry_wandevice_wanprotocolconnection(struct dmctx *ctx, char *idev, char *i
 	struct wancprotoargs *wandcprotoargs = (struct wancprotoargs *) (ctx->args);
 	char *lan_name;
 
+	char *wan_interface;
+	char* containsrepeater= NULL;
+	int repeatindex;
+	struct uci_section *s = NULL;
+	char *freq, **value;
+	json_object *res;
+	char *isrepeater;
+	dmuci_get_option_value_string("netmode", "setup", "curmode", &isrepeater);
+	containsrepeater = strstr(isrepeater, "repeater");
+	if(containsrepeater){
+		repeatindex = (int)(containsrepeater - isrepeater);
+		if(repeatindex == 0){
+			uci_foreach_sections("wireless", "wifi-device", s) {
+				dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", s->e.name, String}}, 1, &res);
+				DM_ASSERT(res, *value = "");
+				freq = dmjson_get_value(res, 1, "frequency");
+				if(freq[0]=='5') dmasprintf(&wan_interface, "%s", s->e.name);
+			}
+		}else{
+			dmasprintf(&wan_interface, "%s", fwan);
+		}
+	}else{
+		dmasprintf(&wan_interface, "%s", fwan);
+	}
 
-	uci_foreach_option_cont("network", "interface", "ifname", fwan, ss) {
+	uci_foreach_option_cont("network", "interface", "ifname", wan_interface, ss) {
 		dmuci_get_value_by_section_string(ss, "proto", &p);
 		lan_name = section_name(ss);
 		if (strstr(p, "ppp"))
