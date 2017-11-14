@@ -1998,11 +1998,14 @@ int set_wan_ip_link_connection_layer2_interface(char *refparam, struct dmctx *ct
 inline int ubus_get_wan_stats(json_object *res, char **value, char *stat_mod)
 {
 	char *proto;
-
+	json_object *res1;
+	char *device_name;
 	dmuci_get_option_value_string("network", section_name(cur_wancprotoargs.wancprotosection), "proto", &proto);
 	if (strcmp(proto, "dhcp") == 0 || strcmp(proto, "pppoe") == 0)
 	{
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", cur_wancdevargs.wan_ifname, String}}, 1, &res);
+		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface",section_name(cur_wancprotoargs.wancprotosection)}, String}, 1, &res1);
+		device_name = dmjson_get_value(res1, 1, "device");
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name",device_name, String}}, 1, &res);
 		DM_ASSERT(res, *value = "");
 		*value = dmjson_get_value(res, 2, "statistics", stat_mod);
 		return 0;
