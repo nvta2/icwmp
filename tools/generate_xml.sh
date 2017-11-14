@@ -5,7 +5,7 @@
 # ./generate_xml.sh <data model> <scripts path> <product class> <device protocol> <model name> <software version>
 # If the input arguments are empty, then use the default values:
 DATA_MODEL=${1:-"tr098"}
-SCRIPTS_PATH=${2:-"/home/piva/iop-bb/feeds/feed_inteno_packages/icwmp/src/dm/dmtree/"}
+SCRIPTS_PATH=${2:-"$(pwd)/dm/dmtree/"}
 PRODUCT_CLASS=${3:-"DG301-W7P2U"}
 DEVICE_PROTOCOL=${4:-"DEVICE_PROTOCOL_DSLFTR069v1"}
 MODEL_NAME=${5:-"DG301-W7P2U"}
