@@ -51,6 +51,7 @@ enum rpc_cpe_methods_idx {
 	RPC_CPE_CHANGE_DU_STATE,
 	RPC_CPE_CANCEL_TRANSFER,
 	RPC_CPE_FAULT,
+	RPC_CPE_X_FACTORY_RESET_SOFT,
 	__RPC_CPE_MAX
 };
 
@@ -281,6 +282,7 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc);
 int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc);
 int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc);
 int cwmp_handle_rpc_cpe_factory_reset(struct session *session, struct rpc *rpc);
+int cwmp_handle_rpc_cpe_x_factory_reset_soft(struct session *session, struct rpc *rpc);
 int cancel_transfer(char * key);
 int cwmp_handle_rpc_cpe_cancel_transfer(struct session *session, struct rpc *rpc);
 int cwmp_handle_rpc_cpe_schedule_inform(struct session *session, struct rpc *rpc);

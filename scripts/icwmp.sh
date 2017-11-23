@@ -87,6 +87,9 @@ case "$1" in
 	factory_reset)
 		action="factory_reset"
 		;;
+	factory_reset_soft)
+		action="factory_reset_soft"
+		;;
 	reboot)
 		action="reboot"
 		;;
@@ -358,6 +361,12 @@ handle_action() {
 	if [ "$action" = "factory_reset" ]; then
 		/sbin/defaultreset
 	fi
+	
+	if [ "$action" = "factory_reset_soft" ]; then
+		ubus call juci.system defaultreset '{"soft":"true","wifi":"true","fw_redirect":"true","fw_parental":"true","passwd_user":"true","ice":"true"}'
+		sync
+		reboot
+	fi
 
 	if [ "$action" = "reboot" ]; then
 		sync
@@ -451,6 +460,9 @@ handle_action() {
 					;;
 				factory_reset)
 					action="factory_reset"
+					;;
+				factory_reset_soft)
+					action="factory_reset_soft"
 					;;
 				reboot)
 					action="reboot"

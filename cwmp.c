@@ -581,6 +581,16 @@ int run_session_end_func (struct session *session)
 		cwmp_apply_acs_changes();
 	}
 
+
+	if (session->end_session & END_SESSION_X_FACTORY_RESET_SOFT)
+	{
+		CWMP_LOG (INFO,"Executing factory reset soft: end session request");
+		external_init();
+		external_simple("factory_reset_soft", NULL, 0);
+		external_exit();
+		exit(EXIT_SUCCESS);
+	}
+
 	dm_entry_restart_services();
 
 	session->end_session = 0;

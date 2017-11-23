@@ -116,6 +116,7 @@ const struct rpc_cpe_method rpc_cpe_methods[] = {
 	[RPC_CPE_SCHEDULE_INFORM] 				= {"ScheduleInform", cwmp_handle_rpc_cpe_schedule_inform, AMD_1},
 	[RPC_CPE_SCHEDULE_DOWNLOAD] 			= {"ScheduleDownload", cwmp_handle_rpc_cpe_schedule_download, AMD_3},
 	[RPC_CPE_CHANGE_DU_STATE] 				= {"ChangeDUState", cwmp_handle_rpc_cpe_change_du_state, AMD_3},
+	[RPC_CPE_X_FACTORY_RESET_SOFT] 			= {"X_FactoryResetSoft", cwmp_handle_rpc_cpe_x_factory_reset_soft, AMD_1},
 	[RPC_CPE_FAULT] 						= {"Fault", cwmp_handle_rpc_cpe_fault, AMD_1}
 };
 
@@ -1894,6 +1895,28 @@ int cwmp_handle_rpc_cpe_factory_reset(struct session *session, struct rpc *rpc)
 	if (!b) goto fault;
 
 	cwmp_set_end_session(END_SESSION_FACTORY_RESET);
+
+	return 0;
+
+fault:
+	if (cwmp_create_fault_message(session, rpc, FAULT_CPE_INTERNAL_ERROR))
+		goto error;
+	return 0;
+
+error:
+	return -1;
+}
+
+int cwmp_handle_rpc_cpe_x_factory_reset_soft(struct session *session, struct rpc *rpc){
+	mxml_node_t *b;
+
+	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	if (!b) goto fault;
+
+	b = mxmlNewElement(b, "cwmp:X_FactoryResetSoftResponse");
+	if (!b) goto fault;
+
+	cwmp_set_end_session(END_SESSION_X_FACTORY_RESET_SOFT);
 
 	return 0;
 
