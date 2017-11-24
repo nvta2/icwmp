@@ -363,9 +363,7 @@ handle_action() {
 	fi
 	
 	if [ "$action" = "factory_reset_soft" ]; then
-		ubus call juci.system defaultreset '{"soft":"true","wifi":"true","fw_redirect":"true","fw_parental":"true","passwd_user":"true","ice":"true"}'
-		sync
-		reboot
+		/sbin/defaultreset -s wifi fw_redirect fw_parental passwd_user ice
 	fi
 
 	if [ "$action" = "reboot" ]; then
