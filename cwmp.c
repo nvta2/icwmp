@@ -26,53 +26,27 @@
 #include "ubus.h"
 #include "diagnostic.h"
 #include "xmpp_cr.h"
+#include "config.h"
 #ifdef XMPP_ENABLE
-#include <strophe.h>
+#include "/home/piva/projects/inteno-tr064/iop-cc/staging_dir/target-mips_mips32_uClibc-0.9.33.2/usr/include/strophe.h"
 #endif
 #include <unistd.h>
  
 struct cwmp         	cwmp_main = {0};
 
-int ip_version = 4;
-LIST_HEAD(list_execute_end_session);
-
-int dm_add_end_session(void(*function)(int a, void *d), int action, void *data)
+int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx)
 {
-	struct execute_end_session 			*execute_end_session;
-
-	execute_end_session = calloc (1,sizeof(struct execute_end_session));
-	if (execute_end_session == NULL)
-	{
-		return -1;
-	}
-	execute_end_session->action = action;
-	execute_end_session->data = data;
-	execute_end_session->function = function;
-	list_add_tail (&(execute_end_session->list), &(list_execute_end_session));
-
+	if(cwmp->conf.supported_amd_version == 0)
+		get_amd_version_config();
+	get_instance_mode_config();
+	dm_ctx_init(ctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
 	return 0;
 }
 
-int cwmp_free_dm_end_session(struct execute_end_session *execute_end_session)
+int cwmp_dm_ctx_clean(struct cwmp *cwmp, struct dmctx *ctx)
 {
-	if(execute_end_session != NULL)
-	{
-		if(execute_end_session->data != NULL)
-		{
-			FREE(execute_end_session->data);
-		}
-		FREE(execute_end_session);
-	}
-}
-
-int apply_end_session()
-{
-	struct execute_end_session *p, *q;
-	list_for_each_entry_safe(p, q, &(list_execute_end_session), list) {
-		p->function(p->action, p->data);
-		list_del(&(p->list));
-		cwmp_free_dm_end_session(p);
-	}
+	dm_ctx_clean(ctx);
+	return 0;
 }
 
 int cwmp_get_int_event_code(char *code)
@@ -216,7 +190,6 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         cwmp->session_status.last_start_time = time(NULL);
         cwmp->session_status.last_status = SESSION_RUNNING;
         cwmp->session_status.next_retry = 0;
-        dm_global_init();
         CWMP_LOG (INFO,"Start session");
         error = cwmp_schedule_rpc (cwmp,session);
         CWMP_LOG (INFO,"End session");
@@ -471,12 +444,6 @@ int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *sessi
     return CWMP_OK;
 }
 
-void cwmp_set_end_session (unsigned int end_session_flag)
-{
-	if (cwmp_main.session_send)
-		cwmp_main.session_send->end_session |= end_session_flag;
-}
-
 int cwmp_session_destructor (struct cwmp *cwmp, struct session *session)
 {
 	struct rpc          *rpc;
@@ -532,7 +499,7 @@ int run_session_end_func (struct session *session)
 {
 
 	apply_end_session();
-	if (session->end_session & END_SESSION_EXTERNAL_ACTION)
+	if (end_session_flag & END_SESSION_EXTERNAL_ACTION)
 	{
 		CWMP_LOG (INFO,"Executing external commands: end session request");
 		external_init();
@@ -540,7 +507,7 @@ int run_session_end_func (struct session *session)
 		external_exit();
 	}
 
-	if (session->end_session & END_SESSION_FACTORY_RESET)
+	if (end_session_flag & END_SESSION_FACTORY_RESET)
 	{
 		CWMP_LOG (INFO,"Executing factory reset: end session request");
 		external_init();
@@ -549,24 +516,24 @@ int run_session_end_func (struct session *session)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (session->end_session & END_SESSION_IPPING_DIAGNOSTIC)
+	if (end_session_flag & END_SESSION_IPPING_DIAGNOSTIC)
 	{
 		CWMP_LOG (INFO,"Executing ippingdiagnostic: end session request");
 		cwmp_ip_ping_diagnostic();        		
 	}
 	
-	if (session->end_session & END_SESSION_DOWNLOAD_DIAGNOSTIC)
+	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC)
 	{
 		CWMP_LOG (INFO,"Executing download diagnostic: end session request");
 		cwmp_start_diagnostic(DOWNLOAD_DIAGNOSTIC);
 	}
 
-	if (session->end_session & END_SESSION_UPLOAD_DIAGNOSTIC)
+	if (end_session_flag & END_SESSION_UPLOAD_DIAGNOSTIC)
 	{
 		CWMP_LOG (INFO,"Executing upload diagnostic: end session request");
 		cwmp_start_diagnostic(UPLOAD_DIAGNOSTIC);
 	}
-	if (session->end_session & END_SESSION_REBOOT)
+	if (end_session_flag & END_SESSION_REBOOT)
 	{
 		CWMP_LOG (INFO,"Executing Reboot: end session request");
 		external_init();
@@ -575,14 +542,14 @@ int run_session_end_func (struct session *session)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (session->end_session & END_SESSION_RELOAD)
+	if (end_session_flag & END_SESSION_RELOAD)
 	{
 		CWMP_LOG (INFO,"Config reload: end session request");
 		cwmp_apply_acs_changes();
 	}
 
 
-	if (session->end_session & END_SESSION_X_FACTORY_RESET_SOFT)
+	if (end_session_flag & END_SESSION_X_FACTORY_RESET_SOFT)
 	{
 		CWMP_LOG (INFO,"Executing factory reset soft: end session request");
 		external_init();
@@ -593,7 +560,7 @@ int run_session_end_func (struct session *session)
 
 	dm_entry_restart_services();
 
-	session->end_session = 0;
+	end_session_flag = 0;
 
 	return CWMP_OK;
 }

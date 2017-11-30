@@ -21,6 +21,7 @@
 #include "dmcommon.h"
 #include "ubus.h"
 #include "diagnostic.h"
+#include "config.h"
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
 #include <arpa/inet.h>

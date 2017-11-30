@@ -22,7 +22,13 @@
 #define RESTORE_FUNCTION_PATH "/usr/share/icwmp/functions/conf_backup"
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 
-int get_config_file(char *refparam, struct dmctx *ctx, char **value)
+/*** DMROOT.DownloadDiagnostics. ***/
+DMLEAF tDeviceConfigParam[] = {
+{"ConfigFile", &DMWRITE, DMT_STRING, get_config_file, set_config_file, NULL, NULL},
+{0}
+};
+
+int get_config_file(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	long length;	
 	FILE * f = NULL; 
@@ -54,7 +60,7 @@ int get_config_file(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_config_file(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_config_file(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -64,18 +70,6 @@ int set_config_file(char *refparam, struct dmctx *ctx, int action, char *value)
 			return 0;
 	}
 	return 0;
-}
-
-//////////////////////////////////////
-
-int entry_method_root_device_config(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"DeviceConfig.") {
-		DMOBJECT(DMROOT"DeviceConfig.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("ConfigFile", ctx, "1", get_config_file, set_config_file, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }
 
 

@@ -2,29 +2,45 @@
 #define __LAYER3_FORWORDING_H
 
 #define ROUTE_FILE "/proc/net/route"
-#define MAX_PROC_ROUTE 256
 
-struct proc_route {
-	char *iface;
-	char *flags;
-	char *refcnt;
-	char *use;
-	char *metric;
-	char *mtu;
-	char *window;
-	char *irtt;
-	char destination[16];
-	char gateway[16];
-	char mask[16];
+enum enum_route_type {
+	ROUTE_STATIC,
+	ROUTE_DYNAMIC,
+	ROUTE_DISABLED
 };
 
-struct routefwdargs
-{
-	char *permission;
-	struct uci_section *routefwdsection;
-	struct proc_route *proute;
-	int type;
-};
+extern struct dm_permession_s DMForwarding_perm;
 
-int entry_method_root_layer3_forwarding(struct dmctx *ctx);
+extern DMLEAF tForwardingInstParam[];
+extern DMOBJ tLayer3ForwardingObj[];
+extern DMLEAF tLayer3ForwardingParam[];
+
+int browseForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+char *get_forwording_perm(char *refparam, struct dmctx *dmctx, void *data, char *instance);
+
+int get_layer3_def_conn_serv(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_src_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_src_mask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_layer3_mtu(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_layer3_def_conn_serv(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_mtu(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_layer3_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+
 #endif

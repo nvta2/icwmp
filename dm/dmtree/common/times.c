@@ -17,7 +17,19 @@
 #include "times.h"
 #include "dmcommon.h"
 
-int get_time_enable(char *refparam, struct dmctx *ctx, char **value)
+
+/*** Time. ***/
+DMLEAF tTimeParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification, linker*/
+{"Enable", &DMWRITE, DMT_BOOL, get_time_enable, set_time_enable, NULL, NULL},
+{"NTPServer1", &DMWRITE, DMT_STRING, get_time_ntpserver1, set_time_ntpserver1, NULL, NULL},
+{"NTPServer2", &DMWRITE, DMT_STRING, get_time_ntpserver2, set_time_ntpserver2, NULL, NULL},
+{"NTPServer3", &DMWRITE, DMT_STRING, get_time_ntpserver3, set_time_ntpserver3, NULL, NULL},
+{"NTPServer4", &DMWRITE, DMT_STRING, get_time_ntpserver4, set_time_ntpserver4, NULL, NULL},
+{"NTPServer5", &DMWRITE, DMT_STRING, get_time_ntpserver5, set_time_ntpserver5, NULL, NULL},
+{0}
+};
+int get_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *path = "/etc/rc.d/*sysntpd";
 	
@@ -28,7 +40,7 @@ int get_time_enable(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_time_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	int check; 
@@ -90,27 +102,27 @@ int get_time_ntpserver(char *refparam, struct dmctx *ctx, char **value, int inde
 	return 0;
 }
 
-int get_time_ntpserver1(char *refparam, struct dmctx *ctx, char **value)
+int get_time_ntpserver1(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_time_ntpserver(refparam, ctx, value, 1);
 }
 
-int get_time_ntpserver2(char *refparam, struct dmctx *ctx, char **value)
+int get_time_ntpserver2(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_time_ntpserver(refparam, ctx, value, 2);
 }
 
-int get_time_ntpserver3(char *refparam, struct dmctx *ctx, char **value)
+int get_time_ntpserver3(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_time_ntpserver(refparam, ctx, value, 3);
 }
 
-int get_time_ntpserver4(char *refparam, struct dmctx *ctx, char **value)
+int get_time_ntpserver4(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_time_ntpserver(refparam, ctx, value, 4);
 }
 
-int get_time_ntpserver5(char *refparam, struct dmctx *ctx, char **value)
+int get_time_ntpserver5(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_time_ntpserver(refparam, ctx, value, 5);
 }
@@ -161,42 +173,28 @@ int set_time_ntpserver(char *refparam, struct dmctx *ctx, int action, char *valu
 	return 0;
 }
 
-int set_time_ntpserver1(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_time_ntpserver1(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	return set_time_ntpserver(refparam, ctx, action, value, 1);
 }
 
-int set_time_ntpserver2(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_time_ntpserver2(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	return set_time_ntpserver(refparam, ctx, action, value, 2);
 }
 
-int set_time_ntpserver3(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_time_ntpserver3(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	return set_time_ntpserver(refparam, ctx, action, value, 3);
 }
 
-int set_time_ntpserver4(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_time_ntpserver4(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	return set_time_ntpserver(refparam, ctx, action, value, 4);
 }
 
-int set_time_ntpserver5(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_time_ntpserver5(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	return set_time_ntpserver(refparam, ctx, action, value, 5);
 }
 
-int entry_method_root_Time(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"Time.") {
-		DMOBJECT(DMROOT"Time.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("Enable", ctx, "1", get_time_enable, set_time_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("NTPServer1", ctx, "1", get_time_ntpserver1, set_time_ntpserver1, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("NTPServer2", ctx, "1", get_time_ntpserver2, set_time_ntpserver2, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("NTPServer3", ctx, "1", get_time_ntpserver3, set_time_ntpserver3, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("NTPServer4", ctx, "1", get_time_ntpserver4, set_time_ntpserver4, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("NTPServer5", ctx, "1", get_time_ntpserver5, set_time_ntpserver5, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
-}

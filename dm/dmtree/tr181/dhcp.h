@@ -11,6 +11,8 @@
 #ifndef __DHCP_H
 #define __DHCP_H
 
+#include <json-c/json.h>
+
 struct dhcp_args
 {
 	struct uci_section *dhcp_sec;
@@ -25,8 +27,56 @@ struct dhcp_static_args
 struct client_args
 {
 	json_object *client;
+	char *key;
 };
 
-int entry_method_root_dhcp(struct dmctx *ctx);
 
+extern DMOBJ tDhcpv4Obj[];
+extern DMOBJ tDhcpv4ServerObj[];
+extern DMOBJ tDhcpServerPoolObj[];
+extern DMLEAF tDhcpServerPoolParams[];
+extern DMLEAF tDhcpServerPoolAddressParams[];
+extern DMLEAF tDhcpServerPoolClientParams[];
+
+int browseDhcpInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseDhcpStaticInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseDhcpClientInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+
+int add_dhcp_server(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_dhcp_server(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+int add_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+
+int get_dns_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_configurable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_interval_address_min(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_interval_address_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_subnetmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_iprouters(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_leasetime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_domainname(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_static_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_staticaddress_chaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_staticaddress_yiaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_client_chaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_dns_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_configurable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_address_min(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_address_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_subnetmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_iprouters(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_leasetime(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_domainname(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_static_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_staticaddress_chaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_dhcp_staticaddress_yiaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+
+int get_dhcp_client_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
 #endif

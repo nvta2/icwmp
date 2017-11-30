@@ -22,18 +22,59 @@
 #include "deviceinfo.h"
 #include "dmjson.h"
 
-inline int entry_method_device_info_vcf(struct dmctx *ctx);
-inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf);
-struct dev_vcf cur_dev_vcf = {0};
+/*** DeviceInfo. ***/
+DMOBJ tDeviceInfoObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
+{"X_INTENO_SE_CATV", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tCatTvParams, NULL},
+{"VendorConfigFile", &DMREAD, NULL, NULL, NULL, browseVcfInst, NULL, NULL, NULL, tVcfParams, NULL},
+{0}
+};
 
-inline int init_args_vcf(struct dmctx *ctx, struct uci_section *s)
-{
-	struct dev_vcf *args = &cur_dev_vcf;
-	ctx->args = (void *)args;
-	args->vcf_sec = s;
-	return 0;
-}
+DMLEAF tDeviceInfoParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification, linker*/
+{"Manufacturer", &DMREAD, DMT_STRING, get_device_manufacturer, NULL, &DMFINFRM, NULL},
+{"ManufacturerOUI", &DMREAD, DMT_STRING, get_device_manufactureroui, NULL, &DMFINFRM, NULL},
+{"ModelName", &DMREAD, DMT_STRING, get_device_routermodel, NULL, &DMFINFRM, NULL},
+{"ProductClass", &DMREAD, DMT_STRING, get_device_productclass, NULL, &DMFINFRM, NULL},
+{"SerialNumber", &DMREAD, DMT_STRING, get_device_serialnumber, NULL,  &DMFINFRM, NULL},
+{"HardwareVersion", &DMREAD, DMT_STRING, get_device_hardwareversion, NULL, &DMFINFRM, NULL},
+{"SoftwareVersion", &DMREAD, DMT_STRING, get_device_softwareversion, NULL, &DMFINFRM, &DMACTIVE},
+{"UpTime", &DMREAD, DMT_UNINT, get_device_info_uptime, NULL, NULL, NULL},
+{"DeviceLog", &DMREAD, DMT_STRING, get_device_devicelog, NULL, NULL, NULL},
+{"SpecVersion", &DMREAD, DMT_STRING, get_device_specversion, NULL,  &DMFINFRM, NULL},
+{"ProvisioningCode", &DMWRITE, DMT_STRING, get_device_provisioningcode, set_device_provisioningcode, &DMFINFRM, &DMACTIVE},
+{"X_INTENO_SE_BaseMacAddr", &DMREAD, DMT_STRING, get_base_mac_addr, NULL, NULL, NULL},
+{"X_INTENO_SE_CATVEnabled", &DMWRITE, DMT_STRING, get_catv_enabled, set_device_catvenabled, NULL, NULL},
+{"X_INTENO_SE_MemoryBank", &DMWRITE, DMT_STRING, get_device_memory_bank, set_device_memory_bank, NULL, NULL},
+{0}
+};
 
+/*** DeviceInfo.X_INTENO_SE_CATV. ***/
+DMLEAF tCatTvParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"Enabled", &DMWRITE, DMT_STRING, get_catv_enabled, set_device_catvenabled, NULL, NULL},
+{"OpticalInputLevel", &DMREAD, DMT_STRING, get_catv_optical_input_level, NULL, NULL, NULL},
+{"RFOutputLevel", &DMREAD, DMT_STRING, get_catv_rf_output_level, NULL, NULL, NULL},
+{"Temperature", &DMREAD, DMT_STRING, get_catv_temperature, NULL, NULL, NULL},
+{"Voltage", &DMREAD, DMT_STRING, get_catv_voltage, NULL, NULL, NULL},
+{0}
+};
+
+/*** DeviceInfo.VendorConfigFile.{i}. ***/
+DMLEAF tVcfParams[] = {
+/* PARAM, permission, type, getvalue, setvalue, forced_inform, notification*/
+{"Alias", &DMWRITE, DMT_STRING, get_vcf_alias, set_vcf_alias, NULL, NULL},
+{"Name", &DMREAD, DMT_STRING, get_vcf_name, NULL, NULL, NULL},
+{"Version", &DMREAD, DMT_STRING, get_vcf_version, NULL, NULL, NULL},
+{"Date", &DMREAD, DMT_TIME, get_vcf_date, NULL, NULL, NULL},
+{"Description", &DMREAD, DMT_STRING, get_vcf_desc, NULL, NULL, NULL},
+{"UseForBackupRestore", &DMREAD, DMT_BOOL, get_vcf_backup_restore, NULL, NULL, NULL},
+{0}
+};
+
+/*
+ *DeviceInfo. functions
+ */
 char *get_deviceid_manufacturer()
 {
 	char *v;
@@ -49,18 +90,18 @@ char *get_deviceid_manufactureroui()
 	json_object *res;
 	FILE *nvrammac=NULL;
 	char macreadfile[18]={0};
-
+	
 	dmuci_get_option_value_string("cwmp", "cpe", "override_oui", &v);
 	if (v[0] == '\0')
 	{
-		dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
+	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
 		if(!(res)){
 			db_get_value_string("hw", "board", "BaseMacAddr", &mac);
 			if(!mac || strlen(mac)==0 ){
 				if ((nvrammac = fopen("/proc/nvram/BaseMacAddr", "r")) == NULL)
-				{
+			    {
 					mac = NULL;
-				}
+			    }
 				else{
 					fscanf(nvrammac,"%[^\n]", macreadfile);
 					macreadfile[17]='\0';
@@ -74,6 +115,7 @@ char *get_deviceid_manufactureroui()
 		}
 		else
 			mac = dm_ubus_get_value(res, 2, "system", "basemac");
+
 		if(mac)
 		{
 			size_t ln = strlen(mac);
@@ -122,49 +164,49 @@ char *get_softwareversion()
 	return val;
 }
 
-int get_device_manufacturer(char *refparam, struct dmctx *ctx, char **value)
+int get_device_manufacturer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_manufacturer();
 	return 0;
 }
 
-int get_device_manufactureroui(char *refparam, struct dmctx *ctx, char **value)
+int get_device_manufactureroui(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_manufactureroui();
 	return 0;
 }
 
-int get_device_productclass(char *refparam, struct dmctx *ctx, char **value)
+int get_device_productclass(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_productclass();
 	return 0;
 }
 
-int get_device_serialnumber(char *refparam, struct dmctx *ctx, char **value)
+int get_device_serialnumber(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_serialnumber();
 	return 0;
 }
 
-int get_device_softwareversion(char *refparam, struct dmctx *ctx, char **value)
+int get_device_softwareversion(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_softwareversion();
 	return 0;
 }
 
-int get_device_hardwareversion(char *refparam, struct dmctx *ctx, char **value)
+int get_device_hardwareversion(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	db_get_value_string("hw", "board", "hardwareVersion", value);
 	return 0;
 }
 
-int get_device_routermodel(char *refparam, struct dmctx *ctx, char **value)
+int get_device_routermodel(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	db_get_value_string("hw", "board", "routerModel", value);
 	return 0;
 }
 
-int get_device_info_uptime(char *refparam, struct dmctx *ctx, char **value)
+int get_device_info_uptime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	FILE* fp = NULL;
 	char *pch, *spch;
@@ -182,7 +224,7 @@ int get_device_info_uptime(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_device_devicelog(char *refparam, struct dmctx *ctx, char **value)
+int get_device_devicelog(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "";
 	int i = 0, nbrlines = 4;
@@ -199,6 +241,7 @@ int get_device_devicelog(char *refparam, struct dmctx *ctx, char **value)
 				if(msg == NULL) msg = p;
 				i++;
 				if (i == nbrlines) {
+					*(p-1) = '\0';
 					break;
 				}
 			}
@@ -214,19 +257,19 @@ int get_device_devicelog(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_device_specversion(char *refparam, struct dmctx *ctx, char **value)
+int get_device_specversion(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "1.0";
 	return 0;
 }
 
-int get_device_provisioningcode(char *refparam, struct dmctx *ctx, char **value)
+int get_device_provisioningcode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "provisioning_code", value);
 	return 0;
 }
 
-int set_device_provisioningcode(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_device_provisioningcode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	switch (action) {
@@ -240,7 +283,7 @@ int set_device_provisioningcode(char *refparam, struct dmctx *ctx, int action, c
 }
 
 
-int get_base_mac_addr(char *refparam, struct dmctx *ctx, char **value)
+int get_base_mac_addr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {	
 	json_object *res;
 	
@@ -250,7 +293,7 @@ int get_base_mac_addr(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_device_memory_bank(char *refparam, struct dmctx *ctx, char **value)
+int get_device_memory_bank(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
 
@@ -260,7 +303,7 @@ int get_device_memory_bank(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_device_memory_bank(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_device_memory_bank(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -271,7 +314,7 @@ int set_device_memory_bank(char *refparam, struct dmctx *ctx, int action, char *
 	}
 	return 0;
 }
-int get_catv_enabled(char *refparam, struct dmctx *ctx, char **value)
+int get_catv_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *catv;
 	dmuci_get_option_value_string("catv", "catv", "enable", &catv);
@@ -283,7 +326,7 @@ int get_catv_enabled(char *refparam, struct dmctx *ctx, char **value)
 	return 0;	
 }
 
-int set_device_catvenabled(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_device_catvenabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	char *stat;
@@ -304,7 +347,7 @@ int set_device_catvenabled(char *refparam, struct dmctx *ctx, int action, char *
 	return 0;
 }
 
-int get_catv_optical_input_level(char *refparam, struct dmctx *ctx, char **value)
+int get_catv_optical_input_level(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
 	char *str;
@@ -316,7 +359,7 @@ int get_catv_optical_input_level(char *refparam, struct dmctx *ctx, char **value
 	return 0;
 }
 
-int get_catv_rf_output_level(char *refparam, struct dmctx *ctx, char **value)
+int get_catv_rf_output_level(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
 	char *str;
@@ -328,7 +371,7 @@ int get_catv_rf_output_level(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_catv_temperature(char *refparam, struct dmctx *ctx, char **value)
+int get_catv_temperature(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
 	char *str;
@@ -340,7 +383,7 @@ int get_catv_temperature(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_catv_voltage(char *refparam, struct dmctx *ctx, char **value)
+int get_catv_voltage(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
 	char *str;
@@ -352,27 +395,30 @@ int get_catv_voltage(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_vcf_name(char *refparam, struct dmctx *ctx, char **value)
+int get_vcf_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "name", value);
+	struct uci_section *vcf_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(vcf_sec, "name", value);
 	return 0;
 }
 
-int get_vcf_version(char *refparam, struct dmctx *ctx, char **value)
+int get_vcf_version(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "version", value);
+	struct uci_section *vcf_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(vcf_sec, "version", value);
 	return 0;
 }
 
-int get_vcf_date(char *refparam, struct dmctx *ctx, char **value)
+int get_vcf_date(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	DIR *dir;
 	struct dirent *d_file;
 	struct stat attr;
 	char path[128];
 	char date[sizeof "AAAA-MM-JJTHH:MM:SS.000Z"];
+	struct uci_section *vcf_sec = (struct uci_section *)data;
 	*value = "";
-	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "name", value);
+	dmuci_get_value_by_section_string(vcf_sec, "name", value);
 	if ((dir = opendir (DEFAULT_CONFIG_DIR)) != NULL) {
 		while ((d_file = readdir (dir)) != NULL) {
 			if(strcmp(*value, d_file->d_name) == 0) {
@@ -382,68 +428,52 @@ int get_vcf_date(char *refparam, struct dmctx *ctx, char **value)
 				*value = dmstrdup(date);
 			}
 		}
-		closedir (dir);
+	closedir (dir);
 	}
 	return 0;
 }
 
-int get_vcf_backup_restore(char *refparam, struct dmctx *ctx, char **value)
+int get_vcf_backup_restore(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "backup_restore", value);
+	struct uci_section *vcf_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(vcf_sec, "backup_restore", value);
 	return 0;
 }
 
-int get_vcf_desc(char *refparam, struct dmctx *ctx, char **value)
+int get_vcf_desc(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "description", value);
+	struct uci_section *vcf_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(vcf_sec, "description", value);
 	return 0;
 }
 
-int get_vcf_alias(char *refparam, struct dmctx *ctx, char **value)
+int get_vcf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "vcf_alias", value);
+	struct uci_section *vcf_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(vcf_sec, "vcf_alias", value);
 	return 0;
 }
 
-int lookup_vcf_name(char *instance, char **value) {
+int set_vcf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	struct uci_section *vcf_sec = (struct uci_section *)data;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(vcf_sec, "vcf_alias", value);
+			return 0;
+	}
+	return 0;
+}
+
+int lookup_vcf_name(char *instance, char **value)
+{
 	struct uci_section *s = NULL;
 	uci_path_foreach_option_eq(icwmpd, DMMAP, "vcf", "vcf_instance", instance, s) {
 		dmuci_get_value_by_section_string(s, "name", value);
 	}
 	return 0;
-}
-/*************************************************************
- * ENTRY METHOD
-/*************************************************************/
-int entry_method_root_DeviceInfo(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"DeviceInfo.") {
-		DMOBJECT(DMROOT"DeviceInfo.", ctx, "0", 0, NULL, NULL, NULL);
-		DMPARAM("Manufacturer", ctx, "0", get_device_manufacturer, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("ManufacturerOUI", ctx, "0", get_device_manufactureroui, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("ModelName", ctx, "0", get_device_routermodel, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("ProductClass", ctx, "0", get_device_productclass, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("SerialNumber", ctx, "0", get_device_serialnumber, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("HardwareVersion", ctx, "0", get_device_hardwareversion, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("SoftwareVersion", ctx, "0", get_device_softwareversion, NULL, NULL, 1, 0, 2, NULL);
-		DMPARAM("UpTime", ctx, "0", get_device_info_uptime, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("DeviceLog", ctx, "0", get_device_devicelog, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SpecVersion", ctx, "0", get_device_specversion, NULL, NULL, 1, 1, UNDEF, NULL);
-		DMPARAM("ProvisioningCode", ctx, "1", get_device_provisioningcode, set_device_provisioningcode, NULL, 1, 0, 2, NULL);
-		DMPARAM("X_INTENO_SE_BaseMacAddr", ctx, "0", get_base_mac_addr, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("X_INTENO_SE_MemoryBank", ctx, "1", get_device_memory_bank, set_device_memory_bank, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("X_INTENO_SE_CATVEnabled", ctx, "1", get_catv_enabled, set_device_catvenabled, NULL, 0, 1, UNDEF, NULL);
-		DMOBJECT(DMROOT"DeviceInfo.X_INTENO_SE_CATV.", ctx, "0", 0, NULL, NULL, NULL);
-		DMPARAM("Enabled", ctx, "1", get_catv_enabled, set_device_catvenabled, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("OpticalInputLevel", ctx, "0", get_catv_optical_input_level, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("RFOutputLevel", ctx, "0", get_catv_rf_output_level, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Temperature", ctx, "0", get_catv_temperature, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Voltage", ctx, "0", get_catv_voltage, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMOBJECT(DMROOT"DeviceInfo.VendorConfigFile.", ctx, "0", 0, NULL, NULL, NULL);
-		SUBENTRY(entry_method_device_info_vcf, ctx);
-		return 0;
-	}
-	return FAULT_9005;
 }
 
 int check_file_dir(char *name)
@@ -457,12 +487,13 @@ int check_file_dir(char *name)
 				return 1;
 			}
 		}
-		closedir(dir);
+	closedir(dir);
 	}
 	return 0;
 }
 
-inline int entry_method_device_info_vcf(struct dmctx *ctx)
+
+int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *vcf = NULL, *vcf_last = NULL, *name;
 	struct uci_section *s = NULL, *del_sec = NULL;
@@ -487,26 +518,11 @@ inline int entry_method_device_info_vcf(struct dmctx *ctx)
 			del_sec = s;
 			continue;
 		}
-		init_args_vcf(ctx, s);
-		vcf = handle_update_instance(1, ctx, &vcf_last, update_instance_alias_icwmpd, 3, s, "vcf_instance", "vcf_alias");
-		SUBENTRY(entry_method_device_info_vcf_instance, ctx, vcf);
+		vcf = handle_update_instance(1, dmctx, &vcf_last, update_instance_alias_icwmpd, 3, s, "vcf_instance", "vcf_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, vcf) == DM_STOP)
+			break;
 	}
 	if(del_sec)
 		DMUCI_DELETE_BY_SECTION(icwmpd, del_sec, NULL, NULL);
 	return 0;
-}
-
-inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf)
-{
-	IF_MATCH(ctx, DMROOT"DeviceInfo.VendorConfigFile.%s.", ivcf) {
-		DMOBJECT(DMROOT"DeviceInfo.VendorConfigFile.%s.", ctx, "0", 1, NULL, NULL, NULL, ivcf);
-		DMPARAM("Alias", ctx, "0", get_vcf_alias, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Name", ctx, "0",  get_vcf_name, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Version", ctx, "0",  get_vcf_version, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Date", ctx, "0",  get_vcf_date, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("Description", ctx, "0",  get_vcf_desc, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("UseForBackupRestore", ctx, "0",  get_vcf_backup_restore, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }

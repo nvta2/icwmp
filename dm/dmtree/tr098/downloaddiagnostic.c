@@ -4,7 +4,7 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
+ *	Copyright (C) 2012-2016 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Imen Bhiri <imen.bhiri@pivasoftware.com>
  *		Author: Feten Besbes <feten.besbes@pivasoftware.com>
  */
@@ -12,14 +12,28 @@
 #include <ctype.h>
 #include <uci.h>
 #include <stdio.h>
-#include "cwmp.h"
-#include "diagnostic.h"
-#include "ubus.h"
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "downloaddiagnostic.h"
+
+/*** DMROOT.DownloadDiagnostics. ***/
+DMLEAF tDownloadDiagnosticsParam[] = {
+{"DiagnosticsState", &DMWRITE, DMT_STRING, get_download_diagnostics_state, set_download_diagnostics_state, NULL, NULL},
+{"DownloadURL", &DMWRITE, DMT_STRING, get_download_diagnostics_url, set_download_diagnostics_url, NULL, NULL},
+{"EthernetPriority", &DMWRITE, DMT_UNINT, get_download_diagnostics_ethernet_priority,set_download_diagnostics_ethernet_priority, NULL, NULL},
+{"ROMTime", &DMREAD, DMT_TIME, get_download_diagnostic_romtime, NULL, NULL, NULL},
+{"BOMTime", &DMREAD, DMT_TIME, get_download_diagnostic_bomtime, NULL, NULL, NULL},
+{"EOMTime", &DMREAD, DMT_TIME, get_download_diagnostic_eomtime, NULL, NULL, NULL},
+{"TestBytesReceived", &DMREAD, DMT_UNINT, get_download_diagnostic_testbytes, NULL, NULL, NULL},
+{"TotalBytesReceived", &DMREAD, DMT_UNINT, get_download_diagnostic_totalbytes, NULL, NULL, NULL},
+{"TCPOpenRequestTime", &DMREAD, DMT_TIME, get_download_diagnostic_tcp_open_request_time, NULL, NULL, NULL},
+{"TCPOpenResponseTime", &DMREAD, DMT_TIME, get_download_diagnostic_tcp_open_response_time, NULL, NULL, NULL},
+//{"DSCP", &DMWRITE, DMT_UNINT, get_download_diagnostics_dscp, set_download_diagnostics_dscp, NULL, NULL},
+//{"Interface", &DMWRITE, DMT_UNINT, get_download_diagnostics_interface, set_download_diagnostics_interface, NULL, NULL},
+{0}
+};
 
 static inline char *download_diagnostic_get(char *option, char *def)
 {
@@ -30,13 +44,13 @@ static inline char *download_diagnostic_get(char *option, char *def)
 	else
 		return tmp;
 }
-int get_download_diagnostics_state(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = download_diagnostic_get("DiagnosticState", "None");
 	return 0;
 }
 
-int set_download_diagnostics_state(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_download_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *tmp;
 	struct uci_section *curr_section = NULL;
@@ -59,13 +73,13 @@ int set_download_diagnostics_state(char *refparam, struct dmctx *ctx, int action
 	return 0;
 }
 
-int get_download_diagnostics_interface(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostics_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "interface", value);
 	return 0;
 }
 
-int set_download_diagnostics_interface(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_download_diagnostics_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *tmp;
 	struct uci_section *curr_section = NULL;
@@ -74,7 +88,7 @@ int set_download_diagnostics_interface(char *refparam, struct dmctx *ctx, int ac
 			return 0;
 		case VALUESET:
 			DOWNLOAD_DIAGNOSTIC_STOP
-			curr_section = dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			curr_section = (struct uci_section *)dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
 			if(!curr_section)
 			{
 				dmuci_add_state_section("cwmp", "downloaddiagnostic", &curr_section, &tmp);
@@ -85,14 +99,14 @@ int set_download_diagnostics_interface(char *refparam, struct dmctx *ctx, int ac
 	return 0;
 }
 
-int get_download_diagnostics_url(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostics_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "url", value);
 	return 0;
 }
 
-int set_download_diagnostics_url(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_download_diagnostics_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *tmp;
 	struct uci_section *curr_section = NULL;
@@ -101,7 +115,7 @@ int set_download_diagnostics_url(char *refparam, struct dmctx *ctx, int action, 
 			return 0;
 		case VALUESET:
 			DOWNLOAD_DIAGNOSTIC_STOP
-			curr_section = dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			curr_section = (struct uci_section *)dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
 			if(!curr_section)
 			{
 				dmuci_add_state_section("cwmp", "downloaddiagnostic", &curr_section, &tmp);
@@ -112,13 +126,13 @@ int set_download_diagnostics_url(char *refparam, struct dmctx *ctx, int action, 
 	return 0;
 }
 
-int get_download_diagnostics_ethernet_priority(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostics_ethernet_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "";
 	return 0;
 }
 
-int set_download_diagnostics_ethernet_priority(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_download_diagnostics_ethernet_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *tmp;
 	struct uci_section *curr_section = NULL;
@@ -128,7 +142,7 @@ int set_download_diagnostics_ethernet_priority(char *refparam, struct dmctx *ctx
 			return 0;
 		case VALUESET:			
 			DOWNLOAD_DIAGNOSTIC_STOP
-			curr_section = dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			curr_section = (struct uci_section *)dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
 			if(!curr_section)
 			{
 				dmuci_add_state_section("cwmp", "downloaddiagnostic", &curr_section, &tmp);
@@ -139,7 +153,7 @@ int set_download_diagnostics_ethernet_priority(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
-int get_download_diagnostic_romtime(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_romtime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "ROMtime", value);
@@ -148,7 +162,7 @@ int get_download_diagnostic_romtime(char *refparam, struct dmctx *ctx, char **va
 	return 0;
 }
 
-int get_download_diagnostic_bomtime(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_bomtime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "BOMtime", value);
@@ -157,7 +171,7 @@ int get_download_diagnostic_bomtime(char *refparam, struct dmctx *ctx, char **va
 	return 0;
 }
 
-int get_download_diagnostic_eomtime(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_eomtime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "EOMtime", value);
@@ -166,7 +180,7 @@ int get_download_diagnostic_eomtime(char *refparam, struct dmctx *ctx, char **va
 	return 0;
 }
 
-int get_download_diagnostic_testbytes(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_testbytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "TestBytesReceived", value);
@@ -175,7 +189,7 @@ int get_download_diagnostic_testbytes(char *refparam, struct dmctx *ctx, char **
 	return 0;
 }
 
-int get_download_diagnostic_totalbytes(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_totalbytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "TotalBytesReceived", value);
@@ -184,7 +198,7 @@ int get_download_diagnostic_totalbytes(char *refparam, struct dmctx *ctx, char *
 	return 0;
 }
 
-int get_download_diagnostic_tcp_open_request_time(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_tcp_open_request_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "TCPOpenRequestTime", value);
@@ -193,34 +207,11 @@ int get_download_diagnostic_tcp_open_request_time(char *refparam, struct dmctx *
 	return 0;
 }
 
-int get_download_diagnostic_tcp_open_response_time(char *refparam, struct dmctx *ctx, char **value)
+int get_download_diagnostic_tcp_open_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "TCPOpenResponseTime", value);
 	if ((*value)[0] == '\0')
 		*value = "0";
 	return 0;
-}
-
-
-
-int entry_method_root_Download_Diagnostics(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"DownloadDiagnostics.") {
-		DMOBJECT(DMROOT"DownloadDiagnostics.", ctx, "0", 0, NULL, NULL, NULL);
-		DMPARAM("DiagnosticsState", ctx, "1", get_download_diagnostics_state, set_download_diagnostics_state, NULL, 0, 1, UNDEF, NULL);
-		//DMPARAM("Interface", ctx, "1", get_download_diagnostics_interface, set_download_diagnostics_interface, NULL, 0, 1, UNDEF, NULL); //TODO
-		DMPARAM("DownloadURL", ctx, "1", get_download_diagnostics_url, set_download_diagnostics_url, NULL, 0, 1, UNDEF, NULL);
-		//DMPARAM("DSCP", ctx, "1", get_download_diagnostics_dscp, set_download_diagnostics_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("EthernetPriority", ctx, "1", get_download_diagnostics_ethernet_priority, set_download_diagnostics_ethernet_priority, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("ROMTime", ctx, "0", get_download_diagnostic_romtime, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("BOMTime", ctx, "0", get_download_diagnostic_bomtime, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("EOMTime", ctx, "0", get_download_diagnostic_eomtime, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("TestBytesReceived", ctx, "0", get_download_diagnostic_testbytes, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("TotalBytesReceived", ctx, "0", get_download_diagnostic_totalbytes, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("TCPOpenRequestTime", ctx, "0", get_download_diagnostic_tcp_open_request_time, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("TCPOpenResponseTime", ctx, "0", get_download_diagnostic_tcp_open_response_time, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }

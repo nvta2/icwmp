@@ -18,70 +18,57 @@
 #include "dmcommon.h"
 #include "nat.h"
 
-struct nat_args
-{
-	struct uci_section *int_sec;
+/*** NAT. ***/
+DMOBJ tnatObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
+{"InterfaceSetting", &DMREAD, NULL, NULL, NULL, browseInterfaceSettingInst, NULL, NULL, NULL, tInterfaceSettingParam, NULL},
+{0}
 };
 
-struct nat_args cur_nat_args = {0};
+/*** NAT.InterfaceSetting. ***/
+DMLEAF tInterfaceSettingParam[] = {
+{"Enable", &DMREAD, DMT_BOOL, get_nat_enable, NULL, NULL, &DMNONE},
+{"Alias", &DMWRITE, DMT_STRING, get_nat_alias, set_nat_alias, NULL, &DMNONE},
+{"Interface", &DMREAD, DMT_STRING, get_nat_interface, NULL, NULL, &DMNONE},
+{0}
+};
 
-inline int init_nat_args(struct dmctx *ctx, struct uci_section *int_sec)
-{
-	struct nat_args *args = &cur_nat_args;
-	ctx->args = (void *)args;
-	args->int_sec = int_sec;	
-	return 0;
-}
 
-int get_nat_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_nat_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "1";
 	return 0;
 }
 
-int get_nat_alias(char *refparam, struct dmctx *ctx, char **value)
+int get_nat_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct nat_args *natargs = (struct nat_args *)ctx->args;
-	dmuci_get_value_by_section_string(natargs->int_sec, "natalias", value);
+	struct uci_section *int_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(int_sec, "natalias", value);
 	return 0;
 }
 
-int set_nat_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_nat_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	struct nat_args *natargs = (struct nat_args *)ctx->args;
+	struct uci_section *int_sec = (struct uci_section *)data;
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(natargs->int_sec, "natalias", value);
+			dmuci_set_value_by_section(int_sec, "natalias", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_nat_interface(char *refparam, struct dmctx *ctx, char **value)
+int get_nat_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *linker;
-	linker = dmstrdup(section_name(cur_nat_args.int_sec));
-	adm_entry_get_linker_param(DMROOT"IP.Interface.", linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	linker = dmstrdup(section_name(((struct uci_section *)data)));
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
 	dmfree(linker);
 	return 0;
-}
-
-/*************************************************************
- * ENTRY METHOD
-/*************************************************************/
-int entry_method_root_nat(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"NAT.") {
-		DMOBJECT(DMROOT"NAT.", ctx, "0", 0, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"NAT.InterfaceSetting.", ctx, "0", 1, NULL, NULL, NULL);
-		SUBENTRY(entry_nat, ctx);
-		return 0;
-	}
-	return FAULT_9005;
 }
 
 int get_nat_last_inst()
@@ -142,7 +129,12 @@ char *nat_update_instance_alias(int action, char **last_inst, void *argv[])
 	return instance;
 }
 
-inline int entry_nat(struct dmctx *ctx)
+
+/*************************************************************
+ * ENTRY METHOD
+/*************************************************************/
+
+int browseInterfaceSettingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *net_sec = NULL, *s = NULL;
 	char *nat = NULL;
@@ -153,26 +145,14 @@ inline int entry_nat(struct dmctx *ctx)
 		uci_foreach_list_cont("firewall", "zone", "network", section_name(net_sec), s) {
 			dmuci_get_value_by_section_string(s, "masq", &nat);
 			if(nat[0] == '1') {
-				nati =  handle_update_instance(1, ctx, &nati_last, nat_update_instance_alias, 4, net_sec, "natinstance", "natalias", &find_max);
-				init_nat_args(ctx, net_sec);
-				SUBENTRY(entry_nat_instance, ctx, nati);
+				nati =  handle_update_instance(1, dmctx, &nati_last, nat_update_instance_alias, 4, net_sec, "natinstance", "natalias", &find_max);
+				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)net_sec, nati) == DM_STOP)
+					goto end;
 				break;
-			}			
+			}
 		}
-	}	
-	return 0;
-}
-
-
-inline int entry_nat_instance(struct dmctx *ctx, char *int_num)
-{
-	IF_MATCH(ctx, DMROOT"NAT.InterfaceSetting.%s.", int_num) {
-		DMOBJECT(DMROOT"NAT.InterfaceSetting.%s.", ctx, "0", NULL, NULL, NULL, NULL, int_num);
-		DMPARAM("Enable", ctx, "0", get_nat_enable, NULL, "xsd:boolean", 0, 0, UNDEF, NULL);
-		DMPARAM("Alias", ctx, "1", get_nat_alias, set_nat_alias, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("Interface", ctx, "0", get_nat_interface, NULL, NULL, 0, 0, UNDEF, NULL);
-		return 0;
 	}
-	return FAULT_9005;
+end:
+	return 0;
 }
 

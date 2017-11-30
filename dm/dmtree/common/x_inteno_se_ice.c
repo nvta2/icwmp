@@ -18,7 +18,14 @@
 #include "dmcommon.h"
 #include "x_inteno_se_ice.h"
 
-int get_ice_cloud_enable(char *refparam, struct dmctx *ctx, char **value)
+/*** DMROOT.X_INTENO_SE_ICE. ***/
+DMLEAF tSe_IceParam[] = {
+	{"Enable", &DMWRITE, DMT_BOOL, get_ice_cloud_enable, set_ice_cloud_enable, NULL, NULL},
+	{"Server", &DMWRITE, DMT_STRING, get_ice_cloud_server, set_ice_cloud_server, NULL, NULL},
+	{0}
+};
+
+int get_ice_cloud_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	bool b;
 	dmuci_get_option_value_string("ice", "cloud", "enabled", value);
@@ -31,7 +38,7 @@ int get_ice_cloud_enable(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_ice_cloud_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_ice_cloud_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	
@@ -50,13 +57,13 @@ int set_ice_cloud_enable(char *refparam, struct dmctx *ctx, int action, char *va
 	}
 }
 
-int get_ice_cloud_server(char *refparam, struct dmctx *ctx, char **value)
+int get_ice_cloud_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("ice", "cloud", "server", value);
 	return 0;
 }
 
-int set_ice_cloud_server(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_ice_cloud_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -68,15 +75,4 @@ int set_ice_cloud_server(char *refparam, struct dmctx *ctx, int action, char *va
 			return 0;
 	}
 	return 0;
-}
-
-int entry_method_root_X_INTENO_SE_Ice(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_ICE.") {
-		DMOBJECT(DMROOT"X_INTENO_SE_ICE.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("Enable", ctx, "1", get_ice_cloud_enable, set_ice_cloud_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("Server", ctx, "1", get_ice_cloud_server, set_ice_cloud_server, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }

@@ -16,6 +16,15 @@
 #include "dmcommon.h"
 #include "x_inteno_se_logincfg.h"
 
+
+DMLEAF tSe_LoginCfgParam[] = {
+{"AdminPassword", &DMWRITE, DMT_STRING, get_empty, set_x_bcm_admin_password, NULL, NULL},
+{"SupportPassword", &DMWRITE, DMT_STRING, get_empty, set_x_bcm_support_password, NULL, NULL},
+{"UserPassword", &DMWRITE, DMT_STRING, get_empty, set_x_bcm_user_password, NULL, NULL},
+{"RootPassword", &DMWRITE, DMT_STRING, get_empty, set_x_bcm_root_password, NULL, NULL},
+{0}
+};
+
 int set_x_bcm_password(char *refparam, struct dmctx *ctx, int action, char *value, char *user_type)
 {
 	switch (action) {
@@ -28,39 +37,26 @@ int set_x_bcm_password(char *refparam, struct dmctx *ctx, int action, char *valu
 	return 0;
 }
 
-int set_x_bcm_admin_password(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_bcm_admin_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	set_x_bcm_password(refparam, ctx, action, value, "admin");
 	return 0;
 }
 
-int set_x_bcm_support_password(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_bcm_support_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	set_x_bcm_password(refparam, ctx, action, value, "support");
 	return 0;
 }
 
-int set_x_bcm_user_password(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_bcm_user_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	set_x_bcm_password(refparam, ctx, action, value, "user");
 	return 0;
 }
 
-int set_x_bcm_root_password(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_bcm_root_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	set_x_bcm_password(refparam, ctx, action, value, "root");
 	return 0;
-}
-
-int entry_method_root_X_INTENO_SE_LOGIN_CFG(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_LoginCfg.") {
-		DMOBJECT(DMROOT"X_INTENO_SE_LoginCfg.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("AdminPassword", ctx, "1", get_empty, set_x_bcm_admin_password, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SupportPassword", ctx, "1", get_empty, set_x_bcm_support_password, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("UserPassword", ctx, "1", get_empty, set_x_bcm_user_password, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("RootPassword", ctx, "1", get_empty, set_x_bcm_root_password, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }

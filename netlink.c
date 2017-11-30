@@ -32,6 +32,7 @@
 #include "cwmp.h"
 #include "http.h"
 #include "log.h"
+#include "config.h"
 
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
 static void netlink_new_msg_v6(struct uloop_fd *ufd, unsigned events);

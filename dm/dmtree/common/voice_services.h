@@ -13,6 +13,30 @@
 #ifndef __VOICE_H
 #define __VOICE_H
 
+extern DMOBJ tServiceObj[];
+extern DMOBJ tVoiceServiceObj[];
+extern DMLEAF tVoiceServiceParam[];
+extern DMLEAF tCapabilitiesParams[];
+extern DMOBJ tCapabilitiesObj[];
+extern DMLEAF tSIPParams[];
+extern DMLEAF tCodecsParams[] ;
+extern DMOBJ tProfileObj[] ;
+extern DMLEAF tProfileSIPParams[];
+extern DMLEAF tServiceProviderInfoParams[];
+extern DMLEAF tProfileParam[];
+extern DMOBJ tLineObj[];
+extern DMOBJ tLineCodecObj[];
+extern DMLEAF tLineCodecListParams[];
+extern DMLEAF tLineSIPParams[];
+extern DMLEAF tVoiceProcessingParams[];
+extern DMLEAF tCallingFeaturesParams[];
+extern DMLEAF tLineParams[];
+extern DMLEAF tRTPParams[];
+extern DMOBJ tRTPObj[];
+extern DMLEAF tSRTPParam[];
+extern DMLEAF tRTCPParams[];
+extern DMLEAF tFaxT38Params[];
+
 /*Args of get_voice_service_capabilities_codecs_generic*/
 struct codec_args
 {
@@ -85,11 +109,6 @@ struct codec
 	char *priority;
 };
 
-struct service_args
-{
-	struct uci_section *service_section;
-};
-
 enum enum_cap_sip_codecs {
 	SIP_CODEC_G723,
 	SIP_CODEC_GSM,
@@ -112,6 +131,132 @@ enum enum_cap_sip_codecs {
 	SIP_CODEC_TESTLAW
 };
 
-int entry_method_root_Service(struct dmctx *ctx);
 bool dm_service_enable_set(void);
+int browseVoiceServiceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseCodecsInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseProfileInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseLineCodecListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+
+int add_profile_object(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+int add_line_object(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_line_object(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+
+int get_service_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_max_profile_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_max_line_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_true_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_max_session_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_signal_protocols(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_regions(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_false_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_role(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_extension(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_tls_auth_protocols(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_tls_enc_protocols(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_tls_key_protocols(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_cap_codec_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_entry_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_capabilities_sip_codec(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_capabilities_sip_bitrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_capabilities_sip_pperiod(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_signalprotocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_max_sessions(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_number_of_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_sip_dtmfmethod(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_profile_region(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_sip_proxyserver(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_proxy_server_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_sip_registerserver(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_sip_registerserverport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_registrar_server_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_user_agent_domain(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_user_agent_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_outbound_proxy(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_outbound_proxy_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_registration_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_re_invite_expires(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_serviceproviderinfo_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_fax_t38_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_vp_rtp_portmin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_vp_rtp_portmax(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_vp_rtp_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_vp_rtp_rtcp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_vp_rtp_rtcp_txrepeatinterval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_service_vp_rtp_srtp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_line_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_line_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_voice_profile_line_callstate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_confort_noise_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx,  void *data, char *instance, char **value);
+int get_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_calling_features_callwaiting(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_sip_auth_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_sip_uri(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_codec_list_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_codec_entry_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int capabilities_sip_codecs_get_codec(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int capabilities_sip_codecs_get_bitrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_capabilities_sip_codecs_pperiod(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_codec_list_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_codec_list_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_directory_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_service_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_cap_codec_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_reset(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_signaling_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_sip_dtmfmethod(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_sip_proxyserver(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_proxy_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_proxy_server_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_sip_registerserver(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_sip_registerserverport(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_registrar_server_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_user_agent_domain(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_user_agent_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_outbound_proxy(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_outbound_proxy_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_registration_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_re_invite_expires(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_service_serviceproviderinfo_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_fax_t38_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_service_vp_rtp_portmin(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_rtp_localportmax(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_service_vp_rtp_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_service_vp_rtp_rtcp_txrepeatinterval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_service_vp_rtp_srtp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_voice_profile_line_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_directory_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_confort_noise_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_calling_features_callwaiting(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_sip_auth_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_sip_auth_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_sip_uri(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_codec_list_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_codec_list_packetization(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_codec_list_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_codec_list_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_profile_region(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int get_voice_service_max_line();
+
 #endif

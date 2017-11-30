@@ -10,6 +10,12 @@ AC_ARG_ENABLE(acs, [AS_HELP_STRING([--enable-acs],
 	[specify which ACS is going to be used; there are some optimizations available for HDM and Fusion ACS (default --enable-acs=multi]))],,
 	[AC_DEFINE(ACS_MULTI)])
 
+AC_ARG_ENABLE(upnptr064, [AS_HELP_STRING([--enable-upnptr064], [enable tr064 upnp feature])], AC_DEFINE(UPNP_TR064),)
+AM_CONDITIONAL([UPNP_TR064],[test "x$enable_upnptr064" = "xyes"])
+
+AC_ARG_ENABLE(xmpp, [AS_HELP_STRING([--enable-xmpp], [enable xmpp feature])], AC_DEFINE(XMPP_ENABLE),)
+AM_CONDITIONAL([XMPP_ENABLE],[test "x$enable_xmpp" = "xyes"])
+
 AS_IF([test "x$enable_acs" = "xhdm"], [AC_DEFINE(ACS_HDM)])
 AS_IF([test "x$enable_acs" = "xfusion"], [AC_DEFINE(ACS_FUSION)])
 AS_IF([test "x$enable_acs" = "xmulti"], [AC_DEFINE(ACS_MULTI)])
@@ -32,18 +38,19 @@ AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging message
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(WITH_DEV_DEBUG),)
 AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy mode])], AC_DEFINE(DUMMY_MODE),)
 
-AC_ARG_ENABLE(xmpp, [AS_HELP_STRING([--enable-xmpp],
-	[enable xmpp; (default --enable-xmpp=disable]))],,)
-
-AM_CONDITIONAL([XMPP_DISABLE], [test "x$enable_xmpp" = "xdisable" ])
-AM_CONDITIONAL([XMPP_ENABLE], [test "x$enable_xmpp" = "xenable" ])
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
+LT_INIT
+AC_ENABLE_SHARED
 
 # checks for libraries
 LIBPTHREAD_LIBS='-lpthread'
 AC_SUBST([LIBPTHREAD_LIBS])
+
+# checks for libraries
+LIBSTROPHE_LIBS='-lstrophe'
+AC_SUBST([LIBSTROPHE_LIBS])
 
 LIBZ_LIBS='-lz'
 AC_SUBST([LIBZ_LIBS])
@@ -112,13 +119,6 @@ AM_COND_IF([DATAMODEL_TR181], [
  AC_DEFINE(DATAMODEL_TR181)
 ])
 
-AM_COND_IF([XMPP_DISABLE], [
- AC_DEFINE(XMPP_DISABLE)
-])
-
-AM_COND_IF([XMPP_ENABLE], [
- AC_DEFINE(XMPP_ENABLE)
-])
 AM_COND_IF([HTTP_CURL], [
  AC_DEFINE(HTTP_CURL)
  PKG_CHECK_MODULES(LIBCURL, [libcurl])

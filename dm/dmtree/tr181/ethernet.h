@@ -16,8 +16,29 @@ struct eth_port_args
 	struct uci_section *eth_port_sec;
 	char *ifname;
 };
+extern DMOBJ tEthernetObj[];
+extern DMOBJ tEthernetStatObj[];
+extern DMLEAF tEthernetParams[];
+extern DMLEAF tEthernetStatParams[];
+int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+
+int get_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_maxbitrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_mac_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_duplexmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_eth_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_eth_port_maxbitrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_eth_port_duplexmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 
-int entry_method_root_Ethernet(struct dmctx *ctx);
-
+int get_linker_val(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
 #endif

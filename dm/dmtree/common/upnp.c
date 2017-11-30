@@ -18,7 +18,21 @@
 #include "dmcommon.h"
 #include "upnp.h"
 
-int get_upnp_enable(char *refparam, struct dmctx *ctx, char **value)
+/*** UPnP. ***/
+DMOBJ tUPnPObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
+{"Device", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tUPnPDeviceParams, NULL},
+{0}
+};
+
+DMLEAF tUPnPDeviceParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"Enable", &DMWRITE, DMT_BOOL, get_upnp_enable, set_upnp_enable, NULL, NULL},
+{"X_INTENO_SE_Status", &DMREAD, DMT_STRING, get_upnp_status, NULL, NULL, NULL},
+{0}
+};
+
+int get_upnp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("upnpd","config","enabled", value);
 	if ((*value)[0] == '\0') {
@@ -27,7 +41,7 @@ int get_upnp_enable(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_upnp_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_upnp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	int check;
@@ -47,7 +61,7 @@ int set_upnp_enable(char *refparam, struct dmctx *ctx, int action, char *value)
 	return 0;
 }
 
-int get_upnp_status(char *refparam, struct dmctx *ctx, char **value)
+int get_upnp_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	pid_t pid = get_pid("miniupnpd");
 	
@@ -58,16 +72,4 @@ int get_upnp_status(char *refparam, struct dmctx *ctx, char **value)
 		*value = "Up";
 	}
 	return 0;
-}
-
-int entry_method_root_upnp(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"UPnP.") {
-		DMOBJECT(DMROOT"UPnP.", ctx, "0", 1, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"UPnP.Device.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("Enable", ctx, "1", get_upnp_enable, set_upnp_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("X_INTENO_SE_Status", ctx, "0", get_upnp_status, NULL, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }

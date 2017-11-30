@@ -13,6 +13,33 @@
 
 #ifndef __ROOT_H
 #define __ROOT_H
+
 #include "dmcwmp.h"
-int entry_method_root(struct dmctx *ctx);
+
+extern DMOBJ tEntryObj[];
+extern DMOBJ tRootObj[];
+
+#ifdef UPNP_TR064
+extern DMOBJ tEntryObjUPNP[];
+extern DMOBJ tRootObjUPNP[];
+extern DMOBJ tRootObjUPNPDMROOT[];
+extern DMOBJ tRootObjUPNPDM[];
+extern DMOBJ tRootObjUPNPBBF[];
+extern UPNP_SUPPORTED_DM tUPNPSupportedDM[];
+
+#define UPNP_SUPPORTED_PARAMETERS_VERSION 1 //Should be incremented each time the Parameters are updated
+#define UPNP_SUPPORTED_DATAMODEL_VERSION 1 //Should be incremented each time the tUPNPSupportedDM array is updated
+#endif
+
+#ifdef DATAMODEL_TR098
+#define DMROOT_URI "urn:broadband-forum-org:tr-098-1-8-0"
+#define DMROOT_URL "https://www.broadband-forum.org/cwmp/tr-098-1-8-0.html"
+#define DMROOT_DESC "TR-098 InternetGatewayDevice:1 Root Object definition"
+#endif
+#ifdef DATAMODEL_TR181
+#define DMROOT_URI "urn:broadband-forum-org:tr-181-2-11-0"
+#define DMROOT_URL "https://www.broadband-forum.org/cwmp/tr-181-2-11-0.html"
+#define DMROOT_DESC "TR-181 Device:2 Root Object definition"
+#endif
+
 #endif

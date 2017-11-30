@@ -60,7 +60,7 @@ const char *file, const char *func, int line,
 #endif /*WITH_MEMTRACK*/
 const char *s
 );
-//inline void dmfree(void *m);
+
 void dmcleanmem();
 #endif /*WITH_MEMLEACKSEC*/
 int __dmasprintf

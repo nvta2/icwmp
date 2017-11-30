@@ -21,12 +21,22 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <uci.h>
-#include <cwmp.h>
+#include <ctype.h>
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "dmjson.h"
+
+char *array_notifcation_char[__MAX_notification] = {
+	[notification_none] = "0",
+	[notification_passive] = "1",
+	[notification_active] = "2",
+	[notification_passive_lw] = "3",
+	[notification_ppassive_passive_lw] = "4",
+	[notification_aactive_lw] = "5",
+	[notification_passive_active_lw] = "6",
+};
 
 int set_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char *option, char *value)
 {
@@ -89,6 +99,7 @@ int update_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char 
 	}
 	return 0;
 }
+
 void compress_spaces(char *str)
 {
 	char *dst = str;
@@ -113,6 +124,58 @@ char *cut_fx(char *str, char *delimiter, int occurence)
 	}
 	return pch;
 }
+
+unsigned char dmisnumeric(char *nbr)
+{
+	if (*nbr == '\0')
+		return 0;
+	while (*nbr <= '9' && *nbr >= '0') {
+		nbr++;
+	}
+	return ((*nbr) ? 0 : 1);
+}
+
+/* int strstructered(char *str1, char *str2)
+ * Return:
+ * STRUCTERED_SAME: if str1 is same of str2 (with # match any number)
+ * STRUCTERED_PART: if str2 is part of str1 (with # match any number)
+ * STRUCTERED_NULL: if str2 is not part of str1 (with # match any number)
+ *
+ */
+int strstructered(char *str1, char *str2)
+{
+	char buf[16];
+	int i = 0;
+	for (; *str1 && *str2; str1++, str2++) {
+		if (*str1 == *str2)
+			continue;
+		if (*str2 == '#') {
+			i = 0;
+			do {
+				buf[i++] = *str1;
+			} while (*(str1+1) && *(str1+1) != dm_delim && str1++);
+			buf[i] = '\0';
+			if (dmisnumeric(buf))
+				continue;
+		}
+		else if (*str1 == '#') {
+			i = 0;
+			do {
+				buf[i++] = *str2;
+			} while (*(str2+1) && *(str2+1) != dm_delim && str2++);
+			buf[i] = '\0';
+			if (dmisnumeric(buf))
+				continue;
+		}
+		return STRUCTERED_NULL;
+	}
+	if (*str1 == '\0' && *str2 == '\0')
+		return STRUCTERED_SAME;
+	else if (*str2 == '\0')
+		return STRUCTERED_PART;
+	return STRUCTERED_NULL;
+}
+
 
 pid_t get_pid(char *pname)
 {
@@ -781,4 +844,58 @@ int check_ifname_is_vlan(char *ifname)
 	if (pch && atoi(pch+1) >= 2)
 		return 1;
 	return 0;
+}
+
+int dmcommon_check_notification_value(char *value)
+{
+	int i;
+	for (i = 0; i< __MAX_notification; i++) {
+		if (strcmp(value, array_notifcation_char[i]) == 0)
+			return 0;
+	}
+	return -1;
+}
+
+char *print_bin(unsigned int n, char *buf, int sep)
+{
+	int i = 0, j;
+	for (j = 0; j < 32;  j++) {
+		if (j % sep == 0)
+			buf[i++] = ' ';
+		buf[i++] = (n & (1<<j)) ? '1' : '0';
+	}
+	buf[i] = '\0';
+	return buf;
+}
+
+void parse_proc_route_line(char *line, struct proc_routing *proute)
+{
+	char *pch, *spch;
+	proute->iface = strtok_r(line, " \t", &spch);
+
+	pch = strtok_r(NULL, " \t", &spch);
+	hex_to_ip(pch, proute->destination);
+	pch = strtok_r(NULL, " \t", &spch);
+	hex_to_ip(pch, proute->gateway);
+	proute->flags = strtok_r(NULL, " \t", &spch);
+	proute->refcnt = strtok_r(NULL, " \t", &spch);
+	proute->use = strtok_r(NULL, " \t", &spch);
+	proute->metric = strtok_r(NULL, " \t", &spch);
+	pch = strtok_r(NULL, " \t", &spch);
+	hex_to_ip(pch, proute->mask);
+	proute->mtu = strtok_r(NULL, " \t", &spch);
+	proute->window = strtok_r(NULL, " \t", &spch);
+	proute->irtt = strtok_r(NULL, " \t\n\r", &spch);
+}
+
+void hex_to_ip(char *address, char *ret)
+{
+	int i;
+	int ip[4] = {0};
+	sscanf(address, "%2x%2x%2x%2x", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
+	if (htonl(13) == 13) {
+		sprintf(ret, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+	} else {
+		sprintf(ret, "%d.%d.%d.%d", ip[3], ip[2], ip[1], ip[0]);
+	}
 }

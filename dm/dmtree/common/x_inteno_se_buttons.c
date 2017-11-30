@@ -18,15 +18,29 @@
 #include "dmcommon.h"
 #include "x_inteno_se_buttons.h"
 
-struct button_args cur_button_args = {0};
-inline int entry_xinteno_button_instance(struct dmctx *ctx, char *ibutton);
-inline int entry_xinteno_buttons(struct dmctx *ctx);
+/*** DMROOT.X_INTENO_SE_Buttons.{i}. ****/
+DMLEAF X_INTENO_SE_ButtonParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
+{"Alias", &DMWRITE, DMT_STRING, get_x_inteno_button_alias, set_x_inteno_button_alias, NULL, NULL},
+{"button", &DMREAD, DMT_STRING, get_x_inteno_button_name, NULL, NULL, NULL},
+{"hotplug", &DMREAD, DMT_STRING, get_x_inteno_button_hotplug, NULL, NULL, NULL},
+{"hotplug_long", &DMREAD, DMT_STRING, get_x_inteno_button_hotplug_long, NULL, NULL, NULL},
+{"minpress", &DMWRITE, DMT_UNINT, get_x_inteno_button_minpress, set_x_inteno_button_minpress, NULL, NULL},
+{"longpress", &DMWRITE, DMT_UNINT, get_x_inteno_button_longpress, set_x_inteno_button_longpress, NULL, NULL},
+{"enable", &DMWRITE, DMT_BOOL, get_x_inteno_button_enable, set_x_inteno_button_enable, NULL, NULL},
+{0}
+};
 
-inline int init_args_button(struct dmctx *ctx, struct uci_section *s)
+int browseXIntenoButton(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct button_args *args = &cur_button_args;
-	ctx->args = (void *)args;
-	args->button_section = s;
+	char *ibutton = NULL, *ibutton_last = NULL;
+	struct uci_section *s = NULL;
+
+	uci_foreach_sections("buttons", "button", s) {
+		ibutton =  handle_update_instance(1, dmctx, &ibutton_last, update_instance_alias, 3, s, "buttoninstance", "buttonalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, ibutton) == DM_STOP)
+			break;
+	}
 	return 0;
 }
 
@@ -34,11 +48,11 @@ inline int init_args_button(struct dmctx *ctx, struct uci_section *s)
 **** function related to button ****
 **************************************************************************************/
 
-int get_x_inteno_button_name(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_list *val;
 
-	dmuci_get_value_by_section_list(cur_button_args.button_section, "button", &val);
+	dmuci_get_value_by_section_list((struct uci_section *)data, "button", &val);
 	if (val)
 		*value = dmuci_list_to_string(val, " ");
 	else
@@ -46,67 +60,67 @@ int get_x_inteno_button_name(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_x_inteno_button_hotplug(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_hotplug(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_button_args.button_section, "hotplug", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "hotplug", value);
 	return 0;
 }
 
-int get_x_inteno_button_hotplug_long(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_hotplug_long(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_button_args.button_section, "hotplug_long", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "hotplug_long", value);
 	return 0;
 }
 
-int get_x_inteno_button_minpress(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_minpress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_button_args.button_section, "minpress", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "minpress", value);
 	return 0;
 }
 
-int set_x_inteno_button_minpress(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_button_minpress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_button_args.button_section, "minpress", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "minpress", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_button_longpress(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_longpress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_button_args.button_section, "longpress", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "longpress", value);
 	return 0;
 }
 
-int set_x_inteno_button_longpress(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_button_longpress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_button_args.button_section, "longpress", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "longpress", value);
 			return 0;
 	}
 	return 0;
 }
 
 
-int get_x_inteno_button_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_button_args.button_section, "enable", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "enable", value);
 	if ((*value)[0] == '\0') {
 		*value = "1";
 	}
 	return 0;
 }
 
-int set_x_inteno_button_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_button_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -118,72 +132,31 @@ int set_x_inteno_button_enable(char *refparam, struct dmctx *ctx, int action, ch
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value_by_section(cur_button_args.button_section, "enable", "");
+				dmuci_set_value_by_section((struct uci_section *)data, "enable", "");
 			else
-				dmuci_set_value_by_section(cur_button_args.button_section, "enable", "0");
+				dmuci_set_value_by_section((struct uci_section *)data, "enable", "0");
 			return 0;
 	}
 	return 0;
 }
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 
-int get_x_inteno_button_alias(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_button_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_button_args.button_section, "buttonalias", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "buttonalias", value);
 	return 0;
 }
 
-int set_x_inteno_button_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_button_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_button_args.button_section, "buttonalias", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "buttonalias", value);
 			return 0;
 	}
 	return 0;
 }
 
-/////////////SUB ENTRIES///////////////
-inline int entry_xinteno_buttons(struct dmctx *ctx)
-{
-	char *ibutton = NULL, *ibutton_last = NULL;
-	struct uci_section *s = NULL;
-
-	uci_foreach_sections("buttons", "button", s) {
-		init_args_button(ctx, s);
-		ibutton =  handle_update_instance(1, ctx, &ibutton_last, update_instance_alias, 3, s, "buttoninstance", "buttonalias");
-		SUBENTRY(entry_xinteno_button_instance, ctx, ibutton);
-	}
-	return 0;
-}
-
-//////////////////////////////////////
-
-int entry_method_root_X_INTENO_SE_BUTTONS(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_Buttons.") {
-		DMOBJECT(DMROOT"X_INTENO_SE_Buttons.", ctx, "0", 1, NULL, NULL, NULL);
-		SUBENTRY(entry_xinteno_buttons, ctx);
-		return 0;
-	}
-	return FAULT_9005;
-}
-
-inline int entry_xinteno_button_instance(struct dmctx *ctx, char *ibutton)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_Buttons.%s.", ibutton) {
-		DMOBJECT(DMROOT"X_INTENO_SE_Buttons.%s.", ctx, "0", 1, NULL, NULL, NULL, ibutton);
-		DMPARAM("Alias", ctx, "1", get_x_inteno_button_alias, set_x_inteno_button_alias, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("button", ctx, "0", get_x_inteno_button_name, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("hotplug", ctx, "0", get_x_inteno_button_hotplug, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("hotplug_long", ctx, "0", get_x_inteno_button_hotplug_long, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("minpress", ctx, "1", get_x_inteno_button_minpress, set_x_inteno_button_minpress, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("longpress", ctx, "1", get_x_inteno_button_longpress, set_x_inteno_button_longpress, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("enable", ctx, "1", get_x_inteno_button_enable, set_x_inteno_button_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
-}
 

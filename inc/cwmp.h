@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <microxml.h>
 #include <libubox/list.h>
+#include "dmcwmp.h"
 #ifdef XMPP_ENABLE
 #include <strophe.h>
 #endif
@@ -90,17 +91,6 @@ enum action
 	START,
 	STOP,
 	RESTART,
-};
-
-enum end_session {
-	END_SESSION_REBOOT = 1,
-	END_SESSION_EXTERNAL_ACTION = 1<<1,
-	END_SESSION_RELOAD = 1<<2,
-	END_SESSION_FACTORY_RESET = 1<<3,
-	END_SESSION_IPPING_DIAGNOSTIC = 1<<4,
-	END_SESSION_DOWNLOAD_DIAGNOSTIC = 1<<5,
-	END_SESSION_UPLOAD_DIAGNOSTIC = 1<<6,
-	END_SESSION_X_FACTORY_RESET_SOFT = 1<<7
 };
 
 enum cwmp_start {
@@ -307,7 +297,6 @@ typedef struct session {
     mxml_node_t			*body_in;
     bool				hold_request;
     bool				digest_auth;
-    unsigned int		end_session;
     int					fault_code;
     int					error;
 } session;
@@ -319,18 +308,12 @@ typedef struct rpc {
     struct list_head	*list_set_value_fault;
 } rpc;
 
-typedef struct execute_end_session {
-    struct list_head                    list;
-    int                           		action;
-    void								*data;
-	void (*function)(int, void*);
-} execute_end_session;
-
 extern int ip_version;
 #define ARRAYSIZEOF(a)  (sizeof(a) / sizeof((a)[0]))
+#ifndef FREE
 #define FREE(x) do { free(x); x = NULL; } while (0)
+#endif
 
-extern struct list_head		list_execute_end_session;
 extern struct cwmp	cwmp_main;
 extern const struct EVENT_CONST_STRUCT	EVENT_CONST [__EVENT_IDX_MAX];
 extern struct list_head list_lw_value_change;
@@ -338,13 +321,6 @@ extern struct list_head list_value_change;
 extern pthread_mutex_t mutex_value_change;
 
 int cwmp_config_reload(struct cwmp *cwmp);
-int cwmp_move_session_to_session_send (struct cwmp *cwmp, struct session *session);
-int cwmp_schedule_rpc (struct cwmp *cwmp, struct session *session);
-int run_session_end_func (struct session *session);
-int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *session);
-int cwmp_session_destructor (struct cwmp *cwmp, struct session *session);
-int dm_add_end_session(void(*function)(int a, void *d), int action, void *data);
-int apply_end_session();
 struct rpc *cwmp_add_session_rpc_cpe (struct session *session, int type);
 struct session *cwmp_add_queue_session (struct cwmp *cwmp);
 struct rpc *cwmp_add_session_rpc_acs (struct session *session, int type);
@@ -355,24 +331,22 @@ void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_
 void *thread_event_periodic (void *v);
 void cwmp_add_notification(void);
 int netlink_init(void);
-int netlink_init_v6(void);
 char * mix_get_time(void);
 char * mix_get_time_of(time_t t_time);
 void *thread_exit_program (void *v);
 void connection_request_ip_value_change(struct cwmp *cwmp, int version);
 void connection_request_port_value_change(struct cwmp *cwmp, int port);
 void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type);
-void cwmp_set_end_session (unsigned int end_session_flag);
 void *thread_handle_notify(void *v);
 int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type);
 int cwmp_get_int_event_code(char *code);
-int cwmp_apply_acs_changes ();
+int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx);
+int cwmp_dm_ctx_clean(struct cwmp *cwmp, struct dmctx *ctx);
+int cwmp_apply_acs_changes();
+int cwmp_move_session_to_session_send (struct cwmp *cwmp, struct session *session);
+int cwmp_schedule_rpc (struct cwmp *cwmp, struct session *session);
+int run_session_end_func (struct session *session);
+int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *session);
+int cwmp_session_destructor (struct cwmp *cwmp, struct session *session);
 int cwmp_init(int argc, char** argv,struct cwmp *cwmp);
-int cwmp_config_reload(struct cwmp *cwmp);
-int uci_get_value(char *cmd,char **value);
-int uci_set_state_value(char *cmd);
-int uci_get_state_value(char *cmd,char **value);
-int save_acs_bkp_config(struct cwmp *cwmp);
-int get_instance_mode_config();
-int get_amd_version_config();
 #endif /* _CWMP_H__ */

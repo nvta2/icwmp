@@ -10,7 +10,27 @@
 #ifndef __IPPING_DIAGNOSTIC_H
 #define __IPPING_DIAGNOSTIC_H
 
-extern struct ip_ping_diagnostic ipping_diagnostic; 
-int entry_method_root_IPPingDiagnostics(struct dmctx *ctx);
+extern DMLEAF tIPPingDiagnosticsParam[];
+
+int get_ipping_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_repetition_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_timeout(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_block_size(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_success_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_failure_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_average_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_min_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ipping_max_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_ipping_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ipping_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ipping_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ipping_repetition_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ipping_timeout(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ipping_block_size(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif

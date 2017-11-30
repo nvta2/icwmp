@@ -365,7 +365,7 @@ handle_action() {
 	if [ "$action" = "factory_reset_soft" ]; then
 		/sbin/defaultreset -s wifi fw_redirect fw_parental passwd_user ice
 	fi
-
+	
 	if [ "$action" = "reboot" ]; then
 		sync
 		reboot

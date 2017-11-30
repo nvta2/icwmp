@@ -17,6 +17,20 @@ struct host_args
 	char *key;
 };
 
-int entry_method_root_hosts(struct dmctx *ctx);
+extern DMLEAF thostsParam[];
+extern DMLEAF thostParam[];
+extern DMOBJ thostsObj[];
+
+int browsehostInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+
+int get_host_nbr_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_hostname(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_phy_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_interfacetype(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_address_source(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_dhcp_client(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 #endif

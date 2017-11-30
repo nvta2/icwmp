@@ -19,15 +19,38 @@
 #include "hosts.h"
 #include "dmjson.h"
 
-struct host_args cur_host_args = {0};
+/*** Hosts. ***/
+
+DMOBJ thostsObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
+{"Host", &DMREAD, NULL, NULL, NULL, browsehostInst, NULL, NULL, NULL, thostParam, NULL},
+{0}
+};
+
+DMLEAF thostsParam[] = {
+{"HostNumberOfEntries", &DMREAD, DMT_UNINT, get_host_nbr_entries, NULL, NULL, NULL},
+{0}
+};
+
+/*** Hosts.Host ***/
+DMLEAF thostParam[] = {
+{"IPAddress", &DMREAD, DMT_STRING, get_host_ipaddress, NULL, NULL, &DMNONE},
+{"HostName", &DMREAD, DMT_STRING, get_host_hostname, NULL, NULL, &DMNONE},
+{"Active", &DMREAD, DMT_BOOL, get_host_active, NULL, NULL, &DMNONE},
+{"PhysAddress", &DMREAD, DMT_STRING, get_host_phy_address, NULL, NULL, &DMNONE},
+{"X_INTENO_SE_InterfaceType", &DMREAD, DMT_STRING, get_host_interfacetype, NULL, NULL, &DMNONE},
+{"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, &DMNONE},
+{"LeaseTimeRemaining", &DMREAD, DMT_STRING, get_host_leasetime_remaining, NULL, NULL, &DMNONE},
+{"DHCPClient", &DMREAD, DMT_STRING, get_host_dhcp_client, NULL, NULL, NULL},
+{0}
+};
+
 
 /*************************************************************
  * INIT
 /*************************************************************/
-inline int init_host_args(struct dmctx *ctx, json_object *clients, char *key)
+inline int init_host_args(struct host_args *args, json_object *clients, char *key)
 {
-	struct host_args *args = &cur_host_args;
-	ctx->args = (void *)args;
 	args->client = clients;
 	args->key = key;
 	return 0;
@@ -35,34 +58,34 @@ inline int init_host_args(struct dmctx *ctx, json_object *clients, char *key)
 /*************************************************************
  * GET & SET PARAM
 /*************************************************************/
-int get_host_ipaddress(char *refparam, struct dmctx *ctx, char **value)
+int get_host_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = dmjson_get_value(cur_host_args.client, 1, "ipaddr");
+	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "ipaddr");
 	return 0;
 }
 
-int get_host_hostname(char *refparam, struct dmctx *ctx, char **value)
+int get_host_hostname(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = dmjson_get_value(cur_host_args.client, 1, "hostname");
+	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "hostname");
 	return 0;
 }
 
-int get_host_active(char *refparam, struct dmctx *ctx, char **value)
+int get_host_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = dmjson_get_value(cur_host_args.client, 1, "connected");
+	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "connected");
 	return 0;
 }
 
-int get_host_phy_address(char *refparam, struct dmctx *ctx, char **value)
+int get_host_phy_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = dmjson_get_value(cur_host_args.client, 1, "macaddr");
+	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
 	return 0;
 }
 
-int get_host_address_source(char *refparam, struct dmctx *ctx, char **value) {
+int get_host_address_source(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value) {
 	char *dhcp;
 
-	dhcp = dmjson_get_value(cur_host_args.client, 1, "dhcp");
+	dhcp = dmjson_get_value(((struct host_args *)data)->client, 1, "dhcp");
 	if (strcasecmp(dhcp, "true") == 0)
 		*value = "DHCP";
 	else
@@ -70,7 +93,7 @@ int get_host_address_source(char *refparam, struct dmctx *ctx, char **value) {
 	return 0;
 }
 
-int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, char **value)
+int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char buf[80], *dhcp;
 	FILE *fp;
@@ -79,12 +102,13 @@ int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, char **value
 	char *leasetime, *mac_f, *mac, *line1;
 	char delimiter[] = " \t";
 
-	dhcp = dmjson_get_value(cur_host_args.client, 1, "dhcp");
+	dhcp = dmjson_get_value(((struct host_args *)data)->client, 1, "dhcp");
 	if (strcmp(dhcp, "false") == 0) {
 		*value = "0";
 	}
 	else {
-		mac = dmjson_get_value(cur_host_args.client, 1, "macaddr");
+		mac = dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
+		//
 		fp = fopen(ARP_FILE, "r");
 		if ( fp != NULL)
 		{
@@ -111,11 +135,11 @@ int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, char **value
 	return 0;
 }
 
-int  get_host_dhcp_client(char *refparam, struct dmctx *ctx, char **value)
+int  get_host_dhcp_client(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *iface, *linker;
-		dmastrcat(&linker, "linker_dhcp:", cur_host_args.key);
-		adm_entry_get_linker_param(DMROOT"DHCPv4.", linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		dmastrcat(&linker, "linker_dhcp:", ((struct host_args *)data)->key);
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cDHCPv4%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL) {
 			*value = "";
 		}
@@ -147,7 +171,7 @@ char *get_interface_type(char *mac, char *ndev)
 				dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", p, String}}, 1, &res);
 				if(res) {
 					json_object_object_foreach(res, key, val) {
-						value = dmjson_get_value(res, 1, "macaddr");
+						value = dmjson_get_value(val, 1, "macaddr");
 						if (strcasecmp(value, mac) == 0)
 							return "802.11";
 					}
@@ -159,17 +183,17 @@ char *get_interface_type(char *mac, char *ndev)
 	return "Ethernet";
 }
 
-int get_host_interfacetype(char *refparam, struct dmctx *ctx, char **value)
+int get_host_interfacetype(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *mac, *network;
 	
-	mac = dmjson_get_value(cur_host_args.client, 1, "macaddr");
-	network = dmjson_get_value(cur_host_args.client, 1, "network");
+	mac = dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
+	network = dmjson_get_value(((struct host_args *)data)->client, 1, "network");
 	*value = get_interface_type(mac, network);
 	return 0;
 }
 
-int get_host_nbr_entries(char *refparam, struct dmctx *ctx, char **value)
+int get_host_nbr_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	int entries = 0;
 	json_object *res;
@@ -182,50 +206,26 @@ int get_host_nbr_entries(char *refparam, struct dmctx *ctx, char **value)
 	dmasprintf(value, "%d", entries); // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
+
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
-int entry_method_root_hosts(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"Hosts.") {
-		DMOBJECT(DMROOT"Hosts.", ctx, "0", 0, NULL, NULL, NULL);
-		DMPARAM("HostNumberOfEntries", ctx, "0", get_host_nbr_entries, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMOBJECT(DMROOT"Hosts.Host.", ctx, "0", 1, NULL, NULL, NULL);
-		SUBENTRY(entry_host, ctx);
-		return 0;
-	}
-	return FAULT_9005;
-}
-
-inline int entry_host(struct dmctx *ctx)
+int browsehostInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	json_object *res, *client_obj;
 	char *idx, *idx_last = NULL;
 	int id = 0;
+	struct host_args curr_host_args = {0};
+
 	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
 	if (res) {
 		json_object_object_foreach(res, key, client_obj) {
-			init_host_args(ctx, client_obj, key);
-			idx = handle_update_instance(2, ctx, &idx_last, update_instance_without_section, 1, ++id);
-			SUBENTRY(entry_host_instance, ctx, idx);
+			init_host_args(&curr_host_args, client_obj, key);
+			idx = handle_update_instance(2, dmctx, &idx_last, update_instance_without_section, 1, ++id);
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_host_args, idx) == DM_STOP)
+				break;
 		}
 	}
 	return 0;
 }
 
-inline int entry_host_instance(struct dmctx *ctx, char *int_num)
-{
-	IF_MATCH(ctx, DMROOT"Hosts.Host.%s.", int_num) {
-		DMOBJECT(DMROOT"Hosts.Host.%s.", ctx, "0", NULL, NULL, NULL, NULL, int_num);
-		DMPARAM("IPAddress", ctx, "0", get_host_ipaddress, NULL, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("HostName", ctx, "0", get_host_hostname, NULL, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("Active", ctx, "0", get_host_active, NULL, "xsd:boolean", 0, 0, UNDEF, NULL);
-		DMPARAM("PhysAddress", ctx, "0", get_host_phy_address, NULL, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("X_INTENO_SE_InterfaceType", ctx, "0", get_host_interfacetype, NULL, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("AddressSource", ctx, "0", get_host_address_source, NULL, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("LeaseTimeRemaining", ctx, "0", get_host_leasetime_remaining, NULL, NULL, 0, 0, UNDEF, NULL);
-		DMPARAM("DHCPClient", ctx, "0", get_host_dhcp_client, NULL, NULL, 0, 1, UNDEF, NULL); //TO CHECK R/W
-		return 0;
-	}
-	return FAULT_9005;
-}

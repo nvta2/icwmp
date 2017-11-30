@@ -50,8 +50,8 @@ enum rpc_cpe_methods_idx {
 	RPC_CPE_SCHEDULE_DOWNLOAD,
 	RPC_CPE_CHANGE_DU_STATE,
 	RPC_CPE_CANCEL_TRANSFER,
-	RPC_CPE_FAULT,
 	RPC_CPE_X_FACTORY_RESET_SOFT,
+	RPC_CPE_FAULT,
 	__RPC_CPE_MAX
 };
 
@@ -114,13 +114,6 @@ enum {
 	FAULT_CPE_TYPE_SERVER
 };
 
-enum {
-	AMD_1 = 1,
-	AMD_2,
-	AMD_3,
-	AMD_4,
-	AMD_5,
-};
 struct rpc_cpe_method {
 	const char *name;
 	int (*handler)(struct session *session, struct rpc *rpc);

@@ -12,80 +12,87 @@
 #include <ctype.h>
 #include <uci.h>
 #include <stdio.h>
-#include "cwmp.h"
-#include "diagnostic.h" 
-#include "ubus.h"
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "softwaremodules.h"
 
-struct software_module cur_software_module = {0};
-inline int entry_softwaremodules_deploymentunit_instance(struct dmctx *ctx, char *idu);
 
-inline int init_args_du_entry(struct dmctx *ctx, struct uci_section *s)
+
+/*** SoftwareModules. ***/
+DMOBJ tSoftwareModulesObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
+{"DeploymentUnit", &DMREAD, NULL, NULL, NULL, browsesoftwaremodules_deploymentunitInst, NULL, NULL, NULL, tDeploymentUnitParams, NULL},
+{0}
+};
+
+DMLEAF tDeploymentUnitParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"UUID", &DMREAD, DMT_STRING, get_deploymentunit_uuid, NULL, NULL, NULL},
+{"Name", &DMREAD, DMT_STRING, get_deploymentunit_name, NULL, NULL, NULL},
+{"Resolved", &DMREAD, DMT_BOOL, get_deploymentunit_resolved, NULL, NULL, NULL},
+{"URL", &DMREAD, DMT_STRING, get_deploymentunit_url, NULL, NULL, NULL},
+{"Vendor", &DMREAD, DMT_STRING, get_deploymentunit_vendor, NULL, NULL, NULL},
+{"Version", &DMREAD, DMT_STRING, get_deploymentunit_version, NULL, NULL, NULL},
+{"ExecutionEnvRef", &DMREAD, DMT_STRING, get_deploymentunit_execution_env_ref, NULL, NULL, NULL},
+{0}
+};
+
+int get_deploymentunit_uuid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *args = &cur_software_module;
-	ctx->args = (void *)args;
-	args->softsection = s;
-	return 0;
-}
+	struct uci_section *softsection = (struct uci_section *)data;
 
-int get_deploymentunit_uuid(char *refparam, struct dmctx *ctx, char **value)
-{
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
-
-	dmuci_get_value_by_section_string(softawreargs->softsection, "uuid", value);
+	dmuci_get_value_by_section_string(softsection, "uuid", value);
 	
 	return 0;
 }
 
-int get_deploymentunit_name(char *refparam, struct dmctx *ctx, char **value)
+int get_deploymentunit_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
+	struct uci_section *softsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(softawreargs->softsection, "name", value);
+	dmuci_get_value_by_section_string(softsection, "name", value);
 	return 0;
 }
 
-int get_deploymentunit_resolved(char *refparam, struct dmctx *ctx, char **value)
+int get_deploymentunit_resolved(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
+	struct uci_section *softsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(softawreargs->softsection, "resolved", value);
+	dmuci_get_value_by_section_string(softsection, "resolved", value);
 	return 0;
 }
 
-int get_deploymentunit_url(char *refparam, struct dmctx *ctx, char **value)
+int get_deploymentunit_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
+	struct uci_section *softsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(softawreargs->softsection, "url", value);
+	dmuci_get_value_by_section_string(softsection, "url", value);
 	return 0;
 }
 
-int get_deploymentunit_vendor(char *refparam, struct dmctx *ctx, char **value)
+int get_deploymentunit_vendor(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
+	struct uci_section *softsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(softawreargs->softsection, "vendor", value);
+	dmuci_get_value_by_section_string(softsection, "vendor", value);
 	return 0;
 }
 
-int get_deploymentunit_version(char *refparam, struct dmctx *ctx, char **value)
+int get_deploymentunit_version(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
+	struct uci_section *softsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(softawreargs->softsection, "version", value);
+	dmuci_get_value_by_section_string(softsection, "version", value);
 	return 0;
 }
 
-int get_deploymentunit_execution_env_ref(char *refparam, struct dmctx *ctx, char **value)
+int get_deploymentunit_execution_env_ref(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct software_module *softawreargs = (struct software_module *)ctx->args;
+	struct uci_section *softsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(softawreargs->softsection, "execution_env_ref", value);
+	dmuci_get_value_by_section_string(softsection, "execution_env_ref", value);
 	return 0;
 }
 
@@ -222,44 +229,21 @@ char *get_softwaremodules_version(char *uuid)
 	return "";
 }
 
-inline int entry_softwaremodules_deploymentunit(struct dmctx *ctx)
+
+
+
+int browsesoftwaremodules_deploymentunitInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *idu = NULL, *idu_last = NULL;
 	char *permission = "1";
 	struct uci_section *s = NULL;
 
 	uci_path_foreach_sections(icwmpd, "dmmap", "deploymentunit", s) {
-		init_args_du_entry(ctx, s);
-		idu = handle_update_instance(1, ctx, &idu_last, update_instance_alias_icwmpd, 3, s, "duinstance", "duinstance_alias");
-		SUBENTRY(entry_softwaremodules_deploymentunit_instance, ctx, idu);
+		idu = handle_update_instance(1, dmctx, &idu_last, update_instance_alias_icwmpd, 3, s, "duinstance", "duinstance_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, idu) == DM_STOP)
+			break;
 	}
 	return 0;
 }
 
-inline int entry_softwaremodules_deploymentunit_instance(struct dmctx *ctx, char *idu)
-{	
-	IF_MATCH(ctx, DMROOT"SoftwareModules.DeploymentUnit.%s.", idu) {
-		DMOBJECT(DMROOT"SoftwareModules.DeploymentUnit.%s.", ctx, "0", 1, NULL, NULL, NULL, idu);
-		DMPARAM("UUID", ctx, "0", get_deploymentunit_uuid, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Name", ctx, "0", get_deploymentunit_name, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Resolved", ctx, "0", get_deploymentunit_resolved, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("URL", ctx, "0", get_deploymentunit_url, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Vendor", ctx, "0", get_deploymentunit_vendor, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Version", ctx, "0", get_deploymentunit_version, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ExecutionEnvRef", ctx, "0", get_deploymentunit_execution_env_ref, NULL, NULL, 0, 1, UNDEF, NULL);			  
-		return 0;
-	}
-	return FAULT_9005;
-}
-
-int entry_method_root_software_modules(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"SoftwareModules.") {
-		DMOBJECT(DMROOT"SoftwareModules.", ctx, "0", 1, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"SoftwareModules.DeploymentUnit.", ctx, "0", 1, NULL, NULL, NULL);
-		SUBENTRY(entry_softwaremodules_deploymentunit, ctx);
-		return 0;
-	}
-	return FAULT_9005;
-}
 

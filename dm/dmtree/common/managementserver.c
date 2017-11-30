@@ -13,15 +13,40 @@
 #include <stdio.h>
 #include <time.h>
 #include "cwmp.h"
-#include "ubus.h"
+#include "dmmem.h"
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "managementserver.h"
-#include "xml.h"
 
-int get_management_server_url(char *refparam, struct dmctx *ctx, char **value)
+/*** ManagementServer. ***/
+DMLEAF tManagementServerParams[] = {
+/* PARAM, permission, type, getvalue, setvalue, forced_inform, notification, linker*/
+{"URL", &DMWRITE, DMT_STRING, get_management_server_url, set_management_server_url, NULL, NULL},
+{"Username", &DMWRITE, DMT_STRING, get_management_server_username, set_management_server_username, NULL, NULL},
+{"Password", &DMWRITE, DMT_STRING, get_empty, set_management_server_passwd, NULL, NULL},
+{"ParameterKey", &DMREAD, DMT_STRING, get_management_server_key, NULL, &DMFINFRM, &DMNONE},
+{"PeriodicInformEnable", &DMWRITE, DMT_BOOL, get_management_server_periodic_inform_enable, set_management_server_periodic_inform_enable,  NULL, NULL},
+{"PeriodicInformInterval", &DMWRITE, DMT_UNINT, get_management_server_periodic_inform_interval, set_management_server_periodic_inform_interval, NULL, NULL},
+{"PeriodicInformTime", &DMWRITE, DMT_TIME, get_management_server_periodic_inform_time, set_management_server_periodic_inform_time, NULL, NULL},
+{"ConnectionRequestURL", &DMREAD, DMT_STRING, get_management_server_connection_request_url, NULL, &DMFINFRM, &DMACTIVE},
+{"ConnectionRequestUsername", &DMWRITE, DMT_STRING, get_management_server_connection_request_username, set_management_server_connection_request_username, NULL, NULL},
+{"ConnectionRequestPassword", &DMWRITE, DMT_STRING, get_empty, set_management_server_connection_request_passwd,  NULL, NULL},
+{"HTTPCompressionSupported", &DMREAD, DMT_STRING, get_management_server_http_compression_supportted, NULL, NULL, NULL},
+{"HTTPCompression", &DMWRITE, DMT_STRING, get_management_server_http_compression, set_management_server_http_compression, NULL, NULL},
+{"LightweightNotificationProtocolsSupported", &DMREAD, DMT_STRING, get_lwn_protocol_supported, NULL, NULL, NULL},
+{"LightweightNotificationProtocolsUsed", &DMWRITE, DMT_STRING, get_lwn_protocol_used, set_lwn_protocol_used, NULL, NULL},
+{"UDPLightweightNotificationHost", &DMWRITE, DMT_STRING, get_lwn_host, set_lwn_host, NULL, NULL},
+{"UDPLightweightNotificationPort", &DMWRITE, DMT_STRING, get_lwn_port, set_lwn_port, NULL, NULL},
+{"CWMPRetryMinimumWaitInterval", &DMWRITE, DMT_UNINT, get_management_server_retry_min_wait_interval, set_management_server_retry_min_wait_interval, NULL, NULL},
+{"CWMPRetryIntervalMultiplier", &DMWRITE, DMT_UNINT, get_management_server_retry_interval_multiplier, set_management_server_retry_interval_multiplier, NULL, NULL},
+{"AliasBasedAddressing", &DMREAD, DMT_BOOL, get_alias_based_addressing, NULL, &DMFINFRM, NULL},
+{"InstanceMode", &DMWRITE, DMT_STRING, get_instance_mode, set_instance_mode, NULL, NULL},
+{0}
+};
+
+int get_management_server_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	int i = 1;
 	char *dhcp = NULL, *pch = NULL, *spch = NULL;
@@ -66,10 +91,10 @@ int get_management_server_url(char *refparam, struct dmctx *ctx, char **value)
 			*value = url;
 	else
 		*value = dmstrdup(DEFAULT_ACSURL);
-	return 0;	
+	return 0;
 }
 
-int set_management_server_url(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -83,13 +108,13 @@ int set_management_server_url(char *refparam, struct dmctx *ctx, int action, cha
 	return 0;
 }
 
-int get_management_server_username(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "userid", value);
 	return 0;	
 }
 
-int set_management_server_username(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -102,7 +127,7 @@ int set_management_server_username(char *refparam, struct dmctx *ctx, int action
 	return 0;	
 }
 
-int set_management_server_passwd(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_passwd(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -115,19 +140,19 @@ int set_management_server_passwd(char *refparam, struct dmctx *ctx, int action, 
 	return 0;	
 }
 
-int get_management_server_key(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "ParameterKey", value);
 	return 0;	
 }
 
-int get_management_server_periodic_inform_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_periodic_inform_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "periodic_inform_enable", value);
 	return 0;	
 }
 
-int set_management_server_periodic_inform_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_periodic_inform_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -148,13 +173,13 @@ int set_management_server_periodic_inform_enable(char *refparam, struct dmctx *c
 	return 0;	
 }
 
-int get_management_server_periodic_inform_interval(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_periodic_inform_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "periodic_inform_interval", value);
 	return 0;
 }
 
-int set_management_server_periodic_inform_interval(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_periodic_inform_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -167,7 +192,7 @@ int set_management_server_periodic_inform_interval(char *refparam, struct dmctx 
 	return 0;
 }
 
-int get_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	time_t time_value;
 	
@@ -184,7 +209,7 @@ int get_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx
 	return 0;	
 }
 
-int set_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct tm tm;
 	char *p, buf[16];
@@ -203,7 +228,7 @@ int set_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx
 	return 0;	
 }
 
-int get_management_server_connection_request_url(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_connection_request_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *ip, *port, *iface;
 
@@ -219,13 +244,13 @@ int get_management_server_connection_request_url(char *refparam, struct dmctx *c
 	return 0;
 }
 
-int get_management_server_connection_request_username(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_connection_request_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "userid", value);
 	return 0;
 }
 
-int set_management_server_connection_request_username(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_connection_request_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -238,7 +263,7 @@ int set_management_server_connection_request_username(char *refparam, struct dmc
 	return 0;
 }
 
-int set_management_server_connection_request_passwd(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_connection_request_passwd(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -251,13 +276,13 @@ int set_management_server_connection_request_passwd(char *refparam, struct dmctx
 	return 0;
 }
 
-int get_lwn_protocol_supported(char *refparam, struct dmctx *ctx, char **value)
+int get_lwn_protocol_supported(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "UDP";
 	return 0;
 }
 
-int get_lwn_protocol_used(char *refparam, struct dmctx *ctx, char **value)
+int get_lwn_protocol_used(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	bool b;
 	char *tmp;
@@ -271,7 +296,7 @@ int get_lwn_protocol_used(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_lwn_protocol_used(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_lwn_protocol_used(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -290,13 +315,13 @@ int set_lwn_protocol_used(char *refparam, struct dmctx *ctx, int action, char *v
 	return 0;
 }
 
-int get_lwn_host(char *refparam, struct dmctx *ctx, char **value)
+int get_lwn_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {	
 	dmuci_get_option_value_string("cwmp", "lwn", "hostname", value);
 	return 0;
 }
 
-int set_lwn_host(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_lwn_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -309,13 +334,13 @@ int set_lwn_host(char *refparam, struct dmctx *ctx, int action, char *value)
 	return 0;
 }
 
-int get_lwn_port(char *refparam, struct dmctx *ctx, char **value)
+int get_lwn_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "lwn", "port", value);
 	return 0;
 }
 
-int set_lwn_port(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_lwn_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -328,19 +353,19 @@ int set_lwn_port(char *refparam, struct dmctx *ctx, int action, char *value)
 	return 0;
 }
 
-int get_management_server_http_compression_supportted(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_http_compression_supportted(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "GZIP,Deflate";
 	return 0;
 }
 
-int get_management_server_http_compression(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_http_compression(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "compression", value);
 	return 0;
 }
 
-int set_management_server_http_compression(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_http_compression(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -356,13 +381,13 @@ int set_management_server_http_compression(char *refparam, struct dmctx *ctx, in
 	return 0;
 }
 
-int get_management_server_retry_min_wait_interval(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_retry_min_wait_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "retry_min_wait_interval", value);
 	return 0;
 }
 
-int set_management_server_retry_min_wait_interval(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_retry_min_wait_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int a;
 	switch (action) {
@@ -380,13 +405,13 @@ int set_management_server_retry_min_wait_interval(char *refparam, struct dmctx *
 	return 0;
 }
 
-int get_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, char **value)
+int get_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "retry_interval_multiplier", value);
 	return 0;
 }
 
-int set_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int a;
 	switch (action) {
@@ -404,7 +429,7 @@ int set_management_server_retry_interval_multiplier(char *refparam, struct dmctx
 	return 0;
 }
 
-int get_alias_based_addressing(char *refparam, struct dmctx *ctx, char **value)
+int get_alias_based_addressing(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "amd_version", value);
 	if((*value)[0] == '\0'|| atoi(*value) <= AMD_4) {
@@ -416,13 +441,13 @@ int get_alias_based_addressing(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int get_instance_mode(char *refparam, struct dmctx *ctx, char **value)
+int get_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "instance_mode", value);
 	return 0;
 }
 
-int set_instance_mode(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -438,32 +463,4 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, int action, char *value
 	return 0;
 }
 
-int entry_method_root_ManagementServer(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"ManagementServer.") {
-		DMOBJECT(DMROOT"ManagementServer.", ctx, "0", 0, NULL, NULL, NULL);
-		DMPARAM("URL", ctx, "1", get_management_server_url, set_management_server_url, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Username", ctx, "1", get_management_server_username, set_management_server_username, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Password", ctx, "1", get_empty, set_management_server_passwd, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ParameterKey", ctx, "0", get_management_server_key, NULL, NULL, 1, 0, 0, NULL);
-		DMPARAM("PeriodicInformEnable", ctx, "1", get_management_server_periodic_inform_enable, set_management_server_periodic_inform_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("PeriodicInformInterval", ctx, "1", get_management_server_periodic_inform_interval, set_management_server_periodic_inform_interval, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("PeriodicInformTime", ctx, "1", get_management_server_periodic_inform_time, set_management_server_periodic_inform_time, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("ConnectionRequestURL", ctx, "0", get_management_server_connection_request_url, NULL, NULL, 1, 0, 2, NULL);
-		DMPARAM("ConnectionRequestUsername", ctx, "1", get_management_server_connection_request_username, set_management_server_connection_request_username, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ConnectionRequestPassword", ctx, "1", get_empty, set_management_server_connection_request_passwd, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("HTTPCompressionSupported", ctx, "0", get_management_server_http_compression_supportted, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("HTTPCompression", ctx, "1", get_management_server_http_compression, set_management_server_http_compression, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("LightweightNotificationProtocolsSupported", ctx, "0", get_lwn_protocol_supported, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("LightweightNotificationProtocolsUsed", ctx, "1", get_lwn_protocol_used, set_lwn_protocol_used, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("UDPLightweightNotificationHost", ctx, "1", get_lwn_host, set_lwn_host, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("UDPLightweightNotificationPort", ctx, "1", get_lwn_port, set_lwn_port, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("CWMPRetryMinimumWaitInterval", ctx, "1", get_management_server_retry_min_wait_interval, set_management_server_retry_min_wait_interval, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("CWMPRetryIntervalMultiplier", ctx, "1", get_management_server_retry_interval_multiplier, set_management_server_retry_interval_multiplier, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("AliasBasedAddressing", ctx, "0", get_alias_based_addressing, NULL, "xsd:boolean", 1, 1, UNDEF, NULL);
-		DMPARAM("InstanceMode", ctx, "1", get_instance_mode, set_instance_mode, NULL, 0, 1, UNDEF, NULL);
 
-		return 0;
-	}
-	return FAULT_9005;
-}

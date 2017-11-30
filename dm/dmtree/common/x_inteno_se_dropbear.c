@@ -18,15 +18,35 @@
 #include "dmcommon.h"
 #include "x_inteno_se_dropbear.h"
 
-inline int entry_xinteno_dropbear_instance(struct dmctx *ctx, char *idropbear);
-inline int entry_xinteno_dropbear(struct dmctx *ctx);
-struct dropbear_args cur_dropbear_args = {0};
+/*** DMROOT.X_INTENO_SE_Dropbear.{i}. ****/
+DMLEAF X_INTENO_SE_DropbearParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
+{"Alias", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_alias, set_x_inteno_dropbear_alias, NULL, NULL},
+{"PasswordAuth", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_password_auth, set_x_inteno_dropbear_password_auth, NULL, NULL},
+{"RootPasswordAuth", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_root_password_auth, set_x_inteno_dropbear_root_password_auth, NULL, NULL},
+{"Port", &DMWRITE, DMT_UNINT, get_x_inteno_dropbear_port, set_x_inteno_dropbear_port, NULL, NULL},
+{"RootLogin", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_root_login, set_x_inteno_dropbear_root_login, NULL, NULL},
+{"GatewayPorts", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_gateway_ports, set_x_inteno_dropbear_gateway_ports, NULL, NULL},
+{"Interface", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_interface, set_x_inteno_dropbear_interface, NULL, NULL},
+{"rsakeyfile", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_rsakeyfile, set_x_inteno_dropbear_rsakeyfile, NULL, NULL},
+{"dsskeyfile", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_dsskeyfile, set_x_inteno_dropbear_dsskeyfile, NULL, NULL},
+{"SSHKeepAlive", &DMWRITE, DMT_UNINT, get_x_inteno_dropbear_ssh_keepalive, set_x_inteno_dropbear_ssh_keepalive, NULL, NULL},
+{"IdleTimeout", &DMWRITE, DMT_UNINT, get_x_inteno_dropbear_idle_timeout, set_x_inteno_dropbear_idle_timeout, NULL, NULL},
+{"verbose", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_gateway_ports, set_x_inteno_dropbear_gateway_ports, NULL, NULL},
+{"BannerFile", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_interface, set_x_inteno_dropbear_interface, NULL, NULL},
+{0}
+};
 
-inline int init_args_dropbear(struct dmctx *ctx, struct uci_section *s)
+int browseXIntenoDropbear(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct dropbear_args *args = &cur_dropbear_args;
-	ctx->args = (void *)args;
-	args->dropbear_section = s;
+	char *idropbear = NULL, *idropbear_last = NULL;
+	struct uci_section *s = NULL;
+
+	uci_foreach_sections("dropbear", "dropbear", s) {
+		idropbear =  handle_update_instance(1, dmctx, &idropbear_last, update_instance_alias, 3, s, "dropbearinstance", "dropbearalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, idropbear) == DM_STOP)
+			break;
+	}
 	return 0;
 }
 
@@ -35,9 +55,9 @@ inline int init_args_dropbear(struct dmctx *ctx, struct uci_section *s)
 **************************************************************************************/
 
 
-int get_x_inteno_dropbear_password_auth(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_password_auth(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "PasswordAuth", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "PasswordAuth", value);
 	if ((*value)[0] == '\0' || ((*value)[0] == 'o' && (*value)[1] == 'n') || (*value)[0] == '1') {
 		*value = "1";
 	}
@@ -46,7 +66,7 @@ int get_x_inteno_dropbear_password_auth(char *refparam, struct dmctx *ctx, char 
 	return 0;
 }
 
-int set_x_inteno_dropbear_password_auth(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_password_auth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -58,17 +78,17 @@ int set_x_inteno_dropbear_password_auth(char *refparam, struct dmctx *ctx, int a
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "PasswordAuth", "1");
+				dmuci_set_value_by_section((struct uci_section *)data, "PasswordAuth", "1");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "PasswordAuth", "0");
+				dmuci_set_value_by_section((struct uci_section *)data, "PasswordAuth", "0");
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_root_password_auth(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_root_password_auth(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "RootPasswordAuth", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "RootPasswordAuth", value);
 	if ((*value)[0] == '\0' || ((*value)[0] == 'o' && (*value)[1] == 'n') || (*value)[0] == '1') {
 		*value = "1";
 	}
@@ -77,7 +97,7 @@ int get_x_inteno_dropbear_root_password_auth(char *refparam, struct dmctx *ctx, 
 	return 0;
 }
 
-int set_x_inteno_dropbear_root_password_auth(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_root_password_auth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -89,24 +109,24 @@ int set_x_inteno_dropbear_root_password_auth(char *refparam, struct dmctx *ctx, 
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "RootPasswordAuth", "1");
+				dmuci_set_value_by_section((struct uci_section *)data, "RootPasswordAuth", "1");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "RootPasswordAuth", "0");
+				dmuci_set_value_by_section((struct uci_section *)data, "RootPasswordAuth", "0");
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_port(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "Port", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "Port", value);
 	if ((*value)[0] == '\0') {
 		*value = "22";
 	}
 	return 0;
 }
 
-int set_x_inteno_dropbear_port(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
@@ -114,17 +134,17 @@ int set_x_inteno_dropbear_port(char *refparam, struct dmctx *ctx, int action, ch
 			return 0;
 		case VALUESET:
 			if (value[0] == '\0')
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "Port", "22");
+				dmuci_set_value_by_section((struct uci_section *)data, "Port", "22");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "Port", value);
+				dmuci_set_value_by_section((struct uci_section *)data, "Port", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_root_login(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_root_login(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "RootLogin", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "RootLogin", value);
 	if ((*value)[0] == '\0' || ((*value)[0] == 'o' && (*value)[1] == 'n') || (*value)[0] == '1' ) {
 		*value = "1";
 	}
@@ -133,7 +153,7 @@ int get_x_inteno_dropbear_root_login(char *refparam, struct dmctx *ctx, char **v
 	return 0;
 }
 
-int set_x_inteno_dropbear_root_login(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_root_login(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -145,17 +165,17 @@ int set_x_inteno_dropbear_root_login(char *refparam, struct dmctx *ctx, int acti
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "RootLogin", "1");
+				dmuci_set_value_by_section((struct uci_section *)data, "RootLogin", "1");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "RootLogin", "0");
+				dmuci_set_value_by_section((struct uci_section *)data, "RootLogin", "0");
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_verbose(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_verbose(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "verbose", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "verbose", value);
 	if ((*value)[0] == '\0' || (*value)[0] == '0' ) {
 		*value = "0";
 	}
@@ -164,7 +184,7 @@ int get_x_inteno_dropbear_verbose(char *refparam, struct dmctx *ctx, char **valu
 	return 0;
 }
 
-int set_x_inteno_dropbear_verbose(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_verbose(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -176,18 +196,18 @@ int set_x_inteno_dropbear_verbose(char *refparam, struct dmctx *ctx, int action,
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "verbose", "1");
+				dmuci_set_value_by_section((struct uci_section *)data, "verbose", "1");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "verbose", "0");
+				dmuci_set_value_by_section((struct uci_section *)data, "verbose", "0");
 			return 0;
 	}
 	return 0;
 }
 
 
-int get_x_inteno_dropbear_gateway_ports(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_gateway_ports(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "GatewayPorts", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "GatewayPorts", value);
 	if ((*value)[0] == '\0' || (*value)[0] == '0' ) {
 		*value = "0";
 	}
@@ -196,7 +216,7 @@ int get_x_inteno_dropbear_gateway_ports(char *refparam, struct dmctx *ctx, char 
 	return 0;
 }
 
-int set_x_inteno_dropbear_gateway_ports(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_gateway_ports(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -208,81 +228,81 @@ int set_x_inteno_dropbear_gateway_ports(char *refparam, struct dmctx *ctx, int a
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "GatewayPorts", "1");
+				dmuci_set_value_by_section((struct uci_section *)data, "GatewayPorts", "1");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "GatewayPorts", "");
+				dmuci_set_value_by_section((struct uci_section *)data, "GatewayPorts", "");
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_interface(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "Interface", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "Interface", value);
 	return 0;
 }
 
-int set_x_inteno_dropbear_interface(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "Interface", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "Interface", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_rsakeyfile(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_rsakeyfile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "rsakeyfile", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "rsakeyfile", value);
 	return 0;
 }
 
-int set_x_inteno_dropbear_rsakeyfile(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_rsakeyfile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "rsakeyfile", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "rsakeyfile", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_dsskeyfile(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_dsskeyfile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "dsskeyfile", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "dsskeyfile", value);
 	return 0;
 }
 
-int set_x_inteno_dropbear_dsskeyfile(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_dsskeyfile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "dsskeyfile", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "dsskeyfile", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_ssh_keepalive(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_ssh_keepalive(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "SSHKeepAlive", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "SSHKeepAlive", value);
 	if ((*value)[0] == '\0') {
 		*value = "300";
 	}
 	return 0;
 }
 
-int set_x_inteno_dropbear_ssh_keepalive(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_ssh_keepalive(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
@@ -290,24 +310,24 @@ int set_x_inteno_dropbear_ssh_keepalive(char *refparam, struct dmctx *ctx, int a
 			return 0;
 		case VALUESET:
 			if (strcmp(value, "300") == 0)
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "SSHKeepAlive", "");
+				dmuci_set_value_by_section((struct uci_section *)data, "SSHKeepAlive", "");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "SSHKeepAlive", value);
+				dmuci_set_value_by_section((struct uci_section *)data, "SSHKeepAlive", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_idle_timeout(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_idle_timeout(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "IdleTimeout", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "IdleTimeout", value);
 	if ((*value)[0] == '\0') {
 		*value = "300";
 	}
 	return 0;
 }
 
-int set_x_inteno_dropbear_idle_timeout(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_idle_timeout(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
@@ -315,28 +335,28 @@ int set_x_inteno_dropbear_idle_timeout(char *refparam, struct dmctx *ctx, int ac
 			return 0;
 		case VALUESET:
 			if (value[0] == '0')
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "IdleTimeout", "");
+				dmuci_set_value_by_section((struct uci_section *)data, "IdleTimeout", "");
 			else
-				dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "IdleTimeout", value);
+				dmuci_set_value_by_section((struct uci_section *)data, "IdleTimeout", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_inteno_dropbear_banner_file(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_banner_file(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "BannerFile", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "BannerFile", value);
 	return 0;
 }
 
-int set_x_inteno_dropbear_banner_file(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_banner_file(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "BannerFile", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "BannerFile", value);
 			return 0;
 	}
 	return 0;
@@ -344,26 +364,26 @@ int set_x_inteno_dropbear_banner_file(char *refparam, struct dmctx *ctx, int act
 
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 
-int get_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, char **value)
+int get_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_dropbear_args.dropbear_section, "dropbearalias", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "dropbearalias", value);
 	return 0;
 }
 
-int set_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_dropbear_args.dropbear_section, "dropbearalias", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "dropbearalias", value);
 			return 0;
 	}
 	return 0;
 }
 
 /***** ADD DEL OBJ *******/
-int add_dropbear_instance(struct dmctx *ctx, char **instancepara)
+int add_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 	char *value;
 	char *instance;
@@ -381,75 +401,26 @@ int add_dropbear_instance(struct dmctx *ctx, char **instancepara)
 	return 0;
 }
 
-int delete_dropbear_all(struct dmctx *ctx)
+int delete_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	int found = 0;
-
-	uci_foreach_sections("dropbear", "dropbear", s) {
+	switch (del_action) {
+		case DEL_INST:
+			dmuci_delete_by_section((struct uci_section *)data, NULL, NULL);
+			break;
+		case DEL_ALL:
+			uci_foreach_sections("dropbear", "dropbear", s) {
 		if (found != 0)
 			dmuci_delete_by_section(ss, NULL, NULL);
 		ss = s;
 		found++;
-	}
-	if (ss != NULL)
-		dmuci_delete_by_section(ss, NULL, NULL);
-	return 0;
-}
-
-
-int delete_dropbear_instance(struct dmctx *ctx)
-{
-	dmuci_delete_by_section(cur_dropbear_args.dropbear_section, NULL, NULL);
-	return 0;
-}
-/////////////SUB ENTRIES///////////////
-inline int entry_xinteno_dropbear(struct dmctx *ctx)
-{
-	char *idropbear = NULL, *idropbear_last = NULL;
-	struct uci_section *s = NULL;
-
-	uci_foreach_sections("dropbear", "dropbear", s) {
-		init_args_dropbear(ctx, s);
-		idropbear =  handle_update_instance(1, ctx, &idropbear_last, update_instance_alias, 3, s, "dropbearinstance", "dropbearalias");
-		SUBENTRY(entry_xinteno_dropbear_instance, ctx, idropbear);
-	}
-	return 0;
-}
-
-//////////////////////////////////////
-
-int entry_method_root_X_INTENO_SE_DROPBEAR(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_Dropbear.") {
-		DMOBJECT(DMROOT"X_INTENO_SE_Dropbear.", ctx, "1", 1, add_dropbear_instance, delete_dropbear_all, NULL);
-		SUBENTRY(entry_xinteno_dropbear, ctx);
+		}
+		if (ss != NULL)
+			dmuci_delete_by_section(ss, NULL, NULL);
 		return 0;
 	}
-	return FAULT_9005;
-}
-
-inline int entry_xinteno_dropbear_instance(struct dmctx *ctx, char *idropbear)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_Dropbear.%s.", idropbear) {
-		DMOBJECT(DMROOT"X_INTENO_SE_Dropbear.%s.", ctx, "1", 1, NULL, delete_dropbear_instance, NULL, idropbear);
-		DMPARAM("Alias", ctx, "1", get_x_inteno_dropbear_alias, set_x_inteno_dropbear_alias, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("PasswordAuth", ctx, "1", get_x_inteno_dropbear_password_auth, set_x_inteno_dropbear_password_auth, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("RootPasswordAuth", ctx, "1", get_x_inteno_dropbear_root_password_auth, set_x_inteno_dropbear_root_password_auth, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("Port", ctx, "1", get_x_inteno_dropbear_port, set_x_inteno_dropbear_port, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("RootLogin", ctx, "1", get_x_inteno_dropbear_root_login, set_x_inteno_dropbear_root_login, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("GatewayPorts", ctx, "1", get_x_inteno_dropbear_gateway_ports, set_x_inteno_dropbear_gateway_ports, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("Interface", ctx, "1", get_x_inteno_dropbear_interface, set_x_inteno_dropbear_interface, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("rsakeyfile", ctx, "1", get_x_inteno_dropbear_rsakeyfile, set_x_inteno_dropbear_rsakeyfile, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("dsskeyfile", ctx, "1", get_x_inteno_dropbear_dsskeyfile, set_x_inteno_dropbear_dsskeyfile, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SSHKeepAlive", ctx, "1", get_x_inteno_dropbear_ssh_keepalive, set_x_inteno_dropbear_ssh_keepalive, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("IdleTimeout", ctx, "1", get_x_inteno_dropbear_idle_timeout, set_x_inteno_dropbear_idle_timeout, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		//DMPARAM("enable", ctx, "1", get_x_inteno_dropbear_enable, set_x_inteno_dropbear_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("verbose", ctx, "1", get_x_inteno_dropbear_verbose, set_x_inteno_dropbear_verbose, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("BannerFile", ctx, "1", get_x_inteno_dropbear_banner_file, set_x_inteno_dropbear_banner_file, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
+	return 0;
 }
 

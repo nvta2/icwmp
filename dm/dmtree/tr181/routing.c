@@ -24,14 +24,50 @@ enum enum_route_type {
 	ROUTE_DISABLED
 };
 
-struct routingfwdargs cur_routefwdargs = {0};
-struct router_args cur_router_args = {0};
+/*** Routing. ***/
+DMOBJ tRoutingObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
+{"Router", &DMREAD, NULL, NULL, NULL, browseRouterInst, NULL, NULL, tRouterObj, tRouterInstParam, NULL},
+{0}
+};
 
-inline int entry_router_ipv4forwarding_instance(struct dmctx *ctx, char *irouter, char *iroute, char *permission);
-inline int init_args_ipv4forward(struct dmctx *ctx, struct uci_section *s, char *permission, struct proc_routing *proute, int type)
+DMLEAF tRoutingParam[] = {
+{"RouterNumberOfEntries", &DMREAD, DMT_UNINT, get_router_nbr_entry, NULL, NULL, NULL},
+{0}
+};
+
+/*** Routing.Router. ***/
+DMOBJ tRouterObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
+{"IPv4Forwarding", &DMREAD, NULL, NULL, NULL, browseIPv4ForwardingInst, NULL, NULL, NULL, tIPv4ForwardingParam, NULL},
+{0}
+};
+DMLEAF tRouterInstParam[] = {
+{"Alias", &DMWRITE, DMT_STRING, get_router_alias, set_router_alias, NULL, NULL},
+{0}
+};
+
+/*** Routing.Router.IPv4Forwarding. ***/
+DMLEAF tIPv4ForwardingParam[] = {
+{"Enable", &DMRouting, DMT_BOOL, get_router_ipv4forwarding_enable, set_router_ipv4forwarding_enable, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING, get_router_ipv4forwarding_status, NULL, NULL, NULL},
+{"Alias", &DMWRITE, DMT_STRING, get_router_ipv4forwarding_alias, set_router_ipv4forwarding_alias, NULL, NULL},
+{"DestIPAddress", &DMRouting, DMT_STRING, get_router_ipv4forwarding_destip, set_router_ipv4forwarding_destip, NULL, NULL},
+{"DestSubnetMask", &DMRouting, DMT_STRING, get_router_ipv4forwarding_destmask, set_router_ipv4forwarding_destmask, NULL, NULL},
+{"SourceIPAddress", &DMREAD, DMT_STRING, get_router_ipv4forwarding_src_address, NULL, NULL, NULL},
+{"SourceSubnetMask", &DMREAD, DMT_STRING, get_router_ipv4forwarding_src_mask, NULL, NULL, NULL},
+{"GatewayIPAddress", &DMRouting, DMT_STRING, get_router_ipv4forwarding_gatewayip, set_router_ipv4forwarding_gatewayip, NULL, NULL},
+{"Interface", &DMRouting, DMT_STRING, get_router_ipv4forwarding_interface_linker_parameter, set_router_ipv4forwarding_interface_linker_parameter, NULL, NULL},
+{"ForwardingMetric", &DMRouting, DMT_STRING, get_router_ipv4forwarding_metric, set_router_ipv4forwarding_metric, NULL, NULL},
+{0}
+};
+
+
+/********************************
+ * inti function
+ ********************************/
+inline int init_args_ipv4forward(struct routingfwdargs *args, struct uci_section *s, char *permission, struct proc_routing *proute, int type)
 {
-	struct routingfwdargs *args = &cur_routefwdargs;
-	ctx->args = (void *)args;
 	args->permission = permission;
 	args->routefwdsection = s;
 	args->proute = proute;
@@ -39,13 +75,6 @@ inline int init_args_ipv4forward(struct dmctx *ctx, struct uci_section *s, char 
 	return 0;
 }
 
-inline int init_router_args(struct dmctx *ctx, struct uci_section *section)
-{
-	struct router_args *args = &cur_router_args;
-	ctx->args = (void *)args;
-	args->router_section = section;
-	return 0;
-}
 /************************************************************************************* 
 **** function related to get_object_router_ipv4forwarding ****
 **************************************************************************************/
@@ -56,38 +85,6 @@ void ip_to_hex(char *address, char *ret) //TODO Move to the common.c
 	
 	sscanf(address, "%d.%d.%d.%d", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
 	sprintf(ret, "%02X%02X%02X%02X", ip[0], ip[1], ip[2], ip[3]);
-}
-
-void hex_to_ip(char *address, char *ret) //TODO Move to the common.c
-{
-	int i;
-	int ip[4] = {0};
-	sscanf(address, "%2x%2x%2x%2x", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
-	if (htonl(13) == 13) {
-		sprintf(ret, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-	} else {
-		sprintf(ret, "%d.%d.%d.%d", ip[3], ip[2], ip[1], ip[0]);
-	}
-}
-
-void parse_proc_route_line(char *line, struct proc_routing *proute)
-{
-	char *pch, *spch;
-	proute->iface = strtok_r(line, " \t", &spch);
-
-	pch = strtok_r(NULL, " \t", &spch);
-	hex_to_ip(pch, proute->destination);
-	pch = strtok_r(NULL, " \t", &spch);
-	hex_to_ip(pch, proute->gateway);
-	proute->flags = strtok_r(NULL, " \t", &spch);
-	proute->refcnt = strtok_r(NULL, " \t", &spch);
-	proute->use = strtok_r(NULL, " \t", &spch);
-	proute->metric = strtok_r(NULL, " \t", &spch);
-	pch = strtok_r(NULL, " \t", &spch);
-	hex_to_ip(pch, proute->mask);
-	proute->mtu = strtok_r(NULL, " \t", &spch);
-	proute->window = strtok_r(NULL, " \t", &spch);
-	proute->irtt = strtok_r(NULL, " \t\n\r", &spch);
 }
 
 bool is_proute_static(struct proc_routing *proute)
@@ -228,9 +225,9 @@ struct uci_section *update_route_dynamic_section(struct proc_routing *proute)
 	return s;
 }
 
-int get_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 
 	if (routeargs->routefwdsection == NULL) {
 		*value = "1";
@@ -244,11 +241,11 @@ int get_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, char **v
 	return 0;
 }
 
-int set_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	char *pch;
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	switch (action) {
 		case VALUECHECK:
@@ -272,9 +269,9 @@ int set_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, int acti
 	return 0;
 }
 
-int get_router_ipv4forwarding_status(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 
 	if (routeargs->routefwdsection == NULL) {
 		*value = "Enabled";
@@ -291,9 +288,9 @@ int get_router_ipv4forwarding_status(char *refparam, struct dmctx *ctx, char **v
 	return 0;	
 }
 
-int get_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	if (routeargs->routefwdsection != NULL)	{
 		dmuci_get_value_by_section_string(routeargs->routefwdsection, "target", value);
@@ -308,9 +305,9 @@ int get_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, char **v
 	return 0;		
 }
 
-int set_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {	
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	switch (action) {
 		case VALUECHECK:			
@@ -322,9 +319,9 @@ int set_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, int acti
 	return 0;
 }
 
-int get_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	if (routeargs->routefwdsection != NULL)	{
 		dmuci_get_value_by_section_string(routeargs->routefwdsection, "netmask", value);
@@ -339,9 +336,9 @@ int get_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, char *
 	return 0;
 }
 
-int set_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {	
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	switch (action) {
 		case VALUECHECK:			
@@ -353,21 +350,21 @@ int set_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, int ac
 	return 0;
 }
 
-int get_router_ipv4forwarding_src_address(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_src_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0.0.0.0";
 	return 0;
 }
 
-int get_router_ipv4forwarding_src_mask(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_src_mask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0.0.0.0";
 	return 0;
 }
 
-int get_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	if (routeargs->routefwdsection != NULL)	{
 		dmuci_get_value_by_section_string(routeargs->routefwdsection, "gateway", value);
@@ -382,9 +379,9 @@ int get_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, char 
 	return 0;
 } 
 
-int set_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {	
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	switch (action) {
 		case VALUECHECK:			
@@ -396,13 +393,13 @@ int set_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, int a
 	return 0;
 }
 
-char *get_router_ipv4forwarding_interface(struct dmctx *ctx)
+char *get_router_ipv4forwarding_interface(struct dmctx *ctx, void *data, char *instance)
 {
 	json_object *res;
 	char *val, *bval, *ifname, *device;
 	char *name;
 	struct uci_section *ss;
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	if (routeargs->routefwdsection != NULL)	{
 		dmuci_get_value_by_section_string(routeargs->routefwdsection, "interface", &val);
@@ -432,14 +429,14 @@ char *get_router_ipv4forwarding_interface(struct dmctx *ctx)
 	return "";
 }
 
-int get_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *iface, *linker;
 			
-	iface = get_router_ipv4forwarding_interface(ctx);
+	iface = get_router_ipv4forwarding_interface(ctx, data, instance);
 	if (iface[0] != '\0') {
 		dmasprintf(&linker, "%s", iface);
-		adm_entry_get_linker_param(DMROOT"IP.Interface.", linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL)
 			*value = "";
 		dmfree(linker);
@@ -447,16 +444,16 @@ int get_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct 
 	return 0;
 }
 
-int set_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *linker;
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			adm_entry_get_linker_value(value, &linker);
+			adm_entry_get_linker_value(ctx, value, &linker);
 			if (linker) {
 				dmuci_set_value_by_section(routeargs->routefwdsection, "interface", linker);
 				dmfree(linker);
@@ -466,10 +463,10 @@ int set_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct 
 	return 0;
 }
 
-int get_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *name;
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;	
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	if (routeargs->routefwdsection != NULL)	{
 		dmuci_get_value_by_section_string(routeargs->routefwdsection, "metric", value);
@@ -484,9 +481,9 @@ int get_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, char **v
 	return 0;
 }
 
-int set_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	struct routingfwdargs *routeargs = (struct routingfwdargs *)ctx->args;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
 	
 	switch (action) {
 		case VALUECHECK:			
@@ -498,7 +495,7 @@ int set_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, int acti
 	return 0;
 }
 
-int get_router_nbr_entry(char *refparam, struct dmctx *ctx, char **value)
+int get_router_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
 	int cnt = 0;
@@ -535,48 +532,56 @@ int get_router_nbr_entry(char *refparam, struct dmctx *ctx, char **value)
  * SET AND GET ALIAS FOR ROUTER OBJ
 /*************************************************************/
 
-int get_router_alias(char *refparam, struct dmctx *ctx, char **value)
+int get_router_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(cur_router_args.router_section, "router_alias", value);
+	dmuci_get_value_by_section_string((struct uci_section *)data, "router_alias", value);
 	return 0;
 }
 
-int set_router_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_router_args.router_section, "router_alias", value);
+			dmuci_set_value_by_section((struct uci_section *)data, "router_alias", value);
 			return 0;
 	}
 	return 0;
 }
 
-int get_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, char **value)
+int get_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "";
-	if (cur_routefwdargs.routefwdsection) dmuci_get_value_by_section_string(cur_routefwdargs.routefwdsection, "routealias", value);
+	if (((struct routingfwdargs *)data)->routefwdsection) dmuci_get_value_by_section_string(((struct routingfwdargs *)data)->routefwdsection, "routealias", value);
 	return 0;
 }
 
-int set_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			if (cur_routefwdargs.routefwdsection) dmuci_set_value_by_section(cur_routefwdargs.routefwdsection, "routealias", value);
+			if (((struct routingfwdargs *)data)->routefwdsection) dmuci_set_value_by_section(((struct routingfwdargs *)data)->routefwdsection, "routealias", value);
 			return 0;
 	}
 	return 0;
 }
+
+char *get_routing_perm(char *refparam, struct dmctx *dmctx, void *data, char *instance)
+{
+	return ((struct routingfwdargs *)data)->permission;
+}
+
+struct dm_permession_s DMRouting = {"0", &get_routing_perm};
+
 
 /*************************************************************
  * SUB ENTRIES
 /*************************************************************/
 
-inline int entry_router_ipv4forwarding(struct dmctx *ctx, char *irouter)
+int browseIPv4ForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iroute = NULL, *iroute_last = NULL;
 	char *permission = "1";
@@ -585,15 +590,19 @@ inline int entry_router_ipv4forwarding(struct dmctx *ctx, char *irouter)
 	char line[MAX_PROC_ROUTING];
 	struct proc_routing proute = {0};
 	bool find_max = true;
+	struct routingfwdargs curr_routefwdargs = {0};
+
 	uci_foreach_sections("network", "route", s) {
-		init_args_ipv4forward(ctx, s, "1", NULL, ROUTE_STATIC);
-		iroute =  handle_update_instance(1, ctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
-		SUBENTRY(entry_router_ipv4forwarding_instance, ctx, irouter, iroute, permission);
+		init_args_ipv4forward(&curr_routefwdargs, s, "1", NULL, ROUTE_STATIC);
+		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
+			goto end;
 	}
 	uci_foreach_sections("network", "route_disabled", s) {
-		init_args_ipv4forward(ctx, s, "1", NULL, ROUTE_DISABLED);
-		iroute =  handle_update_instance(1, ctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
-		SUBENTRY(entry_router_ipv4forwarding_instance, ctx, irouter, iroute, permission);
+		init_args_ipv4forward(&curr_routefwdargs, s, "1", NULL, ROUTE_DISABLED);
+		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
+			goto end;
 	}
 	fp = fopen(ROUTING_FILE, "r");
 	if ( fp != NULL)
@@ -607,72 +616,27 @@ inline int entry_router_ipv4forwarding(struct dmctx *ctx, char *irouter)
 			if (is_proute_static(&proute))
 				continue;
 			ss = update_route_dynamic_section(&proute);
-			init_args_ipv4forward(ctx, ss, "0", &proute, ROUTE_DYNAMIC);
-			iroute =  handle_update_instance(1, ctx, &iroute_last, forwarding_update_instance_alias, 4, ss, "routeinstance", "routealias", &find_max);
-			SUBENTRY(entry_router_ipv4forwarding_instance, ctx, irouter, iroute, "0");
+			init_args_ipv4forward(&curr_routefwdargs, ss, "0", &proute, ROUTE_DYNAMIC);
+			iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, ss, "routeinstance", "routealias", &find_max);
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
+				goto end;
 		}
 		fclose(fp) ;
 	}
+end:
 	return 0;
 }
 
-inline int entry_method_router(struct dmctx *ctx)
+int browseRouterInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *s = NULL;
 	char *r = NULL, *r_last = NULL;
 	
 	update_section_list(DMMAP,"router", NULL, 1, NULL, NULL, NULL, NULL, NULL);
 	uci_path_foreach_sections(icwmpd, "dmmap", "router", s) {
-		init_router_args(ctx, s);
-		r = handle_update_instance(1, ctx, &r_last, update_instance_alias_icwmpd, 3, s, "router_instance", "router_alias");
-		SUBENTRY(entry_method_root_router_sub, ctx, r);
-		return 0;
-	}
-	return FAULT_9005;
-}
-
-inline int entry_router_ipv4forwarding_instance(struct dmctx *ctx, char *irouter, char *iroute, char *permission)
-{	
-	IF_MATCH(ctx, DMROOT"Routing.Router.%s.IPv4Forwarding.%s.", irouter, iroute) {
-		DMOBJECT(DMROOT"Routing.Router.%s.IPv4Forwarding.%s.", ctx, "0", 1, NULL, NULL, NULL, irouter, iroute);
-		DMPARAM("Enable", ctx, permission, get_router_ipv4forwarding_enable, set_router_ipv4forwarding_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("Status", ctx, "0", get_router_ipv4forwarding_status, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Alias", ctx, "1", get_router_ipv4forwarding_alias, set_router_ipv4forwarding_alias, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("DestIPAddress", ctx, permission, get_router_ipv4forwarding_destip, set_router_ipv4forwarding_destip, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("DestSubnetMask", ctx, permission, get_router_ipv4forwarding_destmask, set_router_ipv4forwarding_destmask, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SourceIPAddress", ctx, "0", get_router_ipv4forwarding_src_address, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SourceSubnetMask", ctx, "0", get_router_ipv4forwarding_src_mask, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("GatewayIPAddress", ctx, permission, get_router_ipv4forwarding_gatewayip, set_router_ipv4forwarding_gatewayip, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Interface", ctx, permission, get_router_ipv4forwarding_interface_linker_parameter, set_router_ipv4forwarding_interface_linker_parameter, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ForwardingMetric", ctx, permission, get_router_ipv4forwarding_metric, set_router_ipv4forwarding_metric, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
-}
-
-int entry_method_root_routing(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"Routing.") {
-		DMOBJECT(DMROOT"Routing.", ctx, "0", 1, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"Routing.Router.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("RouterNumberOfEntries", ctx, "0", get_router_nbr_entry, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		SUBENTRY(entry_method_router, ctx);
-		return 0;
-	}
-	return FAULT_9005;
-}
-
-int entry_method_root_router_sub(struct dmctx *ctx, char *irouter)
-{
-	IF_MATCH(ctx, DMROOT"Routing.Router.%s.", irouter) {
-		DMOBJECT(DMROOT"Routing.Router.%s.", ctx, "0", 1, NULL, NULL, NULL, irouter);
-		DMPARAM("Alias", ctx, "1", get_router_alias, set_router_alias, NULL, 0, 1, UNDEF, NULL); //TODO
-		DMOBJECT(DMROOT"Routing.Router.%s.IPv4Forwarding.", ctx, "0", 1, NULL, NULL, NULL, irouter);
-		SUBENTRY(entry_router_ipv4forwarding, ctx, irouter);
+		r = handle_update_instance(1, dmctx, &r_last, update_instance_alias_icwmpd, 3, s, "router_instance", "router_alias");
+		DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, r);
+		break;
 	}
 	return 0;
 }
-
-
-
-

@@ -11,6 +11,15 @@
 #ifndef __NAT_H
 #define __NAT_H
 
-int entry_method_root_nat(struct dmctx *ctx);
+extern DMLEAF tInterfaceSettingParam[];
+extern DMOBJ tnatObj[];
+
+int browseInterfaceSettingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+
+int get_nat_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_nat_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_nat_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_nat_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif

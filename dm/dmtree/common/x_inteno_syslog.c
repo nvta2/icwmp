@@ -18,13 +18,20 @@
 #include "dmcommon.h"
 #include "x_inteno_syslog.h"
 
-int get_server_ip_address(char *refparam, struct dmctx *ctx, char **value)
+DMLEAF tSe_SyslogCfgParam[] = {
+{"ServerIPAddress", &DMWRITE, DMT_STRING, get_server_ip_address, set_server_ip_address, NULL, NULL},
+{"ServerPortNumber", &DMWRITE, DMT_UNINT, get_server_port_number, set_server_port_number, NULL, NULL},
+{"RemoteLogLevel", &DMWRITE, DMT_UNINT, get_remote_log_level, set_remote_log_level, NULL, NULL},
+{0}
+};
+
+int get_server_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("system", "@system[0]", "log_ip", value);
 	return 0;
 }
 
-int set_server_ip_address(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_server_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -36,7 +43,7 @@ int set_server_ip_address(char *refparam, struct dmctx *ctx, int action, char *v
 	return 0;
 }
 	
-int get_server_port_number(char *refparam, struct dmctx *ctx, char **value)
+int get_server_port_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
 	dmuci_get_option_value_string("system", "@system[0]", "log_port", &tmp);
@@ -47,7 +54,7 @@ int get_server_port_number(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_server_port_number(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_server_port_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -59,7 +66,7 @@ int set_server_port_number(char *refparam, struct dmctx *ctx, int action, char *
 	return 0;
 }
 
-int get_remote_log_level(char *refparam, struct dmctx *ctx, char **value)
+int get_remote_log_level(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
 	dmuci_get_option_value_string("system", "@system[0]", "conloglevel", &tmp);
@@ -70,7 +77,7 @@ int get_remote_log_level(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_remote_log_level(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_remote_log_level(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:			
@@ -80,16 +87,4 @@ int set_remote_log_level(char *refparam, struct dmctx *ctx, int action, char *va
 			return 0;
 	}
 	return 0;
-}
-
-int entry_method_root_syslog(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_SyslogCfg.") {
-		DMOBJECT(DMROOT"X_INTENO_SE_SyslogCfg.", ctx, "0", 0, NULL, NULL, NULL);
-		DMPARAM("ServerIPAddress", ctx, "1", get_server_ip_address, set_server_ip_address, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ServerPortNumber", ctx, "1", get_server_port_number, set_server_port_number, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("RemoteLogLevel", ctx, "1", get_remote_log_level, set_remote_log_level, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
 }

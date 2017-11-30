@@ -19,13 +19,13 @@
 #include "x_inteno_se_igmp.h"
 
 
-int get_igmp_dscp_mark(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_dscp_mark(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_dscp_mark", value); 
 	return 0;
 }
 
-int set_igmp_dscp_mark(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_dscp_mark(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -37,7 +37,7 @@ int set_igmp_dscp_mark(char *refparam, struct dmctx *ctx, int action, char *valu
 	return 0;
 }
 
-int get_igmp_proxy_interface(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_proxy_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *p;
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_proxy_interfaces", value);
@@ -49,7 +49,7 @@ int get_igmp_proxy_interface(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_igmp_proxy_interface(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_proxy_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int i;
 	char *p;
@@ -73,13 +73,13 @@ int set_igmp_proxy_interface(char *refparam, struct dmctx *ctx, int action, char
 	return 0;
 }
 
-int get_igmp_default_version(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_default_version(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_default_version", value);
 	return 0;
 } 
 
-int set_igmp_default_version(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_default_version(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -91,13 +91,13 @@ int set_igmp_default_version(char *refparam, struct dmctx *ctx, int action, char
 	return 0;
 }
 
-int get_igmp_query_interval(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_query_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_query_interval", value); 
 	return 0;
 } 
 
-int set_igmp_query_interval(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_query_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -109,13 +109,13 @@ int set_igmp_query_interval(char *refparam, struct dmctx *ctx, int action, char 
 	return 0;
 }
 
-int get_igmp_query_response_interval(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_query_response_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_query_response_interval", value);
 	return 0;
 } 
 
-int set_igmp_query_response_interval(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_query_response_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -127,13 +127,13 @@ int set_igmp_query_response_interval(char *refparam, struct dmctx *ctx, int acti
 	return 0;
 }
 
-int get_igmp_last_member_queryinterval(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_last_member_queryinterval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_last_member_query_interval", value);
 	return 0;
 } 
 
-int set_igmp_last_member_queryinterval(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_last_member_queryinterval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -145,13 +145,13 @@ int set_igmp_last_member_queryinterval(char *refparam, struct dmctx *ctx, int ac
 	return 0;
 }
 
-int get_igmp_robustness_value(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_robustness_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_robustness_value", value);
 	return 0;
 } 
 
-int set_igmp_robustness_value(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_robustness_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -163,7 +163,7 @@ int set_igmp_robustness_value(char *refparam, struct dmctx *ctx, int action, cha
 	return 0;
 }
 
-int get_igmp_multicast_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_multicast_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_lan_to_lan_multicast", value);
 	if ((*value)[0] == '\0') {
@@ -172,7 +172,7 @@ int get_igmp_multicast_enable(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_igmp_multicast_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_multicast_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	
@@ -192,7 +192,7 @@ int set_igmp_multicast_enable(char *refparam, struct dmctx *ctx, int action, cha
 	return 0;
 }
 
-int get_igmp_fastleave_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_fastleave_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_fast_leave", value);
 	if ((*value)[0] == '\0') {
@@ -201,7 +201,7 @@ int get_igmp_fastleave_enable(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_igmp_fastleave_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_fastleave_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -221,7 +221,7 @@ int set_igmp_fastleave_enable(char *refparam, struct dmctx *ctx, int action, cha
 	return 0;
 }
 
-int get_igmp_joinimmediate_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_joinimmediate_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_join_immediate", value);
 	if ((*value)[0] == '\0') {
@@ -230,7 +230,7 @@ int get_igmp_joinimmediate_enable(char *refparam, struct dmctx *ctx, char **valu
 	return 0;
 }
 
-int set_igmp_joinimmediate_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_joinimmediate_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	
@@ -250,7 +250,7 @@ int set_igmp_joinimmediate_enable(char *refparam, struct dmctx *ctx, int action,
 	return 0;
 }
 
-int get_igmp_proxy_enable(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_proxy_enable", value);
 	if ((*value)[0] == '\0') {
@@ -259,7 +259,7 @@ int get_igmp_proxy_enable(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_igmp_proxy_enable(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 
@@ -279,13 +279,13 @@ int set_igmp_proxy_enable(char *refparam, struct dmctx *ctx, int action, char *v
 	return 0;
 }
 
-int get_igmp_maxgroup(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_maxgroup(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_max_groups", value); 
 	return 0;
 } 
 
-int set_igmp_maxgroup(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_maxgroup(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -297,13 +297,13 @@ int set_igmp_maxgroup(char *refparam, struct dmctx *ctx, int action, char *value
 	return 0;
 }
 
-int get_igmp_maxsources(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_maxsources(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_max_sources", value);
 	return 0;
 } 
 
-int set_igmp_maxsources(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_maxsources(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -315,13 +315,13 @@ int set_igmp_maxsources(char *refparam, struct dmctx *ctx, int action, char *val
 	return 0;
 }
 
-int get_igmp_maxmembers(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_maxmembers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_max_members", value);
 	return 0;
 }
 
-int set_igmp_maxmembers(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_maxmembers(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -333,13 +333,13 @@ int set_igmp_maxmembers(char *refparam, struct dmctx *ctx, int action, char *val
 	return 0;
 }
 
-int get_igmp_snooping_mode(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_snooping_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("mcpd", "mcpd", "igmp_snooping_enable", value);
 	return 0;
 }
 
-int set_igmp_snooping_mode(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_snooping_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -351,7 +351,7 @@ int set_igmp_snooping_mode(char *refparam, struct dmctx *ctx, int action, char *
 	return 0;
 }
 
-int get_igmp_snooping_interface(char *refparam, struct dmctx *ctx, char **value)
+int get_igmp_snooping_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *p;
 
@@ -365,7 +365,7 @@ int get_igmp_snooping_interface(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
-int set_igmp_snooping_interface(char *refparam, struct dmctx *ctx, int action, char *value)
+int set_igmp_snooping_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int i;
 	char *p;
@@ -389,27 +389,22 @@ int set_igmp_snooping_interface(char *refparam, struct dmctx *ctx, int action, c
 	return 0;
 }
 
-int entry_method_root_X_INTENO_SE_IGMP(struct dmctx *ctx)
-{
-	IF_MATCH(ctx, DMROOT"X_INTENO_SE_IGMP.") {
-		DMOBJECT(DMROOT"X_INTENO_SE_IGMP.", ctx, "0", 1, NULL, NULL, NULL);
-		DMPARAM("DifferentiateService", ctx, "1", get_igmp_dscp_mark, set_igmp_dscp_mark, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ProxyInterface", ctx, "1", get_igmp_proxy_interface, set_igmp_proxy_interface, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("DefaultVersion", ctx, "1", get_igmp_default_version, set_igmp_default_version, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("QueryInterval", ctx, "1", get_igmp_query_interval, set_igmp_query_interval, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("QueryResponseInterval", ctx, "1", get_igmp_query_response_interval, set_igmp_query_response_interval, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("LastMemberQueryInterval", ctx, "1", get_igmp_last_member_queryinterval, set_igmp_last_member_queryinterval, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("RobustnessValue", ctx, "1", get_igmp_robustness_value, set_igmp_robustness_value, "xsd:int", 0, 1, UNDEF, NULL);
-		DMPARAM("LanToLanMulticastEnable", ctx, "1", get_igmp_multicast_enable, set_igmp_multicast_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("MaxGroup", ctx, "1", get_igmp_maxgroup, set_igmp_maxgroup, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("MaxSources", ctx, "1", get_igmp_maxsources, set_igmp_maxsources, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("MaxMembers", ctx, "1", get_igmp_maxmembers, set_igmp_maxmembers, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		DMPARAM("FastLeaveEnable", ctx, "1", get_igmp_fastleave_enable, set_igmp_fastleave_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("JoinImmediateEnable", ctx, "1", get_igmp_joinimmediate_enable, set_igmp_joinimmediate_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("ProxyEnable", ctx, "1", get_igmp_proxy_enable, set_igmp_proxy_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
-		DMPARAM("SnoopingMode", ctx, "1", get_igmp_snooping_mode, set_igmp_snooping_mode, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SnoopingInterfaces", ctx, "1", get_igmp_snooping_interface, set_igmp_snooping_interface, NULL, 0, 1, UNDEF, NULL);
-		return 0;
-	}
-	return FAULT_9005;
-}
+DMLEAF tSe_IgmpParam[] = {
+{"DifferentiateService", &DMWRITE, DMT_STRING, get_igmp_dscp_mark, set_igmp_dscp_mark, NULL, NULL},
+{"ProxyInterface", &DMWRITE, DMT_STRING, get_igmp_proxy_interface, set_igmp_proxy_interface, NULL, NULL},
+{"DefaultVersion", &DMWRITE, DMT_STRING, get_igmp_default_version, set_igmp_default_version, NULL, NULL},
+{"QueryInterval", &DMWRITE, DMT_UNINT, get_igmp_query_interval, set_igmp_query_interval, NULL, NULL},
+{"QueryResponseInterval", &DMWRITE, DMT_UNINT, get_igmp_query_response_interval, set_igmp_query_response_interval, NULL, NULL},
+{"LastMemberQueryInterval", &DMWRITE, DMT_UNINT, get_igmp_last_member_queryinterval, set_igmp_last_member_queryinterval, NULL, NULL},
+{"RobustnessValue", &DMWRITE, DMT_INT, get_igmp_robustness_value, set_igmp_robustness_value, NULL, NULL},
+{"LanToLanMulticastEnable", &DMWRITE, DMT_BOOL, get_igmp_multicast_enable, set_igmp_multicast_enable, NULL, NULL},
+{"MaxGroup", &DMWRITE, DMT_UNINT, get_igmp_maxgroup, set_igmp_maxgroup, NULL, NULL},
+{"MaxSources", &DMWRITE, DMT_UNINT, get_igmp_maxsources, set_igmp_maxsources, NULL, NULL},
+{"MaxMembers", &DMWRITE, DMT_UNINT, get_igmp_maxmembers, set_igmp_maxmembers, NULL, NULL},
+{"FastLeaveEnable", &DMWRITE, DMT_BOOL, get_igmp_fastleave_enable, set_igmp_fastleave_enable, NULL, NULL},
+{"JoinImmediateEnable", &DMWRITE, DMT_BOOL, get_igmp_joinimmediate_enable, set_igmp_joinimmediate_enable, NULL, NULL},
+{"ProxyEnable", &DMWRITE, DMT_BOOL, get_igmp_proxy_enable, set_igmp_proxy_enable, NULL, NULL},
+{"SnoopingMode", &DMWRITE, DMT_STRING, get_igmp_snooping_mode, set_igmp_snooping_mode, NULL, NULL},
+{"SnoopingInterfaces", &DMWRITE, DMT_STRING, get_igmp_snooping_interface, set_igmp_snooping_interface, NULL, NULL},
+{0}
+};

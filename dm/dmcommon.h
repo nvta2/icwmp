@@ -18,6 +18,8 @@
 #include "dmcwmp.h"
 #define NVRAM_FILE "/proc/nvram/WpaKey"
 #define MAX_DHCP_LEASES 256
+#define MAX_PROC_ROUTING 256
+#define ROUTING_FILE "/proc/net/route"
 #define ARP_FILE "/proc/net/arp"
 #define DMMAP "dmmap"
 #define DHCPSTATICADDRESS_DISABLED_CHADDR "00:00:00:00:00:01"
@@ -54,6 +56,54 @@ do { \
 	if (mpp) close (mpp); \
 } while (0)
 
+#define IPPING_STOP DMCMD("/bin/sh", 2, FUNCTION_PATH, "stop");
+#define FUNCTION_PATH "/usr/share/icwmp/functions/ipping_launch"
+#define DOWNLOAD_DIAGNOSTIC_PATH "/usr/share/icwmp/functions/download_launch"
+#define DOWNLOAD_DUMP_FILE "/tmp/download_dump"
+#define DOWNLOAD_DIAGNOSTIC_STOP DMCMD("/bin/sh", 2, DOWNLOAD_DIAGNOSTIC_PATH, "stop");
+#define UPLOAD_DIAGNOSTIC_PATH "/usr/share/icwmp/functions/upload_launch"
+#define UPLOAD_DUMP_FILE "/tmp/upload_dump"
+#define UPLOAD_DIAGNOSTIC_STOP DMCMD("/bin/sh", 2, UPLOAD_DIAGNOSTIC_PATH, "stop");
+
+enum notification_enum {
+	notification_none,
+	notification_passive,
+	notification_active,
+	notification_passive_lw,
+	notification_ppassive_passive_lw,
+	notification_aactive_lw,
+	notification_passive_active_lw,
+	__MAX_notification
+};
+
+enum strstructered_enum {
+	STRUCTERED_SAME,
+	STRUCTERED_PART,
+	STRUCTERED_NULL
+};
+
+struct proc_routing {
+	char *iface;
+	char *flags;
+	char *refcnt;
+	char *use;
+	char *metric;
+	char *mtu;
+	char *window;
+	char *irtt;
+	char destination[16];
+	char gateway[16];
+	char mask[16];
+};
+
+struct routingfwdargs
+{
+	char *permission;
+	struct uci_section *routefwdsection;
+	struct proc_routing *proute;
+	int type;
+};
+
 void compress_spaces(char *str);
 char *cut_fx(char *str, char *delimiter, int occurence);
 pid_t get_pid(char *pname);
@@ -88,5 +138,8 @@ int max_array(int a[], int size);
 int check_ifname_is_vlan(char *ifname);
 int set_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char *option, char *value);
 int update_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char *option, char * new_option, char *value);
-
+void parse_proc_route_line(char *line, struct proc_routing *proute);
+int strstructered(char *str1, char *str2);
+int dmcommon_check_notification_value(char *value);
+void hex_to_ip(char *address, char *ret);
 #endif

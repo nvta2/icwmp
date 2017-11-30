@@ -20,12 +20,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include "cwmp.h"
 #include "backupSession.h"
 #include "xml.h"
 #include "log.h"
 #include "dmentry.h"
 #include "deviceinfo.h"
+#include "config.h"
 
 typedef enum uci_config_action {
     CMD_SET,
@@ -34,16 +36,47 @@ typedef enum uci_config_action {
     CMD_DEL,
 } uci_config_action;
 
-void show_help()
+struct option long_options[] = {
+	{"boot-event", no_argument, NULL, 'b'},
+	{"get-rpc-methods", no_argument, NULL, 'g'},
+	{"command-input", no_argument, NULL, 'c'},
+	{"shell-cli", required_argument, NULL, 'm'},
+	{"alias-based-addressing", no_argument, NULL, 'a'},
+	{"instance-mode-number", no_argument, NULL, 'N'},
+	{"instance-mode-alias", no_argument, NULL, 'A'},
+	{"upnp", no_argument, NULL, 'U'},
+	{"user-acl", required_argument, NULL, 'u'},
+	{"amendment", required_argument, NULL, 'M'},
+	{"time-tracking", no_argument, NULL, 't'},
+	{"evaluating-test", no_argument, NULL, 'E'},
+	{"file", required_argument, NULL, 'f'},
+	{"wep", required_argument, NULL, 'w'},
+	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'v'},
+	{NULL, 0, NULL, 0}
+};
+
+static void show_help(void)
 {
-    fprintf(stdout, "\nUsage: icwmpd [option]\n");
-    fprintf(stdout, "-b:    this option should be added only in the load phase\n");
-    fprintf(stdout, "-m:    execute data model commands\n");
-    fprintf(stdout, "-w:    generate wep keys\n");
-    fprintf(stdout, "-g:    send GetRPCMethods to ACS\n");
-    fprintf(stdout, "-v:    show the application version\n");
-    fprintf(stdout, "-h:    show this help\n\n");
+	printf("Usage: icwmpd [OPTIONS]\n");
+	printf(" -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event\n");
+	printf(" -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS\n");
+	printf(" -c, --command-input                                 (DataModel CLI) Execute data model rpc(s) with commands input\n");
+	printf(" -m, --shell-cli <data model rpc>                    (DataModel CLI) Execute data model RPC command directly from shell.\n");
+	printf(" -a, --alias-based-addressing                        (DataModel CLI) Alias based addressing supported\n");
+	printf(" -N, --instance-mode-number                          (DataModel CLI) Instance mode is Number (Enabled by default)\n");
+	printf(" -A, --instance-mode-alias                           (DataModel CLI) Instance mode is Alias\n");
+	printf(" -M, --amendment <amendment version>                 (DataModel CLI) Amendment version (Default amendment version is 2)\n");
+	printf(" -U, --upnp                                          (DataModel CLI) Use UPNP data model paths\n");
+	printf(" -u, --user-acl <public|basic|xxxadmin|superadmin>   (DataModel CLI) user access level. Default: superadmin\n");
+	printf(" -t, --time-tracking                                 (DataModel CLI) Tracking time of RPC commands\n");
+	printf(" -E, --evaluating-test                               (DataModel CLI) Evaluating test format\n");
+	printf(" -f, --file <file path>                              (DataModel CLI) Execute data model rpc(s) from file\n");
+	printf(" -w, --wep <strength> <passphrase>                   (WEP KEY GEN) Generate wep keys\n");
+	printf(" -h, --help                                          Display this help text\n");
+	printf(" -v, --version                                       Display the version\n");
 }
+
 void show_version()
 {
 #ifndef CWMP_REVISION
@@ -385,84 +418,6 @@ static void uppercase ( char *sPtr )
 	}
 }
 
-int get_amd_version_config()
-{
-	 int error;
-	 int a = 0;
-	 char *value = NULL;
-	 struct cwmp   *cwmp = &cwmp_main;
-	 if((error = uci_get_value(UCI_CPE_AMD_VERSION ,&value)) == CWMP_OK)
-	 {
-		 cwmp->conf.amd_version = DEFAULT_AMD_VERSION;
-		 if(value != NULL)
-		 {
-			 a = atoi(value) ;
-			 if ( a >= 1 ) {
-				 cwmp->conf.amd_version = a;
-			 }
-			 free(value);
-			 value = NULL;
-		 }
-		 cwmp->conf.supported_amd_version = cwmp->conf.amd_version;
-	 }
-	 else
-	 {
-		 return error;
-	 }
-	 return CWMP_OK;
-}
-
-int get_session_timeout_config()
-{
-	 int error;
-	 int a = 0;
-	 char *value = NULL;
-	 struct cwmp   *cwmp = &cwmp_main;
-	 if((error = uci_get_value(UCI_CPE_SESSION_TIMEOUT ,&value)) == CWMP_OK)
-	 {
-		 cwmp->conf.session_timeout = DEFAULT_SESSION_TIMEOUT;
-		 if(value != NULL)
-		 {
-			 a = atoi(value) ;
-			 if ( a >= 1 ) {
-				 cwmp->conf.session_timeout = a;
-			 }
-			 free(value);
-			 value = NULL;
-		 }
-	 }
-	 else
-	 {
-		 return error;
-	 }
-	 return CWMP_OK;
-}
-
-int get_instance_mode_config()
-{
-	 int error;
-	 char *value = NULL;
-	 struct cwmp   *cwmp = &cwmp_main;
-	 if((error = uci_get_value(UCI_CPE_INSTANCE_MODE ,&value)) == CWMP_OK)
-	    {
-		 cwmp->conf.instance_mode = DEFAULT_INSTANCE_MODE;
-	        if(value != NULL)
-	        {
-	            if ( 0 == strcmp(value, "InstanceNumber") ) {
-	            	cwmp->conf.instance_mode = INSTANCE_MODE_NUMBER;
-	            } else {
-	            	cwmp->conf.instance_mode = INSTANCE_MODE_ALIAS;
-	            }
-	            free(value);
-	            value = NULL;
-	        }
-	    }
-	    else
-	    {
-	        return error;
-	    }
-	 return CWMP_OK;
-}
 int get_global_config(struct config *conf)
 {
     int                     error, error2, error3;
@@ -970,6 +925,84 @@ int get_global_config(struct config *conf)
 	return CWMP_OK;
 }
 
+int get_amd_version_config()
+{
+	 int error;
+	 int a = 0;
+	 char *value = NULL;
+	 struct cwmp   *cwmp = &cwmp_main;
+	 if((error = uci_get_value(UCI_CPE_AMD_VERSION ,&value)) == CWMP_OK)
+	 {
+		 cwmp->conf.amd_version = DEFAULT_AMD_VERSION;
+		 if(value != NULL)
+		 {
+			 a = atoi(value) ;
+			 if ( a >= 1 ) {
+				 cwmp->conf.amd_version = a;
+			 }
+			 free(value);
+			 value = NULL;
+		 }
+		 cwmp->conf.supported_amd_version = cwmp->conf.amd_version;
+	 }
+	 else
+	 {
+		 return error;
+	 }
+	 return CWMP_OK;
+}
+
+int get_session_timeout_config()
+{
+	 int error;
+	 int a = 0;
+	 char *value = NULL;
+	 struct cwmp   *cwmp = &cwmp_main;
+	 if((error = uci_get_value(UCI_CPE_SESSION_TIMEOUT ,&value)) == CWMP_OK)
+	 {
+		 cwmp->conf.session_timeout = DEFAULT_SESSION_TIMEOUT;
+		 if(value != NULL)
+		 {
+			 a = atoi(value) ;
+			 if ( a >= 1 ) {
+				 cwmp->conf.session_timeout = a;
+			 }
+			 free(value);
+			 value = NULL;
+		 }
+	 }
+	 else
+	 {
+		 return error;
+	 }
+	 return CWMP_OK;
+}
+
+int get_instance_mode_config()
+{
+	 int error;
+	 char *value = NULL;
+	 struct cwmp   *cwmp = &cwmp_main;
+	 if((error = uci_get_value(UCI_CPE_INSTANCE_MODE ,&value)) == CWMP_OK)
+	    {
+		 cwmp->conf.instance_mode = DEFAULT_INSTANCE_MODE;
+	        if(value != NULL)
+	        {
+	            if ( 0 == strcmp(value, "InstanceNumber") ) {
+	            	cwmp->conf.instance_mode = INSTANCE_MODE_NUMBER;
+	            } else {
+	            	cwmp->conf.instance_mode = INSTANCE_MODE_ALIAS;
+	            }
+	            free(value);
+	            value = NULL;
+	        }
+	    }
+	    else
+	    {
+	        return error;
+	    }
+	 return CWMP_OK;
+}
 int get_lwn_config(struct config *conf)
 {
     int error;
@@ -1022,42 +1055,151 @@ int get_lwn_config(struct config *conf)
 	}
     return CWMP_OK;
 }
+
 int global_env_init (int argc, char** argv, struct env *env)
 {
-    int i,error=0;
+	unsigned char command_input = 0;
+	unsigned char from_shell = 0;
+	unsigned int dmaliassupport = 0;
+	unsigned int dminstancemode =INSTANCE_MODE_NUMBER;
+	unsigned int dmamendment = AMD_2;
+	unsigned int dmtype = DM_CWMP;
+	struct dmctx dmctx = {0};
 
-    for (i=1;i<argc;i++)
-    {
-        if (argv[i][0]!='-')
-            continue;
-        switch (argv[i][1])
-        {
-            case 'b':
-                env->boot = CWMP_START_BOOT;
-                break;
-            case 'g':
-                env->periodic = CWMP_START_PERIODIC;
-                break;
-            case 'm':
-            	dm_entry_cli(argc, argv);
-            	exit(EXIT_SUCCESS);
-            	break;
-            case 'w':
-            	wepkey_cli(argc, argv);
-            	exit(EXIT_SUCCESS);
-            	break;
-            case 'v':
-                show_version();
-                exit(EXIT_SUCCESS);
-                break;
-            case 'h':
-                show_help();
-                exit(EXIT_SUCCESS);
-                break;
-        }
-    }
+	char *file = NULL;
+	char *upnpuser;
+	char *next;
+	char *m_argv[64];
+	int m_argc;
+	int c, option_index = 0, iv, idx;
 
-    return CWMP_OK;
+	while ((c = getopt_long(argc, argv, "bgcaNAUtEhvm:u:M:f:w:", long_options, &option_index)) != -1) {
+
+		switch (c)
+		{
+		case 'b':
+			env->boot = CWMP_START_BOOT;
+			break;
+
+		case 'g':
+			env->periodic = CWMP_START_PERIODIC;
+			break;
+
+		case 'c':
+			command_input = 1;
+			break;
+
+		case 'a':
+			dmaliassupport = 1;
+			break;
+
+		case 'A':
+			dminstancemode = INSTANCE_MODE_ALIAS;
+			break;
+
+		case 'M':
+			iv = atoi(optarg);
+			if (iv > 0)
+				dmamendment = (unsigned int)(iv & 0xFF);
+			break;
+
+		case 'm':
+			from_shell = 1;
+			idx = optind - 1;
+			m_argc = 2;
+			while(idx < argc) {
+				next = argv[idx];
+				idx++;
+				if(next[0] != '-') {
+					m_argv[m_argc++] = next;
+				}
+				else
+					break;
+				if (m_argc > 63) {
+					printf("Too many arguments!\n");
+					exit(1);
+				}
+			}
+			optind = idx - 1;
+			break;
+
+		case 'U':
+			dmtype = DM_UPNP;
+			break;
+
+		case 'u':
+			upnpuser = optarg;
+			if (strcmp(upnpuser, "public") == 0) {
+				upnp_in_user_mask = DM_PUBLIC_MASK;
+			}
+			else if (strcmp(upnpuser, "basic") == 0) {
+				upnp_in_user_mask = DM_BASIC_MASK;
+			}
+			else if (strcmp(upnpuser, "xxxadmin") == 0) {
+				upnp_in_user_mask = DM_XXXADMIN_MASK;
+			}
+			else if (strcmp(upnpuser, "superadmin") == 0) {
+				upnp_in_user_mask = DM_SUPERADMIN_MASK;
+			}
+			break;
+
+		case 'w':
+			m_argc = 2;
+			idx = optind - 1;
+			while(idx < argc) {
+				next = argv[idx];
+				idx++;
+				if(next[0] != '-') {
+					m_argv[m_argc++] = next;
+				}
+				else
+					break;
+				if (m_argc > 2) {
+					printf("Too many arguments!\n");
+					exit(1);
+				}
+			}
+			optind = idx - 1;
+			wepkey_cli(m_argc, m_argv);
+			exit(0);
+			break;
+
+		case 't':
+			dmcli_timetrack = 1;
+			break;
+
+		case 'E':
+			dmcli_timetrack = 1;
+			dmcli_evaluatetest = 1;
+			break;
+
+		case 'f':
+			file = optarg;
+			break;
+
+		case 'h':
+			show_help();
+			exit(0);
+
+		case 'v':
+			show_version();
+			exit(0);
+		}
+	}
+
+	if (from_shell) {
+		if (!dmaliassupport)
+			dminstancemode =INSTANCE_MODE_NUMBER;
+		dm_execute_cli_shell(m_argc, (char**)m_argv, dmtype, dmamendment, dminstancemode);
+		exit (0);
+	}
+	else if (command_input) {
+		if (!dmaliassupport)
+			dminstancemode =INSTANCE_MODE_NUMBER;
+		dm_execute_cli_command(file, dmtype, dmamendment, dminstancemode);
+		exit (0);
+	}
+	return CWMP_OK;
 }
 
 int global_conf_init (struct config *conf)
@@ -1088,13 +1230,13 @@ int save_acs_bkp_config(struct cwmp *cwmp)
 
 int cwmp_get_deviceid(struct cwmp *cwmp) {
 	struct dmctx dmctx = {0};
-	dm_ctx_init(&dmctx);
+	cwmp_dm_ctx_init(cwmp, &dmctx);
 	cwmp->deviceid.manufacturer = strdup(get_deviceid_manufacturer()); //TODO free
 	cwmp->deviceid.serialnumber = strdup(get_deviceid_serialnumber());
 	cwmp->deviceid.productclass = strdup(get_deviceid_productclass());
 	cwmp->deviceid.oui = strdup(get_deviceid_manufactureroui());
 	cwmp->deviceid.softwareversion = strdup(get_softwareversion());
-	dm_ctx_clean(&dmctx);
+	cwmp_dm_ctx_clean(cwmp, &dmctx);
 	return CWMP_OK;
 }
 
@@ -1112,7 +1254,7 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
     {
 		char *enable;
 		asprintf(&instance, "%d", conf->xmpp_connection_id);
-		dm_ctx_init(&dmctx);
+		cwmp_dm_ctx_init(cwmp, &dmctx);
 		char *tmp;
 		asprintf(&tmp, "%s", get_xmpp_server_enable(instance));
 		//tmp = ;
@@ -1140,7 +1282,7 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 			cwmp->xmpp_param.retry_max_interval = atoi((const char *)get_xmpp_connect_retry_max_interval(instance));
 			cwmp->xmpp_param.retry_max_interval = (cwmp->xmpp_param.retry_max_interval) ? cwmp->xmpp_param.retry_max_interval : DEFAULT_RETRY_MAX_INTERVAL;
 		}
-		dm_ctx_clean(&dmctx);
+		cwmp_dm_ctx_clean(cwmp, &dmctx);
 		check_xmpp_config(cwmp);
 	}
     else
@@ -1188,13 +1330,12 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
     {
         return error;
     }
-	dm_global_init();
     cwmp_get_deviceid(cwmp);
 #ifdef XMPP_ENABLE
 	if (conf->xmpp_enable && conf->xmpp_connection_id > 0)
 		cwmp_get_xmpp_param(cwmp);
 #endif
-    dm_entry_load_enabled_notify();
+    dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }
 
@@ -1213,6 +1354,6 @@ int cwmp_config_reload(struct cwmp *cwmp)
 	if (conf->xmpp_enable && conf->xmpp_connection_id != 0)
 		cwmp_get_xmpp_param(cwmp);
 #endif
-    dm_entry_load_enabled_notify();
+    dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }

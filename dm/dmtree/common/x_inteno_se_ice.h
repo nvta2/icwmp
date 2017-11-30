@@ -1,6 +1,12 @@
 #ifndef __SE_ICE_H
 #define __SE_ICE_H
 
-int entry_method_root_X_INTENO_SE_Ice(struct dmctx *ctx);
+extern DMLEAF tSe_IceParam[];
+
+int get_ice_cloud_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ice_cloud_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_ice_cloud_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ice_cloud_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif

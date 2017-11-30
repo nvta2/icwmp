@@ -1,35 +1,37 @@
 #ifndef __ROUTING_H
 #define __ROUTING_H
 
-#define ROUTING_FILE "/proc/net/route"
-#define MAX_PROC_ROUTING 256
 
-struct proc_routing {
-	char *iface;
-	char *flags;
-	char *refcnt;
-	char *use;
-	char *metric;
-	char *mtu;
-	char *window;
-	char *irtt;
-	char destination[16];
-	char gateway[16];
-	char mask[16];
-};
+extern struct dm_permession_s DMRouting;
 
-struct routingfwdargs
-{
-	char *permission;
-	struct uci_section *routefwdsection;
-	struct proc_routing *proute;
-	int type;
-};
+extern DMLEAF tRouterInstParam[];
+extern DMLEAF tIPv4ForwardingParam[];
+extern DMOBJ tRoutingObj[];
+extern DMLEAF tRoutingParam[];
+extern DMOBJ tRouterObj[];
 
-struct router_args
-{
-	struct uci_section *router_section;
-};
+int browseRouterInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseIPv4ForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
-int entry_method_root_routing(struct dmctx *ctx);
+int get_router_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_src_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_src_mask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_router_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
+int set_router_ipv4forwarding_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_router_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif

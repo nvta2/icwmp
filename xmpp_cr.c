@@ -17,7 +17,9 @@
 #include "http.h"
 #include "xmpp_cr.h"
 #include <unistd.h>
-
+#ifdef XMPP_ENABLE
+#include "/home/piva/projects/inteno-tr064/iop-cc/staging_dir/target-mips_mips32_uClibc-0.9.33.2/usr/include/strophe.h"
+#endif
 
 int ping_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {

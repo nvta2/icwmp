@@ -21,6 +21,7 @@
 #include "log.h"
 #include "wepkey.h"
 #include "dmentry.h"
+#include "netlink.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
@@ -31,8 +32,6 @@ static const char *arr_session_status[] = {
     [SESSION_FAILURE] = "failure",
     [SESSION_SUCCESS] = "success",
 };
-
-static const struct blobmsg_policy notify_policy[] = {};
 
 static int
 cwmp_handle_notify(struct ubus_context *ctx, struct ubus_object *obj,
@@ -102,7 +101,6 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		}
 		else {
 			pthread_mutex_lock (&(cwmp_main.mutex_session_queue));
-			dm_global_init();
 			cwmp_apply_acs_changes();
 			pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 			blobmsg_add_u32(&b, "status", 0);
@@ -182,9 +180,6 @@ static inline time_t get_session_status_next_time() {
     }
     return ntime;
 }
-
-static const struct blobmsg_policy status_policy[] = {
-};
 
 static int
 cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj,
@@ -304,9 +299,9 @@ cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 static const struct ubus_method freecwmp_methods[] = {
-	UBUS_METHOD("notify", cwmp_handle_notify, notify_policy),
+	UBUS_METHOD_NOARG("notify", cwmp_handle_notify),
 	UBUS_METHOD("command", cwmp_handle_command, command_policy),
-	UBUS_METHOD("status", cwmp_handle_status, status_policy),
+	UBUS_METHOD_NOARG("status", cwmp_handle_status),
 	UBUS_METHOD("inform", cwmp_handle_inform, inform_policy),
 };
 
@@ -330,8 +325,8 @@ ubus_init(struct cwmp *cwmp)
 	}
 
 	if (cwmp->conf.ipv6_enable) {
-		if (netlink_init_v6()) {
-			CWMP_LOG(ERROR,"netlink initialization failed");
+	if (netlink_init_v6()) {
+		CWMP_LOG(ERROR,"netlink initialization failed");
 		}
 	}
 	ctx = ubus_connect(cwmp->conf.ubus_socket);
