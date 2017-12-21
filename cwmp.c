@@ -28,7 +28,7 @@
 #include "xmpp_cr.h"
 #include "config.h"
 #ifdef XMPP_ENABLE
-#include "/home/piva/projects/inteno-tr064/iop-cc/staging_dir/target-mips_mips32_uClibc-0.9.33.2/usr/include/strophe.h"
+#include <strophe.h>
 #endif
 #include <unistd.h>
  
