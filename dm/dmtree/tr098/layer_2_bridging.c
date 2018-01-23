@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2012-2015 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 #include <libubox/blobmsg_json.h>

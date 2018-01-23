@@ -8,6 +8,7 @@
  *	  Author MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 #ifndef __DMCWMP_H__

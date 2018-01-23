@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 #ifndef __HOSTS_H
 #define __HOSTS_H

@@ -4,7 +4,7 @@
  *	  Author MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
- *
+ *    Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <uci.h>
@@ -51,6 +51,7 @@
 #include "x_inteno_se_dropbear.h"
 #include "x_inteno_se_buttons.h"
 #include "deviceconfig.h"
+#include "userinterface.h"
 
 static char *get_parameter_notification (struct dmctx *ctx, char *param);
 static int remove_parameter_notification(char *param);
@@ -152,6 +153,7 @@ struct prefix_method prefix_methods[] = {
 	{ DMROOT"PPP.", 1, NULL, 0, &entry_method_root_ppp },
 	{ DMROOT"Routing.", 1, NULL, 0, &entry_method_root_routing },
 	{ DMROOT"NAT.", 1, NULL, 0, &entry_method_root_nat },
+	{ DMROOT"USerInterface.", 1, NULL, 0, &entry_method_root_userinterface },
 #endif
 };
 

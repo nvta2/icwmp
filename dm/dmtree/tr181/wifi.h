@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 #ifndef __WIFI_H
 #define __WIFI_H
@@ -21,6 +21,15 @@ struct wifi_ssid_args
 	struct uci_section *wifi_ssid_sec;
 	char *ifname;
 	char *linker;
+};
+
+struct wifi_associative_device_args
+{
+	int active;
+	int lastdatadownloadlinkrate;
+	int lastdatauplinkrate;
+	int signalstrength;
+	char *macaddress;
 };
 int entry_method_root_Wifi(struct dmctx *ctx);
 

@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 #ifndef __ETHERNET_H
 #define __ETHERNET_H

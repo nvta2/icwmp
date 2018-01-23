@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -34,7 +35,12 @@ inline int init_eth_port(struct dmctx *ctx, struct uci_section *s, char *ifname)
 ///////////////////SET & GET ALIAS////////////////////////////////////
 int get_eth_port_alias(char *refparam, struct dmctx *ctx, char **value)
 {
+	char *eth_instance;
 	dmuci_get_value_by_section_string(cur_eth_port_args.eth_port_sec, "eth_port_alias", value);
+	if(*value == NULL || strlen(*value)<1) {
+		dmuci_get_value_by_section_string(cur_eth_port_args.eth_port_sec, "eth_port_instance", &eth_instance);
+		dmasprintf(value, "cpe-%s", eth_instance);
+	}
 	return 0;
 }
 

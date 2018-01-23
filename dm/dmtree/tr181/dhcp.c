@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <uci.h>
@@ -24,6 +24,7 @@
 struct dhcp_args cur_dhcp_args = {0};
 struct client_args cur_dhcp_client_args = {0};
 struct dhcp_static_args cur_dhcp_staticargs = {0};
+struct dhcp_client_ipv4address_args cur_dhcp_client_ipv4address_args = {0};
 
 /*************************************************************
  * INIT
@@ -225,6 +226,16 @@ int set_dhcp_configurable(char *refparam, struct dmctx *ctx, int action, char *v
 	return 0;
 }
 
+int get_dhcp_status(char *refparam, struct dmctx *ctx, char **value){
+	struct uci_section *s = NULL;
+	char v[3];
+	uci_foreach_option_eq("dhcp", "dhcp", "interface", cur_dhcp_args.interface, s) {
+		dmuci_get_value_by_section_string(s, "ignore", v);
+		*value = (v[0] == '1') ? "Disabled" : "Enabled";
+	}
+	return 0;
+}
+
 int get_dhcp_enable(char *refparam, struct dmctx *ctx, char **value)
 {
 	struct uci_section *s = NULL;
@@ -325,6 +336,7 @@ int get_dhcp_interval_address(struct dmctx *ctx, char **value, int option)
 	}
 	return 0;
 }
+
 int get_dhcp_interval_address_min(char *refparam, struct dmctx *ctx, char **value)
 {
 	get_dhcp_interval_address(ctx, value, LANIP_INTERVAL_START);
@@ -818,6 +830,28 @@ int set_dhcp_staticaddress_yiaddr(char *refparam, struct dmctx *ctx, int action,
 	return 0;
 }
 
+int get_dhcp_client_ipv4address_leasetime(char *refparam, struct dmctx *ctx, char **value){
+	char time_buf[26] = {0};
+	struct tm *t_tm;
+	struct dhcp_client_ipv4address_args current_dhcp_client_ipv4address_args = *((struct dhcp_client_ipv4address_args*)ctx->args);
+
+	*value = "0001-01-01T00:00:00Z";
+	time_t t_time = current_dhcp_client_ipv4address_args.leasetime;
+	t_tm = localtime(&t_time);
+	if (t_tm == NULL)
+		return 0;
+	if(strftime(time_buf, sizeof(time_buf), "%FT%T%z", t_tm) == 0)
+		return 0;
+
+	time_buf[25] = time_buf[24];
+	time_buf[24] = time_buf[23];
+	time_buf[22] = ':';
+	time_buf[26] = '\0';
+
+	*value = dmstrdup(time_buf);
+	return 0;
+}
+
 int get_dhcp_client_chaddr(char *refparam, struct dmctx *ctx, char **value)
 {
 	*value = dmjson_get_value(cur_dhcp_client_args.client, 1, "macaddr");
@@ -827,6 +861,36 @@ int get_dhcp_client_chaddr(char *refparam, struct dmctx *ctx, char **value)
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+int entry_dhcp_client_ipv4address(struct dmctx *ctx, char* num1,char* num2){
+	unsigned int leasetime;
+	char *macaddr;
+	char mac[32], ip[32], buf[512];
+	json_object *passed_args;
+	FILE *fp;
+	struct dhcp_client_ipv4address_args current_dhcp_client_ipv4address_args = {0};
+	int id = 0;
+	char *idx = NULL, *idx_last = NULL;
+
+	fp = fopen("/tmp/dhcp.leases", "r");
+	if (fp == NULL)
+		return 0;
+	while (fgets (buf , 256 , fp) != NULL) {
+		sscanf(buf, "%u %s %s", &leasetime, mac, ip);
+		struct client_args current_client_args = {0};
+		passed_args= ((struct client_args*)(ctx->args))->client;
+		macaddr=dmjson_get_value(passed_args, 1, "macaddr");
+		if(!strcmp(mac, macaddr)){
+			current_dhcp_client_ipv4address_args.ip= dmjson_get_value(passed_args, 1, "ipddr");
+			current_dhcp_client_ipv4address_args.mac= strdup(macaddr);
+			current_dhcp_client_ipv4address_args.leasetime= leasetime;
+			ctx->args=(void*)&current_dhcp_client_ipv4address_args;
+			idx = handle_update_instance(2, ctx, &idx_last, update_instance_without_section, 1, ++id);
+			SUBENTRY(entry_dhcp_client_ipv4address_instance, ctx, num1, num2, idx);
+		}
+
+	}
+}
+
 int entry_method_root_dhcp(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"DHCPv4.") {
@@ -857,6 +921,7 @@ inline int entry_dhcp_instance(struct dmctx *ctx, char *interface, char *int_num
 {
 	IF_MATCH(ctx, DMROOT"DHCPv4.Server.Pool.%s.", int_num) {
 		DMOBJECT(DMROOT"DHCPv4.Server.Pool.%s.", ctx, "0", NULL, NULL, delete_dhcp_server, NULL, int_num);
+		DMPARAM("Status", ctx, "0", get_dhcp_status, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("DNSServers", ctx, "1", get_dns_server, set_dns_server, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("X_INTENO_SE_DHCPServerConfigurable", ctx, "1", get_dhcp_configurable, set_dhcp_configurable, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMPARAM("Enable", ctx, "1", get_dhcp_enable, set_dhcp_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
@@ -934,8 +999,17 @@ inline int entry_dhcp_client_instance(struct dmctx *ctx, char *int_num, char *id
 	IF_MATCH(ctx, DMROOT"DHCPv4.Server.Pool.%s.Client.%s.", int_num, idx) {
 		DMOBJECT(DMROOT"DHCPv4.Server.Pool.%s.Client.%s.", ctx, "1", NULL, NULL, NULL, linker, int_num, idx);
 		DMPARAM("Chaddr", ctx, "0", get_dhcp_client_chaddr, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMOBJECT(DMROOT"DHCPv4.Server.Pool.%s.Client.%s.IPv4Address.", ctx, "0", 1, NULL, NULL, NULL, int_num, idx);
+		SUBENTRY(entry_dhcp_client_ipv4address, ctx, int_num, idx);
 		return 0;
 	}
 	return FAULT_9005;
+}
+
+inline int entry_dhcp_client_ipv4address_instance(struct dmctx *ctx, char* int_num1, char *int_num2, char *idx){
+	IF_MATCH(ctx, DMROOT"DHCPv4.Server.Pool.%s.Client.%s.IPv4Address.%s.", int_num1, int_num2, idx) {
+		DMOBJECT(DMROOT"DHCPv4.Server.Pool.%s.Client.%s.IPv4Address.%s.", ctx, "0", NULL, NULL, NULL, NULL, int_num1, int_num2, idx);
+		DMPARAM("LeaseTimeRemaining", ctx, "0", get_dhcp_client_ipv4address_leasetime, NULL, NULL, 0, 1, UNDEF, NULL);
+	}
 }
 

@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -35,6 +36,55 @@ inline int init_host_args(struct dmctx *ctx, json_object *clients, char *key)
 /*************************************************************
  * GET & SET PARAM
 /*************************************************************/
+int get_host_interface_type(char *refparam, struct dmctx *ctx, char **value){
+	char *type= NULL;
+	char *ifname = dmjson_get_value(cur_host_args.client, 1, "network");
+	struct uci_section *ss = NULL;
+
+	uci_foreach_sections("network", "interface", ss) {
+		if(!strcmp(ifname, section_name(ss))){
+			dmuci_get_value_by_section_string(ss, "type", &type);
+			if(type!=NULL){
+				if(!strcmp(type, "bridge")) *value="Bridge";else *value= "Normal";
+				break;
+			}
+		}
+	}
+}
+
+int get_host_interfacename(char *refparam, struct dmctx *ctx, char **value){
+	*value = dmjson_get_value(cur_host_args.client, 1, "network");
+	if (*value == NULL)
+		*value = "";
+	return 0;
+}
+int get_host_layer3interface(char *refparam, struct dmctx *ctx, char **value){
+	char *ip_linker=dmjson_get_value(cur_host_args.client, 1, "network");
+	adm_entry_get_linker_param(DMROOT"IP.Interface.", ip_linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	if (*value == NULL)
+		*value = "";
+	return 0;
+}
+
+int get_host_associative_device(char *refparam, struct dmctx *ctx, char **value){
+	struct uci_section *ss;
+	char *macaddr_linker=dmjson_get_value(cur_host_args.client, 1, "macaddr");
+	char *accesspointInstance= NULL, *wifiAssociativeDeviecPath;
+	uci_foreach_sections("wireless", "wifi-iface", ss) {
+		dmuci_get_value_by_section_string(ss, "accesspointinstance", &accesspointInstance);
+		if(accesspointInstance[0]!='/0') dmasprintf(&wifiAssociativeDeviecPath, "WiFi.AccessPoint.%s.AssociatedDevice.", accesspointInstance);
+		accesspointInstance= NULL;
+		adm_entry_get_linker_param(DMROOT"WiFi.AccessPoint.1.AssociatedDevice.", macaddr_linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+
+	}
+
+	if (*value == NULL)
+		*value = "";
+	return 0;
+}
+
+
+
 int get_host_ipaddress(char *refparam, struct dmctx *ctx, char **value)
 {
 	*value = dmjson_get_value(cur_host_args.client, 1, "ipaddr");
@@ -217,6 +267,8 @@ inline int entry_host_instance(struct dmctx *ctx, char *int_num)
 {
 	IF_MATCH(ctx, DMROOT"Hosts.Host.%s.", int_num) {
 		DMOBJECT(DMROOT"Hosts.Host.%s.", ctx, "0", NULL, NULL, NULL, NULL, int_num);
+		DMPARAM("AssociatedDevice", ctx, "0", get_host_associative_device, NULL, NULL, 0, 0, UNDEF, NULL);
+		DMPARAM("Layer3Interface", ctx, "0", get_host_layer3interface, NULL, NULL, 0, 0, UNDEF, NULL);
 		DMPARAM("IPAddress", ctx, "0", get_host_ipaddress, NULL, NULL, 0, 0, UNDEF, NULL);
 		DMPARAM("HostName", ctx, "0", get_host_hostname, NULL, NULL, 0, 0, UNDEF, NULL);
 		DMPARAM("Active", ctx, "0", get_host_active, NULL, "xsd:boolean", 0, 0, UNDEF, NULL);
@@ -225,6 +277,8 @@ inline int entry_host_instance(struct dmctx *ctx, char *int_num)
 		DMPARAM("AddressSource", ctx, "0", get_host_address_source, NULL, NULL, 0, 0, UNDEF, NULL);
 		DMPARAM("LeaseTimeRemaining", ctx, "0", get_host_leasetime_remaining, NULL, NULL, 0, 0, UNDEF, NULL);
 		DMPARAM("DHCPClient", ctx, "0", get_host_dhcp_client, NULL, NULL, 0, 1, UNDEF, NULL); //TO CHECK R/W
+		DMPARAM("X_IOPSYS_InterfaceType ", ctx, "0", get_host_interface_type, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("X_IOPSYS_ifname", ctx, "0", get_host_interfacename, NULL, NULL, 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;

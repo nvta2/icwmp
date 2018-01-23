@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <uci.h>
@@ -1041,6 +1041,36 @@ int delete_wifi_ssid(struct dmctx *ctx)
 	dmuci_delete_by_section(cur_wifi_ssid_args.wifi_ssid_sec, NULL, NULL);
 	return 0;
 }
+
+int get_access_point_associative_device_lastdatadownlinkrate(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->lastdatadownloadlinkrate);
+	return 0;
+}
+
+int get_access_point_associative_device_lastdatauplinkrate(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->lastdatauplinkrate);
+	return 0;
+}
+
+int get_access_point_associative_device_signalstrength(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->signalstrength);
+	return 0;
+}
+
+int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, cur_wifi_associative_device_args_ptr->macaddress);
+	return 0;
+}
+int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->active);
+	return 0;
+}
+
 /////////////SUB ENTRIES///////////////
 inline int entry_wifi_radio(struct dmctx *ctx)
 {
@@ -1073,6 +1103,58 @@ inline int entry_wifi_ssid(struct dmctx *ctx)
 	}
 	return 0;
 }
+
+inline int entry_wifi_access_point_associative_device(struct dmctx *ctx, char *wnum){
+	json_object *res, *associated_client_obj;
+	struct uci_section *ss = NULL;
+	char *value, *ap_ifname, *ad_ifname, *is_wireless;
+	int id = 0;
+	char *idx, *idx_last = NULL;
+	char *macaddr= NULL, *active= NULL, *lastdatadownloadlinkrate= NULL, *lastdatauplinkrate= NULL, *signalstrength= NULL;
+
+	struct wifi_associative_device_args cur_wifi_associative_device_args = {0}, *args;
+
+	uci_foreach_sections("wireless", "wifi-iface", ss) {
+		dmuci_get_value_by_section_string(ss, "accesspointinstance", &value);
+		if(!strcmp(value, wnum)){
+			dmuci_get_value_by_section_string(ss, "ifname", &ap_ifname);
+			break;
+		}
+	}
+
+	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
+	if (res) {
+		json_object_object_foreach(res, key, associated_client_obj) {
+			is_wireless = dmjson_get_value(associated_client_obj, 1, "wireless");
+			if(!strcmp(is_wireless, "true")){
+				ad_ifname = dmjson_get_value(associated_client_obj, 1, "wdev");
+				if(!strcmp(ad_ifname, ap_ifname)){
+					macaddr=dmjson_get_value(associated_client_obj, 1, "macaddr");
+					if(macaddr!=NULL && strlen(macaddr)>0) dmasprintf(&(cur_wifi_associative_device_args.macaddress),dmjson_get_value(associated_client_obj, 1, "macaddr"));
+					active=dmjson_get_value(associated_client_obj, 1, "connected");
+					if(active !=NULL && strlen(active)>0){
+						if(!strcmp(active, "true")) cur_wifi_associative_device_args.active= 1; else cur_wifi_associative_device_args.active= 0;
+					}
+					lastdatadownloadlinkrate=dmjson_get_value(associated_client_obj, 1, "rx_rate");
+					if(lastdatadownloadlinkrate!=NULL && strlen(lastdatadownloadlinkrate)>0) cur_wifi_associative_device_args.lastdatadownloadlinkrate= atoi(lastdatadownloadlinkrate);
+					else cur_wifi_associative_device_args.lastdatadownloadlinkrate = 0;
+					lastdatauplinkrate=dmjson_get_value(associated_client_obj, 1, "tx_rate");
+					if(lastdatauplinkrate!=NULL && strlen(lastdatauplinkrate)>0) cur_wifi_associative_device_args.lastdatauplinkrate= atoi(lastdatauplinkrate);
+					else cur_wifi_associative_device_args.lastdatauplinkrate = 0;
+					signalstrength=dmjson_get_value(associated_client_obj, 1, "rssi");
+					if(signalstrength!=NULL && strlen(signalstrength)>0) cur_wifi_associative_device_args.signalstrength= atoi(signalstrength);
+					else cur_wifi_associative_device_args.signalstrength = 0;
+					args= &cur_wifi_associative_device_args;
+					ctx->args = (void*)args;
+					idx = handle_update_instance(3, ctx, &idx_last, update_instance_without_section, 1, ++id);
+					SUBENTRY(entry_wifi_access_point_associative_device_instance, ctx, wnum, idx);
+				}
+			}
+		}
+	}
+
+}
+
 ///////////////////WIFI ENTRY///////////////////
 
 int entry_method_root_Wifi(struct dmctx *ctx)
@@ -1165,7 +1247,24 @@ inline int entry_wifi_access_point_instance(struct dmctx *ctx, char *wnum)
 		DMPARAM("RadiusServerIPAddr", ctx, "1", get_access_point_security_radius_ip_address, set_access_point_security_radius_ip_address, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("RadiusServerPort", ctx, "1", get_access_point_security_radius_server_port, set_access_point_security_radius_server_port, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("RadiusSecret", ctx, "1", get_empty, set_access_point_security_radius_secret, NULL, 0, 1, UNDEF, NULL);
+		DMOBJECT(DMROOT"WiFi.AccessPoint.%s.AssociatedDevice.", ctx, "0", 1, NULL, NULL, NULL, wnum);
+		SUBENTRY(entry_wifi_access_point_associative_device, ctx, wnum);
 		return 0;
 	}
 	return FAULT_9005;
+}
+
+inline int entry_wifi_access_point_associative_device_instance(struct dmctx *dmctx, char *wnum, char *wnum1){
+	char linker[18];
+	struct wifi_associative_device_args cur_wifi_associative_device_args = *((struct wifi_associative_device_args*)dmctx->args);
+	//strcat(linker, section_name(cur_wifi_radio_args.wifi_radio_sec));
+	IF_MATCH(dmctx, DMROOT"WiFi.AccessPoint.%s.AssociatedDevice.%s.", wnum, wnum1){
+		strcpy(linker, cur_wifi_associative_device_args.macaddress);
+		DMOBJECT(DMROOT"WiFi.AccessPoint.%s.AssociatedDevice.%s.", dmctx, "0", 1, NULL, NULL, linker, wnum, wnum1);
+		DMPARAM("Active", dmctx, "0",  get_access_point_associative_device_active, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
+		DMPARAM("MACAddress", dmctx, "0",  get_access_point_associative_device_mac, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("LastDataDownlinkRate", dmctx, "0",  get_access_point_associative_device_lastdatadownlinkrate, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("LastDataUplinkRate", dmctx, "0",  get_access_point_associative_device_lastdatauplinkrate, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("SignalStrength", dmctx, "0",  get_access_point_associative_device_signalstrength, NULL, "xsd:int", 0, 1, UNDEF, NULL);
+	}
 }
