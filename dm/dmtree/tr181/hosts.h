@@ -24,6 +24,10 @@ extern DMOBJ thostsObj[];
 int browsehostInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 int get_host_nbr_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_associateddevice(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_layer3interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_interface_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_host_interfacename(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_host_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_host_hostname(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_host_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);

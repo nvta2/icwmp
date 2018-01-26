@@ -34,6 +34,8 @@ DMLEAF thostsParam[] = {
 
 /*** Hosts.Host ***/
 DMLEAF thostParam[] = {
+{"AssociatedDevice", &DMREAD, DMT_STRING, get_host_associateddevice, NULL, NULL, &DMNONE},
+{"Layer3Interface", &DMREAD, DMT_STRING, get_host_layer3interface, NULL, NULL, &DMNONE},
 {"IPAddress", &DMREAD, DMT_STRING, get_host_ipaddress, NULL, NULL, &DMNONE},
 {"HostName", &DMREAD, DMT_STRING, get_host_hostname, NULL, NULL, &DMNONE},
 {"Active", &DMREAD, DMT_BOOL, get_host_active, NULL, NULL, &DMNONE},
@@ -42,6 +44,8 @@ DMLEAF thostParam[] = {
 {"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, &DMNONE},
 {"LeaseTimeRemaining", &DMREAD, DMT_STRING, get_host_leasetime_remaining, NULL, NULL, &DMNONE},
 {"DHCPClient", &DMREAD, DMT_STRING, get_host_dhcp_client, NULL, NULL, NULL},
+{"X_IOPSYS_InterfaceType", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, &DMNONE},
+{"X_IOPSYS_ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, &DMNONE},
 {0}
 };
 
@@ -58,6 +62,60 @@ inline int init_host_args(struct host_args *args, json_object *clients, char *ke
 /*************************************************************
  * GET & SET PARAM
 /*************************************************************/
+int get_host_associateddevice(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *ss;
+	char *macaddr_linker=dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
+	char *accesspointInstance= NULL, *wifiAssociativeDeviecPath;
+	uci_foreach_sections("wireless", "wifi-iface", ss) {
+		dmuci_get_value_by_section_string(ss, "accesspointinstance", &accesspointInstance);
+		if(accesspointInstance[0]!='/0')
+			dmasprintf(&wifiAssociativeDeviecPath, "Device.WiFi.AccessPoint.%s.AssociatedDevice.", accesspointInstance);
+		accesspointInstance= NULL;
+		adm_entry_get_linker_param(ctx, wifiAssociativeDeviecPath, macaddr_linker, value);
+
+	}
+
+	if (*value == NULL)
+		*value = "";
+	return 0;
+}
+
+int get_host_layer3interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *ip_linker=dmjson_get_value(((struct host_args *)data)->client, 1, "network");
+	adm_entry_get_linker_param(ctx, "Device.IP.Interface.", ip_linker, value);
+	if (*value == NULL)
+		*value = "";
+	return 0;
+}
+
+int get_host_interface_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *type= NULL;
+	char *ifname = dmjson_get_value(((struct host_args *)data)->client, 1, "network");
+	struct uci_section *ss = NULL;
+
+	uci_foreach_sections("network", "interface", ss) {
+		if(!strcmp(ifname, section_name(ss))){
+			dmuci_get_value_by_section_string(ss, "type", &type);
+			if(type!=NULL){
+				if(!strcmp(type, "bridge")) *value="Bridge";else *value= "Normal";
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+int get_host_interfacename(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "network");
+	if (*value == NULL)
+		*value = "";
+	return 0;
+}
+
 int get_host_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "ipaddr");

@@ -34,6 +34,7 @@ DMOBJ tIPObj[] = {
 DMLEAF tIPintParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"Enable", &DMWRITE, DMT_BOOL, get_ip_interface_enable, set_ip_interface_enable, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING, get_ip_interface_status, NULL, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_ip_interface_name, NULL, NULL, NULL},
 {"LowerLayers", &DMWRITE, DMT_STRING, get_ip_int_lower_layer, set_ip_int_lower_layer, NULL, NULL},
 {0}
@@ -337,6 +338,16 @@ int set_ip_interface_enable(char *refparam, struct dmctx *ctx, void *data, char 
 {
 	char *lan_name = section_name(((struct ip_args *)data)->ip_sec);
 	set_interface_enable_ubus(lan_name, refparam, ctx, action, value);
+	return 0;
+}
+
+int get_ip_interface_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *val= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	val = dmjson_get_value(res, 1, "up");
+	*value = !strcmp(val, "true") ? "Up" : "Down";
 	return 0;
 }
 
@@ -761,7 +772,6 @@ int delete_ipv6(char *refparam, struct dmctx *ctx, void *data, char *instance, u
 * LINKER
 ***************************************************************************/
 int get_linker_ip_interface(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-
 	if(((struct ip_args *)data)->ip_sec) {
 		dmasprintf(linker,"%s", section_name(((struct ip_args *)data)->ip_sec));
 		return 0;

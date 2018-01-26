@@ -39,13 +39,21 @@ DMOBJ tDhcpv4ServerObj[] = {
 DMOBJ tDhcpServerPoolObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
 {"StaticAddress", &DMWRITE, add_dhcp_staticaddress, delete_dhcp_staticaddress, NULL, browseDhcpStaticInst, NULL, NULL, NULL, tDhcpServerPoolAddressParams, NULL},
-{"Client", &DMREAD, NULL, NULL, NULL, browseDhcpClientInst, NULL, NULL, NULL, tDhcpServerPoolClientParams, get_dhcp_client_linker},
+{"Client", &DMREAD, NULL, NULL, NULL, browseDhcpClientInst, NULL, NULL, tDhcpServerPoolClientObj, tDhcpServerPoolClientParams, get_dhcp_client_linker},
+{0}
+};
+
+/*** DHCPv4.Server.Pool.{i}.Client.{i}. ***/
+DMOBJ tDhcpServerPoolClientObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
+{"IPv4Address", &DMREAD, NULL, NULL, NULL, browseDhcpClientIPv4Inst, NULL, NULL, NULL, tDhcpServerPoolClientIPv4AddressParams, NULL},
 {0}
 };
 
 DMLEAF tDhcpServerPoolParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"DNSServers", &DMWRITE, DMT_STRING,  get_dns_server, set_dns_server, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING,  get_dhcp_status, NULL, NULL, NULL},
 {"X_INTENO_SE_DHCPServerConfigurable", &DMWRITE, DMT_BOOL, get_dhcp_configurable, set_dhcp_configurable, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL,  get_dhcp_enable, set_dhcp_enable, NULL, NULL},
 {"MinAddress", &DMWRITE, DMT_STRING, get_dhcp_interval_address_min, set_dhcp_address_min, NULL, NULL},
@@ -72,6 +80,13 @@ DMLEAF tDhcpServerPoolAddressParams[] = {
 DMLEAF tDhcpServerPoolClientParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"Chaddr", &DMREAD, DMT_STRING,  get_dhcp_client_chaddr, NULL, NULL, NULL},
+{0}
+};
+
+/*** DHCPv4.Server.Pool.{i}.Client.{i}.IPv4Address.{i}. ***/
+DMLEAF tDhcpServerPoolClientIPv4AddressParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"LeaseTimeRemaining", &DMREAD, DMT_TIME,  get_dhcp_client_ipv4address_leasetime, NULL, NULL, NULL},
 {0}
 };
 
@@ -280,6 +295,17 @@ int set_dhcp_configurable(char *refparam, struct dmctx *ctx, void *data, char *i
 				dmuci_set_value("dhcp", ((struct dhcp_args *)data)->interface, "leasetime", "12h");
 			}
 			return 0;
+	}
+	return 0;
+}
+
+int get_dhcp_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *s = NULL;
+	char v[3];
+	uci_foreach_option_eq("dhcp", "dhcp", "interface", ((struct dhcp_args *)data)->interface, s) {
+		dmuci_get_value_by_section_string(s, "ignore", v);
+		*value = (v[0] == '1') ? "Disabled" : "Enabled";
 	}
 	return 0;
 }
@@ -882,6 +908,29 @@ int get_dhcp_client_chaddr(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+int get_dhcp_client_ipv4address_leasetime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char time_buf[26] = {0};
+	struct tm *t_tm;
+	struct dhcp_client_ipv4address_args current_dhcp_client_ipv4address_args = *((struct dhcp_client_ipv4address_args*)data);
+
+	*value = "0001-01-01T00:00:00Z";
+	time_t t_time = current_dhcp_client_ipv4address_args.leasetime;
+	t_tm = localtime(&t_time);
+	if (t_tm == NULL)
+		return 0;
+	if(strftime(time_buf, sizeof(time_buf), "%FT%T%z", t_tm) == 0)
+		return 0;
+
+	time_buf[25] = time_buf[24];
+	time_buf[24] = time_buf[23];
+	time_buf[22] = ':';
+	time_buf[26] = '\0';
+
+	*value = dmstrdup(time_buf);
+	return 0;
+}
+
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
@@ -945,3 +994,34 @@ int browseDhcpClientInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 	return 0;
 }
 
+int browseDhcpClientIPv4Inst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
+	unsigned int leasetime;
+	char *macaddr;
+	char mac[32], ip[32], buf[512];
+	json_object *passed_args;
+	FILE *fp;
+	struct dhcp_client_ipv4address_args current_dhcp_client_ipv4address_args = {0};
+	int id = 0;
+	char *idx = NULL, *idx_last = NULL;
+
+	fp = fopen("/tmp/dhcp.leases", "r");
+	if (fp == NULL)
+		return 0;
+	while (fgets (buf , 256 , fp) != NULL) {
+		sscanf(buf, "%u %s %s", &leasetime, mac, ip);
+		passed_args= ((struct client_args*)prev_data)->client;
+		macaddr=dmjson_get_value(passed_args, 1, "macaddr");
+		if(!strcmp(mac, macaddr)){
+			current_dhcp_client_ipv4address_args.ip= dmjson_get_value(passed_args, 1, "ipddr");
+			current_dhcp_client_ipv4address_args.mac= strdup(macaddr);
+			current_dhcp_client_ipv4address_args.leasetime= leasetime;
+
+			idx = handle_update_instance(2, dmctx, &idx_last, update_instance_without_section, 1, ++id);
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&current_dhcp_client_ipv4address_args, idx) == DM_STOP)
+				break;
+		}
+	}
+
+	return 0;
+}

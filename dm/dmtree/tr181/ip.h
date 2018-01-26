@@ -40,6 +40,7 @@ int add_ipv6(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 int delete_ipv6(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 
 int get_ip_interface_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ip_interface_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ipv4_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);

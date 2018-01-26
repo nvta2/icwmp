@@ -45,6 +45,7 @@
 #include "nat.h"
 #include "ppp.h"
 #include "routing.h"
+#include "userinterface.h"
 #endif
 #ifdef DATAMODEL_TR098
 #include "landevice.h"
@@ -111,6 +112,7 @@ DMOBJ tRootObj[] = {
 {"NAT", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tnatObj, NULL, NULL},
 {"PPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tpppObj, NULL, NULL},
 {"Routing", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tRoutingObj, tRoutingParam, NULL},
+{"UserInterface", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUserInterfaceObj, NULL, NULL},
 #endif
 {0}
 };

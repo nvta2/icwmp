@@ -54,7 +54,8 @@ libdatamodel_la_SOURCES +=							\
 	../dm/dmtree/tr181/ip.c							\
 	../dm/dmtree/tr181/ppp.c						\
 	../dm/dmtree/tr181/nat.c						\
-	../dm/dmtree/tr181/routing.c
+	../dm/dmtree/tr181/routing.c					\
+	../dm/dmtree/tr181/userinterface.c
 endif
 
 if UPNP_TR064

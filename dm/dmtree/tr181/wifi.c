@@ -107,6 +107,7 @@ DMLEAF tWifiSsidStatsParams[] = {
 DMOBJ tAcessPointSecurityObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
 {"Security", &DMWRITE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWifiAcessPointSecurityParams, NULL},
+{"AssociatedDevice", &DMREAD, NULL, NULL, NULL, browse_wifi_associated_device, NULL, NULL, NULL, tWifiAcessPointAssociatedDeviceParams, get_linker_associated_device},
 {0}
 };
 
@@ -139,6 +140,17 @@ DMLEAF tWifiAcessPointSecurityParams[] = {
 {0}
 };
 
+/*** WiFi.AccessPoint.AssociatedDevice. ***/
+DMLEAF tWifiAcessPointAssociatedDeviceParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"Active", &DMREAD, DMT_BOOL, get_access_point_associative_device_active, NULL, NULL, NULL},
+{"MACAddress", &DMREAD, DMT_STRING ,get_access_point_associative_device_mac, NULL, NULL, NULL},
+{"LastDataDownlinkRate", &DMREAD, DMT_UNINT, get_access_point_associative_device_lastdatadownlinkrate, NULL, NULL, NULL},
+{"LastDataUplinkRate", &DMREAD, DMT_UNINT, get_access_point_associative_device_lastdatauplinkrate, NULL, NULL, NULL},
+{"SignalStrength", &DMREAD, DMT_INT, get_access_point_associative_device_signalstrength, NULL, NULL, NULL},
+{0}
+};
+
 /**************************************************************************
 * LINKER
 ***************************************************************************/
@@ -154,6 +166,16 @@ int get_linker_Wifi_Radio(char *refparam, struct dmctx *dmctx, void *data, char 
 int get_linker_Wifi_Ssid(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
 	if(((struct wifi_ssid_args *)data)->ifname) {
 		*linker = ((struct wifi_ssid_args *)data)->ifname;
+		return 0;
+	}
+	*linker = "";
+	return 0;
+}
+
+int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
+	struct wifi_associative_device_args* cur_wifi_associative_device_args = (struct wifi_associative_device_args*)data;
+	if(cur_wifi_associative_device_args->macaddress) {
+		*linker= cur_wifi_associative_device_args->macaddress;
 		return 0;
 	}
 	*linker = "";
@@ -1058,6 +1080,41 @@ int get_radio_supported_frequency_bands(char *refparam, struct dmctx *ctx, void 
 	*value = "2.4GHz, 5GHz";
 	return 0;
 }
+
+int get_access_point_associative_device_lastdatadownlinkrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->lastdatadownloadlinkrate);
+	return 0;
+}
+
+int get_access_point_associative_device_lastdatauplinkrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->lastdatauplinkrate);
+	return 0;
+}
+
+int get_access_point_associative_device_signalstrength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->signalstrength);
+	return 0;
+}
+
+int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
+	dmasprintf(value, cur_wifi_associative_device_args_ptr->macaddress);
+	return 0;
+}
+int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->active);
+	return 0;
+}
+
 /**************************************************************************
 * SET AND GET ALIAS
 ***************************************************************************/
@@ -1250,4 +1307,54 @@ int browseWifiAccessPointInst(struct dmctx *dmctx, DMNODE *parent_node, void *pr
 			break;
 	}
 	return 0;
+}
+
+int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance){
+	json_object *res, *associated_client_obj;
+	struct uci_section *ss = NULL;
+	char *value, *ap_ifname, *ad_ifname, *is_wireless;
+	int id = 0;
+	char *idx, *idx_last = NULL;
+	char *macaddr= NULL, *active= NULL, *lastdatadownloadlinkrate= NULL, *lastdatauplinkrate= NULL, *signalstrength= NULL;
+
+	struct wifi_associative_device_args cur_wifi_associative_device_args = {0}, *args;
+
+	uci_foreach_sections("wireless", "wifi-iface", ss) {
+		dmuci_get_value_by_section_string(ss, "accesspointinstance", &value);
+		if(!strcmp(value, prev_instance)){
+			dmuci_get_value_by_section_string(ss, "ifname", &ap_ifname);
+			break;
+		}
+	}
+
+	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
+	if (res) {
+		json_object_object_foreach(res, key, associated_client_obj) {
+			is_wireless = dmjson_get_value(associated_client_obj, 1, "wireless");
+			if(!strcmp(is_wireless, "true")){
+				ad_ifname = dmjson_get_value(associated_client_obj, 1, "wdev");
+				if(!strcmp(ad_ifname, ap_ifname)){
+					macaddr=dmjson_get_value(associated_client_obj, 1, "macaddr");
+					if(macaddr!=NULL && strlen(macaddr)>0) dmasprintf(&(cur_wifi_associative_device_args.macaddress),dmjson_get_value(associated_client_obj, 1, "macaddr"));
+					active=dmjson_get_value(associated_client_obj, 1, "connected");
+					if(active !=NULL && strlen(active)>0){
+						if(!strcmp(active, "true")) cur_wifi_associative_device_args.active= 1; else cur_wifi_associative_device_args.active= 0;
+					}
+					lastdatadownloadlinkrate=dmjson_get_value(associated_client_obj, 1, "rx_rate");
+					if(lastdatadownloadlinkrate!=NULL && strlen(lastdatadownloadlinkrate)>0) cur_wifi_associative_device_args.lastdatadownloadlinkrate= atoi(lastdatadownloadlinkrate);
+					else cur_wifi_associative_device_args.lastdatadownloadlinkrate = 0;
+					lastdatauplinkrate=dmjson_get_value(associated_client_obj, 1, "tx_rate");
+					if(lastdatauplinkrate!=NULL && strlen(lastdatauplinkrate)>0) cur_wifi_associative_device_args.lastdatauplinkrate= atoi(lastdatauplinkrate);
+					else cur_wifi_associative_device_args.lastdatauplinkrate = 0;
+					signalstrength=dmjson_get_value(associated_client_obj, 1, "rssi");
+					if(signalstrength!=NULL && strlen(signalstrength)>0) cur_wifi_associative_device_args.signalstrength= atoi(signalstrength);
+					else cur_wifi_associative_device_args.signalstrength = 0;
+					args= &cur_wifi_associative_device_args;
+					idx = handle_update_instance(3, dmctx, &idx_last, update_instance_without_section, 1, ++id);
+					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&cur_wifi_associative_device_args, idx) == DM_STOP)
+						break;
+				}
+			}
+		}
+	}
 }

@@ -28,6 +28,15 @@ struct wifi_acp_args
 	char *ifname;
 };
 
+struct wifi_associative_device_args
+{
+	int active;
+	int lastdatadownloadlinkrate;
+	int lastdatauplinkrate;
+	int signalstrength;
+	char *macaddress;
+};
+
 extern DMOBJ tWifiObj[];
 extern DMLEAF tWifiParams[];
 extern DMOBJ tWifiRadioStatsObj[];
@@ -37,12 +46,14 @@ extern DMLEAF tWifiAcessPointParams[];
 extern DMLEAF tWifiSsidParams[];
 extern DMLEAF tWifiRadioParams[];
 extern DMLEAF tWifiAcessPointSecurityParams[];
+extern DMLEAF tWifiAcessPointAssociatedDeviceParams[];
 extern DMLEAF tWifiRadioStatsParams[];
 extern DMLEAF tWifiSsidStatsParams[];
 
 int browseWifiSsidInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseWifiAccessPointInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseWifiRadioInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 int add_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
 int delete_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
@@ -91,8 +102,14 @@ int get_access_point_security_modes(char *refparam, struct dmctx *ctx, void *dat
 int get_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_radius_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_radius_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_lastdatadownlinkrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_lastdatauplinkrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_signalstrength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_Wifi_Radio(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_Wifi_Ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
 
 int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
