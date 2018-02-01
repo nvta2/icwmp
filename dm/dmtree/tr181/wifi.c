@@ -833,13 +833,8 @@ int get_access_point_security_supported_modes(char *refparam, struct dmctx *ctx,
 	return 0;
 }
 
-int get_access_point_security_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static void get_value_security_mode(char **value, char *encryption, char *cipher)
 {
-	char *encryption, *cipher;
-
-	*value = "";
-	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", &encryption);
-	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", &cipher);
 	if (strcmp(encryption, "none") == 0)
 		*value = "None";
 	else if (strcmp(encryption, "wep-open") == 0 || strcmp(encryption, "wep-shared") == 0)
@@ -848,91 +843,109 @@ int get_access_point_security_modes(char *refparam, struct dmctx *ctx, void *dat
 		*value = "WPA-Personal";
 	else if (strcmp(encryption, "wpa") == 0)
 		*value = "WPA-Enterprise";
-	else if (strcmp(encryption, "psk2") == 0 && strcmp(cipher, "ccmp") == 0)
+	else if ((strcmp(encryption, "psk2") == 0 && strcmp(cipher, "auto") == 0) || (strcmp(encryption, "psk2") == 0 && strcmp(cipher, "ccmp") == 0) || (strcmp(encryption, "psk2") == 0 && *cipher == '\0'))
 		*value = "WPA2-Personal";
 	else if (strcmp(encryption, "wpa2") == 0)
 		*value = "WPA2-Enterprise";
-	else if (strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "tkip+ccmp") == 0)
+	else if ((strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "auto") == 0) || (strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "ccmp") == 0) || (strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "tkip+ccmp") == 0) || (strcmp(encryption, "mixed-psk") == 0 && *cipher == '\0'))
 		*value = "WPA-WPA2-Personal";
-	else if (strcmp(encryption, "mixed-wpa") == 0)
+	else if (strcmp(encryption, "wpa-mixed") == 0 || strcmp(encryption, "mixed-wpa") == 0)
 		*value = "WPA-WPA2-Enterprise";
+}
+
+int get_access_point_security_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *encryption, *cipher, *mode;
+
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", &encryption);
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", &cipher);
+	get_value_security_mode(&mode, encryption, cipher);
+
+	*value = mode;
 	return 0;
 }
 
 int set_access_point_security_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *option, *gnw;
+	char *encryption, *cipher, *mode;
 	char strk64[4][11];
+
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", &encryption);
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", &cipher);
+	get_value_security_mode(&mode, encryption, cipher);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			if (strcmp(value, "None") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "none");
-			}
-			else if (strcmp(value, "WEP-64") == 0 || strcmp(value, "WEP-128") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wep-open");
-				wepkey64("Inteno", strk64);
-				int i = 0;
-				while (i < 4) {
-					dmasprintf(&option, "key%d", i + 1);
-					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, option, strk64[i]);
-					dmfree(option);
-					i++;
+			if (strcmp(value, mode) != 0) {
+				if (strcmp(value, "None") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "none");
 				}
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", "1");
-			}
-			else if (strcmp(value, "WPA-Personal") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				gnw = get_nvram_wpakey();
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "psk");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "tkip");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
-				dmfree(gnw);
-			}
-			else if (strcmp(value, "WPA-Enterprise") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wpa");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_server", "");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_port", "1812");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_secret", "");
-			}
-			else if (strcmp(value, "WPA2-Personal") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				gnw = get_nvram_wpakey();
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "psk2");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "ccmp");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pbc", "1");
-				dmfree(gnw);
-			}
-			else if (strcmp(value, "WPA2-Enterprise") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wpa2");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_server", "");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_port", "1812");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_secret", "");
-			}
-			else if (strcmp(value, "WPA-WPA2-Personal") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				gnw = get_nvram_wpakey();
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "mixed-psk");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "tkip+ccmp");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pbc", "1");
-				dmfree(gnw);
-			}
-			else if (strcmp(value, "WPA-WPA2-Enterprise") == 0) {
-				reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "mixed-wpa");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_server", "");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_port", "1812");
-				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_secret", "");
+				else if (strcmp(value, "WEP-64") == 0 || strcmp(value, "WEP-128") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wep-open");
+					wepkey64("Inteno", strk64);
+					int i = 0;
+					while (i < 4) {
+						dmasprintf(&option, "key%d", i + 1);
+						dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, option, strk64[i]);
+						dmfree(option);
+						i++;
+					}
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", "1");
+				}
+				else if (strcmp(value, "WPA-Personal") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					gnw = get_nvram_wpakey();
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "psk");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "tkip");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
+					dmfree(gnw);
+				}
+				else if (strcmp(value, "WPA-Enterprise") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wpa");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_server", "");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_port", "1812");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_secret", "");
+				}
+				else if (strcmp(value, "WPA2-Personal") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					gnw = get_nvram_wpakey();
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "psk2");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "ccmp");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pbc", "1");
+					dmfree(gnw);
+				}
+				else if (strcmp(value, "WPA2-Enterprise") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wpa2");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_server", "");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_port", "1812");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_secret", "");
+				}
+				else if (strcmp(value, "WPA-WPA2-Personal") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					gnw = get_nvram_wpakey();
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "mixed-psk");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "tkip+ccmp");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pbc", "1");
+					dmfree(gnw);
+				}
+				else if (strcmp(value, "WPA-WPA2-Enterprise") == 0) {
+					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wpa-mixed");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_server", "");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_port", "1812");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "radius_secret", "");
+				}
 			}
 			return 0;
 	}
