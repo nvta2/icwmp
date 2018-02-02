@@ -764,6 +764,13 @@ int dm_entry_restart_services(void)
 
 	return 0;
 }
+
+void dm_apply_config(void)
+{
+	apply_end_session();
+	dm_entry_restart_services();
+}
+
 #ifdef UPNP_TR064
 int dm_entry_upnp_restart_services(void)
 {
@@ -1155,6 +1162,7 @@ void dm_execute_cli_shell(int argc, char** argv, unsigned int dmtype, unsigned i
 		}
 		parameter_key = argv[4];
 		if (!set_fault) {
+			apply_services = 1;
 			fault = dm_entry_apply(&cli_dmctx, CMD_SET_VALUE, parameter_key, NULL);
 		}
 		cli_output_dm_result(&cli_dmctx, fault, CMD_SET_VALUE, output);
@@ -1182,6 +1190,8 @@ void dm_execute_cli_shell(int argc, char** argv, unsigned int dmtype, unsigned i
 		param =argv[5];
 		parameter_key =argv[4];
 		fault = dm_entry_param_method(&cli_dmctx, CMD_ADD_OBJECT, param, parameter_key, NULL);
+		if (!fault)
+			apply_services = 1;
 		cli_output_dm_result(&cli_dmctx, fault, CMD_ADD_OBJECT, output);
 	}
 	/* DEL OBJECT */
@@ -1191,6 +1201,8 @@ void dm_execute_cli_shell(int argc, char** argv, unsigned int dmtype, unsigned i
 		param =argv[5];
 		parameter_key =argv[4];
 		fault = dm_entry_param_method(&cli_dmctx, CMD_DEL_OBJECT, param, parameter_key, NULL);
+		if (!fault)
+			apply_services = 1;
 		cli_output_dm_result(&cli_dmctx, fault, CMD_DEL_OBJECT, output);
 	}
 	/* INFORM */
@@ -1395,7 +1407,7 @@ void dm_execute_cli_shell(int argc, char** argv, unsigned int dmtype, unsigned i
 
 	dm_ctx_clean(&cli_dmctx);
 	if (apply_services) {
-		dm_upnp_apply_config();
+		dm_apply_config();
 	}
 
 	if (!fault) {
@@ -1487,6 +1499,7 @@ int dmentry_cli(int argc, char *argv[], unsigned int dmtype, unsigned int amd_ve
 		}
 		parameter_key = argv[3];
 		if (!set_fault) {
+			apply_services = 1;
 			fault = dm_entry_apply(&cli_dmctx, CMD_SET_VALUE, parameter_key, NULL);
 		}
 		cli_output_dm_result(&cli_dmctx, fault, CMD_SET_VALUE, 1);
@@ -1519,6 +1532,8 @@ int dmentry_cli(int argc, char *argv[], unsigned int dmtype, unsigned int amd_ve
 		param = argv[3];
 		parameter_key = argv[4];
 		fault = dm_entry_param_method(&cli_dmctx, CMD_ADD_OBJECT, param, parameter_key, NULL);
+		if (!fault)
+			apply_services = 1;
 		cli_output_dm_result(&cli_dmctx, fault, CMD_ADD_OBJECT, 1);
 	}
 	else if (strcmp(argv[2], "del_obj") == 0) {
@@ -1528,6 +1543,8 @@ int dmentry_cli(int argc, char *argv[], unsigned int dmtype, unsigned int amd_ve
 		param =argv[3];
 		parameter_key =argv[4];
 		fault = dm_entry_param_method(&cli_dmctx, CMD_DEL_OBJECT, param, parameter_key, NULL);
+		if (!fault)
+			apply_services = 1;
 		cli_output_dm_result(&cli_dmctx, fault, CMD_DEL_OBJECT, 1);
 	}
 	else if (strcmp(argv[2], "external_command") == 0) {
@@ -1731,7 +1748,7 @@ int dmentry_cli(int argc, char *argv[], unsigned int dmtype, unsigned int amd_ve
 
 	dm_ctx_clean(&cli_dmctx);
 	if (apply_services) {
-		dm_upnp_apply_config();
+		dm_apply_config();
 	}
 
 	if (!fault) {
