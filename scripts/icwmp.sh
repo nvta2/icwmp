@@ -22,6 +22,7 @@ FAULT_CPE_NO_FAULT="0"
 FAULT_CPE_INTERNAL_ERROR="2"
 FAULT_CPE_DOWNLOAD_FAILURE="10"
 FAULT_CPE_UPLOAD_FAILURE="11"
+FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER="15"
 FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED="18"
 
 for ffile in `ls /usr/share/icwmp/functions/`; do
@@ -238,27 +239,37 @@ handle_action() {
 		local fault_code="9000"
 		if [ "$__arg4" = "" -o "$__arg5" = "" ];then
 			if [ "$__arg7" != "" ];then
-				curl --fail --capath $__arg7 -o /tmp/icwmp_download $__arg1 2> /dev/null				
+				resp=$(curl --fail --capath $__arg7 --write-out %{http_code} --silent -o /tmp/icwmp_download --output /dev/nul $__arg1)				
 			elif [ ${__arg1:0:8} = https:// ];then
-				wget -O /tmp/icwmp_download --no-check-certificate "$__arg1" 2> /dev/null				
+				resp=`wget --server-response -O /tmp/icwmp_download --no-check-certificate "$__arg1" 2>&1 | awk '/^  HTTP/{print $2}'`				
 			else
-				wget -O /tmp/icwmp_download "$__arg1" 2> /dev/null	
+				resp=`wget --server-response -O /tmp/icwmp_download "$__arg1" 2>&1 | awk '/^  HTTP/{print $2}'`	
 			fi
-			if [ "$?" != "0" ];then
-				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
+			if [ "$resp" == "404" ];then
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
+				icwmp_fault_output "" "$fault_code"
+				return 1
+			elif [ "$resp" != "200" ];then
+-				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
 				icwmp_fault_output "" "$fault_code"
 				return 1
 			fi
 		else
 			local url=`echo "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g"`
 			if [ "$__arg7" != "" ];then
-				curl --fail --capath $__arg7 -u $__arg4:$__arg5 -o /tmp/icwmp_download $__arg1 2> /dev/null
+				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o /tmp/icwmp_download --output /dev/nul $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				wget -O /tmp/icwmp_download --no-check-certificate "$url" 2> /dev/null
+				resp=`wget --server-response -O /tmp/icwmp_download --no-check-certificate "$url" 2>&1 | awk '/^  HTTP/{print $2}'`		
 			else
-				wget -O /tmp/icwmp_download "$url" 2> /dev/null
+				resp=`wget --server-response -O /tmp/icwmp_download "$url" 2>&1 | awk '/^  HTTP/{print $2}'`
 			fi
-			if [ "$?" != "0" ];then
+
+			resp=`echo $resp| awk '{print $NF}'`
+			if [ "$resp" == "404" ];then
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
+				icwmp_fault_output "" "$fault_code"
+				return 1
+			elif [ "$resp" != "200" ];then
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
 				icwmp_fault_output "" "$fault_code"
 				return 1
