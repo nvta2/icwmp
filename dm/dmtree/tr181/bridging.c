@@ -1259,8 +1259,10 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 				break;
 			}
 		}
+#endif
 		if(!found) {
-			uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", pch, w_eth_s) {
+#ifndef EX400
+				uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", pch, w_eth_s) {
 #else
 				uci_foreach_option_eq("network", "interface", "ifname", pch, w_eth_s) {
 #endif
@@ -1288,6 +1290,7 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 				break;
 			}
 		}
+#ifndef EX400
 		if(!found) {
 			uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "ifname", pch, vlan_s) {
 				dmuci_set_value_by_section(vlan_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
@@ -1300,6 +1303,7 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 				break;
 			}
 		}
+#endif
 	}
 end:
 	dmfree(ifname_dup);
