@@ -155,7 +155,7 @@ DMLEAF tWifiAcessPointAssociatedDeviceParams[] = {
 * LINKER
 ***************************************************************************/
 int get_linker_Wifi_Radio(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if(((struct wifi_radio_args *)data)->wifi_radio_sec) {
+	if(data && ((struct wifi_radio_args *)data)->wifi_radio_sec) {
 		*linker = section_name(((struct wifi_radio_args *)data)->wifi_radio_sec);
 		return 0;
 	}
@@ -164,7 +164,7 @@ int get_linker_Wifi_Radio(char *refparam, struct dmctx *dmctx, void *data, char 
 }
 
 int get_linker_Wifi_Ssid(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if(((struct wifi_ssid_args *)data)->ifname) {
+	if(data && ((struct wifi_ssid_args *)data)->ifname) {
 		*linker = ((struct wifi_ssid_args *)data)->ifname;
 		return 0;
 	}
@@ -174,7 +174,7 @@ int get_linker_Wifi_Ssid(char *refparam, struct dmctx *dmctx, void *data, char *
 
 int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
 	struct wifi_associative_device_args* cur_wifi_associative_device_args = (struct wifi_associative_device_args*)data;
-	if(cur_wifi_associative_device_args->macaddress) {
+	if(data && cur_wifi_associative_device_args->macaddress) {
 		*linker= cur_wifi_associative_device_args->macaddress;
 		return 0;
 	}

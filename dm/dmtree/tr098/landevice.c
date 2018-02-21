@@ -3649,20 +3649,13 @@ end:
 int browselanethernetinterfaceconfigInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	int i = 0;
-	char *pch, *spch;
 	char *ifname, *wan_eth, *baseifname;
 	char *ieth = NULL, *ieth_last = NULL;
 	struct uci_section *s = NULL;
 	struct ldlanargs *lanargs = (struct ldlanargs *)prev_data;
 	struct ldethargs curr_ethargs = {0};
 
-#ifdef EX400
-	uci_foreach_option_eq("ports", "ethport", "name", "WAN", s) {
-		dmuci_get_value_by_section_string(s, "ifname", &wan_eth);
-	}
-#else
-	dmuci_get_option_value_string("layer2_interface_ethernet", "ethernet_interface", "baseifname", &wan_eth);
-#endif
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_eth);
 	dmuci_get_value_by_section_string(lanargs->ldlansection, "ifname", &ifname);
 	lan_eth_update_section_option_list(ifname, section_name(lanargs->ldlansection), wan_eth);
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "lan_eth", "network", section_name(lanargs->ldlansection), s) {

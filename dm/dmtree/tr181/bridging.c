@@ -19,7 +19,6 @@
 
 char *wan_baseifname = NULL;
 
-
 /*** Bridging. ***/
 DMOBJ tBridgingObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
@@ -98,7 +97,7 @@ DMLEAF tBridgeVlanPortParams[] = {
 * LINKER
 ***************************************************************************/
 int get_linker_br_port(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if(((struct bridging_port_args *)data)->bridge_port_sec) {
+	if(data && ((struct bridging_port_args *)data)->bridge_port_sec) {
 		dmasprintf(linker,"%s+%s", section_name(((struct bridging_port_args *)data)->bridge_port_sec), ((struct bridging_port_args *)data)->ifname);
 		return 0;
 	}
@@ -107,7 +106,7 @@ int get_linker_br_port(char *refparam, struct dmctx *dmctx, void *data, char *in
 }
 
 int get_linker_br_vlan(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if(((struct bridging_vlan_args *)data)->vlan_port) {
+	if(data && ((struct bridging_vlan_args *)data)->vlan_port) {
 		dmasprintf(linker,"vlan%s_%s", ((struct bridging_vlan_args *)data)->vlan_port, ((struct bridging_vlan_args *)data)->br_inst);
 		return 0;
 	}
@@ -167,49 +166,46 @@ int check_ifname_exist_in_br_ifname_list(char *ifname)
 int get_br_port_last_inst(char *br_key)
 {
 	char *tmp;
-	int r = 0, dr = 0, ds = 0, max;
+	int max=1;
 	struct uci_section *s;
 	int buf[BUF_SIZE] = {0};
 
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "bridge_port", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
-			break;
+			continue;
 		buf[0] = atoi(tmp);
+		if(buf[0]>max) max=buf[0];
 	}
 	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
-			break;
+			continue;
 		buf[1] = atoi(tmp);
+		if(buf[1]>max) max=buf[1];
 	}
 #ifndef EX400
-	uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("dsl", "atm-device", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
-			break;
+			continue;
 		buf[2] = atoi(tmp);
+		if(buf[2]>max) max=buf[2];
 	}
-	uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("dsl", "ptm-device", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
-			break;
+			continue;
 		buf[3] = atoi(tmp);
+		if(buf[3]>max) max=buf[3];
 	}
-	uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "bridge_key", br_key, s) {
-#else
-	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
 #endif
-		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
-		if (tmp[0] == '\0')
-			break;
-		buf[4] = atoi(tmp);
-	}
 	uci_foreach_option_eq("wireless", "wifi-iface", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
-			break;
-		buf[5] = atoi(tmp);
+			continue;
+		buf[4] = atoi(tmp);
+		if(buf[4]>max) max=buf[4];
 	}
 	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
@@ -217,7 +213,6 @@ int get_br_port_last_inst(char *br_key)
 			break;
 		buf[6] = atoi(tmp);
 	}
-	max =  max_array(buf, BUF_SIZE);
 	return max;
 }
 
@@ -270,11 +265,12 @@ char *br_port_update_instance_alias(int action, char **last_inst, void *argv[])
 	char *alias_opt = (char *) argv[2];
 	bool *find_max = (bool *) argv[3];
 	char *br_key = (char *) argv[4];
+	int m;
 
 	dmuci_get_value_by_section_string(s, inst_opt, &instance);
 	if (instance[0] == '\0') {
 		if (*find_max) {
-			int m = get_br_port_last_inst(br_key);
+			m = get_br_port_last_inst(br_key);
 			sprintf(buf, "%d", m+1);
 			*find_max = false;
 		}
@@ -309,19 +305,19 @@ int reset_br_port(char *br_key)
 		dmuci_set_value_by_section(s, "penable", "0");
 	}
 #ifndef EX400
-	uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("dsl", "atm-device", "bridge_key", br_key, s) {
 		dmuci_set_value_by_section(s, "bridge_port_instance", "");
 		dmuci_set_value_by_section(s, "bridge_port_alias", "");
 		dmuci_set_value_by_section(s, "bridge_key", "");
 		dmuci_set_value_by_section(s, "penable", "0");
 	}
-	uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("dsl", "ptm-device", "bridge_key", br_key, s) {
 		dmuci_set_value_by_section(s, "bridge_port_instance", "");
 		dmuci_set_value_by_section(s, "bridge_port_alias", "");
 		dmuci_set_value_by_section(s, "bridge_key", "");
 		dmuci_set_value_by_section(s, "penable", "0");
 	}
-	uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
 #else
 	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
 #endif
@@ -369,14 +365,14 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 		}
 #ifndef EX400
 	} else if (strncmp(linker, "ptm", 3) == 0) {
-		uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "ifname", linker, s) {
+		uci_foreach_option_eq("dsl", "ptm-device", "device", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
 			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
 	} else if (strncmp(linker, "atm", 3) == 0) {
-		uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "ifname", linker, s) {
+		uci_foreach_option_eq("dsl", "atm-device", "device", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
 			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
@@ -390,6 +386,13 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
+	} else if (strncmp(linker, "eth0", 4) == 0) {
+		uci_foreach_option_eq("network", "device", "name", linker, s) {
+			dmuci_set_value_by_section(s, "bridge_key", br_key);
+			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			break;
+		}
 	} else {
 		uci_foreach_option_eq("ports", "ethport", "ifname", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
@@ -397,14 +400,6 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
 			break;
 		}
-#ifndef EX400
-		uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
-			break;
-		}
-#endif
 	}
 	return 0;
 }
@@ -415,9 +410,8 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 int get_br_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
-	char *br_name;
-	dmastrcat(&br_name, "br-", section_name(((struct bridging_args *)data)->bridge_sec));
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", br_name, String}}, 1, &res);
+
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(((struct bridging_args *)data)->bridge_sec), String}}, 1, &res);
 	DM_ASSERT(res, *value = "false");
 	*value = dmjson_get_value(res, 1, "up");
 	return 0;
@@ -426,11 +420,14 @@ int get_br_enable(char *refparam, struct dmctx *ctx, void *data, char *instance,
 int get_br_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
+
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(((struct bridging_args *)data)->bridge_sec), String}}, 1, &res);
 	DM_ASSERT(res, *value = "Disabled");
 	*value = dmjson_get_value(res, 1, "up");
 	if(strcmp(*value,"true") == 0)
 		*value = "Enabled";
+	else
+		*value = "Disabled";
 	return 0;
 }
 
@@ -438,6 +435,7 @@ int set_br_enable(char *refparam, struct dmctx *ctx, void *data, char *instance,
 {
 	bool b;
 	int error = string_to_bool(value, &b);
+
 	switch (action) {
 		case VALUECHECK:
 			if (error)
@@ -817,7 +815,6 @@ int delete_bridge(char *refparam, struct dmctx *ctx, void *data, char *instance,
 				reset_br_port(bridgekey);
 				dmuci_set_value_by_section(bridge_s, "ifname", "");
 			}
-
 			break;
 	}
 	return 0;
@@ -941,18 +938,18 @@ int check_port_with_ifname (char * ifname, struct uci_section **ss)
 {
 	struct uci_section *s;
 	if (check_ifname_is_vlan(ifname)) {
-		uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "ifname", ifname, s) {
+		uci_foreach_option_eq("network", "device", "ifname", ifname, s) {
 			*ss = s;
 			break;
 		}
 #ifndef EX400
 	} else if (strncmp(ifname, "ptm", 3) == 0) {
-		uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "ifname", ifname, s) {
+		uci_foreach_option_eq("dsl", "ptm-device", "device", ifname, s) {
 			*ss = s;
 			break;
 		}
 	} else if (strncmp(ifname, "atm", 3) == 0) {
-		uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "ifname", ifname, s) {
+		uci_foreach_option_eq("dsl", "atm-device", "device", ifname, s) {
 			*ss = s;
 			break;
 		}
@@ -967,12 +964,6 @@ int check_port_with_ifname (char * ifname, struct uci_section **ss)
 			*ss = s;
 			break;
 		}
-#ifndef EX400
-		uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", ifname, s) {
-			*ss = s;
-			break;
-		}
-#endif
 	}
 	return 0;
 }
@@ -985,13 +976,14 @@ int get_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 	char plinker[32];
 	struct uci_section *s = NULL;
 	char lbuf[512];
-
 	dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_port_sec, "mg_port", &mg_port);
 	dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_sec, "ifname", &ifname);
 	if (ifname[0] != '\0' && strcmp(mg_port, "true") ==  0) {
 		ifname_dup = dmstrdup(ifname);
 		p = lbuf;
 		for (pch = strtok_r(ifname_dup, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
+			if (strstr(pch, "atm") || strstr(pch, "ptm") || strstr(pch, wan_baseifname))
+				continue;
 			check_port_with_ifname(pch, &s);
 			sprintf(plinker, "%s+%s", section_name(s), pch);
 			adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", DMROOT, dm_delim, dm_delim, dm_delim), plinker, value);
@@ -1184,11 +1176,8 @@ int browseBridgeInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, 
 	struct uci_section *br_s = NULL;
 	char *br_inst = NULL, *br_inst_last = NULL, *ifname;
 	struct bridging_args curr_bridging_args = {0};
-#ifdef EX400
+
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname);
-#else
-	dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &wan_baseifname);
-#endif
 	uci_foreach_option_eq("network", "interface", "type", "bridge", br_s) {
 		br_inst = handle_update_instance(1, dmctx, &br_inst_last, update_instance_alias, 3, br_s, "bridge_instance", "bridge_alias");
 		dmuci_get_value_by_section_string(br_s, "ifname", &ifname);
@@ -1201,12 +1190,12 @@ int browseBridgeInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, 
 
 int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *eth_s = NULL, *atm_s = NULL, *ptm_s = NULL, *wl_s = NULL, *vlan_s = NULL, *w_eth_s = NULL, *m_port = NULL, *new_port = NULL;
+	struct uci_section *eth_s = NULL, *atm_s = NULL, *ptm_s = NULL, *wl_s = NULL, *vlan_s = NULL, *w_eth_s = NULL, *new_port = NULL;
 	char *port = NULL, *port_last = NULL, *vlan = NULL, *vlan_last = NULL;
-	char *ifname_dup = NULL, *pch, *spch, *vid;
+	char *ifname_dup = NULL, *pch, *spch;
 	bool find_max = true;
 	struct bridging_port_args curr_bridging_port_args = {0};
-
+	bool found = false;
 	update_section_list(DMMAP,"bridge_port", "bridge_key", 1, ((struct bridging_args *)prev_data)->br_key, "mg_port", "true", "bridge_port_instance", "1");
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "bridge_port", "bridge_key",  ((struct bridging_args *)prev_data)->br_key, new_port) {
 		init_bridging_port_args(&curr_bridging_port_args, new_port, ((struct bridging_args *)prev_data)->bridge_sec, false, "");
@@ -1218,7 +1207,7 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 		return 0;
 	ifname_dup = dmstrdup(((struct bridging_args *)prev_data)->ifname);
 	for (pch = strtok_r(ifname_dup, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
-		bool found = false;
+		found = false;
 		if(!found) {
 			uci_foreach_option_eq("ports", "ethport", "ifname", pch, eth_s) {
 				dmuci_set_value_by_section(eth_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
@@ -1234,7 +1223,7 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 		}
 #ifndef EX400
 		if(!found) {
-			uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "ifname", pch, atm_s) {
+			uci_foreach_option_eq("dsl", "atm-device", "device", pch, atm_s) {
 				dmuci_set_value_by_section(atm_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
 				dmuci_set_value_by_section(atm_s, "mg_port", "false");
 				dmuci_set_value_by_section(atm_s, "penable", "1");
@@ -1247,7 +1236,7 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 			}
 		}
 		if(!found) {
-			uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "ifname", pch, ptm_s) {
+			uci_foreach_option_eq("dsl", "ptm-device", "device", pch, ptm_s) {
 				dmuci_set_value_by_section(ptm_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
 				dmuci_set_value_by_section(ptm_s, "mg_port", "false");
 				dmuci_set_value_by_section(ptm_s, "penable", "1");
@@ -1261,21 +1250,20 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 		}
 #endif
 		if(!found) {
-#ifndef EX400
-				uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", pch, w_eth_s) {
-#else
-				uci_foreach_option_eq("network", "interface", "ifname", pch, w_eth_s) {
-#endif
-				dmuci_set_value_by_section(w_eth_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
-				dmuci_set_value_by_section(w_eth_s, "mg_port", "false");
-				dmuci_set_value_by_section(w_eth_s, "penable", "1");
-				init_bridging_port_args(&curr_bridging_port_args, w_eth_s, ((struct bridging_args *)prev_data)->bridge_sec, false, pch);
-				port = handle_update_instance(2, dmctx, &port_last, br_port_update_instance_alias, 5, w_eth_s, "bridge_port_instance", "bridge_port_alias", &find_max, ((struct bridging_args *)prev_data)->br_key);
-				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_port_args, port) == DM_STOP)
-					goto end;
-				found  = true ;
-				break;
+			if(strncmp(pch, wan_baseifname, strlen(wan_baseifname))==0){
+				uci_foreach_option_eq("network", "device", "name", pch, w_eth_s) { //just if we are in wan eth ifname
+					dmuci_set_value_by_section(w_eth_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
+					dmuci_set_value_by_section(w_eth_s, "mg_port", "false");
+					dmuci_set_value_by_section(w_eth_s, "penable", "1");
+					init_bridging_port_args(&curr_bridging_port_args, w_eth_s, ((struct bridging_args *)prev_data)->bridge_sec, false, pch);
+					port = handle_update_instance(2, dmctx, &port_last, br_port_update_instance_alias, 5, w_eth_s, "bridge_port_instance", "bridge_port_alias", &find_max, ((struct bridging_args *)prev_data)->br_key);
+					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_port_args, port) == DM_STOP)
+						goto end;
+					found  = true ;
+					break;
+				}
 			}
+
 		}
 		if(!found) {
 			uci_foreach_option_eq("wireless", "wifi-iface", "ifname", pch, wl_s) {

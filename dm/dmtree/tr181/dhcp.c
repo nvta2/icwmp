@@ -94,7 +94,7 @@ DMLEAF tDhcpServerPoolClientIPv4AddressParams[] = {
 * LINKER
 ***************************************************************************/
 int get_dhcp_client_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (((struct client_args *)data)->key) {
+	if (data && ((struct client_args *)data)->key) {
 		*linker = ((struct client_args *)data)->key;
 		return 0;
 	} else {

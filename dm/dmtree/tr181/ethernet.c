@@ -62,7 +62,7 @@ DMLEAF tEthernetStatParams[] = {
 * LINKER
 ***************************************************************************/
 int get_linker_val(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (((struct eth_port_args *)data)->ifname) {
+	if (data && ((struct eth_port_args *)data)->ifname) {
 		*linker = ((struct eth_port_args *)data)->ifname;
 		return 0;
 	} else {
@@ -338,11 +338,8 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 	char *int_num = NULL, *int_num_last = NULL, *ifname;
 	struct uci_section *ss = NULL;
 	struct eth_port_args curr_eth_port_args = {0};
-#ifndef EX400
-	dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &wan_ifname);
-#else
+
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_ifname);
-#endif
 	uci_foreach_sections("ports", "ethport", ss) {
 		dmuci_get_value_by_section_string(ss, "ifname", &ifname);
 		if (strcmp(ifname, wan_ifname) == 0) {

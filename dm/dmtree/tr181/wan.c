@@ -17,6 +17,8 @@
 #include "wan.h"
 #include "dmjson.h"
 
+#define DSL_LINE 2
+
 /*** DSL. ***/
 DMOBJ tDslObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
@@ -132,11 +134,27 @@ DMLEAF tPtmLinkStatsParams[] = {
 {0}
 };
 
+enum enum_dslline_idx {
+	IDX_VDSL,
+	IDX_ADSL
+};
+
+struct dsl_line
+{
+	char *instance;
+	char *type;
+};
+
+struct dsl_line dsl_lines[DSL_LINE] = {
+	[IDX_VDSL] = {"1", "vdsl"},
+	[IDX_ADSL] = {"2", "adsl"}
+};
+
 /**************************************************************************
 * LINKER
 ***************************************************************************/
 int get_atm_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (((struct atm_args *)data)->ifname) {
+	if (data && ((struct atm_args *)data)->ifname) {
 		*linker =  ((struct atm_args *)data)->ifname;
 		return 0;
 	}
@@ -145,7 +163,7 @@ int get_atm_linker(char *refparam, struct dmctx *dmctx, void *data, char *instan
 }
 
 int get_ptm_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (((struct ptm_args *)data)->ifname){
+	if (data && ((struct ptm_args *)data)->ifname){
 		*linker =  ((struct ptm_args *)data)->ifname;
 		return 0;
 	}
@@ -153,7 +171,7 @@ int get_ptm_linker(char *refparam, struct dmctx *dmctx, void *data, char *instan
 	return 0;
 }
 int get_dsl_line_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (((struct dsl_line_args *)data)->type) {
+	if (data && ((struct dsl_line_args *)data)->type) {
 		*linker = ((struct dsl_line_args *)data)->type;
 		return 0;
 	}
@@ -162,7 +180,7 @@ int get_dsl_line_linker(char *refparam, struct dmctx *dmctx, void *data, char *i
 }
 
 int get_dsl_channel_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (((struct dsl_line_args *)data)->type){
+	if (data && ((struct dsl_line_args *)data)->type){
 		*linker = ((struct dsl_line_args *)data)->type;
 		return 0;
 	}
@@ -310,7 +328,7 @@ int get_dsl_link_downstreammaxrate(char *refparam, struct dmctx *ctx, void *data
 	json_object *res = NULL;
 	json_object *sub_obj = NULL;
 	json_object *sub_obj_2 = NULL;
-	*value = "";
+	*value = "0";
 	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
@@ -333,7 +351,7 @@ int get_dsl_link_downstreamattenuation(char *refparam, struct dmctx *ctx, void *
 {
 	char *attn_down_x100;
 	json_object *res = NULL;
-	*value = "";
+	*value = "0";
 	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
@@ -350,7 +368,7 @@ int get_dsl_link_downstreamnoisemargin(char *refparam, struct dmctx *ctx, void *
 {
 	char *snr_down_x100;
 	json_object *res;
-	*value = "";
+	*value = "0";
 	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
@@ -369,7 +387,7 @@ int get_dsl_link_upstreammaxrate(char *refparam, struct dmctx *ctx, void *data, 
 	json_object *res = NULL;
 	json_object *sub_obj = NULL;
 	json_object *sub_obj_2 = NULL;
-	*value = "";
+	*value = "0";
 	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
@@ -390,7 +408,7 @@ int get_dsl_link_upstreamattenuation(char *refparam, struct dmctx *ctx, void *da
 {
 	char *attn_up_x100;
 	json_object *res = NULL;
-	*value = "";
+	*value = "0";
 	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
@@ -407,7 +425,7 @@ int get_dsl_link_upstreamnoisemargin(char *refparam, struct dmctx *ctx, void *da
 {
 	char *snr_up_x100;
 	json_object *res;
-	*value = "";
+	*value = "0";
 	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
 		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
 		DM_ASSERT(res, *value = "0");
@@ -477,14 +495,18 @@ int get_dsl_channel_upstreamcurrrate(char *refparam, struct dmctx *ctx, void *da
 
 int get_channel_annexm_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *val = "0";
-	*value = "";
+	struct uci_list *v;
+	struct uci_element *e;
+	*value = "0";
+
 	if (strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0) {
-		dmuci_get_option_value_string("layer2_interface", "capabilities", "AnnexM", &val);
-		if (val[0] != '\0') {
-			if (strcasecmp(val, "enabled") == 0) {
-				*value = "1";
-				return 0;
+		dmuci_get_option_value_list("dsl","line","mode", &v);
+		if (v) {
+			uci_foreach_element(v, e) {
+				if (strcasecmp(e->name, "AnnexM") == 0) {
+					*value = "1";
+					return 0;
+				}
 			}
 		}
 	}
@@ -493,6 +515,8 @@ int get_channel_annexm_status(char *refparam, struct dmctx *ctx, void *data, cha
 
 int set_channel_annexm_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_list *v;
+	struct uci_element *e;
 	bool b;
 
 	switch (action) {
@@ -501,13 +525,23 @@ int set_channel_annexm_status(char *refparam, struct dmctx *ctx, void *data, cha
 				return FAULT_9007;
 			return 0;
 		case VALUESET:
-			string_to_bool(value, &b);
-			if(b) {
-				dmuci_set_value("layer2_interface", "capabilities", "AnnexM", "Enabled");
+			if (strcmp(((struct dsl_line_args *)data)->type, "adsl") != 0) {
+				return 0;
 			}
-			else
-				dmuci_set_value("layer2_interface", "capabilities", "AnnexM", "");
-			return 0;
+			string_to_bool(value, &b);
+
+			dmuci_get_option_value_list("dsl","line","mode", &v);
+			if (v) {
+				uci_foreach_element(v, e) {
+					if (strcasecmp(e->name, "AnnexM") == 0 && b==false) {
+						dmuci_del_list_value("dsl", "line", "mode", "annexm");
+						return 0;
+					}else if(strcasecmp(e->name, "AnnexM") != 0 && b==true){
+						dmuci_add_list_value("dsl", "line", "mode", "annexm");
+						return 0;
+					}
+				}
+			}
 	}
 	return 0;
 }
@@ -573,20 +607,13 @@ int get_ptm_link_name(char *refparam, struct dmctx *ctx, void *data, char *insta
 
 int get_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *type, *encapsulation;
-	dmuci_get_value_by_section_string(((struct atm_args *)data)->atm_sec,"link_type", &type);
-	if (strcmp(type, "EoA") == 0 ) {
-		type = "encapseoa";
-	} else if (strcmp(type, "PPPoA") == 0) {
-		type = "encapspppoa";
-	} else if (strcmp(type, "IPoA") == 0) {
-		type = "encapsipoa";
-	}
-	dmuci_get_value_by_section_string(((struct atm_args *)data)->atm_sec, type, &encapsulation);
-	if (strstr(encapsulation, "vcmux")) {
+	char *encapsulation;
+
+	dmuci_get_value_by_section_string(((struct atm_args *)data)->atm_sec, "encapsulation", &encapsulation);
+	if (strcasecmp(encapsulation, "vcmux") == 0) {
 		*value = "VCMUX";
 	}
-	else if (strstr(encapsulation, "llc")) {
+	else if (strcasecmp(encapsulation, "llc") == 0) {
 		*value = "LLC";
 	} else {
 		*value = "";
@@ -596,40 +623,22 @@ int get_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int set_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	int i;
-	struct uci_section *s;
-	char *type, *encapsulation, *encaptype, *pch;
+	char *encapsulation;
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_get_value_by_section_string(((struct atm_args *)data)->atm_sec, "link_type", &type);
-			int enc;
-			if (strstr(value, "VCMUX")) {
-				enc = 1;
+			if (strcmp(value, "VCMUX") == 0) {
+				encapsulation = "vcmux";
 			}
-			else if (strstr(value, "LLC")) {
-				enc = 0;
-			}
-			else
-				return 0;
-			if (strstr(type, "EoA")) {
-				encaptype = "encapseoa";
-				encapsulation = enc ? "vcmux_eth" : "llcsnap_eth";
-			}
-			else if (strstr(type, "PPPoA")) {
-				encaptype = "encapspppoa";
-				encapsulation = enc ? "vcmux_pppoa" : "llcencaps_ppp";
-			}
-			else if (strstr(type, "IPoA")) {
-				encaptype = "encapsipoa";
-				encapsulation = enc ? "vcmux_ipoa" : "llcsnap_rtip";
+			else if (strcmp(value, "LLC") == 0) {
+				encapsulation = "llc";
 			}
 			else
 				return 0;
 
-			dmuci_set_value_by_section(((struct atm_args *)data)->atm_sec, encaptype, encapsulation);
+			dmuci_set_value_by_section(((struct atm_args *)data)->atm_sec, "encapsulation", encapsulation);
 			return 0;
 	}
 	return 0;
@@ -770,49 +779,40 @@ int get_ptm_enable(char *refparam, struct dmctx *ctx, void *data, char *instance
 /*************************************************************/
 int add_atm_link(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	int idx;
-	char *value;
-	char *instance;
-	char ifname[16] = {0};
-	char buf[16] = {0};
-	struct uci_section *s = NULL;
+	char *instance = NULL;
+	char *atm_device = NULL;
+	char *instance_update = NULL;
 
-	idx = get_cfg_layer2idx("layer2_interface_adsl", "atm_bridge", "baseifname", sizeof("atm")-1);
-	sprintf(buf, "atm%d",idx);
-	sprintf(ifname,"%s.1",buf);
-	instance = get_last_instance("layer2_interface_adsl", "atm_bridge", "atmlinkinstance");
-	dmuci_add_section("layer2_interface_adsl", "atm_bridge", &s, &value);
-	dmuci_set_value_by_section(s, "baseifname", buf);
-	dmuci_set_value_by_section(s, "bridge", "0");
-	dmuci_set_value_by_section(s, "encapseoa", "llcsnap_eth");
-	dmuci_set_value_by_section(s, "ifname", ifname);
-	dmuci_set_value_by_section(s, "link_type", "EoA");
-	dmuci_set_value_by_section(s, "unit", buf + 3);
-	dmuci_set_value_by_section(s, "vci", "35");
-	dmuci_set_value_by_section(s, "vpi", "8");
-	*instancepara = update_instance(s, instance, "atmlinkinstance");
+	instance = get_last_instance("dsl", "atm-device", "atmlinkinstance");
+	dmasprintf(&atm_device, "atm%d", instance ? atoi(instance) : 0);
+	dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
+	dmuci_set_value("dsl", atm_device, "", "atm-device");
+	dmuci_set_value("dsl", atm_device, "name", "ATM");
+	dmuci_set_value("dsl", atm_device, "vpi", "8");
+	dmuci_set_value("dsl", atm_device, "vci", "35");
+	dmuci_set_value("dsl", atm_device, "device", atm_device);
+	dmuci_set_value("dsl", atm_device, "link_type", "eoa");
+	dmuci_set_value("dsl", atm_device, "encapsulation", "llc");
+	dmuci_set_value("dsl", atm_device, "qos_class", "ubr");
+	*instancepara = dmuci_set_value("dsl", atm_device, "atmlinkinstance", instance_update);
 	return 0;
 }
 
 int add_ptm_link(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	int idx;
-	char *value;
-	char *instance;
-	char ifname[16] = {0};
-	char buf[16] = {0};
-	struct uci_section *s = NULL;
+	char *instance = NULL;
+	char *ptm_device = NULL;
+	char *instance_update = NULL;
 
-	idx = get_cfg_layer2idx("layer2_interface_vdsl", "vdsl_interface", "baseifname", sizeof("ptm")-1);
-	sprintf(buf,"ptm%d", idx);
-	sprintf(ifname,"%s.1",buf);
-	instance = get_last_instance("layer2_interface_vdsl", "vdsl_interface", "ptmlinkinstance");
-	dmuci_add_section("layer2_interface_vdsl", "vdsl_interface", &s, &value);
-	dmuci_set_value_by_section(s, "baseifname", buf);
-	dmuci_set_value_by_section(s, "bridge", "0");
-	dmuci_set_value_by_section(s, "ifname", ifname);
-	dmuci_set_value_by_section(s, "unit", buf + 3);
-	*instancepara = update_instance(s, instance, "ptmlinkinstance");
+	instance = get_last_instance("dsl", "ptm-device", "ptmlinkinstance");
+	dmasprintf(&ptm_device, "ptm%d", instance ? atoi(instance) : 0);
+	dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
+	dmuci_set_value("dsl", ptm_device, "", "ptm-device");
+	dmuci_set_value("dsl", ptm_device, "name", "PTM");
+	dmuci_set_value("dsl", ptm_device, "device", ptm_device);
+	dmuci_set_value("dsl", ptm_device, "priority", "1");
+	dmuci_set_value("dsl", ptm_device, "portid", "1");
+	*instancepara = dmuci_set_value("dsl", ptm_device, "ptmlinkinstance", instance_update);
 	return 0;
 }
 
@@ -820,45 +820,45 @@ int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 {
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
-
 	struct uci_section *ns = NULL;
 	struct uci_section *nss = NULL;
 	char *ifname;
+
 	switch (del_action) {
 		case DEL_INST:
 			dmuci_delete_by_section(((struct atm_args *)data)->atm_sec, NULL, NULL);
 			uci_foreach_option_cont("network", "interface", "ifname", ((struct atm_args *)data)->ifname, s) {
-				if (ss)
+				if (ss && ifname!=NULL)
 					wan_remove_dev_interface(ss, ((struct atm_args *)data)->ifname);
 				ss = s;
 			}
-			if (ss != NULL)
+			if (ss != NULL && ifname!=NULL)
 				wan_remove_dev_interface(ss, ((struct atm_args *)data)->ifname);
 			break;
 		case DEL_ALL:
-			uci_foreach_sections("layer2_interface_adsl", "atm_bridge", s) {
+			uci_foreach_sections("dsl", "atm-device", s) {
 				if (ss){
-					dmuci_get_value_by_section_string(ss, "ifname", &ifname);
+					dmuci_get_value_by_section_string(ss, "device", &ifname);
 					dmuci_delete_by_section(ss, NULL, NULL);
 					uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
-						if (nss)
+						if (nss && ifname!=NULL)
 							wan_remove_dev_interface(nss, ifname);
 						nss = ns;
 					}
-					if (nss != NULL)
+					if (nss != NULL && ifname!=NULL)
 						wan_remove_dev_interface(nss, ifname);
 				}
 				ss = s;
 			}
 			if (ss != NULL) {
-				dmuci_get_value_by_section_string(ss, "ifname", &ifname);
+				dmuci_get_value_by_section_string(ss, "device", &ifname);
 				dmuci_delete_by_section(ss, NULL, NULL);
 				uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
-					if (nss)
+					if (nss && ifname!=NULL)
 						wan_remove_dev_interface(nss, ifname);
 					nss = ns;
 				}
-				if (nss != NULL)
+				if (nss != NULL && ifname!=NULL)
 					wan_remove_dev_interface(nss, ifname);
 			}
 			break;
@@ -871,7 +871,6 @@ int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	char *ifname;
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
-
 	struct uci_section *ns = NULL;
 	struct uci_section *nss = NULL;
 
@@ -879,37 +878,37 @@ int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	case DEL_INST:
 		dmuci_delete_by_section(((struct ptm_args *)data)->ptm_sec, NULL, NULL);
 		uci_foreach_option_cont("network", "interface", "ifname", ((struct ptm_args *)data)->ifname, s) {
-			if (ss)
+			if (ss && ifname!=NULL)
 				wan_remove_dev_interface(ss, ((struct ptm_args *)data)->ifname);
 			ss = s;
 		}
-		if (ss != NULL)
+		if (ss != NULL && ifname!=NULL)
 			wan_remove_dev_interface(ss, ((struct ptm_args *)data)->ifname);
 		break;
 	case DEL_ALL:
-		uci_foreach_sections("layer2_interface_vdsl", "vdsl_interface", s) {
+		uci_foreach_sections("dsl", "ptm-device", s) {
 			if (ss){
-				dmuci_get_value_by_section_string(ss, "ifname", &ifname);
+				dmuci_get_value_by_section_string(ss, "device", &ifname);
 				dmuci_delete_by_section(ss, NULL, NULL);
 				uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
 					if (nss)
 						wan_remove_dev_interface(nss, ifname);
 					nss = ns;
 				}
-				if (nss != NULL)
+				if (nss != NULL && ifname!=NULL)
 					wan_remove_dev_interface(nss, ifname);
 			}
 			ss = s;
 		}
 		if (ss != NULL) {
-			dmuci_get_value_by_section_string(ss, "ifname", &ifname);
+			dmuci_get_value_by_section_string(ss, "device", &ifname);
 			dmuci_delete_by_section(ss, NULL, NULL);
 			uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
-				if (nss)
+				if (nss && ifname!=NULL)
 					wan_remove_dev_interface(nss, ifname);
 				nss = ns;
 			}
-			if (nss != NULL)
+			if (nss != NULL && ifname!=NULL)
 				wan_remove_dev_interface(nss, ifname);
 		}
 		break;
@@ -994,45 +993,73 @@ int set_ptm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+int update_create_dmmap_dsl(void){
+	struct uci_section *s;
+	char *alias;
+	int i;
+
+	uci_foreach_sections("dsl", "dsl-line", s) {
+		uci_path_foreach_sections(icwmpd, DMMAP, "dsltype", s) {
+			return 1;
+		}
+
+		for(i=0; i<DSL_LINE; i++){
+			asprintf(&alias, "cpe-%d", i+1);
+			DMUCI_SET_VALUE(icwmpd, "dmmap", dsl_lines[i].type, "", "dsltype");
+			DMUCI_SET_VALUE(icwmpd, "dmmap", dsl_lines[i].type, "dsllinkinstance", dsl_lines[i].instance);
+			DMUCI_SET_VALUE(icwmpd, "dmmap", dsl_lines[i].type, "dsllinkalias", alias);
+			free(alias);
+		}
+		return 1;
+	}
+	return 0;
+}
+
 
 int browseDslLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	char *wnum = NULL, *wnum_last = NULL, *channel_last = NULL, *type;
+	char *wnum = NULL, *wnum_last = NULL;
 	struct uci_section *s = NULL;
 	struct dsl_line_args curr_dsl_line_args = {0};
 
-	uci_foreach_sections("layer2_interface", "dsltype", s) {
-		init_dsl_link(&curr_dsl_line_args, s, section_name(s));
-		wnum = handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, s, "dsllinkinstance", "dsllinkalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dsl_line_args, wnum) == DM_STOP)
-			break;
+	if (update_create_dmmap_dsl())
+	{
+		uci_path_foreach_sections(icwmpd, DMMAP, "dsltype", s) {
+			init_dsl_link(&curr_dsl_line_args, s, section_name(s));
+			wnum = handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, s, "dsllinkinstance", "dsllinkalias");
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dsl_line_args, wnum) == DM_STOP)
+				break;
+		}
 	}
 	return 0;
 }
 
 int browseDslChannelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	char *wnum = NULL, *wnum_last = NULL, *channel_last = NULL, *type;
+	char *wnum = NULL, *wnum_last = NULL;
 	struct uci_section *s = NULL;
 	struct dsl_line_args curr_dsl_line_args = {0};
 
-	uci_foreach_sections("layer2_interface", "dsltype", s) {
-		init_dsl_link(&curr_dsl_line_args, s, section_name(s));
-		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, s, "channelinstance", "channelalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dsl_line_args, wnum) == DM_STOP)
-			break;
+	if (update_create_dmmap_dsl())
+	{
+		uci_path_foreach_sections(icwmpd, DMMAP, "dsltype", s) {
+			init_dsl_link(&curr_dsl_line_args, s, section_name(s));
+			wnum = handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, s, "channelinstance", "channelalias");
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dsl_line_args, wnum) == DM_STOP)
+				break;
+		}
 	}
 	return 0;
 }
 
 int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	char *wnum = NULL, *wnum_last = NULL, *channel_last = NULL, *ifname;
+	char *wnum = NULL, *channel_last = NULL, *ifname;
 	struct uci_section *s = NULL;
 	struct atm_args curr_atm_args = {0};
 
-	uci_foreach_sections("layer2_interface_adsl", "atm_bridge", s) {
-		dmuci_get_value_by_section_string(s, "ifname", &ifname);
+	uci_foreach_sections("dsl", "atm-device", s) {
+		dmuci_get_value_by_section_string(s, "device", &ifname);
 		init_atm_link(&curr_atm_args, s, ifname);
 		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, s, "atmlinkinstance", "atmlinkalias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_atm_args, wnum) == DM_STOP)
@@ -1043,12 +1070,12 @@ int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 
 int browsePtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	char *wnum = NULL, *wnum_last = NULL, *channel_last = NULL, *ifname;
+	char *wnum = NULL, *channel_last = NULL, *ifname;
 	struct uci_section *s = NULL;
 	struct ptm_args curr_ptm_args = {0};
 
-	uci_foreach_sections("layer2_interface_vdsl", "vdsl_interface", s) {
-		dmuci_get_value_by_section_string(s, "ifname", &ifname);
+	uci_foreach_sections("dsl", "ptm-device", s) {
+		dmuci_get_value_by_section_string(s, "device", &ifname);
 		init_ptm_link(&curr_ptm_args, s, ifname);
 		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, s, "ptmlinkinstance", "ptmlinkalias"); //finish here
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_ptm_args, wnum) == DM_STOP)

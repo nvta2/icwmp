@@ -23,9 +23,9 @@ const char *vlan_ifname[3] = {"eth","atm", "ptm"};
 char *wan_baseifname = NULL;
 #ifndef EX400
 struct wan_interface wan_interface_tab[3] = {
-{"1", "ethernet", "layer2_interface_ethernet", "ethernet_interface"},
-{"2", "adsl", "layer2_interface_adsl", "atm_bridge"},
-{"3", "vdsl", "layer2_interface_vdsl", "vdsl_interface"}
+{"1", "ethernet", "ports", "ethport"},
+{"2", "adsl", "dsl", "atm-device"},
+{"3", "vdsl", "dsl", "ptm-device"}
 };
 #endif
 
@@ -99,7 +99,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 		uci_foreach_sections(wan_interface_tab[i].package, wan_interface_tab[i].section, wan_s) {
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
 			dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
-			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
+			dmuci_get_value_by_section_string(wan_s, "device", &base_ifname);
 			ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 			init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
 			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, available_inst) == DM_STOP)
@@ -110,7 +110,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 	uci_foreach_sections("ports", "ethport", wan_s) {
 		if(!strcmp(wan_s->e.name, "WAN")){
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
-			dmasprintf(&oface, DMROOT_CWMP"WANDevice.1.WANConnectionDevice.%s.", waninstance); // MEM WILL BE FREED IN DMMEMCLEAN
+			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
 			ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 			init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
@@ -148,11 +148,8 @@ int browselayer2_bridgeInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 	char *bridge_instance = NULL, *bridge_instance_last = NULL;
 	struct uci_section *bridge_s;
 	struct args_layer2 curr_args = {0};
-#ifdef EX400
-		dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname);
-#else
-	dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &wan_baseifname);
-#endif
+
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname);
 	uci_foreach_option_eq("network", "interface", "type", "bridge", bridge_s) {
 		bridge_instance =  handle_update_instance(1, dmctx, &bridge_instance_last, update_instance_alias, 3, bridge_s, "bridge_instance", "bridge_alias");
 		init_args_layer2(&curr_args, bridge_s, NULL, NULL, bridge_instance_last, NULL, NULL);
@@ -207,7 +204,7 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 		uci_foreach_sections(wan_interface_tab[i].package, wan_interface_tab[i].section, wan_s) {
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
 			dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
-			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
+			dmuci_get_value_by_section_string(wan_s, "device", &base_ifname);
 			update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 		}
 	}
@@ -215,7 +212,7 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 	uci_foreach_sections("ports", "ethport", wan_s) {
 		if(!strcmp(wan_s->e.name, "WAN")){
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
-			dmasprintf(&oface, DMROOT_CWMP"WANDevice.1.WANConnectionDevice.%s.", waninstance); // MEM WILL BE FREED IN DMMEMCLEAN
+			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
 			update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 		}

@@ -210,9 +210,9 @@ struct wan_device
 };
 
 struct wan_device wan_devices[WAN_DEVICE] = {
-	[WAN_IDX_ETH] = {"1", NULL, "ethernet_interface", "layer2_interface_ethernet"},
-	[WAN_IDX_ATM] = {"2", "atm", "atm_bridge", "layer2_interface_adsl"},
-	[WAN_IDX_PTM] = {"3", "ptm", "vdsl_interface", "layer2_interface_vdsl"}
+	[WAN_IDX_ETH] = {"1", "eth0", "ethport", "ports"},
+	[WAN_IDX_ATM] = {"2", "atm", "atm-device", "dsl"},
+	[WAN_IDX_PTM] = {"3", "ptm", "ptm-device", "dsl"}
 };
 #endif
 
@@ -297,14 +297,13 @@ void set_bridge_layer2(struct dmctx *ctx, char *bridge, struct wanargs *wandcpro
 		}
 #ifndef EX400
 		else if (strstr(pch, "atm")) {
-			uci_foreach_option_eq("layer2_interface_adsl", "atm_bridge", "ifname", pch, s)
+			uci_foreach_option_eq("network", "device", "name", pch, s)
 			{
 				dmuci_set_value_by_section(s, "bridge", bridge);
 			}
-
 		}
 		else if (strstr(pch, "ptm")) {
-			uci_foreach_option_eq("layer2_interface_vdsl", "vdsl_interface", "ifname", pch, s)
+			uci_foreach_option_eq("network", "device", "name", pch, s)
 			{
 				dmuci_set_value_by_section(s, "bridge", bridge);
 			}
@@ -315,14 +314,11 @@ void set_bridge_layer2(struct dmctx *ctx, char *bridge, struct wanargs *wandcpro
 
 			uci_foreach_option_eq("network", "interface", "ifname", pch, s)
 			{
-
 				dmuci_set_value_by_section(s, "bridge", bridge);
-
-				fprintf(stdout, "bridge = %s\n", bridge);
 			}
 
 #else
-			uci_foreach_option_eq("layer2_interface_ethernet", "ethernet_interface", "ifname", pch, s)
+			uci_foreach_option_eq("network", "device", "name", pch, s)
 			{
 				dmuci_set_value_by_section(s, "bridge", bridge);
 			}
@@ -439,47 +435,40 @@ char *get_last_instance_proto(char *package, char *section, char *opt_inst, char
 int add_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 #ifndef EX400
-	int iwan, idx;
-	char *value;
 	char *instance;
-	char ifname[16] = {0};
-	char buf[16] = {0};
-	struct uci_section *s = NULL;
+	char *device = NULL;
+	char *instance_update = NULL;
 	struct wanargs *wandargs = (struct wanargs *)data;
 
 	if (wandargs->instance == WAN_INST_ATM) {
-		idx = get_cfg_layer2idx("layer2_interface_adsl", "atm_bridge", "baseifname", sizeof("atm")-1);
-		sprintf(buf, "atm%d",idx);
-		sprintf(ifname,"%s.1",buf);
-		instance = get_last_instance_lev2("layer2_interface_adsl", "atm_bridge", "waninstance", "baseifname", "atm");
-		dmuci_add_section("layer2_interface_adsl", "atm_bridge", &s, &value);
-		dmuci_set_value_by_section(s, "baseifname", buf);
-		dmuci_set_value_by_section(s, "bridge", "0");
-		dmuci_set_value_by_section(s, "encapseoa", "llcsnap_eth");
-		dmuci_set_value_by_section(s, "ifname", ifname);
-		dmuci_set_value_by_section(s, "link_type", "EoA");
-		dmuci_set_value_by_section(s, "unit", buf+3);
-		dmuci_set_value_by_section(s, "vci", "35");
-		dmuci_set_value_by_section(s, "vpi", "8");
-		*instancepara = update_instance(s, instance, "waninstance");
+		instance = get_last_instance_lev2("dsl", "atm-device", "waninstance", "device", "atm");
+		dmasprintf(&device, "atm%d", instance ? atoi(instance) : 0);
+		dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
+		dmuci_set_value("dsl", device, "", "atm-device");
+		dmuci_set_value("dsl", device, "name", "ATM");
+		dmuci_set_value("dsl", device, "vpi", "8");
+		dmuci_set_value("dsl", device, "vci", "35");
+		dmuci_set_value("dsl", device, "device", device);
+		dmuci_set_value("dsl", device, "link_type", "eoa");
+		dmuci_set_value("dsl", device, "encapsulation", "llc");
+		dmuci_set_value("dsl", device, "qos_class", "ubr");
+		*instancepara = dmuci_set_value("dsl", device, "waninstance", instance_update);
 		return 0;
 	}
 	else if (wandargs->instance == WAN_INST_PTM) {
-		idx = get_cfg_layer2idx("layer2_interface_vdsl", "vdsl_interface", "baseifname", sizeof("ptm")-1);
-		sprintf(buf,"ptm%d", idx);
-		sprintf(ifname,"%s.1",buf);
-		instance = get_last_instance_lev2("layer2_interface_vdsl", "vdsl_interface", "waninstance", "baseifname", "ptm");
-		dmuci_add_section("layer2_interface_vdsl", "vdsl_interface", &s, &value);
-		dmuci_set_value_by_section(s, "baseifname", buf);
-		dmuci_set_value_by_section(s, "bridge", "0");
-		dmuci_set_value_by_section(s, "ifname", ifname);
-		dmuci_set_value_by_section(s, "unit", buf+3);
-		*instancepara = update_instance(s, instance, "waninstance");
+		instance = get_last_instance_lev2("dsl", "ptm-device", "waninstance", "device", "ptm");
+		dmasprintf(&device, "ptm%d", instance ? atoi(instance) : 0);
+		dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
+		dmuci_set_value("dsl", device, "", "ptm-device");
+		dmuci_set_value("dsl", device, "name", "PTM");
+		dmuci_set_value("dsl", device, "device", device);
+		dmuci_set_value("dsl", device, "priority", "1");
+		dmuci_set_value("dsl", device, "portid", "1");
+		*instancepara = dmuci_set_value("dsl", device, "waninstance", instance_update);
 		return 0;
 	}
 	return FAULT_9005;
 #else
-
 	return FAULT_9008;
 #endif
 }
@@ -491,7 +480,7 @@ int delete_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data
 	struct uci_section *ss = NULL;
 	struct wanargs *wandargs;
 	struct wanargs *wandcdevargs;
-	
+
 	switch (del_action) {
 		case DEL_INST:
 			wandcdevargs = (struct wanargs *)data;
@@ -506,7 +495,7 @@ int delete_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data
 			return 0;
 		case DEL_ALL:
 			wandargs = (struct wanargs *)data;
-			uci_foreach_option_cont(wan_devices[wandargs->instance - 1].cdev, wan_devices[wandargs->instance - 1].stype, "baseifname", wandargs->fdev, s) {
+			uci_foreach_option_cont(wan_devices[wandargs->instance - 1].cdev, wan_devices[wandargs->instance - 1].stype, "device", wandargs->fdev, s) {
 				if (ss)
 					dmuci_delete_by_section(ss, NULL, NULL);
 				ss = s;
@@ -526,7 +515,6 @@ int delete_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data
 	}
 	return 0;
 #else
-
 	return FAULT_9008;
 #endif
 }
@@ -541,7 +529,6 @@ int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char 
 	instance = get_last_instance_proto("network", "interface", "conipinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_IP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1); //MEM WILL BE FREED IN DMMEMCLEAN
 #ifdef EX400
-
 	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
 
 #else
@@ -593,7 +580,6 @@ int add_wan_wanpppconnection(char *refparam, struct dmctx *ctx, void *data, char
 	instance = get_last_instance_proto("network", "interface", "conpppinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_PPP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1);
 #ifdef EX400
-
 	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WANPPPConnection, *instancepara);
 
 #else
@@ -1044,16 +1030,19 @@ int get_wan_device_dsl_upstreamnoisemargin(char *refparam, struct dmctx *ctx, vo
 
 int get_annexm_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *val = "0";
-	*value = "0";
 	struct wanargs *wandargs = (struct wanargs *)data;
+	struct uci_list *v;
+	struct uci_element *e;
+	*value = "0";
 	
 	if (wandargs->instance == WAN_INST_ATM) {
-		dmuci_get_option_value_string("layer2_interface", "capabilities", "AnnexM", &val);
-		if (val[0] != '\0') {
-			if (strcasecmp(val, "enabled") == 0) {
-				*value = "1";
-				return 0;
+		dmuci_get_option_value_list("dsl","line","mode", &v);
+		if (v) {
+			uci_foreach_element(v, e) {
+				if (strcasecmp(e->name, "AnnexM") == 0) {
+					*value = "1";
+					return 0;
+				}
 			}
 		}
 	}
@@ -1062,9 +1051,10 @@ int get_annexm_status(char *refparam, struct dmctx *ctx, void *data, char *insta
 
 int set_annexm_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	bool b;
-
+	struct uci_list *v;
+	struct uci_element *e;
 	struct wanargs *wandargs = (struct wanargs *)data;
+	bool b;
 		
 	switch (action) {
 		case VALUECHECK:
@@ -1076,12 +1066,19 @@ int set_annexm_enable(char *refparam, struct dmctx *ctx, void *data, char *insta
 				return 0;
 			}
 			string_to_bool(value, &b);
-			if(b) {
-				dmuci_set_value("layer2_interface", "capabilities", "AnnexM", "Enabled");					
+
+			dmuci_get_option_value_list("dsl","line","mode", &v);
+			if (v) {
+				uci_foreach_element(v, e) {
+					if (strcasecmp(e->name, "AnnexM") == 0 && b==false) {
+						dmuci_del_list_value("dsl", "line", "mode", "annexm");
+						return 0;
+					}else if(strcasecmp(e->name, "AnnexM") != 0 && b==true){
+						dmuci_add_list_value("dsl", "line", "mode", "annexm");
+						return 0;
+					}
+				}
 			}
-			else
-				dmuci_set_value("layer2_interface", "capabilities", "AnnexM", "");				
-			return 0;
 	}
 	return 0;
 }
@@ -1265,8 +1262,8 @@ int get_wan_dsl_link_config_destination_address(char *refparam, struct dmctx *ct
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 	char *vpi, *vci;
 	struct uci_section *s;
-	
-	uci_foreach_option_cont("layer2_interface_adsl", "atm_bridge", "ifname", wandcdevargs->fwan, s) { 
+
+	uci_foreach_option_cont("dsl", "atm-device", "device", wandcdevargs->fwan, s) {
 		dmuci_get_value_by_section_string(s, "vpi", &vpi);
 		dmuci_get_value_by_section_string(s, "vci", &vci);
 		dmasprintf(value, "PVC: %s/%s", vpi, vci); // MEM WILL BE FREED IN DMMEMCLEAN
@@ -1285,7 +1282,7 @@ int set_wan_dsl_link_config_destination_address(char *refparam, struct dmctx *ct
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			uci_foreach_option_cont("layer2_interface_adsl", "atm_bridge", "ifname", wandcdevargs->fwan, s) {
+			uci_foreach_option_cont("dsl", "atm-device", "device", wandcdevargs->fwan, s) {
 				if (strstr(value, "PVC: "))
 					value += 5;
 				else
@@ -1311,25 +1308,18 @@ int get_wan_dsl_link_config_atm_encapsulation(char *refparam, struct dmctx *ctx,
 {
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 	struct uci_section *s;
-	char *type, *encapsulation, *encaptype;
+	char *encapsulation;
 	*value = "";
 	
-	uci_foreach_option_cont("layer2_interface_adsl", "atm_bridge", "ifname", wandcdevargs->fwan, s) {
-		dmuci_get_value_by_section_string(s,"link_type", &type);
-		if (strcmp(type, "EoA") == 0 ) {
-			type = "encapseoa";
-		} else if (strcmp(type, "PPPoA") == 0) {
-			type = "encapspppoa";
-		} else if (strcmp(type, "IPoA") == 0) {
-			type = "encapsipoa";
-		}
-		dmuci_get_value_by_section_string(s, type, &encapsulation);
+	uci_foreach_option_cont("dsl", "atm-device", "device", wandcdevargs->fwan, s) {
+		dmuci_get_value_by_section_string(s, "encapsulation", &encapsulation);
 		if (strstr(encapsulation, "vcmux")) {
 			*value = "VCMUX";
 		}
 		else if (strstr(encapsulation, "llc")) {
 			*value = "LLC";
-		} else {
+		}
+		else {
 			*value = "";
 		}
 		break;
@@ -1339,43 +1329,26 @@ int get_wan_dsl_link_config_atm_encapsulation(char *refparam, struct dmctx *ctx,
 
 int set_wan_dsl_link_config_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	int i;
 	struct uci_section *s;
-	char *type, *encapsulation, *encaptype, *pch;
+	char *type, *encapsulation;
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			uci_foreach_option_cont("layer2_interface_adsl", "atm_bridge", "ifname", wandcdevargs->fwan, s) {
-				dmuci_get_value_by_section_string(s, "link_type", &type);
-				int enc;
+			uci_foreach_option_cont("dsl", "atm-device", "device", wandcdevargs->fwan, s) {
 				if (strstr(value, "VCMUX")) {
-					enc = 1;
+					encapsulation = "vcmux";
 				}
 				else if (strstr(value, "LLC")) {
-					enc = 0;
-				}
-				else
-					return 0;
-				if (strstr(type, "EoA")) {
-					encaptype = "encapseoa";
-					encapsulation = enc ? "vcmux_eth" : "llcsnap_eth";
-				}
-				else if (strstr(type, "PPPoA")) {
-					encaptype = "encapspppoa";
-					encapsulation = enc ? "vcmux_pppoa" : "llcencaps_ppp";
-				}
-				else if (strstr(type, "IPoA")) {
-					encaptype = "encapsipoa";
-					encapsulation = enc ? "vcmux_ipoa" : "llcsnap_rtip";
+					encapsulation = "llc";
 				}
 				else
 					return 0;
 				break;
 			}
-			dmuci_set_value_by_section(s, encaptype, encapsulation);
+			dmuci_set_value_by_section(s, "encapsulation", encapsulation);
 			return 0;
 	}
 	return 0;
@@ -2319,9 +2292,6 @@ char *get_wan_connection_device_notif(char *refparam, struct dmctx *dmctx, void 
 	return "0";
 }
 
-
-
-
 int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	int i = 0;
@@ -2335,37 +2305,27 @@ int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	dmuci_get_option_value_string("cwmp", "cpe", "default_wan_interface", &default_wan);
 	dmuci_get_option_value_string("network", default_wan, "ifname", &default_wan_ifname);
 	dmuci_get_option_value_string("network", default_wan, "proto", &defwanproto);
-#ifdef EX400
-
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &eth_wan);
-
-#else
-	dmuci_get_option_value_string("layer2_interface_ethernet", "Wan", "baseifname", &eth_wan);
 	wan_devices[WAN_IDX_ETH].fdev = eth_wan;
-#endif
+
 	if (strstr(defwanproto, "ppp"))
 		default_wan_proto = WAN_PROTO_PPP;
 	else if (strcmp(defwanproto, "dhcp") == 0 || strcmp(defwanproto, "static") == 0)
 		default_wan_proto = WAN_PROTO_IP;
 	else
 		default_wan_proto = WAN_PROTO_NIL;
-		update_section_list(DMMAP,"wan_dev", NULL, 3, NULL, NULL, NULL, NULL, NULL);
-		uci_path_foreach_sections(icwmpd, "dmmap", "wan_dev", s) {
+	update_section_list(DMMAP,"wan_dev", NULL, 3, NULL, NULL, NULL, NULL, NULL);
+	uci_path_foreach_sections(icwmpd, "dmmap", "wan_dev", s) {
 #ifdef EX400
-
 		if(i==WAN_IDX_ETH){
-
 			init_wanargs(&curr_wanargs, i+1, eth_wan, s);
-
 			if (strstr(default_wan_ifname, eth_wan))
 				notif_permission = false;
 			else
 				notif_permission = true;
-
 		}
 #else
 		init_wanargs(&curr_wanargs, i+1, wan_devices[i].fdev, s);
-
 		if (strstr(default_wan_ifname, wan_devices[i].fdev))
 			notif_permission = false;
 		else
@@ -2378,17 +2338,16 @@ int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 		else
 			cwritable = "1";
 #endif
+
 		dev = handle_update_instance(1, dmctx, &dev_last, update_instance_alias_icwmpd, 3, s, "wan_dev_instance", "wan_dev_alias");
 #ifdef EX400
 		if(i==WAN_IDX_ETH){
-
 			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_wanargs, dev) == DM_STOP)
 				break;
-
 		}
 #else
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_wanargs, dev) == DM_STOP)
-					break;
+			break;
 #endif
 		i++;
 	}
@@ -2401,7 +2360,8 @@ int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void
 	char *fwan;
 	char *wan_ifname;
 	char *iwan = NULL, *iwan_last = NULL;
-	char *pack, *stype;
+	char *pack, *stype, *sname;
+	char uname[32] = "";
 	bool ipn_perm = true;
 	bool pppn_perm = true;
 	bool notif_permission = true;
@@ -2409,54 +2369,69 @@ int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void
 	struct wanargs *curr_wanargs = (struct wanargs *)prev_data;
 
 	i = curr_wanargs->instance - 1;
+
 #ifdef EX400
-
-	if (i==0){
-
+	if (i == WAN_IDX_ETH){
 		uci_foreach_sections("ports", "ethport", s) {
-
 			if(!strcmp(s->e.name, "WAN")){
-
 				dmuci_get_value_by_section_string(s, "ifname", &fwan);
-
 				dmuci_get_option_value_string("network", "wan", "ifname", &wan_ifname);
-
 				if (strstr(default_wan_ifname, fwan)) {
-
 					notif_permission = false;
-
 					if (default_wan_proto == WAN_PROTO_IP) ipn_perm = false;
 					else if (default_wan_proto == WAN_PROTO_PPP) pppn_perm = false;
-
 				}
 				iwan = handle_update_instance(2, dmctx, &iwan_last, update_instance_alias, 3, s, "waninstance", "wanalias");
-
 				init_wancdevargs(curr_wanargs, s, fwan, iwan_last, wan_ifname);
-
-				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iwan) == DM_STOP){
+				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iwan) == DM_STOP)
 					break;
-				}
-
 			}
 		}
 	}
 #else
 	pack = wan_devices[i].cdev;
 	stype = wan_devices[i].stype;
-	uci_foreach_sections(pack, stype, s) {
-		dmuci_get_value_by_section_string(s, "baseifname", &fwan);
-		dmuci_get_value_by_section_string(s, "ifname", &wan_ifname);
-		if (strstr(default_wan_ifname, fwan)) {
-			notif_permission = false;
-			if (default_wan_proto == WAN_PROTO_IP) ipn_perm = false;
-			else if (default_wan_proto == WAN_PROTO_PPP) pppn_perm = false;
+
+	if(i == WAN_IDX_ETH)
+	{
+		uci_foreach_sections(pack, stype, s) {
+			if(!strcmp(s->e.name, "WAN")){
+				fwan = eth_wan; //eth0
+				sprintf(uname, "%s.1", fwan);
+				wan_ifname = dmstrdup(uname); //eth0.1
+
+				if (strstr(default_wan_ifname, fwan)) {
+					notif_permission = false;
+					if (default_wan_proto == WAN_PROTO_IP) ipn_perm = false;
+					else if (default_wan_proto == WAN_PROTO_PPP) pppn_perm = false;
+				}
+				iwan = handle_update_instance(2, dmctx, &iwan_last, update_instance_alias, 3, s, "waninstance", "wanalias");
+				init_wancdevargs(curr_wanargs, s, fwan, iwan_last, wan_ifname);
+				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iwan) == DM_STOP)
+					goto end;
+			}
 		}
-		iwan = handle_update_instance(2, dmctx, &iwan_last, update_instance_alias, 3, s, "waninstance", "wanalias");
-		init_wancdevargs(curr_wanargs, s, fwan, iwan_last, wan_ifname);
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iwan) == DM_STOP)
-			break;
+	}
+	else
+	{
+		uci_foreach_sections(pack, stype, s) {
+			dmuci_get_value_by_section_string(s, "device", &fwan); //atm0
+			sprintf(uname, "%s.1", fwan);
+			wan_ifname = dmstrdup(uname); //atm0.1
+
+			if (strstr(default_wan_ifname, fwan)) {
+				notif_permission = false;
+				if (default_wan_proto == WAN_PROTO_IP) ipn_perm = false;
+				else if (default_wan_proto == WAN_PROTO_PPP) pppn_perm = false;
+			}
+			iwan = handle_update_instance(2, dmctx, &iwan_last, update_instance_alias, 3, s, "waninstance", "wanalias");
+			init_wancdevargs(curr_wanargs, s, fwan, iwan_last, wan_ifname);
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iwan) == DM_STOP)
+				goto end;
+		}
 	}
 #endif
+end:
 	return 0;
 }
 
