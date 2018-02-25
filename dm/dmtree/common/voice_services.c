@@ -351,7 +351,7 @@ void wait_voice_service_up(void)
 	json_object *res;
 	int i = 0;
 	while (i++ < 10) {
-		dmubus_call("asterisk", "status", UBUS_ARGS{}, 0, &res);
+		dmubus_call("voice.asterisk", "status", UBUS_ARGS{}, 0, &res);
 		if (res)
 			return;
 	}
@@ -363,7 +363,7 @@ static inline int init_allowed_sip_codecs()
 	char id[8], priority[24], ptime[24];
 	int i;
 	available_sip_codecs = 0;
-	dmubus_call("asterisk", "codecs", UBUS_ARGS{}, 0, &res);
+	dmubus_call("voice.asterisk", "codecs", UBUS_ARGS{}, 0, &res);
 	if(res) {
 		json_object_object_foreach(res, key, val) {
 			for (i = 0; i < ARRAY_SIZE(capabilities_sip_codecs); i++) {
@@ -834,8 +834,7 @@ int get_voice_service_max_line()
 	json_object *res;
 	json_object *brcm = NULL;
 	
-  //dmubus_call("asterisk.brcm", "dump", UBUS_ARGS{}, 0, &res);
-	dmubus_call("asterisk", "status", UBUS_ARGS{}, 0, &res);
+	dmubus_call("voice.asterisk", "status", UBUS_ARGS{}, 0, &res);
 	if(res)
 		brcm = dmjson_get_obj(res, 1, "brcm");
 	if(brcm) {
@@ -924,7 +923,7 @@ int get_voice_profile_max_sessions(char *refparam, struct dmctx *ctx, void *data
 {
 	json_object *res;
 	char *sub_channel = NULL, *num_lines = NULL;
-	dmubus_call("asterisk.brcm", "dump", UBUS_ARGS{}, 0, &res);
+	dmubus_call("voice.asterisk", "lines", UBUS_ARGS{}, 0, &res);
 	DM_ASSERT(res, *value = "");
 	sub_channel = dm_ubus_get_value(res, 1, "num_subchannels");
 	num_lines =  dm_ubus_get_value(res, 1, "num_lines");
@@ -940,7 +939,7 @@ int get_voice_profile_number_of_lines(char *refparam, struct dmctx *ctx, void *d
 	struct sip_args *sipargs = (struct sip_args *)data;
 
 	*value = "0";
-	dmubus_call("asterisk", "status", UBUS_ARGS{}, 0, &res);
+	dmubus_call("voice.asterisk", "status", UBUS_ARGS{}, 0, &res);
 	if (!res)
 		return 0;
 	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", section_name(sipargs->sip_section), b_section) {
@@ -1112,7 +1111,6 @@ int set_sip_user_agent_port(char *refparam, struct dmctx *ctx, void *data, char 
 
 int get_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//dmubus_call("asterisk.sip", "dump", UBUS_ARGS{}, 0, &res);
 	char *tmp;
 	struct sip_args *sipargs = (struct sip_args *)data;
 	
