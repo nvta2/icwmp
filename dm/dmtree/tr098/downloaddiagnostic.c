@@ -30,7 +30,7 @@ DMLEAF tDownloadDiagnosticsParam[] = {
 {"TotalBytesReceived", &DMREAD, DMT_UNINT, get_download_diagnostic_totalbytes, NULL, NULL, NULL},
 {"TCPOpenRequestTime", &DMREAD, DMT_TIME, get_download_diagnostic_tcp_open_request_time, NULL, NULL, NULL},
 {"TCPOpenResponseTime", &DMREAD, DMT_TIME, get_download_diagnostic_tcp_open_response_time, NULL, NULL, NULL},
-//{"DSCP", &DMWRITE, DMT_UNINT, get_download_diagnostics_dscp, set_download_diagnostics_dscp, NULL, NULL},
+{"DSCP", &DMWRITE, DMT_UNINT, get_download_diagnostics_dscp, set_download_diagnostics_dscp, NULL, NULL},
 //{"Interface", &DMWRITE, DMT_UNINT, get_download_diagnostics_interface, set_download_diagnostics_interface, NULL, NULL},
 {0}
 };
@@ -213,5 +213,33 @@ int get_download_diagnostic_tcp_open_response_time(char *refparam, struct dmctx 
 	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "TCPOpenResponseTime", value);
 	if ((*value)[0] == '\0')
 		*value = "0";
+	return 0;
+}
+
+int get_download_diagnostics_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "DSCP", value);
+	if ((*value)[0] == '\0')
+		*value = "0";
+	return 0;
+}
+int set_download_diagnostics_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	char *tmp;
+	struct uci_section *curr_section = NULL;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			DOWNLOAD_DIAGNOSTIC_STOP
+			curr_section = (struct uci_section *)dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			if(!curr_section)
+			{
+				dmuci_add_state_section("cwmp", "downloaddiagnostic", &curr_section, &tmp);
+			}
+			dmuci_set_varstate_value("cwmp", "@downloaddiagnostic[0]", "DSCP", value);
+			return 0;
+	}
 	return 0;
 }

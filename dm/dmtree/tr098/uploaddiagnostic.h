@@ -28,5 +28,7 @@ int set_upload_diagnostic_test_file_length(char *refparam, struct dmctx *ctx, vo
 int get_upload_diagnostic_totalbytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_upload_diagnostic_tcp_open_request_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_upload_diagnostic_tcp_open_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_upload_diagnostic_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_upload_diagnostic_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif

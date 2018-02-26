@@ -26,7 +26,7 @@ DMLEAF tIPPingDiagnosticsParam[] = {
 {"NumberOfRepetitions", &DMWRITE, DMT_UNINT, get_ipping_repetition_number, set_ipping_repetition_number, NULL, NULL},
 {"Timeout", &DMWRITE, DMT_UNINT, get_ipping_timeout, set_ipping_timeout, NULL, NULL},
 {"DataBlockSize", &DMWRITE, DMT_UNINT, get_ipping_block_size, set_ipping_block_size, NULL, NULL},
-//{"DSCP", &DMWRITE, DMT_UNINT, get_ipping_dscp, set_ipping_dscp, NULL, NULL},
+{"DSCP", &DMWRITE, DMT_UNINT, get_ipping_dscp, set_ipping_dscp, NULL, NULL},
 {"SuccessCount", &DMREAD, DMT_UNINT, get_ipping_success_count, NULL, NULL, NULL},
 {"FailureCount", &DMREAD, DMT_UNINT, get_ipping_failure_count, NULL, NULL, NULL},
 {"AverageResponseTime", &DMREAD, DMT_UNINT, get_ipping_average_response_time, NULL, NULL, NULL},
@@ -34,6 +34,7 @@ DMLEAF tIPPingDiagnosticsParam[] = {
 {"MaximumResponseTime", &DMREAD, DMT_UNINT, get_ipping_max_response_time, NULL, NULL, NULL},
 {0}
 };
+
 
 static inline char *ipping_get(char *option, char *def)
 {
@@ -203,6 +204,33 @@ int set_ipping_block_size(char *refparam, struct dmctx *ctx, void *data, char *i
 				dmuci_add_state_section("cwmp", "ippingdiagnostic", &curr_section, &tmp);
 			}
 			dmuci_set_varstate_value("cwmp", "@ippingdiagnostic[0]", "DataBlockSize", value);
+	}
+	return 0;
+}
+
+int get_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = ipping_get("DSCP", "0");
+
+		return 0;
+}
+
+int set_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+
+	char *tmp;
+	struct uci_section *curr_section = NULL;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			IPPING_STOP
+			curr_section = (struct uci_section *)dmuci_walk_state_section("cwmp", "ippingdiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			if(!curr_section)
+			{
+				dmuci_add_state_section("cwmp", "ippingdiagnostic", &curr_section, &tmp);
+			}
+			dmuci_set_varstate_value("cwmp", "@ippingdiagnostic[0]", "DSCP", value);
 	}
 	return 0;
 }
