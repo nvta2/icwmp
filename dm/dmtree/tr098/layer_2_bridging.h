@@ -85,9 +85,10 @@ int get_available_interface_key(char *refparam, struct dmctx *ctx, void *data, c
 int get_interface_reference(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_interfaces_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 char *layer2_get_last_section_instance(char *package, char *section, char *opt_inst);
-int update_bridge_vlan_config(char *vid, char *bridge_key);
+int update_bridge_vlan_config(char *vid, char *bridge_key, char* ifname);
 int update_bridge_all_vlan_config_bybridge(struct dmctx *ctx, struct args_layer2 *curr_args);
 void update_add_vlan_interfaces(char *bridge_key, char *vid);
+void update_remove_vlan_interfaces(char *bridge_key, char *vid);
 void update_add_vlan_to_bridge_interface(char *bridge_key, struct uci_section *dmmap_s);
 int get_marking_bridge_reference(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 void get_baseifname_from_ifname(char *ifname, char *baseifname);
@@ -97,5 +98,5 @@ int set_marking_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 int get_brvlan_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_brvlan_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int get_marking_interface_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int set_bridge_vlan_vid_sub(struct uci_section *vb, char *value);
+int set_bridge_vlan_vid_sub(struct uci_section *br_sec, struct uci_section *vb, char *value);
 #endif

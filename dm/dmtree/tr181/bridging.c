@@ -207,7 +207,7 @@ int get_br_port_last_inst(char *br_key)
 		buf[4] = atoi(tmp);
 		if(buf[4]>max) max=buf[4];
 	}
-	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("network", "device", "bridge_key", br_key, s) {
 		dmuci_get_value_by_section_string(s, "bridge_port_instance", &tmp);
 		if (tmp[0] == '\0')
 			break;
@@ -332,7 +332,7 @@ int reset_br_port(char *br_key)
 		dmuci_set_value_by_section(s, "bridge_key", "");
 		dmuci_set_value_by_section(s, "penable", "0");
 	}
-	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "bridge_key", br_key, s) {
+	uci_foreach_option_eq("network", "device", "bridge_key", br_key, s) {
 		if (prev_s)
 			dmuci_delete_by_section(prev_s, NULL, NULL);
 		prev_s = s;
@@ -357,7 +357,7 @@ int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *m
 {
 	struct uci_section *s;
 	if (check_ifname_is_vlan(linker)) {
-		uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "ifname", linker, s) {
+		uci_foreach_option_eq("network", "device", "ifname", linker, s) {
 			dmuci_set_value_by_section(s, "bridge_key", br_key);
 			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
 			dmuci_set_value_by_section(s, "mg_port", mg_port);
@@ -548,14 +548,57 @@ int get_br_port_stats_rx_packets(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+int is_bridge_vlan_enabled(struct bridging_vlan_args *curr_arg)
+{
+	struct uci_section *vlan_sec = curr_arg->bridge_vlan_sec, *br_sec = curr_arg->bridge_sec;
+	char *ifname, *br_ifname, *ifname_dup, *pch, *spch;
+
+	dmuci_get_value_by_section_string(br_sec, "ifname", &br_ifname);
+	dmuci_get_value_by_section_string(vlan_sec, "name", &ifname);
+	ifname_dup = dmstrdup(br_ifname);
+	if(ifname!=NULL && ifname[0]!='\0'){
+		if (is_strword_in_optionvalue(ifname_dup, ifname))
+			return 1;
+	}
+	return 0;
+}
+
+int update_br_vlan_ifname(struct bridging_vlan_args *curr_arg, int status)
+{
+	char ifname_dup[128], *ptr, *baseifname, *ifname, *start, *end;
+	struct uci_section *vlan_sec = curr_arg->bridge_vlan_sec, *br_sec = curr_arg->bridge_sec;
+	int pos=0;
+	dmuci_get_value_by_section_string(br_sec, "ifname", &ifname);
+	dmuci_get_value_by_section_string(vlan_sec, "name", &baseifname);
+	ptr = ifname_dup;
+	dmstrappendstr(ptr, ifname);
+	dmstrappendend(ptr);
+	if(status){
+		if (is_strword_in_optionvalue(ifname_dup, baseifname)) return 0;
+		if (ifname_dup[0] != '\0') dmstrappendchr(ptr, ' ');
+		dmstrappendstr(ptr, baseifname);
+		dmstrappendend(ptr);
+	}else{
+		if (is_strword_in_optionvalue(ifname_dup, baseifname)){
+			start = strstr(ifname_dup, baseifname);
+			end = start + strlen(baseifname);
+			if(start != ifname_dup){
+				start--;
+				pos=1;
+			}
+			memmove(start, start + strlen(baseifname)+pos, strlen(end) + 1);
+		}
+	}
+	dmuci_set_value_by_section(br_sec, "ifname", ifname_dup);
+	return 0;
+}
+
 int get_br_vlan_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "false";
-	char *tmp;
-	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "penable", &tmp);
-	if (tmp[0] == '0' || tmp[0] == '\0')
-		*value = "false";
-	else if (tmp[0] == '1')
+	int status;
+	status = is_bridge_vlan_enabled((struct bridging_vlan_args *)data);
+	if (status)
 		*value = "true";
 	return 0;
 }
@@ -566,6 +609,7 @@ int set_br_vlan_enable(char *refparam, struct dmctx *ctx, void *data, char *inst
 	char *vlan_ifname, *br_ifname, *vid, *p;
 	char new_ifname[256];
 	char pr_linker[32];
+	int is_enabled;
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -573,35 +617,12 @@ int set_br_vlan_enable(char *refparam, struct dmctx *ctx, void *data, char *inst
 			return 0;
 		case VALUESET:
 			string_to_bool(value, &b);
-			if (b)
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "penable", "1");
-			else {
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "penable", "0");
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "bridge_port_instance", "");
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "bridge_port_alias", "");
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "br_port_linker", "");
+			is_enabled = is_bridge_vlan_enabled((struct bridging_vlan_args *)data);
+			if (b && !is_enabled) {
+				update_br_vlan_ifname((struct bridging_vlan_args *)data, 1);
 			}
-			dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "ifname", &vlan_ifname);
-			if (vlan_ifname[0] == '\0')
-				return 0;
-			dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", &br_ifname);
-			if (b) {
-				//add vlan ifname to br ifname list
-				p = new_ifname;
-				if (br_ifname[0] != '\0') {
-					dmstrappendstr(p, br_ifname);
-					dmstrappendchr(p, ' ');
-				}
-				dmstrappendstr(p, vlan_ifname);
-				dmstrappendend(p);
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", new_ifname);
-				sprintf(pr_linker,"%s+%s", section_name(((struct bridging_vlan_args *)data)->bridge_vlan_sec), vlan_ifname);
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "br_port_linker", pr_linker);
-			} else {
-				//delete vlan ifname from br ifname list
-				remove_interface_from_ifname(vlan_ifname, br_ifname, new_ifname);
-				//remove_vid_interfaces_from_ifname(vid, br_ifname, new_ifname);
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", new_ifname);
+			if (!b && is_enabled){
+				update_br_vlan_ifname((struct bridging_vlan_args *)data, 0);
 			}
 			return 0;
 	}
@@ -611,7 +632,7 @@ int set_br_vlan_enable(char *refparam, struct dmctx *ctx, void *data, char *inst
 int get_br_vlan_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0";
-	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "name", value);
+	*value = dmstrdup(section_name(((struct bridging_vlan_args *)data)->bridge_vlan_sec));
 	return 0;
 }
 
@@ -621,7 +642,7 @@ int set_br_vlan_name(char *refparam, struct dmctx *ctx, void *data, char *instan
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "name", value);
+			 dmuci_rename_section_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec,value);
 			return 0;
 	}
 	return 0;
@@ -630,45 +651,28 @@ int set_br_vlan_name(char *refparam, struct dmctx *ctx, void *data, char *instan
 int get_br_vlan_vid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0";
-	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vlan8021q", value);
+	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vid", value);
 	return 0;
 }
 
 int set_br_vlan_vid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	char *ifname, *p, *vifname, *linker, *n_ifname;
-	char buf[256];
-	char tmp[8];
+	char *name, *br_ifname, *ifname;
+	int is_enabled;
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vlan8021q", value);
-			dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "ifname", &vifname);
-			if (vifname[0] != '\0') {
-				strncpy(tmp, vifname, 5);
-				tmp[5] = '\0';
-				strcat(tmp, value);// concat new vid
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "ifname", tmp);
-				//update br ifname
-				dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", &ifname);
-				remove_interface_from_ifname(vifname, ifname, buf);
-				p = buf;
-				if (buf[0] != '\0') {
-					dmstrappendstr(p, buf);
-					dmstrappendchr(p, ' ');
-				}
-				dmstrappendstr(p, tmp);
-				dmstrappendend(p);
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", buf);
-				dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "br_port_linker", &linker);
-				strcpy(buf,linker);
-				p = strchr(buf, '+') + 1;
-				dmstrappendstr(p, tmp);
-				dmstrappendend(p);
-				dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "br_port_linker", buf);
-			}
+			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vid", value);
+			dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "ifname", &ifname);
+			dmasprintf(&name, "%s.%s", ifname, value);
+			is_enabled = is_bridge_vlan_enabled((struct bridging_vlan_args *)data);
+			if(is_enabled)
+				update_br_vlan_ifname((struct bridging_vlan_args *)data, 0);
+			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "name", name);
+			if(is_enabled)
+				update_br_vlan_ifname((struct bridging_vlan_args *)data, 1);
 			return 0;
 	}
 	return 0;
@@ -677,7 +681,7 @@ int set_br_vlan_vid(char *refparam, struct dmctx *ctx, void *data, char *instanc
 int get_br_vlan_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0";
-	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vlan8021p", value);
+	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "priority", value);
 	return 0;
 }
 
@@ -691,7 +695,7 @@ int set_br_vlan_priority(char *refparam, struct dmctx *ctx, void *data, char *in
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vlan8021p", value);
+			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "priority", value);
 			return 0;
 	}
 	return 0;
@@ -826,40 +830,39 @@ int add_br_vlan(char *refparam, struct dmctx *ctx, void *data, char **instance)
 	struct uci_section *vlan_s;
 	char buf[16];
 	char *v_name = buf;
+	char *vid;
+	int x;
+	char *val_name;
 
-	last_instance = get_last_instance_lev2("layer2_interface_vlan", "vlan_interface", "bridge_vlan_instance", "bridge_key", ((struct bridging_args *)data)->br_key);
-	dmuci_add_section("layer2_interface_vlan", "vlan_interface", &vlan_s, &value);
+	last_instance = get_last_instance_lev2("network", "device", "bridge_vlan_instance", "bridge_key", ((struct bridging_args *)data)->br_key);
+	dmasprintf(&vlan_name, "vlan%d", last_instance ? atoi(last_instance)+ 1 : 0);
+	dmuci_add_section("network", "device", &vlan_s, &value);
+	dmuci_rename_section_by_section(vlan_s, vlan_name);
 	dmuci_set_value_by_section(vlan_s, "bridge_key", ((struct bridging_args *)data)->br_key);
 	*instance = update_instance(vlan_s, last_instance, "bridge_vlan_instance");
-	dmstrappendstr(v_name, "vlan_");
-	dmstrappendstr(v_name, ((struct bridging_args *)data)->br_key);
-	dmstrappendchr(v_name, '.');
-	dmstrappendstr(v_name, *instance);
-	dmstrappendend(v_name);
-	dmuci_set_value_by_section(vlan_s, "name", v_name);
-	dmuci_set_value_by_section(vlan_s, "penable", "0");
+	dmuci_set_value_by_section(vlan_s, "priority", "0");
+	dmuci_set_value_by_section(vlan_s, "type", "8021q");
+	dmuci_set_value_by_section(vlan_s, "ifname", wan_baseifname);
 	return 0;
 }
 
 int delete_br_vlan(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-	char *vid, *ifname;
+	char *vid, *ifname, *br_ifname, *vl_ifname, *type;
+	struct uci_section *prev_s = NULL, *vlan_s=NULL;
 	char new_ifname[128];
-	struct uci_section *vlan_s, *prev_s = NULL ;
+	int is_enabled;
 
 	switch (del_action) {
 	case DEL_INST:
-		dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", &ifname);
-		dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "vlan8021q", &vid);
-		if(ifname[0] != '\0' && vid[0] != '\0'){
-			remove_vid_interfaces_from_ifname(vid, ifname, new_ifname);
-			dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_sec, "ifname", new_ifname);
-		}
+		is_enabled = is_bridge_vlan_enabled((struct bridging_vlan_args *)data);
+		if(is_enabled)
+			update_br_vlan_ifname((struct bridging_vlan_args *)data, 0);
 		dmuci_delete_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, NULL, NULL);
 		break;
 	case DEL_ALL:
-		uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "bridge_key", ((struct bridging_args *)data)->br_key, vlan_s) {
-			dmuci_get_value_by_section_string(vlan_s, "vlan8021q", &vid);
+		uci_foreach_option_eq("network", "device", "bridge_key", ((struct bridging_args *)data)->br_key, vlan_s) {
+			dmuci_get_value_by_section_string(vlan_s, "vid", &vid);
 			dmuci_get_value_by_section_string(((struct bridging_args *)data)->bridge_sec, "ifname", &ifname);
 			if(ifname[0] != '\0' && vid[0] != '\0'){
 				remove_vid_interfaces_from_ifname(vid, ifname, new_ifname);
@@ -911,7 +914,7 @@ int delete_br_port(char *refparam, struct dmctx *ctx, void *data, char *instance
 			return 0;
 		}
 		dmasprintf(&linker, "%s+%s", section_name(((struct bridging_port_args *)data)->bridge_port_sec), ((struct bridging_port_args *)data)->ifname);
-		uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "br_port_linker", linker, vlan_s) {
+		uci_foreach_option_eq("network", "device", "br_port_linker", linker, vlan_s) {
 			dmuci_set_value_by_section(vlan_s, "br_port_linker", "");
 		}
 		DMUCI_DELETE_BY_SECTION(icwmpd, ((struct bridging_port_args *)data)->bridge_port_sec, NULL, NULL);//del port from dmmap
@@ -1046,7 +1049,7 @@ int set_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 				}
 				// check if the current port is already linked with VLAN
 				sprintf(pr_linker,"%s+%s", section_name(((struct bridging_port_args *)data)->bridge_port_sec), ((struct bridging_port_args *)data)->ifname);
-				uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "br_port_linker", pr_linker, s) {
+				uci_foreach_option_eq("network", "device", "br_port_linker", pr_linker, s) {
 					dmuci_get_value_by_section_string(s, "vlan8021q", &vid);
 					break;
 				}
@@ -1063,7 +1066,7 @@ int set_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 					linker = tmp;
 					dmstrappendstr(p, tmp);
 					dmstrappendend(p);
-					uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "br_port_linker", pr_linker, s) {
+					uci_foreach_option_eq("network", "device", "br_port_linker", pr_linker, s) {
 						sprintf(pr_linker,"%s+%s", section_name(s), linker);
 						dmuci_set_value_by_section(s, "br_port_linker", pr_linker);
 						dmuci_set_value_by_section(s, "ifname", linker);
@@ -1131,14 +1134,14 @@ int set_vlan_port_port_ref(char *refparam, struct dmctx *ctx, void *data, char *
 				if (strstr(pch, "atm") || strstr(pch, "ptm") || strstr(pch, wan_baseifname)) {
 					strncpy(tmp, pch, 4);
 					tmp[4] ='\0';
-					dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "baseifname", tmp);
+					dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "ifname", tmp);
 				}
 			} else {
 				if (strstr(pch, "atm") || strstr(pch, "ptm") || strstr(pch, wan_baseifname)) {
 					p = new_ifname;
 					strncpy(tmp, pch, 4);
 					tmp[4] ='\0';
-					dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "baseifname", tmp);
+					dmuci_set_value_by_section(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "ifname", tmp);
 					dmstrappendstr(p,  tmp);
 					dmstrappendchr(p, '.');
 					dmstrappendstr(p, vid);
@@ -1190,9 +1193,9 @@ int browseBridgeInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, 
 
 int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *eth_s = NULL, *atm_s = NULL, *ptm_s = NULL, *wl_s = NULL, *vlan_s = NULL, *w_eth_s = NULL, *new_port = NULL;
+	struct uci_section *s, *eth_s = NULL, *atm_s = NULL, *ptm_s = NULL, *wl_s = NULL, *vlan_s = NULL, *w_eth_s = NULL, *new_port = NULL;
 	char *port = NULL, *port_last = NULL, *vlan = NULL, *vlan_last = NULL;
-	char *ifname_dup = NULL, *pch, *spch;
+	char *ifname_dup = NULL, *pch, *spch, *type;
 	bool find_max = true;
 	struct bridging_port_args curr_bridging_port_args = {0};
 	bool found = false;
@@ -1280,15 +1283,21 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 		}
 #ifndef EX400
 		if(!found) {
-			uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "ifname", pch, vlan_s) {
-				dmuci_set_value_by_section(vlan_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
-				dmuci_set_value_by_section(vlan_s, "mg_port", "false");
-				dmuci_set_value_by_section(vlan_s, "penable", "1");
-				init_bridging_port_args(&curr_bridging_port_args, vlan_s, ((struct bridging_args *)prev_data)->bridge_sec, true, pch);
-				port =  handle_update_instance(2, dmctx, &port_last, br_port_update_instance_alias, 5, vlan_s, "bridge_port_instance", "bridge_port_alias", &find_max, ((struct bridging_args *)prev_data)->br_key);
-				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_port_args, port) == DM_STOP)
-					goto end;
-				break;
+			if (strncmp(pch, wan_baseifname, 4) == 0 || strncmp(pch, "ptm", 3) == 0 || strncmp(pch, "atm", 3) == 0) {
+				uci_foreach_option_eq("network", "device", "name", pch, vlan_s) {
+					dmuci_get_value_by_section_string(vlan_s, "type", &type);
+					//Check if VLAN or NOT
+					if (strcmp(type, "untagged")!=0) {
+						dmuci_set_value_by_section(vlan_s, "bridge_key", ((struct bridging_args *)prev_data)->br_key);
+						dmuci_set_value_by_section(vlan_s, "mg_port", "false");
+						dmuci_set_value_by_section(vlan_s, "penable", "1");
+						init_bridging_port_args(&curr_bridging_port_args, vlan_s, ((struct bridging_args *)prev_data)->bridge_sec, true, pch);
+						port = handle_update_instance(2, dmctx, &port_last, br_port_update_instance_alias, 5, vlan_s, "bridge_port_instance", "bridge_port_alias", &find_max, ((struct bridging_args *)prev_data)->br_key);
+						if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_port_args, port) == DM_STOP)
+							goto end;
+						break;
+					}
+				}
 			}
 		}
 #endif
@@ -1300,32 +1309,56 @@ end:
 
 int browseBridgeVlanInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *vlan_s = NULL;
-	char *vlan = NULL, *vlan_last = NULL;
-	char *type, *ipv4 ;
-	struct bridging_vlan_args curr_bridging_vlan_args = {0};
+	struct uci_section *vlan_s;
+	char *vlan = NULL, *vlan_last = NULL, *type, *ifname, *is_lan= NULL;
 
-	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "bridge_key", ((struct bridging_args *)prev_data)->br_key, vlan_s) {
-		vlan =  handle_update_instance(2, dmctx, &vlan_last, update_instance_alias, 3, vlan_s, "bridge_vlan_instance", "bridge_vlan_alias");
-		init_bridging_vlan_args(&curr_bridging_vlan_args, vlan_s, ((struct bridging_args *)prev_data)->bridge_sec, vlan_last, ((struct bridging_args *)prev_data)->br_key);
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_vlan_args, vlan) == DM_STOP)
-			break;
+	struct bridging_vlan_args curr_bridging_vlan_args = {0};
+	struct bridging_args *br_args = (struct bridging_args *)prev_data;
+	bool find_max = true;
+
+	dmuci_get_value_by_section_string(br_args->bridge_sec, "is_lan", &is_lan);
+	if(is_lan==NULL || strcmp(is_lan, "1")!=0){
+		uci_foreach_sections("network", "device", vlan_s) {
+			if(!vlan_s)
+				goto end;
+			//Check if VLAN or NOT
+			dmuci_get_value_by_section_string(vlan_s, "type", &type);
+			if (strcmp(type, "untagged")!=0) {
+				vlan =  handle_update_instance(2, dmctx, &vlan_last, update_instance_alias, 3, vlan_s, "bridge_vlan_instance", "bridge_vlan_alias");
+				init_bridging_vlan_args(&curr_bridging_vlan_args, vlan_s, br_args->bridge_sec, vlan_last, br_args->br_key);
+				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_vlan_args, vlan) == DM_STOP)
+					goto end;
+			}
+		}
 	}
+end:
 	return 0;
 }
 
 int browseBridgeVlanPortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *vlan_s = NULL;
-	char *vlan = NULL, *vlan_last = NULL;
-	char *type, *ipv4 ;
-	struct bridging_vlan_args curr_bridging_vlan_args = {0};
+	struct uci_section *vlan_s;
+		char *vlan = NULL, *vlan_last = NULL, *type, *ifname, *is_lan= NULL;
 
-	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "bridge_key", ((struct bridging_args *)prev_data)->br_key, vlan_s) {
-		vlan =  handle_update_instance(2, dmctx, &vlan_last, update_instance_alias, 3, vlan_s, "bridge_vlan_instance", "bridge_vlan_alias");
-		init_bridging_vlan_args(&curr_bridging_vlan_args, vlan_s, ((struct bridging_args *)prev_data)->bridge_sec, vlan_last, ((struct bridging_args *)prev_data)->br_key);
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_vlan_args, vlan) == DM_STOP)
-			break;
-	}
-	return 0;
+		struct bridging_vlan_args curr_bridging_vlan_args = {0};
+		struct bridging_args *br_args = (struct bridging_args *)prev_data;
+		bool find_max = true;
+
+		dmuci_get_value_by_section_string(br_args->bridge_sec, "is_lan", &is_lan);
+		if(is_lan==NULL || strcmp(is_lan, "1")!=0){
+			uci_foreach_sections("network", "device", vlan_s) {
+				if(!vlan_s)
+					goto end;
+				//Check if VLAN or NOT
+				dmuci_get_value_by_section_string(vlan_s, "type", &type);
+				if (strcmp(type, "untagged")!=0) {
+					vlan =  handle_update_instance(2, dmctx, &vlan_last, update_instance_alias, 3, vlan_s, "bridge_vlan_instance", "bridge_vlan_alias");
+					init_bridging_vlan_args(&curr_bridging_vlan_args, vlan_s, br_args->bridge_sec, vlan_last, br_args->br_key);
+					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_vlan_args, vlan) == DM_STOP)
+						goto end;
+				}
+			}
+		}
+	end:
+		return 0;
 }
