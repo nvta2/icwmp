@@ -2306,7 +2306,9 @@ int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	dmuci_get_option_value_string("network", default_wan, "ifname", &default_wan_ifname);
 	dmuci_get_option_value_string("network", default_wan, "proto", &defwanproto);
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &eth_wan);
+#ifndef EX400
 	wan_devices[WAN_IDX_ETH].fdev = eth_wan;
+#endif
 
 	if (strstr(defwanproto, "ppp"))
 		default_wan_proto = WAN_PROTO_PPP;
