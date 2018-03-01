@@ -949,7 +949,7 @@ int cwmp_rpc_acs_prepare_transfer_complete(struct cwmp *cwmp, struct session *se
 	n = mxmlNewElement(n, "CommandKey");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, p->command_key);
+	n = mxmlNewText(n, 0, p->command_key?p->command_key:"");
 	if (!n) goto error;
 
 	n = n->parent->parent;
@@ -2304,7 +2304,7 @@ int cwmp_launch_download(struct download *pdownload, struct transfer_complete **
 		return error;
 	}
 
-	p->command_key			= strdup(pdownload->command_key);
+	p->command_key			= pdownload->command_key?strdup(pdownload->command_key):strdup("");
 	p->start_time 			= strdup(download_startTime);
 	p->complete_time		= strdup(mix_get_time());
 	if(error != FAULT_CPE_NO_FAULT)
