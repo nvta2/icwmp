@@ -16,30 +16,37 @@
 
 #include "dmcwmp.h"
 
-extern DMOBJ tEntryObj[];
-extern DMOBJ tRootObj[];
+extern DMOBJ tEntry098Obj[];
+extern DMOBJ tEntry181Obj[];
+extern DMOBJ tRoot_098_Obj[];
+extern DMOBJ tRoot_181_Obj[];
 
 #ifdef UPNP_TR064
-extern DMOBJ tEntryObjUPNP[];
-extern DMOBJ tRootObjUPNP[];
-extern DMOBJ tRootObjUPNPDMROOT[];
-extern DMOBJ tRootObjUPNPDM[];
-extern DMOBJ tRootObjUPNPBBF[];
+extern DMOBJ tEntry098ObjUPNP[];
+extern DMOBJ tRoot098ObjUPNP[];
+extern DMOBJ tRoot098ObjUPNPDMROOT[];
+extern DMOBJ tRoot098ObjUPNPDM[];
+extern DMOBJ tRoot098ObjUPNPBBF[];
+extern DMOBJ tEntry181ObjUPNP[];
+extern DMOBJ tRoot181ObjUPNP[];
+extern DMOBJ tRoot181ObjUPNPDMROOT[];
+extern DMOBJ tRoot181ObjUPNPDM[];
+extern DMOBJ tRoot181ObjUPNPBBF[];
 extern UPNP_SUPPORTED_DM tUPNPSupportedDM[];
+extern UPNP_SUPPORTED_DM tUPNPSupportedDM_098[];
+extern UPNP_SUPPORTED_DM tUPNPSupportedDM_181[];
+extern size_t tr98_size;
+extern size_t tr181_size;
 
 #define UPNP_SUPPORTED_PARAMETERS_VERSION 1 //Should be incremented each time the Parameters are updated
 #define UPNP_SUPPORTED_DATAMODEL_VERSION 1 //Should be incremented each time the tUPNPSupportedDM array is updated
 #endif
 
-#ifdef DATAMODEL_TR098
-#define DMROOT_URI "urn:broadband-forum-org:tr-098-1-8-0"
-#define DMROOT_URL "https://www.broadband-forum.org/cwmp/tr-098-1-8-0.html"
-#define DMROOT_DESC "TR-098 InternetGatewayDevice:1 Root Object definition"
-#endif
-#ifdef DATAMODEL_TR181
-#define DMROOT_URI "urn:broadband-forum-org:tr-181-2-11-0"
-#define DMROOT_URL "https://www.broadband-forum.org/cwmp/tr-181-2-11-0.html"
-#define DMROOT_DESC "TR-181 Device:2 Root Object definition"
-#endif
+#define DMROOT_URI_098 "urn:broadband-forum-org:tr-098-1-8-0"
+#define DMROOT_URL_098 "https://www.broadband-forum.org/cwmp/tr-098-1-8-0.html"
+#define DMROOT_DESC_098 "TR-098 InternetGatewayDevice:1 Root Object definition"
+#define DMROOT_URI_181 "urn:broadband-forum-org:tr-181-2-11-0"
+#define DMROOT_URL_181 "https://www.broadband-forum.org/cwmp/tr-181-2-11-0.html"
+#define DMROOT_DESC_181 "TR-181 Device:2 Root Object definition"
 
 #endif

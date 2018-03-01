@@ -47,8 +47,6 @@ extern DMLEAF tBridgeVlanPortParams[];
 extern DMOBJ tBridgePortObj[];
 extern DMLEAF tBridgePortStatParams[];
 
-int update_br_vlan_ifname(struct bridging_vlan_args *curr_arg, int status);
-
 int browseBridgeVlanPortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseBridgeVlanInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);

@@ -20,7 +20,7 @@
 #include "layer_2_bridging.h"
 
 const char *vlan_ifname[3] = {"eth","atm", "ptm"};
-char *wan_baseifname = NULL;
+static char *wan_baseifname = NULL;
 #ifndef EX400
 struct wan_interface wan_interface_tab[3] = {
 {"1", "ethernet", "ports", "ethport"},
@@ -100,7 +100,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 			uci_foreach_sections("ports", "ethport", wan_s) {
 				if(!strcmp(wan_s->e.name, "WAN")){
 					waninstance = update_instance(wan_s, waninstance, "waninstance");
-					dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+					dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 					dmuci_get_value_by_section_string(wan_s, "ifname", &base_ifname);
 					ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 					init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
@@ -111,7 +111,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 		}else{
 			uci_foreach_sections(wan_interface_tab[i].package, wan_interface_tab[i].section, wan_s) {
 				waninstance = update_instance(wan_s, waninstance, "waninstance");
-				dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+				dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 				dmuci_get_value_by_section_string(wan_s, "device", &base_ifname);
 				ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 				init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
@@ -124,7 +124,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 	uci_foreach_sections("ports", "ethport", wan_s) {
 		if(!strcmp(wan_s->e.name, "WAN")){
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
-			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
 			ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 			init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
@@ -138,7 +138,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 	i = 0;
 	for (ch_ptr = strtok_r(phy_interface_dup, " ", &saveptr); ch_ptr; ch_ptr = strtok_r(NULL, " ", &saveptr))
 	{
-		dmasprintf(&oface, "%s%cLANInterfaces%cLANEthernetInterfaceConfig%c%d%c", DMROOT, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+		dmasprintf(&oface, "%s%cLANInterfaces%cLANEthernetInterfaceConfig%c%d%c", dmroot, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 		ai_s = update_availableinterface_list(dmctx, ch_ptr, &available_inst, &instance_last);
 		init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "LANInterface", oface);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, available_inst) == DM_STOP)
@@ -146,7 +146,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 	}
 	i = 0;
 	uci_foreach_sections("wireless", "wifi-iface", wifi_s) {
-		dmasprintf(&oface, "%s%cLANInterfaces%cWLANConfiguration%c%d%c", DMROOT, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+		dmasprintf(&oface, "%s%cLANInterfaces%cWLANConfiguration%c%d%c", dmroot, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 		ai_s = update_availableinterface_list(dmctx, section_name(wifi_s), &available_inst, &instance_last);
 		init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "LANInterface", oface);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, available_inst) == DM_STOP)
@@ -221,7 +221,7 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 	for (i=0; i<3; i++) {
 		uci_foreach_sections(wan_interface_tab[i].package, wan_interface_tab[i].section, wan_s) {
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
-			dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+			dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 			dmuci_get_value_by_section_string(wan_s, "device", &base_ifname);
 			update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 		}
@@ -230,7 +230,7 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 	uci_foreach_sections("ports", "ethport", wan_s) {
 		if(!strcmp(wan_s->e.name, "WAN")){
 			waninstance = update_instance(wan_s, waninstance, "waninstance");
-			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", DMROOT, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 			dmuci_get_value_by_section_string(wan_s, "baseifname", &base_ifname);
 			update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
 		}
@@ -241,12 +241,12 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 	i = 0;
 	for (ch_ptr = strtok_r(phy_interface_dup, " ", &saveptr); ch_ptr != NULL; ch_ptr = strtok_r(NULL, " ", &saveptr))
 	{
-		dmasprintf(&oface, "%s%cLANInterfaces%cLANEthernetInterfaceConfig%c%d%c", DMROOT, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+		dmasprintf(&oface, "%s%cLANInterfaces%cLANEthernetInterfaceConfig%c%d%c", dmroot, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 		update_availableinterface_list(dmctx, ch_ptr, &available_inst, &instance_last);
 	}
 	i = 0;
 	uci_foreach_sections("wireless", "wifi-iface", wifi_s) {
-		dmasprintf(&oface, "%s%cLANInterfaces%cWLANConfiguration%c%d%c", DMROOT, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+		dmasprintf(&oface, "%s%cLANInterfaces%cWLANConfiguration%c%d%c", dmroot, dm_delim, dm_delim, dm_delim, ++i, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
 		update_availableinterface_list(dmctx, section_name(wifi_s), &available_inst, &instance_last);
 	}
 	dmfree(phy_interface_dup);
@@ -763,7 +763,7 @@ int set_bridge_vlan_enable(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
-int update_br_vlan_ifname(struct uci_section* br_sec, char* ifname, char* baseifname, int status)
+static int update_br_vlan_ifname(struct uci_section* br_sec, char* ifname, char* baseifname, int status)
 {
 	char ifname_dup[128], *ptr, *start, *end;
 	int pos=0;

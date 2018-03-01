@@ -64,16 +64,7 @@ inline int init_args_rentry(struct routingfwdargs *args, struct uci_section *s, 
 /************************************************************************************* 
 **** function related to get_object_layer3 ****
 **************************************************************************************/
-void ip_to_hex(char *address, char *ret) //TODO Move to the common.c
-{
-	int i;
-	int ip[4] = {0};
-	
-	sscanf(address, "%d.%d.%d.%d", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
-	sprintf(ret, "%02X%02X%02X%02X", ip[0], ip[1], ip[2], ip[3]);
-}
-
-bool is_proute_static(struct proc_routing *proute)
+static bool is_proute_static(struct proc_routing *proute)
 {
 	char *mask;
 	struct uci_section *s;
@@ -90,7 +81,7 @@ bool is_proute_static(struct proc_routing *proute)
 	return false;
 }
 
-bool is_cfg_route_active(struct uci_section *s)
+static bool is_cfg_route_active(struct uci_section *s)
 {
 	FILE *fp;
 	char line[MAX_PROC_ROUTING];
@@ -120,7 +111,7 @@ bool is_cfg_route_active(struct uci_section *s)
 	return false;
 }
 
-int get_forwarding_last_inst()
+static int get_forwarding_last_inst()
 {
 	char *rinst = NULL, *drinst = NULL, *dsinst = NULL, *tmp;
 	int r = 0, dr = 0, ds = 0, max;
@@ -155,7 +146,7 @@ int get_forwarding_last_inst()
 	return max;
 }
 
-char *forwarding_update_instance_alias(int action, char **last_inst, void *argv[])
+static char *forwarding_update_instance_alias(int action, char **last_inst, void *argv[])
 {
 	char *instance, *alias;
 	char buf[8] = {0};
@@ -231,7 +222,7 @@ char *forwarding_update_instance_alias_icwmpd(int action, char **last_inst, void
 	return instance;
 }
 
-struct uci_section *update_route_dynamic_section(struct proc_routing *proute)
+static struct uci_section *update_route_dynamic_section(struct proc_routing *proute)
 {
 	struct uci_section *s = NULL;
 	char *name, *mask;
@@ -476,9 +467,9 @@ int get_layer3_interface_linker_parameter(char *refparam, struct dmctx *ctx, voi
 	iface = get_layer3_interface(ctx, (struct routingfwdargs *)data);
 	if (iface[0] != '\0') {
 		dmastrcat(&linker, "linker_interface:", iface);
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWANDevice%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWANDevice%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL) {
-			adm_entry_get_linker_param(ctx, dm_print_path("%s%cLANDevice%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+			adm_entry_get_linker_param(ctx, dm_print_path("%s%cLANDevice%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 			if (*value == NULL)
 				*value = "";
 		}
@@ -578,7 +569,7 @@ int get_layer3_def_conn_serv(char *refparam, struct dmctx *ctx, void *data, char
 	dmuci_get_option_value_string("cwmp", "cpe", "default_wan_interface", &iface);
 	if (iface[0] != '\0') {
 		dmasprintf(&linker, "linker_interface:%s", iface);
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWANDevice%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWANDevice%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL) {
 			*value = "";
 		}

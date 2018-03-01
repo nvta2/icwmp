@@ -486,7 +486,7 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-        sprintf(buf, "%sManagementServer.URL", DMROOT);
+        sprintf(buf, "%sManagementServer.URL", dmroot);
         add_dm_parameter_tolist(&(event_container->head_dm_parameter),
         		buf, NULL, NULL);
         cwmp_save_event_container (cwmp,event_container);

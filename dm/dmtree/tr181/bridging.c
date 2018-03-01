@@ -17,7 +17,7 @@
 #include "bridging.h"
 #include "dmjson.h"
 
-char *wan_baseifname = NULL;
+static char *wan_baseifname = NULL;
 
 /*** Bridging. ***/
 DMOBJ tBridgingObj[] = {
@@ -563,7 +563,7 @@ int is_bridge_vlan_enabled(struct bridging_vlan_args *curr_arg)
 	return 0;
 }
 
-int update_br_vlan_ifname(struct bridging_vlan_args *curr_arg, int status)
+static int update_br_vlan_ifname(struct bridging_vlan_args *curr_arg, int status)
 {
 	char ifname_dup[128], *ptr, *baseifname, *ifname, *start, *end;
 	struct uci_section *vlan_sec = curr_arg->bridge_vlan_sec, *br_sec = curr_arg->bridge_sec;
@@ -989,7 +989,7 @@ int get_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 				continue;
 			check_port_with_ifname(pch, &s);
 			sprintf(plinker, "%s+%s", section_name(s), pch);
-			adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", DMROOT, dm_delim, dm_delim, dm_delim), plinker, value);
+			adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", dmroot, dm_delim, dm_delim, dm_delim), plinker, value);
 			if (*value == NULL)
 				*value = "";
 			dmstrappendstr(p, *value);
@@ -1008,13 +1008,13 @@ int get_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 			linker = buf;
 		}
 	}
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value);
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
-		adm_entry_get_linker_param(ctx,dm_print_path("%s%cWiFi%cSSID%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value);
+		adm_entry_get_linker_param(ctx,dm_print_path("%s%cWiFi%cSSID%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cATM%cLink%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value);
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cATM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPTM%cLink%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value);
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPTM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 
 	if (*value == NULL)
 		*value = "";
@@ -1090,9 +1090,9 @@ int get_vlan_port_vlan_ref(char *refparam, struct dmctx *ctx, void *data, char *
 {
 	char linker[8];
 	char *name;
-	dmasprintf(&name,"%s%cBridging%cBridge%c%s%c", DMROOT, dm_delim, dm_delim, dm_delim, ((struct bridging_vlan_args *)data)->br_inst, dm_delim);
+	dmasprintf(&name,"%s%cBridging%cBridge%c%s%c", dmroot, dm_delim, dm_delim, dm_delim, ((struct bridging_vlan_args *)data)->br_inst, dm_delim);
 	sprintf(linker,"vlan%s_%s", ((struct bridging_vlan_args *)data)->vlan_port, ((struct bridging_vlan_args *)data)->br_inst);
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
 	return 0;
@@ -1102,7 +1102,7 @@ int get_vlan_port_port_ref(char *refparam, struct dmctx *ctx, void *data, char *
 {
 	char *linker;
 	dmuci_get_value_by_section_string(((struct bridging_vlan_args *)data)->bridge_vlan_sec, "br_port_linker", &linker);
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
 	return 0;

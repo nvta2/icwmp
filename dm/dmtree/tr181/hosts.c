@@ -197,7 +197,7 @@ int  get_host_dhcp_client(char *refparam, struct dmctx *ctx, void *data, char *i
 {
 	char *iface, *linker;
 		dmastrcat(&linker, "linker_dhcp:", ((struct host_args *)data)->key);
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cDHCPv4%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cDHCPv4%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL) {
 			*value = "";
 		}
@@ -205,7 +205,7 @@ int  get_host_dhcp_client(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
-char *get_interface_type(char *mac, char *ndev)
+static char *get_interface_type(char *mac, char *ndev)
 {
 	json_object *res;
 	int wlctl_num;

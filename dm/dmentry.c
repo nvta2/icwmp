@@ -66,8 +66,23 @@ static void print_dm_help(void)
 	printf(" exit\n");
 }
 
+static int check_uci_datamodel(void)
+{
+	char *uci_datamodel = NULL;
+
+	dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &uci_datamodel);
+	if( (strcasecmp(uci_datamodel, "tr181") == 0) || (strcasecmp(uci_datamodel, "tr-181") == 0) )
+		return 1;
+
+	return 0;
+}
+
 static int dm_ctx_init_custom(struct dmctx *ctx, unsigned int dm_type, unsigned int amd_version, unsigned int instance_mode, int custom)
 {
+	unsigned int uci_data_model;
+#ifdef UPNP_TR064
+	UPNP_SUPPORTED_DM *tUPNPSupportedDM = NULL;
+#endif
 	if (custom == CTX_INIT_ALL) {
 		memset(&dmubus_ctx, 0, sizeof(struct dmubus_ctx));
 		INIT_LIST_HEAD(&dmubus_ctx.obj_head);
@@ -81,22 +96,62 @@ static int dm_ctx_init_custom(struct dmctx *ctx, unsigned int dm_type, unsigned 
 	ctx->amd_version = amd_version;
 	ctx->instance_mode = instance_mode;
 	ctx->dm_type = dm_type;
+	uci_data_model = check_uci_datamodel();
 #ifdef UPNP_TR064
 	if (dm_type == DM_UPNP) {
-		strcpy(DMROOT, DMROOT_UPNP);
-		dm_delim = DMDELIM_UPNP;
-		ctx->dm_entryobj = tEntryObjUPNP;
-		ctx->user_mask = upnp_in_user_mask;
+		if(uci_data_model == DM_TR098) {
+			strcpy(dmroot, DMROOT_UPNP);
+			dm_delim = DMDELIM_UPNP;
+			ctx->dm_entryobj = tEntry098ObjUPNP;
+			ctx->user_mask = upnp_in_user_mask;
+		}
+		else {
+			strcpy(dmroot, DMROOT_UPNP);
+			dm_delim = DMDELIM_UPNP;
+			ctx->dm_entryobj = tEntry181ObjUPNP;
+			ctx->user_mask = upnp_in_user_mask;
+		}
 	}
 	else {
-		strcpy(DMROOT, DMROOT_CWMP);
-		dm_delim = DMDELIM_CWMP;
-		ctx->dm_entryobj = tEntryObj;
+		if(uci_data_model == DM_TR098) {
+			strcpy(dmroot, "InternetGatewayDevice");
+			dm_delim = DMDELIM_CWMP;
+			ctx->dm_entryobj = tEntry098Obj;
+		}
+		else {
+			strcpy(dmroot, "Device");
+			dm_delim = DMDELIM_CWMP;
+			ctx->dm_entryobj = tEntry181Obj;
+		}
 	}
+
+	if(uci_data_model == DM_TR098) {
+		tUPNPSupportedDM = malloc(tr98_size);
+		if (tUPNPSupportedDM == NULL) {
+			exit(0);
+		}
+		tUPNPSupportedDM = tUPNPSupportedDM_098;
+	}
+	else {
+		tUPNPSupportedDM = malloc(tr181_size);
+		if (tUPNPSupportedDM == NULL) {
+			exit(0);
+		}
+		tUPNPSupportedDM = tUPNPSupportedDM_181;
+	}
+
+	free(tUPNPSupportedDM);
 #else
-	strcpy(DMROOT, DMROOT_CWMP);
-	dm_delim = DMDELIM_CWMP;
-	ctx->dm_entryobj = tEntryObj;
+	if(uci_data_model == DM_TR098) {
+		strcpy(dmroot, "InternetGatewayDevice");
+		dm_delim = DMDELIM_CWMP;
+		ctx->dm_entryobj = tEntry098Obj;
+	}
+	else {
+		strcpy(dmroot, "Device");
+		dm_delim = DMDELIM_CWMP;
+		ctx->dm_entryobj = tEntry181Obj;
+	}
 #endif
 	return 0;
 }

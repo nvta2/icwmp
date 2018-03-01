@@ -168,11 +168,11 @@ int get_lan_eth_iface_cfg_stats_rx_packets(char *refparam, struct dmctx *ctx, vo
 int get_wlan_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_max_bit_rate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_channel(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_auto_channel_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_beacon_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_mac_control_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_possible_channels(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -194,8 +194,8 @@ int get_wlan_devstatus_statistics_tx_bytes(char *refparam, struct dmctx *ctx, vo
 int get_wlan_devstatus_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_devstatus_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_devstatus_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_inteno_se_supported_standard(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -246,7 +246,7 @@ int set_wlan_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 int set_wlan_max_bit_rate(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_channel(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_auto_channel_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_beacon_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_mac_control_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_standard(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -261,8 +261,8 @@ int set_wlan_ieee_11i_authentication_mode(char *refparam, struct dmctx *ctx, voi
 int set_wlan_radio_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_device_operation_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_authentication_service_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_inteno_se_maxssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);

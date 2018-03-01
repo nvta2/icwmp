@@ -60,7 +60,7 @@ int delete_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char *instan
 int get_wifi_bandsteering_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_wifi_bandsteering_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
-int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_radio_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_radio_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_radio_max_bit_rate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -81,9 +81,9 @@ int get_radio_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *dat
 int get_ssid_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wifi_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wifi_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ssid_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ssid_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ssid_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ssid_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -92,8 +92,8 @@ int get_access_point_alias(char *refparam, struct dmctx *ctx, void *data, char *
 int get_wifi_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wifi_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ap_ssid_ref(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+static int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_total_associations(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_maxassoc(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_control_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -111,7 +111,7 @@ int get_linker_Wifi_Radio(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_linker_Wifi_Ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
 
-int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_max_bit_rate(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -122,11 +122,11 @@ int set_radio_channel(char *refparam, struct dmctx *ctx, void *data, char *insta
 int set_radio_auto_channel_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_ssid_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wifi_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_ssid_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wifi_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_maxassoc(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_control_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -137,5 +137,5 @@ int set_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, 
 int set_access_point_security_radius_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_radius_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_radius_secret(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif

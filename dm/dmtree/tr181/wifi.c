@@ -277,13 +277,13 @@ int get_wifi_status (char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
-int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct wifi_ssid_args *)data)->wifi_ssid_sec, "ssid", value);
 	return 0;
 }
 
-int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -295,7 +295,7 @@ int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance,
 	return 0;
 }
 
-int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *wlan_name;
 	json_object *res;
@@ -687,7 +687,7 @@ int get_ssid_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data
 /**************************************************************************
 * SET & GET VALUE
 ***************************************************************************/
-int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *hidden;
 	dmuci_get_value_by_section_string(((struct wifi_ssid_args *)data)->wifi_ssid_sec, "hidden", &hidden);
@@ -698,7 +698,7 @@ int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
-int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	switch (action) {
@@ -718,7 +718,7 @@ int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
-int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	bool b;
 	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "device", value);
@@ -732,7 +732,7 @@ int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	return 0;
 }
 
-int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	char *device;
@@ -1132,13 +1132,13 @@ int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx
 * SET AND GET ALIAS
 ***************************************************************************/
 
-int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct wifi_radio_args *)data)->wifi_radio_sec, "radioalias", value);
 	return 0;
 }
 
-int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -1190,7 +1190,7 @@ int set_access_point_alias(char *refparam, struct dmctx *ctx, void *data, char *
 int get_ssid_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	if (((struct wifi_ssid_args *)data)->linker[0] != '\0') {
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cRadio%c", DMROOT, dm_delim, dm_delim, dm_delim), ((struct wifi_ssid_args *)data)->linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cRadio%c", dmroot, dm_delim, dm_delim, dm_delim), ((struct wifi_ssid_args *)data)->linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL)
 			*value = "";
 	}
@@ -1216,7 +1216,7 @@ int set_ssid_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int get_ap_ssid_ref(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cSSID%c", DMROOT, dm_delim, dm_delim, dm_delim), ((struct wifi_acp_args *)data)->ifname, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cSSID%c", dmroot, dm_delim, dm_delim, dm_delim), ((struct wifi_acp_args *)data)->ifname, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
 	return 0;

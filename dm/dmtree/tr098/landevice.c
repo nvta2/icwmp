@@ -1803,7 +1803,7 @@ int get_lan_eth_iface_cfg_stats_rx_packets(char *refparam, struct dmctx *ctx, vo
 }
 
 //HOST DYNAMIC
-char *get_interface_type(char *mac, char *ndev)
+static char *get_interface_type(char *mac, char *ndev)
 {
 	json_object *res;
 	int wlctl_num;
@@ -1981,7 +1981,7 @@ int get_wlan_status (char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
-int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 
@@ -2072,14 +2072,14 @@ int set_wlan_auto_channel_enable(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
-int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	dmuci_get_value_by_section_string(wlanargs->lwlansection, "ssid", value);
 	return 0;
 }
 
-int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_wlan_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 
@@ -2822,7 +2822,7 @@ int get_wlan_devstatus_statistics_rx_packets(char *refparam, struct dmctx *ctx, 
 	return 0;
 }
 
-int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *hidden;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -2834,7 +2834,7 @@ int get_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
-int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -3175,7 +3175,7 @@ int set_x_inteno_se_scantimer(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
-int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	bool b;
@@ -3238,7 +3238,7 @@ int set_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, void *data, cha
 	}
 	return 0;
 }
-int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	bool b;

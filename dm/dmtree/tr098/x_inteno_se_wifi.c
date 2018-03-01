@@ -212,13 +212,13 @@ int set_wifi_dfsenable(char *refparam, struct dmctx *ctx, void *data, char *inst
 }
 
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
-int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string((struct uci_section *)data, "radioalias", value);
 	return 0;
 }
 
-int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+static int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:

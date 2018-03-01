@@ -127,28 +127,32 @@ int set_x_inteno_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *da
 int get_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *iface, *linker;
+	char *uci_datamodel = NULL;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 
 	dmuci_get_value_by_section_string(owsd_listensection, "interface", &iface);
-#ifdef DATAMODEL_TR098
-	if (iface[0] != '\0') {
-		dmastrcat(&linker, "linker_interface:", iface);
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWANDevice%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
-		if (*value == NULL) {
-			adm_entry_get_linker_param(ctx, dm_print_path("%s%cLANDevice%c", DMROOT, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &uci_datamodel);
+	if( (strcasecmp(uci_datamodel, "tr181") == 0) || (strcasecmp(uci_datamodel, "tr-181") == 0))
+	{
+		if (iface[0] != '\0') {
+			adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), iface, value); // MEM WILL BE FREED IN DMMEMCLEAN
 			if (*value == NULL)
 				*value = "";
 		}
-		dmfree(linker);
 	}
-#endif
-#ifdef DATAMODEL_TR181
-	if (iface[0] != '\0') {
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", DMROOT, dm_delim, dm_delim, dm_delim), iface, value); // MEM WILL BE FREED IN DMMEMCLEAN
-		if (*value == NULL)
-			*value = "";
+	else
+	{
+		if (iface[0] != '\0') {
+			dmastrcat(&linker, "linker_interface:", iface);
+			adm_entry_get_linker_param(ctx, dm_print_path("%s%cWANDevice%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+			if (*value == NULL) {
+				adm_entry_get_linker_param(ctx, dm_print_path("%s%cLANDevice%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+				if (*value == NULL)
+					*value = "";
+			}
+			dmfree(linker);
+		}
 	}
-#endif
 	return 0;
 }
 
@@ -156,6 +160,7 @@ int set_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, voi
 {
 	int check;
 	char *linker, *iface;
+	char *uci_datamodel = NULL;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 
 	switch (action) {
@@ -164,9 +169,10 @@ int set_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, voi
 		case VALUESET:
 			adm_entry_get_linker_value(ctx, value, &linker);
 			if (linker) {
-#ifdef DATAMODEL_TR098
-				iface = linker + sizeof("linker_interface:") - 1;
-#endif
+				dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &uci_datamodel);
+				if( (strcasecmp(uci_datamodel, "tr098") == 0) || (strcasecmp(uci_datamodel, "tr-098") == 0) || (strcasecmp(uci_datamodel, "tr98") == 0) || (strcasecmp(uci_datamodel, "tr-98") == 0) ) {
+					iface = linker + sizeof("linker_interface:") - 1;
+				}
 				dmuci_set_value_by_section(owsd_listensection, "interface", iface);
 				dmfree(linker);
 			}

@@ -899,3 +899,12 @@ void hex_to_ip(char *address, char *ret)
 		sprintf(ret, "%d.%d.%d.%d", ip[3], ip[2], ip[1], ip[0]);
 	}
 }
+
+void ip_to_hex(char *address, char *ret)
+{
+	int i;
+	int ip[4] = {0};
+
+	sscanf(address, "%d.%d.%d.%d", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
+	sprintf(ret, "%02X%02X%02X%02X", ip[0], ip[1], ip[2], ip[3]);
+}

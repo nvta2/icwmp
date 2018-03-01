@@ -78,16 +78,7 @@ inline int init_args_ipv4forward(struct routingfwdargs *args, struct uci_section
 /************************************************************************************* 
 **** function related to get_object_router_ipv4forwarding ****
 **************************************************************************************/
-void ip_to_hex(char *address, char *ret) //TODO Move to the common.c
-{
-	int i;
-	int ip[4] = {0};
-	
-	sscanf(address, "%d.%d.%d.%d", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
-	sprintf(ret, "%02X%02X%02X%02X", ip[0], ip[1], ip[2], ip[3]);
-}
-
-bool is_proute_static(struct proc_routing *proute)
+static bool is_proute_static(struct proc_routing *proute)
 {
 	char *mask;
 	struct uci_section *s;
@@ -104,7 +95,7 @@ bool is_proute_static(struct proc_routing *proute)
 	return false;
 }
 
-bool is_cfg_route_active(struct uci_section *s)
+static bool is_cfg_route_active(struct uci_section *s)
 {
 	FILE *fp;
 	char line[MAX_PROC_ROUTING];
@@ -134,7 +125,7 @@ bool is_cfg_route_active(struct uci_section *s)
 	return false;
 }
 
-int get_forwarding_last_inst()
+static int get_forwarding_last_inst()
 {
 	char *rinst = NULL, *drinst = NULL, *dsinst = NULL, *tmp;
 	int r = 0, dr = 0, ds = 0, max;
@@ -169,7 +160,7 @@ int get_forwarding_last_inst()
 	return max;
 }
 
-char *forwarding_update_instance_alias(int action, char **last_inst, void *argv[])
+static char *forwarding_update_instance_alias(int action, char **last_inst, void *argv[])
 {
 	char *instance, *alias;
 	char buf[8] = {0};
@@ -207,7 +198,7 @@ char *forwarding_update_instance_alias(int action, char **last_inst, void *argv[
 	return instance;
 }
 
-struct uci_section *update_route_dynamic_section(struct proc_routing *proute)
+static struct uci_section *update_route_dynamic_section(struct proc_routing *proute)
 {
 	struct uci_section *s = NULL;
 	char *name, *mask;
@@ -436,7 +427,7 @@ int get_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct 
 	iface = get_router_ipv4forwarding_interface(ctx, data, instance);
 	if (iface[0] != '\0') {
 		dmasprintf(&linker, "%s", iface);
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 		if (*value == NULL)
 			*value = "";
 		dmfree(linker);

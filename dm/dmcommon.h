@@ -143,4 +143,5 @@ void parse_proc_route_line(char *line, struct proc_routing *proute);
 int strstructered(char *str1, char *str2);
 int dmcommon_check_notification_value(char *value);
 void hex_to_ip(char *address, char *ret);
+void ip_to_hex(char *address, char *ret);
 #endif

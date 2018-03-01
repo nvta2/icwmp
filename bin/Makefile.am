@@ -30,7 +30,6 @@ libdatamodel_la_SOURCES =	\
 	../dm/dmtree/common/x_inteno_se_buttons.c		\
 	../dm/dmtree/common/root.c
 
-if DATAMODEL_TR098
 libdatamodel_la_SOURCES += 							\
 	../dm/dmtree/tr098/lan_interfaces.c				\
 	../dm/dmtree/tr098/landevice.c					\
@@ -42,8 +41,7 @@ libdatamodel_la_SOURCES += 							\
 	../dm/dmtree/tr098/uploaddiagnostic.c			\
 	../dm/dmtree/tr098/deviceconfig.c				\
 	../dm/dmtree/tr098/layer_3_forwarding.c	
-endif
-if DATAMODEL_TR181
+
 libdatamodel_la_SOURCES +=							\
 	../dm/dmtree/tr181/wifi.c						\
 	../dm/dmtree/tr181/ethernet.c					\
@@ -56,7 +54,6 @@ libdatamodel_la_SOURCES +=							\
 	../dm/dmtree/tr181/nat.c						\
 	../dm/dmtree/tr181/routing.c					\
 	../dm/dmtree/tr181/userinterface.c
-endif
 
 if UPNP_TR064
 libdatamodel_la_SOURCES +=							\

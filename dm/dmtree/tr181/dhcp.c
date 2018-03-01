@@ -750,7 +750,7 @@ int get_dhcp_interface(char *refparam, struct dmctx *ctx, void *data, char *inst
 {
 	char *linker;
 	linker = dmstrdup(((struct dhcp_args *)data)->interface);
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", DMROOT, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
 	dmfree(linker);

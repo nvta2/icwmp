@@ -128,7 +128,7 @@ LIST_HEAD(list_execute_end_session);
 int end_session_flag = 0;
 int ip_version = 4;
 char dm_delim = DMDELIM_CWMP;
-char DMROOT[64] = DMROOT_CWMP;
+char dmroot[64] = "InternetGatewayDevice";
 unsigned int upnp_in_user_mask = DM_SUPERADMIN_MASK;
 
 

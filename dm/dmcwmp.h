@@ -20,16 +20,8 @@
 #include "dmuci.h"
 #include "dmmem.h"
 
-#ifdef DATAMODEL_TR098
-#define DMROOT_CWMP "InternetGatewayDevice"
-#endif
-#ifdef DATAMODEL_TR181
-#define DMROOT_CWMP "Device"
-#endif
-
 #ifdef UPNP_TR064
 #define DMROOT_UPNP ""
-
 #define DMDELIM_UPNP '/'
 #endif
 
@@ -411,6 +403,11 @@ enum dm_type_enum{
 	DM_UPNP,
 };
 
+enum datamodel_type_enum{
+	DM_TR098,
+	DM_TR181,
+};
+
 enum dm_param_flags_enum{
 	/* UPNP OnChange flags flags */
 	DM_PARAM_ALARAM_ON_CHANGE = 1 << 0,
@@ -463,7 +460,7 @@ extern struct list_head list_upnp_changed_version;
 extern int end_session_flag;
 extern int ip_version;
 extern char dm_delim;
-extern char DMROOT[64];
+extern char dmroot[64];
 extern unsigned int upnp_in_user_mask;
 
 char *update_instance(struct uci_section *s, char *last_inst, char *inst_opt);
