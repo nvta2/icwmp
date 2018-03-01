@@ -112,7 +112,7 @@ struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_c
     INIT_LIST_HEAD (&(event_container->head_dm_parameter));
     list_add (&(event_container->list), ilist->prev);
     event_container->code = event_code;
-    event_container->command_key = strdup(command_key);
+    event_container->command_key = command_key?strdup(command_key):strdup("");
     if((id<0) || (id>=MAX_INT_ID) )
     {
         id=0;
