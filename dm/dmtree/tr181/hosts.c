@@ -110,9 +110,23 @@ int get_host_interface_type(char *refparam, struct dmctx *ctx, void *data, char 
 
 int get_host_interfacename(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = dmjson_get_value(((struct host_args *)data)->client, 1, "network");
-	if (*value == NULL)
-		*value = "";
+	char *frequency, *wireless;
+
+	frequency = dmjson_get_value(((struct host_args *)data)->client, 1, "frequency");
+	wireless = dmjson_get_value(((struct host_args *)data)->client, 1, "wireless");
+	if( (*frequency != '\0') && (strcmp(wireless, "true")==0) )
+	{
+		if(strcmp(frequency,"5GHz")==0)
+			*value = "wifi5GHz";
+		else
+			*value = "wifi2.4GHz";
+	}
+	else
+	{
+		*value = dmjson_get_value(((struct host_args *)data)->client, 1, "network");
+		if (*value == NULL)
+			*value = "";
+	}
 	return 0;
 }
 
@@ -140,7 +154,8 @@ int get_host_phy_address(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
-int get_host_address_source(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value) {
+int get_host_address_source(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	char *dhcp;
 
 	dhcp = dmjson_get_value(((struct host_args *)data)->client, 1, "dhcp");
