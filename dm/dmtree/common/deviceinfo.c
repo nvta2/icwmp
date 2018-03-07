@@ -27,6 +27,7 @@ DMOBJ tDeviceInfoObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
 {"X_INTENO_SE_CATV", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tCatTvParams, NULL},
 {"VendorConfigFile", &DMREAD, NULL, NULL, NULL, browseVcfInst, NULL, NULL, NULL, tVcfParams, NULL},
+{"VendorLogFile", &DMREAD, NULL, NULL, NULL, browseVlfInst, NULL, NULL, NULL, tVlfParams, NULL},
 {0}
 };
 
@@ -69,6 +70,16 @@ DMLEAF tVcfParams[] = {
 {"Date", &DMREAD, DMT_TIME, get_vcf_date, NULL, NULL, NULL},
 {"Description", &DMREAD, DMT_STRING, get_vcf_desc, NULL, NULL, NULL},
 {"UseForBackupRestore", &DMREAD, DMT_BOOL, get_vcf_backup_restore, NULL, NULL, NULL},
+{0}
+};
+
+/*** DeviceInfo.VendorLogFile.{i}. ***/
+DMLEAF tVlfParams[] = {
+/* PARAM, permission, type, getvalue, setvalue, forced_inform, notification*/
+{"Alias", &DMWRITE, DMT_STRING, get_vlf_alias, set_vlf_alias, NULL, NULL},
+{"Name", &DMREAD, DMT_STRING, get_vlf_name, NULL, NULL, NULL},
+{"MaximumSize", &DMREAD, DMT_UNINT, get_vlf_max_size, NULL, NULL, NULL},
+{"Persistent", &DMREAD, DMT_BOOL, get_vlf_persistent, NULL, NULL, NULL},
 {0}
 };
 
@@ -492,6 +503,46 @@ int check_file_dir(char *name)
 	return 0;
 }
 
+int get_vlf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *sys_log_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(sys_log_sec, "vlf_alias", value);
+	return 0;
+}
+
+int set_vlf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	struct uci_section *sys_log_sec = (struct uci_section *)data;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(sys_log_sec, "vlf_alias", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_vlf_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *sys_log_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(sys_log_sec, "log_file", value);
+	return 0;
+}
+
+int get_vlf_max_size (char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *sys_log_sec = (struct uci_section *)data;
+	dmuci_get_value_by_section_string(sys_log_sec, "log_size", value);
+	*value = (**value) ? *value : "0";
+	return 0;
+}
+
+int get_vlf_persistent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	return 0;
+}
 
 int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
@@ -525,4 +576,16 @@ int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, cha
 	if(del_sec)
 		DMUCI_DELETE_BY_SECTION(icwmpd, del_sec, NULL, NULL);
 	return 0;
+}
+
+//Browse VendorLogFile instances
+int browseVlfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
+	struct uci_section *sys_log_sec;
+	char *instance, *last_instance;
+	uci_foreach_sections("system", "system", sys_log_sec) {
+		instance = handle_update_instance(1, dmctx, &last_instance, update_instance_alias_icwmpd, 3, sys_log_sec, "vlf_instance", "vlf_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)sys_log_sec, instance) == DM_STOP)
+			break;
+	}
 }

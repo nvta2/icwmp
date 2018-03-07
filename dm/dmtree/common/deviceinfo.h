@@ -19,6 +19,7 @@
 extern DMLEAF tDeviceInfoParams[];
 extern DMLEAF tCatTvParams[];
 extern DMLEAF tVcfParams[];
+extern DMLEAF tVlfParams[];
 extern DMOBJ tDeviceInfoObj[];
 
 char *get_deviceid_manufacturer();
@@ -28,6 +29,7 @@ char *get_deviceid_serialnumber();
 char *get_softwareversion();
 int lookup_vcf_name(char *instance, char **value);
 int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseVlfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 int get_device_manufacturer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_device_manufactureroui(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -54,11 +56,16 @@ int get_vcf_version(char *refparam, struct dmctx *ctx, void *data, char *instanc
 int get_vcf_date(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_vcf_desc(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_vcf_backup_restore(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_vlf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_vlf_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_vlf_max_size(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_vlf_persistent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_device_provisioningcode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_device_catvenabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_device_memory_bank(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_device_catvenabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_vcf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_vlf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif

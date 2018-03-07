@@ -2394,11 +2394,10 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	bkp_session_save();
 
 	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
-	if (pupload->file_type[0] == '3' && pupload->f_instance && isdigit(pupload->f_instance[0])) {
+	if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
 		lookup_vcf_name(pupload->f_instance, &name);
 	}
-	external_upload(pupload->url, pupload->file_type,
-			pupload->username, pupload->password, name);
+	external_upload(pupload->url, pupload->file_type, pupload->username, pupload->password, name);
 	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
 	external_handle_action(cwmp_handle_uploadFault);
 	external_fetch_uploadFaultResp(&fault_code);
@@ -3462,7 +3461,6 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
     struct transfer_complete					*ptransfer_complete;
     long int									time_of_grace = 3600,timeout;
     char										*fault_code;
-
     for(;;)
     {
         if (list_upload.next!=&(list_upload)) {
@@ -3475,12 +3473,12 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
                 timeout = 0;
             if((timeout >= 0)&&(timeout > time_of_grace))
             {
-                pthread_mutex_lock (&mutex_upload);
+            	pthread_mutex_lock (&mutex_upload);
                 bkp_session_delete_upload(pupload);
                 ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
                 if(ptransfer_complete != NULL)
                 {
-                    error = FAULT_CPE_DOWNLOAD_FAILURE;
+                	error = FAULT_CPE_DOWNLOAD_FAILURE;
 
                     ptransfer_complete->command_key		= strdup(pupload->command_key);
                     ptransfer_complete->start_time 		= strdup(mix_get_time());
@@ -3499,20 +3497,20 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
             }
             if((timeout >= 0)&&(timeout <= time_of_grace))
             {
-                pthread_mutex_lock (&(cwmp->mutex_session_send));
+            	pthread_mutex_lock (&(cwmp->mutex_session_send));
                 external_init();
                 CWMP_LOG(INFO,"Launch upload file %s",pupload->url);
                 error = cwmp_launch_upload(pupload,&ptransfer_complete);
                 if(error != FAULT_CPE_NO_FAULT)
                 {
-                    bkp_session_insert_transfer_complete(ptransfer_complete);
+                	bkp_session_insert_transfer_complete(ptransfer_complete);
                     bkp_session_save();
                     cwmp_root_cause_TransferComplete (cwmp,ptransfer_complete);
                     bkp_session_delete_transfer_complete(ptransfer_complete);
                 }
                 else
                 {
-                    bkp_session_insert_transfer_complete(ptransfer_complete);
+                	bkp_session_insert_transfer_complete(ptransfer_complete);
                     bkp_session_save();
                     //external_apply("download", pdownload->file_type); !!!
                     external_handle_action(cwmp_handle_uploadFault); //IBH TO ADD
@@ -4539,7 +4537,6 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
 	FREE(c);
-
 	if (!n) return -1;
 	b = n;
 
@@ -4606,7 +4603,9 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
-	if(strncmp(file_type, "3 Vendor Configuration File", sizeof"3 Vendor Configuration File" -1) != 0 &&
+	if(strncmp(file_type, "1 Vendor Configuration File", sizeof"1 Vendor Configuration File" -1) != 0 &&
+		strncmp(file_type, "3 Vendor Configuration File", sizeof"3 Vendor Configuration File" -1) != 0 &&
+		strncmp(file_type, "2 Vendor Log File", sizeof"2 Vendor Log File" -1) != 0 &&
 		strncmp(file_type, "4 Vendor Log File", sizeof"4 Vendor Log File" -1) != 0)
 	{
 		error = FAULT_CPE_REQUEST_DENIED;
@@ -4630,8 +4629,9 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	}
 
 	FREE(file_type);
-	if(error != FAULT_CPE_NO_FAULT)
+	if(error != FAULT_CPE_NO_FAULT){
 		goto fault;
+	}
 
 	t = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!t) goto fault;
@@ -4689,11 +4689,9 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 		{
 			CWMP_LOG(INFO,"Upload will start at the end of session");
 		}
-
 		pthread_mutex_unlock (&mutex_upload);
 		pthread_cond_signal(&threshold_upload);
 	}
-
 	return 0;
 
 fault:
