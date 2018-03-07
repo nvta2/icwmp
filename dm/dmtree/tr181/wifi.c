@@ -238,10 +238,9 @@ int set_wifi_bandsteering_enable(char *refparam, struct dmctx *ctx, void *data, 
 
 int get_wifi_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	int i;
 	char *val;
 	dmuci_get_value_by_section_string(((struct wifi_ssid_args *)data)->wifi_ssid_sec, "disabled", &val);
-	if (val[0] == '0')
+	if ((val[0] == '\0') || (val[0] == '0'))
 		*value = "1";
 	else
 		*value = "0";
