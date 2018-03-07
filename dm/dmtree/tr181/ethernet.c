@@ -89,8 +89,7 @@ int get_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *inst
 	dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "eth_port_alias", value);
 	if(*value == NULL || strlen(*value)<1)
 	{
-		dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "eth_port_instance", &eth_instance);
-		dmasprintf(value, "cpe-%s", eth_instance);
+		dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "name", value);
 	}
 
 	return 0;
