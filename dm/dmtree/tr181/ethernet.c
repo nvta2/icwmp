@@ -112,7 +112,7 @@ int set_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *inst
 int get_eth_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
-	char *ifname;
+	char *ifname, *speed;
 
 	if (strstr(((struct eth_port_args *)data)->ifname, wan_ifname)) {
 		ifname = dmstrdup(wan_ifname);
@@ -121,7 +121,11 @@ int get_eth_port_enable(char *refparam, struct dmctx *ctx, void *data, char *ins
 
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	*value = dmjson_get_value(res, 1, "up");
+	speed = dmjson_get_value(res, 1, "speed");
+	if(*speed != '\0')
+		*value = "true";
+	else
+		*value = "false";
 	dmfree(ifname);
 	return 0;
 }
