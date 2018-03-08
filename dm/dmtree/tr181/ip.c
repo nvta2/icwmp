@@ -56,7 +56,7 @@ DMOBJ tDiagnosticObj[] = {
 DMLEAF tIPv4Params[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform*/
 {"Alias", &DMWRITE, DMT_STRING, get_ipv4_alias, set_ipv4_alias, &IPv4INFRM, NULL},
-{"Enable", &DMREAD, DMT_BOOL, get_ip_enable, NULL, &IPv4INFRM, NULL},
+{"Enable", &DMWRITE, DMT_BOOL, get_ip_interface_enable, set_ip_interface_enable, &IPv4INFRM, NULL},
 {"X_BROADCOM_COM_FirewallEnabled", &DMWRITE, DMT_BOOL, get_firewall_enabled, set_firewall_enabled, &IPv4INFRM, NULL},
 {"IPAddress", &DMWRITE, DMT_STRING, get_ipv4_address, set_ipv4_address, &IPv4INFRM, NULL},
 {"SubnetMask", &DMWRITE, DMT_STRING, get_ipv4_netmask, set_ipv4_netmask, &IPv4INFRM, NULL},
@@ -782,7 +782,6 @@ int get_linker_ip_interface(char *refparam, struct dmctx *dmctx, void *data, cha
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
-
 int browseIPIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *net_sec = NULL;
@@ -828,8 +827,7 @@ int browseIPIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 
 int browseIfaceIPv4Inst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *ip_sec = NULL;
-	char *type, *ifname, *ipv4, *ipv6, *ipv4_inst = NULL, *ipv6_inst = NULL,*ipv4_inst_last = NULL, *ipv6_inst_last = NULL ;
+	char *ipv4_inst = NULL, *ipv4_inst_last = NULL;
 
 	if(((struct ip_args *)prev_data)->ip_4address[0] != '\0') {
 		ipv4_inst = handle_update_instance(2, dmctx, &ipv4_inst_last, update_instance_alias, 3, ((struct ip_args *)prev_data)->ip_sec, "ipv4_instance", "ipv4_alias");
@@ -842,8 +840,7 @@ end:
 
 int browseIfaceIPv6Inst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *ip_sec = NULL;
-	char *type, *ifname, *ipv4, *ipv6, *ipv4_inst = NULL, *ipv6_inst = NULL,*ipv4_inst_last = NULL, *ipv6_inst_last = NULL ;
+	char *ipv6_inst = NULL, *ipv6_inst_last = NULL;
 
 	if (((struct ip_args *)prev_data)->ip_6address[0] != '\0') {
 		ipv6_inst = handle_update_instance(2, dmctx, &ipv6_inst_last, update_instance_alias, 3, ((struct ip_args *)prev_data)->ip_sec, "ipv6_instance", "ipv6_alias");
