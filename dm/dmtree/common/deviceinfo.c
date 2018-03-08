@@ -581,11 +581,31 @@ int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, cha
 //Browse VendorLogFile instances
 int browseVlfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *sys_log_sec;
-	char *instance, *last_instance;
+	struct uci_section *sys_log_sec, *s, *dm_sec, *del_sec=NULL;
+	char *instance, *last_instance, *log_file,*log_size, *add_value, *lfile;
+	int i=1, n=0;
 	uci_foreach_sections("system", "system", sys_log_sec) {
-		instance = handle_update_instance(1, dmctx, &last_instance, update_instance_alias_icwmpd, 3, sys_log_sec, "vlf_instance", "vlf_alias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)sys_log_sec, instance) == DM_STOP)
+		if(!sys_log_sec)
 			break;
+		dmuci_get_value_by_section_string(sys_log_sec, "log_file", &log_file);
+		dmuci_get_value_by_section_string(sys_log_sec, "log_size", &log_size);
+		uci_path_foreach_sections(icwmpd, "dmmap", "vlf", dm_sec) {
+			if(dm_sec)
+				break;
+		}
+		if(!dm_sec){
+			update_section_list(DMMAP,"vlf", NULL, i++, NULL, "log_file", log_file, "log_size", log_size);
+		}
+		else{
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dm_sec, "log_file", log_file);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dm_sec, "log_size", log_size);
+		}
 	}
+	uci_path_foreach_sections(icwmpd, "dmmap", "vlf", dm_sec) {
+		instance = handle_update_instance(1, dmctx, &last_instance, update_instance_alias_icwmpd, 3, dm_sec, "vlf_instance", "vlf_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)dm_sec, instance) == DM_STOP){
+			break;
+		}
+	}
+	return 0;
 }
