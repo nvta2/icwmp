@@ -814,7 +814,7 @@ int browseIPIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 		}
 		dmuci_get_value_by_section_string(net_sec, "proto", &proto);
 		dmuci_get_value_by_section_string(net_sec, "ip_int_instance", &inst);
-		if (ipv4addr[0] == '\0' && ipv6addr[0] == '\0' && strcmp(proto, "dhcp") != 0 && strcmp(proto, "dhcpv6") != 0 && strcmp(inst, "") == 0) {
+		if (ipv4addr[0] == '\0' && ipv6addr[0] == '\0' && strcmp(proto, "dhcp") != 0 && strcmp(proto, "dhcpv6") != 0 && strcmp(inst, "") == 0 && strcmp(type, "bridge") != 0) {
 			continue;
 		}
 		init_ip_args(&curr_ip_args, net_sec, ipv4addr, ipv6addr);
