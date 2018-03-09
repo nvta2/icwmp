@@ -54,6 +54,10 @@ DMLEAF tEthernetStatParams[] = {
 {"BytesReceived", &DMREAD, DMT_UNINT, get_eth_port_stats_rx_bytes, NULL, NULL, NULL},
 {"PacketsSent", &DMREAD, DMT_UNINT, get_eth_port_stats_tx_packets, NULL, NULL, NULL},
 {"PacketsReceived", &DMREAD, DMT_UNINT, get_eth_port_stats_rx_packets, NULL, NULL, NULL},
+{"ErrorsSent", &DMREAD, DMT_UNINT, get_eth_port_stats_tx_errors, NULL, NULL, NULL},
+{"ErrorsReceived", &DMREAD, DMT_UNINT, get_eth_port_stats_rx_errors, NULL, NULL, NULL},
+{"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_eth_port_stats_tx_discardpackets, NULL, NULL, NULL},
+{"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_eth_port_stats_rx_discardpackets, NULL, NULL, NULL},
 {0}
 };
 
@@ -329,6 +333,46 @@ int get_eth_port_stats_rx_packets(char *refparam, struct dmctx *ctx, void *data,
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ((struct eth_port_args *)data)->ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
 	*value = dmjson_get_value(res, 2, "statistics", "rx_packets");
+	return 0;
+}
+
+int get_eth_port_stats_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+
+	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ((struct eth_port_args *)data)->ifname, String}}, 1, &res);
+	DM_ASSERT(res, *value = "");
+	*value = dmjson_get_value(res, 2, "statistics", "tx_errors");
+	return 0;
+}
+
+int get_eth_port_stats_rx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+
+	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ((struct eth_port_args *)data)->ifname, String}}, 1, &res);
+	DM_ASSERT(res, *value = "");
+	*value = dmjson_get_value(res, 2, "statistics", "rx_errors");
+	return 0;
+}
+
+int get_eth_port_stats_tx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+
+	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ((struct eth_port_args *)data)->ifname, String}}, 1, &res);
+	DM_ASSERT(res, *value = "");
+	*value = dmjson_get_value(res, 2, "statistics", "tx_dropped");
+	return 0;
+}
+
+int get_eth_port_stats_rx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+
+	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ((struct eth_port_args *)data)->ifname, String}}, 1, &res);
+	DM_ASSERT(res, *value = "");
+	*value = dmjson_get_value(res, 2, "statistics", "rx_dropped");
 	return 0;
 }
 

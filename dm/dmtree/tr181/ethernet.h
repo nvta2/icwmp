@@ -33,6 +33,10 @@ int get_eth_port_stats_tx_bytes(char *refparam, struct dmctx *ctx, void *data, c
 int get_eth_port_stats_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_eth_port_stats_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_eth_port_stats_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_rx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_tx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_eth_port_stats_rx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_eth_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
