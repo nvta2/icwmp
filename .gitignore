@@ -1,5 +1,7 @@
 *.swp
 *.swo
+*.o
+*.lo
 bin/*
 !bin/Makefile.am
 .prepared*
@@ -19,5 +21,10 @@ config.status
 configure
 depcomp
 install-sh
-ipkg-brcm63xx_ref_nand/
+ipkg-*/
 missing
+.deps/
+.dirstamp
+.git_update
+.pkgdir/
+
