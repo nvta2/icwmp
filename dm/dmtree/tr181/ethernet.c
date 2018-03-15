@@ -390,7 +390,9 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 	uci_foreach_sections("ports", "ethport", ss) {
 		dmuci_get_value_by_section_string(ss, "ifname", &ifname);
 		if (strcmp(ifname, wan_ifname) == 0) {
+#ifndef EX400
 			dmasprintf(&ifname, "%s.1", ifname);
+#endif
 		}
 		init_eth_port(&curr_eth_port_args, ss, ifname);
 		int_num =  handle_update_instance(1, dmctx, &int_num_last, update_instance_alias, 3, ss, "eth_port_instance", "eth_port_alias");

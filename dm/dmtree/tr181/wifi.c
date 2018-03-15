@@ -897,7 +897,12 @@ int get_access_point_security_modes(char *refparam, struct dmctx *ctx, void *dat
 
 	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", &encryption);
 	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", &cipher);
-	get_value_security_mode(&mode, encryption, cipher);
+	if (*encryption == '\0' && *cipher == '\0') {
+		*value = "None";
+		return 0;
+	}
+	else
+		get_value_security_mode(&mode, encryption, cipher);
 
 	*value = mode;
 	return 0;

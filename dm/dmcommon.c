@@ -839,10 +839,14 @@ int max_array(int a[], int size)
 
 int check_ifname_is_vlan(char *ifname)
 {
-	char *pch = NULL;
-	pch = strrchr(ifname, '.');
-	if (pch && atoi(pch+1) >= 2)
-		return 1;
+	struct uci_section *s;
+	char *type;
+
+	uci_foreach_option_eq("network", "device", "ifname", ifname, s) {
+		dmuci_get_value_by_section_string(s, "type", &type);
+		if(strcasecmp(type, "untagged") != 0)
+			return 1;
+	}
 	return 0;
 }
 
