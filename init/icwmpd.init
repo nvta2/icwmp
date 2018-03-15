@@ -88,6 +88,8 @@ enable_dhcp_option43() {
 	done
 	if [ $proto == "dhcp" ]; then
 		newreqopts="$(echo $newreqopts | tr ' ' '\n' | sort -n | tr '\n' ' ' | sed 's/^[ \t]*//;s/[ \t]*$//')"
+		reqopts="$(echo $reqopts | tr ' ' '\n' | sort -n | tr '\n' ' ' | sed 's/^[ \t]*//;s/[ \t]*$//')"
+		[ "$newreqopts" == "$reqopts" ] && return
 		uci -q set network.$wan.reqopts="$newreqopts"
 		uci commit network
 		ubus call network reload
