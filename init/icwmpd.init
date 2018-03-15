@@ -70,6 +70,7 @@ enable_dhcp_option43() {
 	local reqopts="$(uci -q get network.$wan.reqopts)"
 	local proto="$(uci -q get network.$wan.proto)"
 	local tropts="43"
+	local oldreqopts="$reqopts"
 	local ropt iopt
 	for ropt in $reqopts; do
 		case $ropt in
@@ -87,8 +88,8 @@ enable_dhcp_option43() {
 	done
 	if [ $proto == "dhcp" ]; then
 		newreqopts="$(echo $newreqopts | tr ' ' '\n' | sort -n | tr '\n' ' ' | sed 's/^[ \t]*//;s/[ \t]*$//')"
-		reqopts="$(echo $reqopts | tr ' ' '\n' | sort -n | tr '\n' ' ' | sed 's/^[ \t]*//;s/[ \t]*$//')"
-		[ "$newreqopts" == "$reqopts" ] && return
+		oldreqopts="$(echo $oldreqopts | tr ' ' '\n' | sort -n | tr '\n' ' ' | sed 's/^[ \t]*//;s/[ \t]*$//')"
+		[ "$newreqopts" == "$oldreqopts" ] && return
 		uci -q set network.$wan.reqopts="$newreqopts"
 		uci commit network
 		ubus call network reload
