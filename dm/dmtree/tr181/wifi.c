@@ -135,6 +135,7 @@ DMLEAF tWifiAcessPointSecurityParams[] = {
 {"ModesSupported", &DMREAD, DMT_STRING, get_access_point_security_supported_modes, NULL, NULL, NULL},
 {"ModeEnabled", &DMWRITE, DMT_STRING ,get_access_point_security_modes, set_access_point_security_modes, NULL, NULL},
 {"WEPKey", &DMWRITE, DMT_STRING, get_empty, set_access_point_security_wepkey, NULL, NULL},
+{"X_INTENO_SE_WEPKeyIndex", &DMWRITE, DMT_UNINT, get_access_point_security_wepkey_index, set_access_point_security_wepkey_index, NULL, NULL},
 {"PreSharedKey", &DMWRITE, DMT_STRING, get_empty, set_access_point_security_shared_key, NULL, NULL},
 {"KeyPassphrase", &DMWRITE, DMT_STRING, get_empty, set_access_point_security_passphrase, NULL, NULL},
 {"RekeyingInterval", &DMWRITE, DMT_UNINT, get_access_point_security_rekey_interval, set_access_point_security_rekey_interval, NULL, NULL},
@@ -1008,6 +1009,32 @@ int set_access_point_security_wepkey(char *refparam, struct dmctx *ctx, void *da
 				dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "key_index", &key_index);
 				sprintf(buf,"key%s", key_index);
 				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, buf, value);
+			}
+			return 0;
+	}
+	return 0;
+}
+
+int get_access_point_security_wepkey_index(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *key_index;
+
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "key_index", &key_index);
+	if (*key_index == '\0')
+		*value = "1";
+	else
+		*value = key_index;
+	return 0;
+}
+
+int set_access_point_security_wepkey_index(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			if (atoi(value)>=1 && atoi(value)<=4) {
+				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key_index", value);
 			}
 			return 0;
 	}

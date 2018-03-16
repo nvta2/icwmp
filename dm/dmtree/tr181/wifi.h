@@ -103,6 +103,7 @@ int get_access_point_maxassoc(char *refparam, struct dmctx *ctx, void *data, cha
 int get_access_point_control_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_supported_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_security_wepkey_index(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_radius_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_radius_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -135,6 +136,7 @@ int set_access_point_maxassoc(char *refparam, struct dmctx *ctx, void *data, cha
 int set_access_point_control_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_modes(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_wepkey(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_access_point_security_wepkey_index(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_shared_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_passphrase(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
