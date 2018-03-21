@@ -39,11 +39,13 @@ DMLEAF tIPintParams[] = {
 {"LowerLayers", &DMWRITE, DMT_STRING, get_ip_int_lower_layer, set_ip_int_lower_layer, NULL, NULL},
 {0}
 };
+
 /* *** Device.IP.Interface. *** */
 DMOBJ tInterfaceObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf*/
 {"IPv4Address", &DMWRITE, add_ipv4, delete_ipv4, NULL, browseIfaceIPv4Inst, NULL, NULL, NULL, tIPv4Params, NULL},
 {"IPv6Address", &DMWRITE, add_ipv6, delete_ipv6, NULL, browseIfaceIPv6Inst, NULL, NULL, NULL, tIPv6Params, NULL},
+{"Stats", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tIPInterfaceStatsParams, NULL},
 {0}
 };
 
@@ -52,6 +54,7 @@ DMOBJ tDiagnosticObj[] = {
 {"IPPingDiagnostics", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tIpPingDiagParams, NULL},
 {0}
 };
+
 /* *** Device.IP.Interface.{i}.IPv4Address.{i}. *** */
 DMLEAF tIPv4Params[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform*/
@@ -64,7 +67,6 @@ DMLEAF tIPv4Params[] = {
 {0}
 };
 
-
 /* *** Device.IP.Interface.{i}.IPv6Address.{i}. *** */
 DMLEAF tIPv6Params[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform*/
@@ -72,6 +74,20 @@ DMLEAF tIPv6Params[] = {
 {"Enable", &DMREAD, DMT_BOOL, get_ip_enable, NULL, &IPv6INFRM, NULL},
 {"IPAddress", &DMWRITE, DMT_STRING, get_ipv6_address, set_ipv6_address, &IPv6INFRM, NULL},
 {"Origin", &DMWRITE, DMT_STRING, get_ipv6_addressing_type, set_ipv6_addressing_type, &IPv6INFRM, NULL},
+{0}
+};
+
+/* *** Device.IP.Interface.{i}.Stats. *** */
+DMLEAF tIPInterfaceStatsParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
+{"BytesSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_bytes, NULL, NULL, NULL},
+{"BytesReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_bytes, NULL, NULL, NULL},
+{"PacketsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_packets, NULL, NULL, NULL},
+{"PacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_packets, NULL, NULL, NULL},
+{"ErrorsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_errors, NULL, NULL, NULL},
+{"ErrorsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_errors, NULL, NULL, NULL},
+{"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_discardpackets, NULL, NULL, NULL},
+{"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_discardpackets, NULL, NULL, NULL},
 {0}
 };
 
@@ -592,6 +608,118 @@ int set_ipv6_address(char *refparam, struct dmctx *ctx, void *data, char *instan
 int get_ip_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "true";
+	return 0;
+}
+
+int get_ip_interface_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "tx_bytes");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "rx_bytes");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "tx_packets");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "rx_packets");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "tx_errors");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "rx_errors");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_tx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "tx_dropped");
+	}
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res, *diag;
+	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if(device) {
+		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
+		DM_ASSERT(diag, *value = "");
+		*value = dmjson_get_value(diag, 2, "statistics", "rx_dropped");
+	}
 	return 0;
 }
 /*************************************************************

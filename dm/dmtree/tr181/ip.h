@@ -23,6 +23,7 @@ extern DMOBJ tIPObj[];
 extern DMOBJ tInterfaceObj[];
 extern DMLEAF tIPv4Params[];
 extern DMLEAF tIPv6Params[];
+extern DMLEAF tIPInterfaceStatsParams[];
 extern DMLEAF tIPintParams[];
 extern DMLEAF tIpPingDiagParams[];
 extern DMOBJ tDiagnosticObj[];
@@ -64,6 +65,14 @@ int get_ip_ping_failure_count(char *refparam, struct dmctx *ctx, void *data, cha
 int get_ip_ping_average_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ip_ping_min_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_ip_ping_max_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_rx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_tx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ip_interface_statistics_rx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
