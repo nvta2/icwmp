@@ -51,7 +51,7 @@ DMOBJ tInterfaceObj[] = {
 
 DMOBJ tDiagnosticObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf*/
-{"IPPingDiagnostics", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tIpPingDiagParams, NULL},
+{"IPPing", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tIpPingDiagParams, NULL},
 {0}
 };
 
