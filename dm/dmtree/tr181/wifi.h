@@ -35,6 +35,7 @@ struct wifi_associative_device_args
 	int lastdatauplinkrate;
 	int signalstrength;
 	char *macaddress;
+	char *wdev;
 };
 
 extern DMOBJ tWifiObj[];
@@ -47,6 +48,8 @@ extern DMLEAF tWifiSsidParams[];
 extern DMLEAF tWifiRadioParams[];
 extern DMLEAF tWifiAcessPointSecurityParams[];
 extern DMLEAF tWifiAcessPointAssociatedDeviceParams[];
+extern DMOBJ tWifiAcessPointAssociatedDeviceObj[];
+extern DMLEAF tWifiAcessPointAssociatedDeviceStatsParams[];
 extern DMLEAF tWifiRadioStatsParams[];
 extern DMLEAF tWifiSsidStatsParams[];
 
@@ -112,6 +115,15 @@ int get_access_point_associative_device_lastdatauplinkrate(char *refparam, struc
 int get_access_point_associative_device_signalstrength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_retrans_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_failed_retrans_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_retry_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_associative_device_statistics_multiple_retry_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_Wifi_Radio(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_Wifi_Ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
