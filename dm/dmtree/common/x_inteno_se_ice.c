@@ -20,9 +20,9 @@
 
 /*** DMROOT.X_INTENO_SE_ICE. ***/
 DMLEAF tSe_IceParam[] = {
-	{"Enable", &DMWRITE, DMT_BOOL, get_ice_cloud_enable, set_ice_cloud_enable, NULL, NULL},
-	{"Server", &DMWRITE, DMT_STRING, get_ice_cloud_server, set_ice_cloud_server, NULL, NULL},
-	{0}
+{"Enable", &DMWRITE, DMT_BOOL, get_ice_cloud_enable, set_ice_cloud_enable, NULL, NULL},
+{"Server", &DMWRITE, DMT_STRING, get_ice_cloud_server, set_ice_cloud_server, NULL, NULL},
+{0}
 };
 
 int get_ice_cloud_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)

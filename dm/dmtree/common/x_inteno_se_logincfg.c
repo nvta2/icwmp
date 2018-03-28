@@ -16,7 +16,7 @@
 #include "dmcommon.h"
 #include "x_inteno_se_logincfg.h"
 
-
+/*** DMROOT.X_INTENO_SE_LoginCfg. ***/
 DMLEAF tSe_LoginCfgParam[] = {
 {"AdminPassword", &DMWRITE, DMT_STRING, get_empty, set_x_bcm_admin_password, NULL, NULL},
 {"SupportPassword", &DMWRITE, DMT_STRING, get_empty, set_x_bcm_support_password, NULL, NULL},

@@ -18,6 +18,7 @@
 #include "dmcommon.h"
 #include "x_inteno_syslog.h"
 
+/*** DMROOT.X_INTENO_SE_SyslogCfg. ***/
 DMLEAF tSe_SyslogCfgParam[] = {
 {"ServerIPAddress", &DMWRITE, DMT_STRING, get_server_ip_address, set_server_ip_address, NULL, NULL},
 {"ServerPortNumber", &DMWRITE, DMT_UNINT, get_server_port_number, set_server_port_number, NULL, NULL},

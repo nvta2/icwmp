@@ -19,6 +19,7 @@
 #include "dmentry.h"
 #include "x_inteno_se_owsd.h"
 
+/*** DMROOT.X_INTENO_SE_Owsd. ***/
 DMLEAF XIntenoSeOwsdParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
 {"Socket", &DMWRITE, DMT_STRING, get_x_inteno_owsd_global_sock, set_x_inteno_owsd_global_sock, NULL, NULL},

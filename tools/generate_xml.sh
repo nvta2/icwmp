@@ -4,58 +4,212 @@
 # USAGE:
 # ./generate_xml.sh <data model> <scripts path> <product class> <device protocol> <model name> <software version>
 # If the input arguments are empty, then use the default values:
-DATA_MODEL=${1:-"tr098"}
-SCRIPTS_PATH=${2:-"$(pwd)/dm/dmtree/"}
-PRODUCT_CLASS=${3:-"DG301-W7P2U"}
-DEVICE_PROTOCOL=${4:-"DEVICE_PROTOCOL_DSLFTR069v1"}
-MODEL_NAME=${5:-"DG301-W7P2U"}
-SOFTWARE_VERSION=${6:-"1.2.3.4B"}
-cnt_obj=0
-cnt_param=0
-SCRIPTS_PATH_COMMON=${SCRIPTS_PATH}/"common/"
-SCRIPTS_PATH=${SCRIPTS_PATH}/${DATA_MODEL}
+	
 
-if [ "$DATA_MODEL" == "tr098" ]; then
-ROOT_PATH="InternetGatewayDevice."
-else
-	ROOT_PATH="Device."
-fi
-# Funtcions
-# Check if object of parameters or get none in case of object contains an intance
-is_object() {
-	str=$1
-	function=`echo $str |cut -d, -f1`
-	if [ "$function" == "DMOBJECT" ]; then	
-		check=`echo $str |grep "\.[012345689]*\.,\$\|\.#\w*\.,\$"`
-		if [ "$check" == "" ]; then
-			echo "object"
+# VARIABLES ####################################################################################################
+obj_look_obj_child_list=""
+obj_look_param_child_list=""
+obj_look_father_list=""
+param_look_father_list=""
+
+
+# FUNCTIONS ####################################################################################################
+set_node_name() { 
+	echo ${1}
+}
+
+set_obj_object_child() { 
+	echo "${1},${2}"
+}
+
+set_obj_object_line() {
+	echo "object, ${1}, root, ${2}"
+}
+
+set_obj_param_child() { 
+	echo "${1},${2}"
+}
+set_obj_param_line() { 
+	echo "parameter, ${1}, root, ${2}"
+}
+
+set_obj_instance_line(){
+	echo "instance, , root, ${1}"
+}
+
+set_objs_child_instance_name(){
+	echo "${1}.${2}"
+}
+
+set_prms_child_instance_name(){
+	echo "${1}.${2}"
+}
+
+get_param_type(){
+	ptype=$1
+	case "$ptype" in
+		"DMT_STRING" )
+			echo "string"
+			;;
+		"DMT_UNINT" )
+			echo "unsignedInt"
+			;;
+		"DMT_TIME" )
+			echo "dateTime"
+			;;
+		"DMT_BOOL" )
+			echo "boolean"
+			;;
+		"DMT_LONG" )
+			echo "long"
+			;;
+		"DMT_INT" )
+			echo "int"
+			;;
+		"DMT_HEXBIN" )
+			echo "hexbin"
+			;;
+	esac
+	
+}
+
+get_leaf_obj_line_number(){
+	if [ "$1" !=  "root.c" ]; then
+		echo `grep -nE DMOBJ\|DMLEAF $1 | grep -v UPNP |cut -f1 -d: | tr "\n" " "`
+	else
+		if [ $DATA_MODEL == "tr098" ]; then
+			echo `grep -nE DMOBJ\|DMLEAF $1 |grep "098" |grep -v UPNP | cut -f1 -d: | tr "\n" " "`
 		else
-			echo "instance"
+			echo `grep -nE DMOBJ\|DMLEAF $1 |grep "181" |grep -v UPNP | cut -f1 -d: | tr "\n" " "`
 		fi
-	else
-		echo "parameter"
 	fi
 }
 
-#	Check if object contains list of instances
-is_array() {
-	object=$1
-	check=`cat script_list.txt |grep "$object[012345689]*\.,\$\|$object#\w*\.,\$"`
-	if [ "$check" == "" ]; then
-		echo "false"
+add_item_to_list(){
+	item="$1"
+	list="$2"
+	length=${#list}
+	if [ $length == 0 ]; then
+		list="$item"
 	else
-		echo "true"
+		list="$list $item"
 	fi
+	echo "$list"
 }
 
-get_param_type() {
-	str=$1
-	type=`echo $str |cut -d, -f3`
-	type=${type#*xsd:}
-	type=${type:-string}
-	echo $type
+remove_item_from_list(){
+	item="$1"
+	list="$2"
+	new_list=""
+	for i in $list; do
+		if [ "$i" == "$item" ]; then
+			continue
+		fi
+		new_list=`add_item_to_list "$i" "$new_list"`
+	done
+	echo "$new_list"
 }
 
+#Tree.txt Generation ####################################
+gen_dm_tree(){
+	file=$1
+	#Get line number of lines containing Object or Param
+	leaf_obj_line=`get_leaf_obj_line_number "$file"`
+	for line_number in $leaf_obj_line; do
+		#Get table name
+		table_name=`sed -n $line_number'p' $file | cut -d' ' -f2 | tr -d []`
+		str=`sed -n $line_number'p' $file | grep "DMOBJ"`
+		parameters_list=""
+		objects_list=""
+		o_found="0"
+		p_found="0"
+		
+		######## Before looking for childs Look to father
+		for obj in $obj_look_obj_child_list; do
+			childs_obj=`echo $obj | awk -F ":" '{print $2}'`
+			if [ "$childs_obj" == "$table_name" ]; then  #I found mum
+				father_name=`echo $obj | awk -F ":" '{print $1}'`
+				o_found="1"
+				break
+			fi
+		done
+		for param in $obj_look_param_child_list; do
+			childs_params=`echo $param | awk -F ":" '{print $2}'`
+			if [ "$childs_params" == "$table_name" ]; then  #I found mum
+				father_name=`echo $param | awk -F ":" '{print $1}'`
+				p_found="1"
+				break
+			fi
+		done
+	
+		######## Create Childs list
+		while IFS=, read -r f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11; do
+			name=`echo ${f1//{} | sed 's/^"\(.*\)"$/\1/'`
+			permission=${f2// &}
+			type=${f3// }
+			multiinstance=${f6// }
+			if [ "$multiinstance" != "NULL" ]; then
+				instance="true"
+			else
+				instance="false"
+			fi
+			if [ "$name" == "(char *)&dmroot"  ]; then
+				name=${ROOT_PATH}
+			fi
+			if [ "$o_found" == "1" ]; then
+				name=`set_obj_object_child "$father_name" "$name"`
+				oname=`set_obj_object_line $instance "$name"`
+				echo "$oname," >> $TREE_TXT
+#				if [ "$instance" == "true" ]; then
+#					objinst=`set_obj_instance_line $name`
+#					echo $objinst >> $TREE_TXT
+#				fi
+				#tree=`add_item_to_list "$oname" "$tree"`
+			fi
+			if [ "$p_found" == "1" ]; then
+				name=`set_obj_param_child "$father_name" "$name"`
+				otype=`get_param_type $type`
+				pname=`set_obj_param_line "$otype" "$name"`
+				#tree=`add_item_to_list "$pname" "$tree"`
+				echo $pname >> $TREE_TXT
+			fi
+			if [ -n "$str" ]; then
+				child_objects=${f9// }
+				child_parameters=${f10// }
+				obj_name=${name}
+				#Add the actual object to the list of objects looking for their children objects ########
+				if [ "$child_objects" != "NULL" ]; then
+					new_item=${obj_name}":"${child_objects}
+					obj_look_obj_child_list=`add_item_to_list "$new_item" "$obj_look_obj_child_list"`
+				fi
+				#Add the actual object to the list of objects looking for their children parameters #######
+				if [ "$child_parameters" != "NULL" ]; then
+					new_item=${obj_name}":"${child_parameters}
+					obj_look_param_child_list=`add_item_to_list "$new_item" "$obj_look_param_child_list"`
+				fi
+			fi
+		done <<<"`sed -n $line_number',/{0}/p' $file | sed -e '/{0}/d' | sed -e '/^{/!d'`"
+		
+		######### Remove object from list of object looking there childs
+		for obj in $obj_look_obj_child_list; do
+			childs_obj=`echo $obj | awk -F ":" '{print $2}'`
+			if [ "$childs_obj" == "$table_name" ]; then  #I found mum
+				obj_look_obj_child_list=`remove_item_from_list "$obj" "$obj_look_obj_child_list"`
+				break
+			fi
+		done
+		
+		######### Remove object from list of object looking there childs
+		for param in $obj_look_param_child_list; do
+			childs_params=`echo $param | awk -F ":" '{print $2}'`
+			if [ "$childs_params" == "$table_name" ]; then  #I found mum
+				obj_look_param_child_list=`remove_item_from_list "$param" "$obj_look_param_child_list"`
+				break
+			fi
+		done
+	done
+}
+#XML Generation Functions ####################################
 xml_open_tag_object() {
 	local objn="$1"
 	local isarray="$2"
@@ -166,68 +320,94 @@ echo "    </dataModel>"
 echo "</deviceType>"
 }
 
-echo "Start Generation of inteno.xml"
 
-EXEC_PATH=`pwd`
-SCRIPTS_LIST_FILE="$EXEC_PATH/script_list.txt"
-echo "" > $SCRIPTS_LIST_FILE
-# Extract object and parameter list from scripts
-list=`ls $SCRIPTS_PATH |grep -v "common"`
-cd $SCRIPTS_PATH
 
-cat `echo $list` | grep "DMOBJECT\|DMPARAM" |grep -v "^\\s*#" |sed 's/^[ \t]*//' |awk -F '[(,)]' '{type=""; { if($1=="DMOBJECT") { type = "object"; obj_name = $2; print $1 " " $2;} else {if($7 ~ /xsd:/) {print $1 " " obj_name$2 " " $7;} else {print $1 " " obj_name$2;}} } }' | awk '{print $1","$2","$3}' | sort -t, -k2 | sed -e "s|.\%|.#|g" | sed -e "s|\"||g" | sed -e "s|DMROOT|$ROOT_PATH|g" > $SCRIPTS_LIST_FILE
 
-list=`ls $SCRIPTS_PATH_COMMON |grep -v "common"`
-cd $SCRIPTS_PATH_COMMON
+# MAIN ####################################################################################################
+# CONSTANTS ######
+CURRENT_PATH=`pwd`
+OUT_STREAM="tmp.txt"
+ROOT_FILE="root.c"
+TREE_TXT=$CURRENT_PATH"/"$OUT_STREAM
 
-cat `echo $list` | grep "DMOBJECT\|DMPARAM" |grep -v "^\\s*#" |sed 's/^[ \t]*//' |awk -F '[(,)]' '{type=""; { if($1=="DMOBJECT") { type = "object"; obj_name = $2; print $1 " " $2;} else {if($7 ~ /xsd:/) {print $1 " " obj_name$2 " " $7;} else {print $1 " " obj_name$2;}} } }' | awk '{print $1","$2","$3}' | sort -t, -k2 | sed -e "s|.\%|.#|g" | sed -e "s|\"||g" | sed -e "s|DMROOT|$ROOT_PATH|g" >> $SCRIPTS_LIST_FILE
-cd $EXEC_PATH
+DM_98="tr098"
+DM_181="tr181"
+DM_PATH=${2:-"$(pwd)/../dm/dmtree/"}
+PRODUCT_CLASS=${3:-"DG301-W7P2U"}
+DEVICE_PROTOCOL=${4:-"DEVICE_PROTOCOL_DSLFTR069v1"}
+MODEL_NAME=${5:-"DG301-W7P2U"}
+SOFTWARE_VERSION=${6:-"1.2.3.4B"}
 
-echo "" > tmp.txt
-while read line
-do
-	test=`is_object $line`
-	name=`echo $line |cut -d, -f2 |sed -e "s/\\./,/g"`
-	case "$test" in
-		"object" )
-			str=`echo $line |cut -d, -f2`
-			array=`is_array $str`
-			str="object,$array,root,$name"
-			;;
-		"instance" )
-			str="instance,,root,$name"
-			;;
-		"parameter" )
-			type=`get_param_type "$line"`
-			str="parameter,$type,root,$name"
-			;;
-	esac
-	echo "$str" >> tmp.txt
-done <$SCRIPTS_LIST_FILE
+SCRIPTS_PATH_COMMON=${DM_PATH}/"common/"
+cnt_obj=0
+cnt_param=0
+### GEN TR098 TREE ####
+DATA_MODEL=$DM_98
+SCRIPTS_PATH=${DM_PATH}/${DATA_MODEL}
+DIR_LIST="$SCRIPTS_PATH_COMMON $SCRIPTS_PATH"
+XML_OUT_STREAM_098="inteno_tr098.xml"
+ROOT_PATH="InternetGatewayDevice"
+####
 
-#Remove instances from lines
-cont=1
-while [ "$cont" != "" ]; do
-	sed -ri 's/,[0-9]+//' tmp.txt
-	cont=`grep ",[0-9]+" tmp.txt`
+echo "Start Generation of TR098..."
+echo "Please wait..."
+rm -rf $OUT_STREAM
+rm -rf $XML_OUT_STREAM_098
+echo "object,false,root,$ROOT_PATH," > $OUT_STREAM
+cd "$SCRIPTS_PATH_COMMON"
+gen_dm_tree $ROOT_FILE
+for dir in $DIR_LIST; do
+	cd $dir
+	files=`ls *.c |grep -v $ROOT_FILE`
+	for file in $files; do
+		gen_dm_tree "$file"
+	done
 done
-cont=1
-while [ "$cont" != "" ]; do
-	sed -ri 's/,(#)[^,]+//' tmp.txt
-	cont=`grep ",#" tmp.txt`
+cd $CURRENT_PATH
+
+sort -k 4 $OUT_STREAM > tmp2.txt
+cat tmp2.txt | tr -d "[:blank:]" > $OUT_STREAM
+
+gen_data_model_xml_file > $XML_OUT_STREAM_098
+cnt_obj=`grep -c "object," tmp.txt`
+cnt_param=`grep -c "parameter," tmp.txt`
+echo "Number of TR098 objects is $cnt_obj"
+echo "Number of TR098 parameters is $cnt_param"
+echo "End Of TR098 Generation"
+
+### GEN TR181 TREE ##################################
+cnt_obj=0
+cnt_param=0
+DATA_MODEL=$DM_181
+SCRIPTS_PATH=${DM_PATH}/${DATA_MODEL}
+DIR_LIST="$SCRIPTS_PATH_COMMON $SCRIPTS_PATH"
+XML_OUT_STREAM_181="inteno_tr181.xml"
+ROOT_PATH="Device"
+########
+
+echo "Start Generation of TR0181..."
+echo "Please wait..."
+rm -rf $OUT_STREAM
+rm -rf $XML_OUT_STREAM_181
+echo "object,false,root,$ROOT_PATH," > $OUT_STREAM
+cd "$SCRIPTS_PATH_COMMON"
+gen_dm_tree $ROOT_FILE
+for dir in $DIR_LIST; do
+	cd $dir
+	files=`ls *.c |grep -v $ROOT_FILE`
+	for file in $files; do
+		gen_dm_tree "$file"
+	done
 done
-	
-#Remove duplicated lines
-awk '!a[$0]++' tmp.txt > tmp2.txt
-mv tmp2.txt tmp.txt
+cd $CURRENT_PATH
 
-
-gen_data_model_xml_file > inteno.xml
-
-rm -rf tmp.txt
-rm -rf $SCRIPTS_LIST_FILE
-
-echo "Number of objects is $cnt_obj"
-echo "Number of parameters is $cnt_param"
-
-echo "End Of Generation"
+sort -k 4 $OUT_STREAM > tmp2.txt
+cat tmp2.txt | tr -d "[:blank:]" > $OUT_STREAM
+rm -rf tmp2.txt
+gen_data_model_xml_file > $XML_OUT_STREAM_181
+cnt_obj=`grep -c "object," tmp.txt`
+cnt_param=`grep -c "parameter," tmp.txt`
+echo "Number of TR181 objects is $cnt_obj"
+echo "Number of TR181 parameters is $cnt_param"
+echo "End Of TR181 Generation"
+rm -rf tmp_.txt
