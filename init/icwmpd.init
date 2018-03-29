@@ -1,8 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2015 Inteno Broadband Technology AB
-#  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
-#  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
-#  Author Anis Ellouze <anis.ellouze@pivasoftware.com>
+# Copyright (C) 2015-2018 Inteno Broadband Technology AB
 
 . /lib/functions.sh
 include /lib/network
@@ -14,6 +11,7 @@ STOP=10
 USE_PROCD=1
 PROG="/usr/sbin/icwmpd"
 
+EXTRA_COMMANDS="notify"
 EXTRA_HELP="	start	[GetRPCMethods] Start icwmpd service and send GetRPCMethods"
 
 validate_url() {
@@ -198,7 +196,16 @@ reload_service() {
 	start
 }
 
+notify() {
+       ubus -t 1 call tr069 notify >/dev/null 2>&1 & 
+}
+
 service_triggers() {
-        procd_add_reload_trigger cwmp
+	procd_add_config_trigger "config.change" "cwmp"  /etc/init.d/icwmpd reload
+        if [ "$(uci get cwmp.cpe.notification)" == "1" ]; then
+		for conf in $(ls /etc/config/); do
+			procd_add_config_trigger "config.change" "$conf" /etc/init.d/icwmpd notify
+		done
+	fi
 }
 
