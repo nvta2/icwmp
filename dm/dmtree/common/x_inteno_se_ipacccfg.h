@@ -5,6 +5,7 @@ extern DMOBJ tSe_IpAccObj[];
 extern DMLEAF tSe_IpAccCfgParam[];
 extern DMLEAF tSe_PortForwardingParam[];
 
+
 int browseport_forwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseAccListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
@@ -35,6 +36,7 @@ int get_x_bcm_com_ip_acc_list_cfgobj_protocol(char *refparam, struct dmctx *ctx,
 int get_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_acc_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_port_forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_port_forwarding_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -57,5 +59,6 @@ int set_x_bcm_com_ip_acc_list_cfgobj_protocol(char *refparam, struct dmctx *ctx,
 int set_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_acc_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif

@@ -52,6 +52,7 @@ DMLEAF tSe_IpAccCfgParam[] = {
 {"FilterName", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_name, set_x_bcm_com_ip_acc_list_cfgobj_name, NULL, NULL},
 {"AccAddressAndNetMask", &DMWRITE, DMT_STRING, get_x_inteno_cfgobj_address_netmask, set_x_inteno_cfgobj_address_netmask, NULL, NULL},
 {"AccPort", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_acc_port, set_x_bcm_com_ip_acc_list_cfgobj_acc_port, NULL, NULL},
+{"Target", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_target, set_x_bcm_com_ip_acc_list_cfgobj_target, NULL, NULL},
 {0}
 };
 
@@ -222,6 +223,28 @@ int set_x_bcm_com_ip_acc_list_cfgobj_acc_port(char *refparam, struct dmctx *ctx,
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(ipaccsection, "dest_port", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *ipaccsection = (struct uci_section *)data;
+
+	dmuci_get_value_by_section_string(ipaccsection, "target", value);
+	return 0;
+}
+
+int set_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	struct uci_section *ipaccsection = (struct uci_section *)data;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(ipaccsection, "target", value);
 			return 0;
 	}
 	return 0;
@@ -609,7 +632,7 @@ int add_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char **inst
 	dmuci_set_value_by_section(rule, "type", "generic");
 	dmuci_set_value_by_section(rule, "name", "new_rule");
 	dmuci_set_value_by_section(rule, "proto", "all");
-	dmuci_set_value_by_section(rule, "target", "REJECT");
+	dmuci_set_value_by_section(rule, "target", "ACCPET");
 	dmuci_set_value_by_section(rule, "family", "ipv4");
 	dmuci_set_value_by_section(rule, "enabled", "1");
 	dmuci_set_value_by_section(rule, "hidden", "1");
@@ -730,11 +753,10 @@ int browseAccListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 {
 	char *irule = NULL, *irule_last = NULL;
 	struct uci_section *s = NULL;
-
 	uci_foreach_sections("firewall", "rule", s) {
 		irule =  handle_update_instance(1, dmctx, &irule_last, update_instance_alias, 3, s, "fruleinstance", "frulealias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, irule) == DM_STOP)
-			break;
+			return 0;
 	}
 	return 0;
 }
