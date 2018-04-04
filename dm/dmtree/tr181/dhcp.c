@@ -172,10 +172,9 @@ int add_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, char *
 	char *instance;
 	struct uci_section *s = NULL;
 	
-	instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "interface", ((struct dhcp_args *)data)->interface);
+	instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "dhcp", ((struct dhcp_args *)data)->interface);
 	dmuci_add_section("dhcp", "host", &s, &value);
-	dmuci_set_value_by_section(s, "mac", DHCPSTATICADDRESS_DISABLED_CHADDR);
-	dmuci_set_value_by_section(s, "interface", ((struct dhcp_args *)data)->interface);
+	dmuci_set_value_by_section(s, "dhcp", ((struct dhcp_args *)data)->interface);
 	*instancepara = update_instance(s, instance, "ldhcpinstance");
 	return 0;
 }
@@ -193,7 +192,7 @@ int delete_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, cha
 			dmuci_delete_by_section(dhcpargs->dhcpsection, NULL, NULL);
 			break;
 		case DEL_ALL:
-			uci_foreach_option_eq("dhcp", "host", "interface", ((struct dhcp_args *)data)->interface, s) {
+			uci_foreach_option_eq("dhcp", "host", "dhcp", ((struct dhcp_args *)data)->interface, s) {
 				if (found != 0)
 					dmuci_delete_by_section(ss, NULL, NULL);
 				ss = s;
@@ -335,6 +334,8 @@ int set_dhcp_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
 				return FAULT_9007;
+			if (b == 0)
+				return FAULT_9001;
 			return 0;
 		case VALUESET:
 			string_to_bool(value, &b);
@@ -577,18 +578,11 @@ int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *data, c
 					continue;
 				else {
 					dmuci_add_section("dhcp", "host", &dhcp_section, &val);
-					dmuci_set_value_by_section(dhcp_section, "mac", DHCPSTATICADDRESS_DISABLED_CHADDR);
-					dmuci_set_value_by_section(dhcp_section, "interface", ((struct dhcp_args *)data)->interface);
+					dmuci_set_value_by_section(dhcp_section, "dhcp", ((struct dhcp_args *)data)->interface);
 					dmuci_set_value_by_section(dhcp_section, "ip", pch);
 				}
 			}
 			dmfree(local_value);
-			uci_foreach_sections("dhcp", "host", s) {
-				dmuci_get_value_by_section_string(s, "ip", &ip);
-				n_ip =	inet_network(ip);
-				if (n_ip >= n_min && n_ip <= n_max)
-					dmuci_delete_by_section(s, "ip", NULL);
-			}
 			return 0;
 	}
 	return 0;
@@ -956,7 +950,7 @@ int browseDhcpStaticInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 	char *idhcp = NULL, *idhcp_last = NULL;
 	struct dhcp_static_args curr_dhcp_staticargs = {0};
 
-	uci_foreach_option_cont("dhcp", "host", "interface", ((struct dhcp_args *)prev_data)->interface, sss) {
+	uci_foreach_option_cont("dhcp", "host", "dhcp", ((struct dhcp_args *)prev_data)->interface, sss) {
 		idhcp = handle_update_instance(2, dmctx, &idhcp_last, update_instance_alias, 3, sss, "ldhcpinstance", "ldhcpalias");
 		init_args_dhcp_host(&curr_dhcp_staticargs, sss);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dhcp_staticargs, idhcp) == DM_STOP)
