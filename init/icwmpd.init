@@ -33,9 +33,10 @@ get_acs_url() {
 	local acs_dhcp_discovery="$(uci -q get cwmp.acs.dhcp_discovery)"
 	local url="$(uci -q get cwmp.acs.url)"
 	local dhcp_url_path="$(uci -q get cwmp.acs.dhcp_url_path)"
+	local dhcp_url="$(uci -P /var/state -q get $dhcp_url_path)"
 
-	if [ "$acs_dhcp_discovery" == "enable" -o -z "$url" ]; then
-		url="$(uci -P /var/state -q get $dhcp_url_path)"
+	if [ "$acs_dhcp_discovery" == "enable" -a -n "$dhcp_url" -o -z "$url" ]; then
+		url="$dhcp_url"
 		echo "ACS URL from DHCP server: $url"
 		[ -n "$url" ] && uci -P /var/state -q set cwmp.acs.url="$url"
 	elif [ -n "$url" ];then
