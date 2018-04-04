@@ -211,6 +211,7 @@ int get_dns_server(char *refparam, struct dmctx *ctx, void *data, char *instance
 {
 	json_object *res;
 	int len;
+	struct uci_section *s = NULL;
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", ((struct dhcp_args *)data)->interface, String}}, 1, &res);
 	if(res)
@@ -229,6 +230,9 @@ int get_dns_server(char *refparam, struct dmctx *ctx, void *data, char *instance
 			else
 				p++;
 		}
+	}
+	if ((*value)[0] == '\0') {
+		dmuci_get_option_value_string("network", ((struct dhcp_args *)data)->interface, "ipaddr", value);
 	}
 	return 0;
 }
