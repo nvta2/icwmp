@@ -2424,7 +2424,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 		return error;
 	}
 
-	p->command_key			= strdup(pupload->command_key);
+	p->command_key			= pupload->command_key?strdup(pupload->command_key):strdup("");
 	p->start_time 			= strdup(upload_startTime);
 	p->complete_time		= strdup(mix_get_time());
 	if(error != FAULT_CPE_NO_FAULT)
