@@ -623,11 +623,12 @@ int set_port_forwarding_src_mac(char *refparam, struct dmctx *ctx, void *data, c
 /***** ADD DEL OBJ *******/
 int add_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char *instance;
-	struct uci_section *rule = NULL;
+	struct uci_section *rule = NULL, *dmmap_rule= NULL;
+	LIST_HEAD(dup_list);
 	
-	instance = get_last_instance("firewall", "rule", "fruleinstance");
+	instance = get_last_instance_icwmpd("dmmap_firewall", "rule", "fruleinstance");
 	dmuci_add_section("firewall", "rule", &rule, &value);
 	dmuci_set_value_by_section(rule, "type", "generic");
 	dmuci_set_value_by_section(rule, "name", "new_rule");
@@ -637,7 +638,11 @@ int add_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char **inst
 	dmuci_set_value_by_section(rule, "enabled", "1");
 	dmuci_set_value_by_section(rule, "hidden", "1");
 	dmuci_set_value_by_section(rule, "parental", "0");
-	*instancepara = update_instance(rule, instance, "fruleinstance");
+
+	dmuci_add_section_icwmpd("dmmap_firewall", "rule", &dmmap_rule, &v);
+	dmuci_set_value_by_section(dmmap_rule, "section_name", section_name(rule));
+	*instancepara = update_instance_icwmpd(dmmap_rule, instance, "fruleinstance");
+
 	return 0;
 }
 
@@ -647,22 +652,34 @@ int delete_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char *in
 	struct uci_section *ss = NULL;
 	int found = 0;
 	struct uci_section *ipaccsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
 
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section(ipaccsection, "dmmap_firewall", "rule", section_name(ipaccsection), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(ipaccsection, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("firewall", "rule", s) {
-				if (found != 0)
+				if (found != 0){
+					get_dmmap_section_of_config_section(s, "dmmap_firewall", "rule", section_name(s), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
+				}
 				ss = s;
 				found++;
 			}
-			if (ss != NULL)
+			if (ss != NULL){
+				get_dmmap_section_of_config_section(ss, "dmmap_firewall", "rule", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			break;
 	}
+
 	return 0;
 }
 
@@ -712,18 +729,24 @@ int delete_ipacccfg_port_forwarding(char *refparam, struct dmctx *ctx, void *dat
 int get_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *ipaccsection = (struct uci_section *)data;
-	dmuci_get_value_by_section_string(ipaccsection, "frulealias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(ipaccsection, "dmmap_firewall", "rule", section_name(ipaccsection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "frulealias", value);
 	return 0;
 }
 
 int set_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *ipaccsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(ipaccsection, "dmmap_firewall", "rule", section_name(ipaccsection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(ipaccsection, "frulealias", value);
+			dmuci_set_value_by_section(dmmap_section, "frulealias", value);
 			return 0;
 	}
 	return 0;
@@ -732,6 +755,7 @@ int set_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *d
 int get_port_forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *forwardsection = (struct uci_section *)data;
+
 	dmuci_get_value_by_section_string(forwardsection, "forwardalias", value);
 	return 0;
 }
@@ -753,11 +777,20 @@ int browseAccListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 {
 	char *irule = NULL, *irule_last = NULL;
 	struct uci_section *s = NULL;
-	uci_foreach_sections("firewall", "rule", s) {
-		irule =  handle_update_instance(1, dmctx, &irule_last, update_instance_alias, 3, s, "fruleinstance", "frulealias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, irule) == DM_STOP)
+	struct dmmap_dup *p;
+	struct list_head *ilist;
+	LIST_HEAD(dup_list);
+
+	char *v;
+
+	synchronize_specific_config_sections_with_dmmap("firewall", "rule", "dmmap_firewall", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->dmmap_section, "fruleinstance", &v);
+		irule =  handle_update_instance(1, dmctx, &irule_last, update_instance_alias_icwmpd, 3, p->dmmap_section, "fruleinstance", "frulealias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, irule) == DM_STOP)
 			return 0;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
