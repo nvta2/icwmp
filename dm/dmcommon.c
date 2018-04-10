@@ -7,6 +7,7 @@
  *	Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Imen Bhiri <imen.bhiri@pivasoftware.com>
  *		Author: Feten Besbes <feten.besbes@pivasoftware.com>
+ *		Author: Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <arpa/inet.h>
@@ -911,4 +912,112 @@ void ip_to_hex(char *address, char *ret)
 
 	sscanf(address, "%d.%d.%d.%d", &(ip[0]), &(ip[1]), &(ip[2]), &(ip[3]));
 	sprintf(ret, "%02X%02X%02X%02X", ip[0], ip[1], ip[2], ip[3]);
+}
+
+
+
+/*
+ * dmmap_config sections list manipulation
+ */
+void add_sectons_list_paramameter(struct list_head *dup_list, struct uci_section *config_section, struct uci_section *dmmap_section)
+{
+	struct dmmap_dup *dmmap_config;
+	struct list_head *ilist;
+
+	dmmap_config = dmcalloc(1, sizeof(struct dmmap_dup));
+	list_add_tail(&dmmap_config->list, dup_list);
+	dmmap_config->config_section = config_section;
+	dmmap_config->dmmap_section = dmmap_section;
+}
+
+
+void dmmap_config_dup_delete(struct dmmap_dup *dmmap_config)
+{
+	list_del(&dmmap_config->list);
+}
+
+void free_dmmap_config_dup_list(struct list_head *dup_list)
+{
+	struct dmmap_dup *dmmap_config;
+	while (dup_list->next != dup_list) {
+		dmmap_config = list_entry(dup_list->next, struct dmmap_dup, list);
+		dmmap_config_dup_delete(dmmap_config);
+	}
+}
+
+/*
+ * Function allows to synchronize config section with dmmap config
+ */
+
+struct uci_section *get_origin_section_from_config(char *package, char *section_type, char *orig_section_name)
+{
+	struct uci_section *s;
+
+	uci_foreach_sections(package, section_type, s) {
+		if (strcmp(section_name(s), orig_section_name) == 0)
+			return s;
+	}
+	return NULL;
+}
+
+struct uci_section *get_dup_section_in_dmmap(char *dmmap_package, char *section_type, char *orig_section_name)
+{
+	struct uci_section *s;
+
+	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, "section_name", orig_section_name, s)
+	{
+		return s;
+	}
+
+	return NULL;
+}
+
+void synchronize_specific_config_sections_with_dmmap(char *package, char *section_type, char *dmmap_package, struct list_head *dup_list)
+{
+	struct uci_section *s, *stmp, *dmmap_sect;
+	FILE *fp;
+	char *v, *dmmap_file_path;
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+	uci_foreach_sections(package, section_type, s) {
+		/*
+		 * create/update corresponding dmmap section that have same config_section link and using param_value_array
+		 */
+		if ((dmmap_sect = get_dup_section_in_dmmap(dmmap_package, section_type, section_name(s))) == NULL) {
+			dmuci_add_section_icwmpd(dmmap_package, section_type, &dmmap_sect, &v);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section_name", section_name(s));
+		}
+
+		/*
+		 * Add system and dmmap sections to the list
+		 */
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect);
+	}
+
+	/*
+	 * Delete unused dmmap sections
+	 */
+	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
+		dmuci_get_value_by_section_string(s, "section_name", &v);
+		if(get_origin_section_from_config(package, section_type, v) == NULL){
+			dmuci_delete_by_section(s, NULL, NULL);
+		}
+	}
+}
+
+void get_dmmap_section_of_config_section(struct uci_section *config_section, char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
+	struct uci_section* s;
+	char *section_name_conf =section_name(config_section);
+
+	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, "section_name", section_name_conf, s){
+		*dmmap_section= s;
+		return;
+	}
+	*dmmap_section= NULL;
 }

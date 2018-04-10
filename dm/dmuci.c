@@ -8,6 +8,7 @@
  *	  Author MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -345,6 +346,7 @@ int dmuci_commit_package(char *package)
 int dmuci_commit(void)
 {
 	char **configs = NULL;
+	char **icwmpd_configs = NULL;
 	char **p;
 
 	if ((uci_list_configs(uci_ctx, &configs) != UCI_OK) || !configs) {
@@ -355,7 +357,12 @@ int dmuci_commit(void)
 	}
 	if(uci_ctx_icwmpd)
 	{
-		DMUCI_COMMIT_PACKAGE(icwmpd, "dmmap");
+		if ((uci_list_configs(uci_ctx_icwmpd, &icwmpd_configs) != UCI_OK) || !icwmpd_configs) {
+			return -1;
+		}
+		for (p = icwmpd_configs; *p; p++) {
+			DMUCI_COMMIT_PACKAGE(icwmpd, *p);
+		}
 	}
 	return 0;
 }
@@ -650,6 +657,7 @@ char *dmuci_set_value_by_section(struct uci_section *s, char *option, char *valu
 int dmuci_delete_by_section(struct uci_section *s, char *option, char *value)
 {
 	struct uci_ptr up = {0};
+	uci_ctx->flags |= UCI_FLAG_EXPORT_NAME;
 
 	dmuci_lookup_ptr_by_section(uci_ctx, &up, s, option, value);
 

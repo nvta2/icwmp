@@ -4,6 +4,7 @@
  *	  Author MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -533,6 +534,21 @@ char *update_instance_without_section(int action, char **last_inst, void *argv[]
 		instance = dmstrdup(buf);
 	}
 	return instance;
+}
+
+char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst)
+{
+	struct uci_section *s;
+	char *inst = NULL;
+	char *last_inst = NULL;
+
+	uci_path_foreach_sections(icwmpd, package, section, s) {
+		inst = update_instance_icwmpd(s, last_inst, opt_inst);
+		if(last_inst)
+			dmfree(last_inst);
+		last_inst = dmstrdup(inst);
+	}
+	return inst;
 }
 
 char *get_last_instance(char *package, char *section, char *opt_inst)
