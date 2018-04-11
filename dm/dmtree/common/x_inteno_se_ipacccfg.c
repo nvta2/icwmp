@@ -626,7 +626,6 @@ int add_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char **inst
 	char *value, *v;
 	char *instance;
 	struct uci_section *rule = NULL, *dmmap_rule= NULL;
-	LIST_HEAD(dup_list);
 	
 	instance = get_last_instance_icwmpd("dmmap_firewall", "rule", "fruleinstance");
 	dmuci_add_section("firewall", "rule", &rule, &value);

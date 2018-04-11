@@ -45,16 +45,22 @@ DMLEAF X_INTENO_SE_ListenObjParams[] = {
 {0}
 };
 
+
 int browseXIntenoOwsdListenObj(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iowsd_listen = NULL, *iowsd_listen_last = NULL;
 	struct uci_section *s = NULL;
+	struct dmmap_dup *p;
+	struct list_head *ilist;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("owsd", "owsd-listen", s) {
-		iowsd_listen =  handle_update_instance(1, dmctx, &iowsd_listen_last, update_instance_alias, 3, s, "olisteninstance", "olistenalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, iowsd_listen) == DM_STOP)
+	synchronize_specific_config_sections_with_dmmap("owsd", "owsd-listen", "dmmap_owsd", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		iowsd_listen =  handle_update_instance(1, dmctx, &iowsd_listen_last, update_instance_alias, 3, p->dmmap_section, "olisteninstance", "olistenalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, iowsd_listen) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -316,18 +322,24 @@ int set_x_inteno_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *
 int get_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
-	dmuci_get_value_by_section_string(owsd_listensection, "olistenalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(owsd_listensection, "dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "olistenalias", value);
 	return 0;
 }
 
 int set_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(owsd_listensection, "dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(owsd_listensection, "olistenalias", value);
+			dmuci_set_value_by_section(dmmap_section, "olistenalias", value);
 			return 0;
 	}
 	return 0;
@@ -336,17 +348,21 @@ int set_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *d
 /***** ADD DEL OBJ *******/
 int add_owsd_listen(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char *instance;
-	struct uci_section *listen_sec = NULL;
+	struct uci_section *listen_sec = NULL, *dmmap_sec= NULL;
 
-	instance = get_last_instance("owsd", "owsd-listen", "olisteninstance");
+	instance = get_last_instance_icwmpd("dmmap_owsd", "owsd-listen", "olisteninstance");
 
 	dmuci_add_section("owsd", "owsd-listen", &listen_sec, &value);
 	dmuci_set_value_by_section(listen_sec, "ipv6", "on");
 	dmuci_set_value_by_section(listen_sec, "whitelist_interface_as_origin", "1");
 	dmuci_add_list_value_by_section(listen_sec, "origin", "*");
-	*instancepara = update_instance(listen_sec, instance, "olisteninstance");
+
+	dmuci_add_section_icwmpd("dmmap_owsd", "owsd-listen", &dmmap_sec, &v);
+	dmuci_set_value_by_section(dmmap_sec, "section_name", section_name(listen_sec));
+	*instancepara = update_instance_icwmpd(dmmap_sec, instance, "olisteninstance");
+
 	return 0;
 }
 
@@ -355,20 +371,32 @@ int delete_owsd_listen_instance(char *refparam, struct dmctx *ctx, void *data, c
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
 	int found = 0;
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section(owsd_listensection, "dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(owsd_listensection, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("owsd", "owsd-listen", s) {
-				if (found != 0)
+				if (found != 0){
+					get_dmmap_section_of_config_section(s, "dmmap_owsd", "listen", section_name(s), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
+				}
 				ss = s;
 				found++;
 			}
-			if (ss != NULL)
+			if (ss != NULL){
+				get_dmmap_section_of_config_section(ss, "dmmap_owsd", "listen", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			return 0;
 	}
 	return 0;
