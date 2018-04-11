@@ -153,6 +153,7 @@ void hex_to_ip(char *address, char *ret);
 void ip_to_hex(char *address, char *ret);
 void free_dmmap_config_dup_list(struct list_head *dup_list);
 void synchronize_specific_config_sections_with_dmmap(char *package, char *section_type, char *dmmap_package, struct list_head *dup_list);
+void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *section_type, char *dmmap_package,char* option_name, char* option_value, struct list_head *dup_list);
 void get_dmmap_section_of_config_section(struct uci_section *config_section, char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section);
 
 #endif

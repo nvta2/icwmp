@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2015 Inteno Broadband Technology AB
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 

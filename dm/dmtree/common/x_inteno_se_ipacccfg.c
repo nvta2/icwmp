@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2015 Inteno Broadband Technology AB
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -684,16 +685,19 @@ int delete_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int add_ipacccfg_port_forwarding(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char *instance;
-	struct uci_section *redirect = NULL;	
+	struct uci_section *redirect = NULL, *dmmap_redirect= NULL;
 	
-	instance = get_last_instance_lev2("firewall", "redirect", "forwardinstance", "target", "DNAT");
+	instance = get_last_instance_icwmpd("dmmap_firewall", "redirect", "forwardinstance");
 	dmuci_add_section("firewall", "redirect", &redirect, &value);
 	dmuci_set_value_by_section(redirect, "enabled", "0");
 	dmuci_set_value_by_section(redirect, "target", "DNAT");
 	dmuci_set_value_by_section(redirect, "proto", "tcp udp");
-	*instancepara = update_instance(redirect, instance, "forwardinstance");
+
+	dmuci_add_section_icwmpd("dmmap_firewall", "redirect", &dmmap_redirect, &v);
+	dmuci_set_value_by_section(dmmap_redirect, "section_name", section_name(redirect));
+	*instancepara = update_instance_icwmpd(dmmap_redirect, instance, "forwardinstance");
 	return 0;
 }
 
@@ -705,20 +709,31 @@ int delete_ipacccfg_port_forwarding(char *refparam, struct dmctx *ctx, void *dat
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct uci_section *forwardsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
 	
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section(forwardsection, "dmmap_firewall", "redirect", section_name(forwardsection), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(forwardsection, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_option_eq("firewall", "redirect", "target", "DNAT", s) {
-				if (found != 0)
+				if (found != 0){
+					get_dmmap_section_of_config_section(s, "dmmap_firewall", "redirect", section_name(s), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
+				}
 				ss = s;
 				found++;
 			}
-			if (ss != NULL)
+			if (ss != NULL){
+				get_dmmap_section_of_config_section(ss, "dmmap_firewall", "redirect", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			break;
 	}
 	return 0;
@@ -754,19 +769,24 @@ int set_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *d
 int get_port_forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *forwardsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
 
-	dmuci_get_value_by_section_string(forwardsection, "forwardalias", value);
+	get_dmmap_section_of_config_section(forwardsection, "dmmap_firewall", "redirect", section_name(forwardsection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "forwardalias", value);
 	return 0;
 }
 
 int set_port_forwarding_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *forwardsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(forwardsection, "dmmap_firewall", "redirect", section_name(forwardsection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(forwardsection, "forwardalias", value);
+			dmuci_set_value_by_section(dmmap_section, "forwardalias", value);
 			return 0;
 	}
 	return 0;
@@ -794,11 +814,17 @@ int browseport_forwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *pr
 {
 	char *iforward = NULL, *iforward_last = NULL;
 	struct uci_section *s = NULL;
-	uci_foreach_option_eq("firewall", "redirect", "target", "DNAT", s) {
-		iforward =  handle_update_instance(1, dmctx, &iforward_last, update_instance_alias, 3, s, "forwardinstance", "forwardalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, iforward) == DM_STOP)
+	struct dmmap_dup *p;
+	struct list_head *ilist;
+	LIST_HEAD(dup_list);
+
+	synchronize_specific_config_sections_with_dmmap_eq("firewall", "redirect", "dmmap_firewall", "target", "DNAT", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		iforward =  handle_update_instance(1, dmctx, &iforward_last, update_instance_alias, 3, p->dmmap_section, "forwardinstance", "forwardalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, iforward) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
