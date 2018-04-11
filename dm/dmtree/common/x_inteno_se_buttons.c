@@ -35,12 +35,17 @@ int browseXIntenoButton(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 {
 	char *ibutton = NULL, *ibutton_last = NULL;
 	struct uci_section *s = NULL;
+	struct dmmap_dup *p;
+	struct list_head *ilist;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("buttons", "button", s) {
-		ibutton =  handle_update_instance(1, dmctx, &ibutton_last, update_instance_alias, 3, s, "buttoninstance", "buttonalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, ibutton) == DM_STOP)
+	synchronize_specific_config_sections_with_dmmap("buttons", "button", "dmmap_buttons", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		ibutton =  handle_update_instance(1, dmctx, &ibutton_last, update_instance_alias, 3, p->dmmap_section, "buttoninstance", "buttonalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, ibutton) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -143,17 +148,23 @@ int set_x_inteno_button_enable(char *refparam, struct dmctx *ctx, void *data, ch
 
 int get_x_inteno_button_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string((struct uci_section *)data, "buttonalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section((struct uci_section *)data, "dmmap_buttons", "button", section_name((struct uci_section *)data), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "buttonalias", value);
 	return 0;
 }
 
 int set_x_inteno_button_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section((struct uci_section *)data, "dmmap_buttons", "button", section_name((struct uci_section *)data), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section((struct uci_section *)data, "buttonalias", value);
+			dmuci_set_value_by_section(dmmap_section, "buttonalias", value);
 			return 0;
 	}
 	return 0;

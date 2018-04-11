@@ -780,11 +780,8 @@ int browseAccListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	struct list_head *ilist;
 	LIST_HEAD(dup_list);
 
-	char *v;
-
 	synchronize_specific_config_sections_with_dmmap("firewall", "rule", "dmmap_firewall", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		dmuci_get_value_by_section_string(p->dmmap_section, "fruleinstance", &v);
 		irule =  handle_update_instance(1, dmctx, &irule_last, update_instance_alias_icwmpd, 3, p->dmmap_section, "fruleinstance", "frulealias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, irule) == DM_STOP)
 			return 0;
