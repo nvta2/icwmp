@@ -99,10 +99,9 @@ int add_dhcp_staticaddress(struct dmctx *ctx, char **instancepara)
 	char *instance;
 	struct uci_section *s = NULL;
 	
-	instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "interface", cur_dhcp_args.interface);
+	instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "dhcp", cur_dhcp_args.interface);
 	dmuci_add_section("dhcp", "host", &s, &value);
-	dmuci_set_value_by_section(s, "mac", DHCPSTATICADDRESS_DISABLED_CHADDR);
-	dmuci_set_value_by_section(s, "interface", cur_dhcp_args.interface);
+	dmuci_set_value_by_section(s, "dhcp", cur_dhcp_args.interface);
 	*instancepara = update_instance(s, instance, "ldhcpinstance");
 	return 0;
 }
@@ -114,7 +113,7 @@ int delete_dhcp_staticaddress_all(struct dmctx *ctx)
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 
-	uci_foreach_option_eq("dhcp", "host", "interface", cur_dhcp_args.interface, s) {
+	uci_foreach_option_eq("dhcp", "host", "dhcp", cur_dhcp_args.interface, s) {
 		if (found != 0)
 			dmuci_delete_by_section(ss, NULL, NULL);
 		ss = s;
@@ -504,18 +503,11 @@ int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, int action, c
 					continue;
 				else {
 					dmuci_add_section("dhcp", "host", &dhcp_section, &val);
-					dmuci_set_value_by_section(dhcp_section, "mac", DHCPSTATICADDRESS_DISABLED_CHADDR);
-					dmuci_set_value_by_section(dhcp_section, "interface", cur_dhcp_args.interface);
+					dmuci_set_value_by_section(dhcp_section, "dhcp", cur_dhcp_args.interface);
 					dmuci_set_value_by_section(dhcp_section, "ip", pch);
 				}
 			}
 			dmfree(local_value);
-			uci_foreach_sections("dhcp", "host", s) {
-				dmuci_get_value_by_section_string(s, "ip", &ip);
-				n_ip =	inet_network(ip);
-				if (n_ip >= n_min && n_ip <= n_max)
-					dmuci_delete_by_section(s, "ip", NULL);
-			}
 			return 0;
 	}
 	return 0;
@@ -947,7 +939,7 @@ inline int entry_dhcp_static_address(struct dmctx *ctx, char *interface, char *i
 {
 	struct uci_section *sss = NULL;
 	char *idhcp = NULL, *idhcp_last = NULL;
-	uci_foreach_option_cont("dhcp", "host", "interface", interface, sss) {
+	uci_foreach_option_cont("dhcp", "host", "dhcp", interface, sss) {
 		idhcp = handle_update_instance(2, ctx, &idhcp_last, update_instance_alias, 3, sss, "ldhcpinstance", "ldhcpalias");
 		init_args_dhcp_host(ctx, sss);
 		SUBENTRY(entry_dhcp_static_address_instance, ctx, idev, idhcp);

@@ -470,10 +470,9 @@ int add_landevice_dhcpstaticaddress(struct dmctx *ctx, char **instancepara)
 	struct ldlanargs *lanargs = (struct ldlanargs *)ctx->args;
 	char *lan_name = section_name(lanargs->ldlansection);
 	
-	instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "interface", lan_name);
+	instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "dhcp", lan_name);
 	dmuci_add_section("dhcp", "host", &s, &value);
-	dmuci_set_value_by_section(s, "mac", DHCPSTATICADDRESS_DISABLED_CHADDR);
-	dmuci_set_value_by_section(s, "interface", lan_name);
+	dmuci_set_value_by_section(s, "dhcp", lan_name);
 	*instancepara = update_instance(s, instance, "ldhcpinstance");
 	return 0;
 }
@@ -487,7 +486,7 @@ int delete_landevice_dhcpstaticaddress_all(struct dmctx *ctx)
 	struct ldlanargs *lanargs = (struct ldlanargs *)ctx->args;
 	
 	lan_name = section_name(lanargs->ldlansection);
-	uci_foreach_option_eq("dhcp", "host", "interface", lan_name, s) {
+	uci_foreach_option_eq("dhcp", "host", "dhcp", lan_name, s) {
 		if (found != 0)
 			dmuci_delete_by_section(ss, NULL, NULL);
 		ss = s;
@@ -942,18 +941,11 @@ int set_lan_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, int actio
 					continue;
 				else {
 					dmuci_add_section("dhcp", "host", &dhcp_section, &val);
-					dmuci_set_value_by_section(dhcp_section, "mac", DHCPSTATICADDRESS_DISABLED_CHADDR);
-					dmuci_set_value_by_section(dhcp_section, "interface", lan_name);
+					dmuci_set_value_by_section(dhcp_section, "dhcp", lan_name);
 					dmuci_set_value_by_section(dhcp_section, "ip", pch);
 				}
 			}
 			dmfree(local_value);
-			uci_foreach_sections("dhcp", "host", s) {
-				dmuci_get_value_by_section_string(s, "ip", &ip);
-				n_ip =	inet_network(ip);
-				if (n_ip >= n_min && n_ip <= n_max)
-					dmuci_delete_by_section(s, "ip", NULL);
-			}
 			return 0;
 	}
 	return 0;
@@ -1349,10 +1341,7 @@ int get_dhcpstaticaddress_enable (char *refparam, struct dmctx *ctx, char **valu
 	struct lddhcpargs *dhcpargs = (struct lddhcpargs *)ctx->args;
 
 	dmuci_get_value_by_section_string(dhcpargs->lddhcpsection, "mac", &mac);
-	if (strcmp (mac, DHCPSTATICADDRESS_DISABLED_CHADDR) == 0)
-		*value = "0";
-	else
-		*value = "1";
+	*value = "1";
 	return 0;
 }
 
@@ -1366,6 +1355,8 @@ int set_dhcpstaticaddress_enable(char *refparam, struct dmctx *ctx, int action, 
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
 				return FAULT_9007;
+			if (b == 0)
+				return FAULT_9001;
 			return 0;
 		case VALUESET:
 			string_to_bool(value, &b);
@@ -3440,7 +3431,7 @@ inline int entry_landevice_ipinterface_and_dhcpstaticaddress(struct dmctx *ctx, 
 		ilan = handle_update_instance(2, ctx, &ilan_last, update_instance_alias, 3, ss, "lipinstance", "lipalias");
 		init_ldargs_ip(ctx, ss);
 		SUBENTRY(entry_landevice_ipinterface_instance, ctx, idev, ilan);
-		uci_foreach_option_cont("dhcp", "host", "interface", section_name(ss), sss) {
+		uci_foreach_option_cont("dhcp", "host", "dhcp", section_name(ss), sss) {
 			idhcp = handle_update_instance(2, ctx, &idhcp_last, update_instance_alias, 3, sss, "ldhcpinstance", "ldhcpalias");
 			init_ldargs_dhcp(ctx, sss);
 			SUBENTRY(entry_landevice_dhcpstaticaddress_instance, ctx, idev, idhcp);
