@@ -157,6 +157,9 @@ int get_dns_server(char *refparam, struct dmctx *ctx, char **value)
 				p++;
 		}
 	}
+	if ((*value)[0] == '\0') {
+		dmuci_get_option_value_string("network", cur_dhcp_args.interface, "ipaddr", value);
+	}
 	return 0;
 }
 

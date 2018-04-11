@@ -581,6 +581,9 @@ int get_lan_dns(char *refparam, struct dmctx *ctx, char **value)
 				p++;
 		}
 	}
+	if ((*value)[0] == '\0') {
+		dmuci_get_value_by_section_string(lanargs->ldlansection, "ipaddr", value);
+	}
 	return 0;
 }
 
