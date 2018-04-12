@@ -310,27 +310,60 @@ handle_action() {
 	fi
 	if [ "$action" = "upload" ]; then
 		local fault_code="9000"
-		if [ "$__arg5" = "" ];then
-			__arg5="all_configs"
-			$UCI_EXPORT > "/tmp/${__arg5}"
-		else 
-			$UCI_EXPORT "$__arg5" > "/tmp/${__arg5}"
-		fi
-		if [ "$__arg3" = "" -o "$__arg4" = "" ];then
-				curl -T "/tmp/${__arg5}" "$__arg1" 2> /dev/null
-				if [ "$?" != "0" ];then
-				let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
-				icwmp_fault_output "" "$fault_code"
-				return 1
-		fi
-		else
-			curl -T "/tmp/${__arg5}" -u $__arg3:$__arg4 "$__arg1" 2> /dev/null
-			if [ "$?" != "0" ];then
-				let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
-				icwmp_fault_output "" "$fault_code"
-				return 1
-			fi
-		fi		
+		local flname=""
+		case $__arg2 in
+			"1"*|"3"*)
+				if [ "$__arg5" = "" ];then
+					__arg5="all_configs"
+					$UCI_EXPORT > "/tmp/${__arg5}"
+				else 
+					$UCI_EXPORT "$__arg5" > "/tmp/${__arg5}"
+				fi
+				if [ "$__arg3" = "" -o "$__arg4" = "" ];then
+						curl -T "/tmp/${__arg5}" "$__arg1" 2> /dev/null
+						if [ "$?" != "0" ];then
+						let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
+						icwmp_fault_output "" "$fault_code"
+						return 1
+				fi
+				else
+					curl -T "/tmp/${__arg5}" -u $__arg3:$__arg4 "$__arg1" 2> /dev/null
+					if [ "$?" != "0" ];then
+						let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
+						icwmp_fault_output "" "$fault_code"
+						return 1
+					fi
+				fi
+			;;
+			"2"*|"4"*)
+				flname=`$UCI_GET system.@system[0].log_file`					
+				if [ "$flname" = "" ];then
+					let fault_code=$fault_code+$FAULT_CPE_INTERNAL_ERROR
+					icwmp_fault_output "" "$fault_code"
+					return 1
+				fi
+				dir=$(dirname "${flname}")
+				if [ "$dir" == "." ]; then
+					flname="/${flname}"
+				fi
+				if [ "$__arg3" = "" -o "$__arg4" = "" ];then
+						curl -T "$flname" "$__arg1" 2> /dev/null
+						if [ "$?" != "0" ];then
+							let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
+							icwmp_fault_output "" "$fault_code"
+							return 1
+						fi
+				else
+					curl -T "$flname" -u $__arg3:$__arg4 "$__arg1" 2> /dev/null
+					if [ "$?" != "0" ];then
+						let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
+						icwmp_fault_output "" "$fault_code"
+						return 1
+					fi
+				fi
+			;;
+		esac
+		
 	fi
 	if [ "$action" = "apply_download" ]; then
 		case "$__arg1" in

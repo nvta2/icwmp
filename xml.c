@@ -2390,11 +2390,10 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	bkp_session_save();
 
 	dm_ctx_init(&dmctx);
-	if (pupload->file_type[0] == '3' && pupload->f_instance && isdigit(pupload->f_instance[0])) {
+	if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
 		lookup_vcf_name(pupload->f_instance, &name);
 	}
-	external_upload(pupload->url, pupload->file_type,
-			pupload->username, pupload->password, name);
+	external_upload(pupload->url, pupload->file_type, pupload->username, pupload->password, name);
 	dm_ctx_clean(&dmctx);
 	external_handle_action(cwmp_handle_uploadFault);
 	external_fetch_uploadFaultResp(&fault_code);
@@ -4602,8 +4601,10 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
-	if(strncmp(file_type, "3 Vendor Configuration File", sizeof"3 Vendor Configuration File" -1) != 0 &&
-		strncmp(file_type, "4 Vendor Log File", sizeof"4 Vendor Log File" -1) != 0)
+	if(strncmp(file_type, "1 Vendor Configuration File", sizeof"1 Vendor Configuration File" -1) != 0 &&
+	   strncmp(file_type, "3 Vendor Configuration File", sizeof"3 Vendor Configuration File" -1) != 0 &&
+	   strncmp(file_type, "2 Vendor Log File", sizeof"2 Vendor Log File" -1) != 0 &&
+	   strncmp(file_type, "4 Vendor Log File", sizeof"4 Vendor Log File" -1) != 0)
 	{
 		error = FAULT_CPE_REQUEST_DENIED;
 	}
