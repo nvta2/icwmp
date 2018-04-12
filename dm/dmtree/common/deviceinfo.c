@@ -24,7 +24,10 @@
 
 inline int entry_method_device_info_vcf(struct dmctx *ctx);
 inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf);
+inline int entry_method_device_info_vlf(struct dmctx *ctx);
+inline int entry_method_device_info_vlf_instance(struct dmctx *ctx, char *ivlf);
 struct dev_vcf cur_dev_vcf = {0};
+struct dev_vlf cur_dev_vlf = {0};
 
 inline int init_args_vcf(struct dmctx *ctx, struct uci_section *s)
 {
@@ -34,6 +37,13 @@ inline int init_args_vcf(struct dmctx *ctx, struct uci_section *s)
 	return 0;
 }
 
+inline int init_args_vlf(struct dmctx *ctx, struct uci_section *s)
+{
+	struct dev_vlf *args = &cur_dev_vlf;
+	ctx->args = (void *)args;
+	args->vlf_sec = s;
+	return 0;
+}
 char *get_deviceid_manufacturer()
 {
 	char *v;
@@ -358,6 +368,12 @@ int get_vcf_name(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
+int get_vlf_name(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_dev_vlf.vlf_sec, "log_file", value);
+	return 0;
+}
+
 int get_vcf_version(char *refparam, struct dmctx *ctx, char **value)
 {
 	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "version", value);
@@ -405,6 +421,24 @@ int get_vcf_alias(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
+int get_vlf_alias(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_dev_vlf.vlf_sec, "vlf_alias", value);
+	return 0;
+}
+
+int get_vlf_maxsize(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_dev_vlf.vlf_sec, "log_size", value);
+	return 0;
+}
+
+int get_vlf_persistent(char *refparam, struct dmctx *ctx, char **value)
+{
+	*value = "0";
+	return 0;
+}
+
 int lookup_vcf_name(char *instance, char **value) {
 	struct uci_section *s = NULL;
 	uci_path_foreach_option_eq(icwmpd, DMMAP, "vcf", "vcf_instance", instance, s) {
@@ -440,7 +474,9 @@ int entry_method_root_DeviceInfo(struct dmctx *ctx)
 		DMPARAM("Temperature", ctx, "0", get_catv_temperature, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Voltage", ctx, "0", get_catv_voltage, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMOBJECT(DMROOT"DeviceInfo.VendorConfigFile.", ctx, "0", 0, NULL, NULL, NULL);
+		DMOBJECT(DMROOT"DeviceInfo.VendorLogFile.", ctx, "0", 0, NULL, NULL, NULL);
 		SUBENTRY(entry_method_device_info_vcf, ctx);
+		SUBENTRY(entry_method_device_info_vlf, ctx);
 		return 0;
 	}
 	return FAULT_9005;
@@ -506,6 +542,36 @@ inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf)
 		DMPARAM("Date", ctx, "0",  get_vcf_date, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
 		DMPARAM("Description", ctx, "0",  get_vcf_desc, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("UseForBackupRestore", ctx, "0",  get_vcf_backup_restore, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
+		return 0;
+	}
+	return FAULT_9005;
+}
+
+/*** DeviceInfo.VendorLogFile.{i}. ***/
+inline int entry_method_device_info_vlf(struct dmctx *ctx)
+{
+	char *vlf = NULL, *vlf_last = NULL, *name;
+	struct uci_section *s = NULL, *del_sec = NULL;
+	DIR *dir;
+	struct dirent *d_file;
+
+	uci_foreach_sections("system", "system", s) {
+		init_args_vlf(ctx, s);
+		vlf = handle_update_instance(1, ctx, &vlf_last, update_instance_alias_icwmpd, 3, s, "vlf_instance", "vlf_alias");
+		SUBENTRY(entry_method_device_info_vlf_instance, ctx, vlf);
+	}
+	return 0;
+}
+
+
+inline int entry_method_device_info_vlf_instance(struct dmctx *ctx, char *ivlf)
+{
+	IF_MATCH(ctx, DMROOT"DeviceInfo.VendorLogFile.%s.", ivlf) {
+		DMOBJECT(DMROOT"DeviceInfo.VendorLogFile.%s.", ctx, "0", 1, NULL, NULL, NULL, ivlf);
+		DMPARAM("Alias", ctx, "0", get_vlf_alias, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Name", ctx, "0",  get_vlf_name, NULL, "xsd:string", 0, 1, UNDEF, NULL);
+		DMPARAM("MaximumSize", ctx, "0",  get_vlf_maxsize, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Persistent", ctx, "0",  get_vlf_persistent, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;

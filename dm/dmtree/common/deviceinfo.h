@@ -29,4 +29,9 @@ struct dev_vcf
 {
 	struct uci_section *vcf_sec;
 };
+
+struct dev_vlf
+{
+	struct uci_section *vlf_sec;
+};
 #endif
