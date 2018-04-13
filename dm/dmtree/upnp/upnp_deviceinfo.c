@@ -97,7 +97,7 @@ int upnp_deviceinfo_get_software_version(char *refparam, struct dmctx *ctx, void
 		return 0;
 	}
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
-	*value = cut_fx(tmp, delimiter, 2);
+	*value = cut_fx(tmp, delimiter, 1);
 	return 0;
 }
 

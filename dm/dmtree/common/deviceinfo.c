@@ -171,7 +171,7 @@ char *get_softwareversion()
 	
 	db_get_value_string("hw", "board", "iopVersion", &v);
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
-	val = cut_fx(tmp, delimiter, 2);
+	val = cut_fx(tmp, delimiter, 1);
 	return val;
 }
 
