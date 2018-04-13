@@ -119,13 +119,13 @@ int get_host_interfacename(char *refparam, struct dmctx *ctx, void *data, char *
 	if( (*frequency != '\0') && (strcmp(wireless, "true")==0) )
 	{
 		if(strcmp(frequency,"5GHz")==0)
-			*value = "wifi5GHz";
+			*value = "WiFi@5GHz";
 		else
-			*value = "wifi2.4GHz";
+			*value = "WiFi@2.4GHz";
 	}
 	else
 	{
-		*value = dmjson_get_value(((struct host_args *)data)->client, 1, "network");
+		*value = dmjson_get_value(((struct host_args *)data)->client, 1, "ethport");
 		if (*value == NULL)
 			*value = "";
 	}
