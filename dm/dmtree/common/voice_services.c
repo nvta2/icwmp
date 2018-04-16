@@ -541,6 +541,7 @@ int get_line_max_instance(struct uci_section **brcm_section)
 	int line_number, i=0;
 	json_object *res;
 	char *value;
+	int found=0;
 	
 	line_number = get_voice_service_max_line();
 	
@@ -550,6 +551,7 @@ int get_line_max_instance(struct uci_section **brcm_section)
 
 		if (strcmp(value, "-") == 0)
 		{
+			found=1;
 			break;
 		}
 		else if (i >= line_number) {
@@ -557,10 +559,12 @@ int get_line_max_instance(struct uci_section **brcm_section)
 			break;
 		}
 	}
-	if (i != 0)
+	if (found == 1)
 		*brcm_section = s;
-	else 
+	else {
+		i=0;
 		*brcm_section = NULL;
+	}
 	return i;
 }
 
