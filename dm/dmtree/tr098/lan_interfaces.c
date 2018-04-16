@@ -135,18 +135,24 @@ int set_lan_eth_int_alias(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_wlan_conf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *wiface_sec = (struct uci_section *)data;
-	dmuci_get_value_by_section_string(wiface_sec, "wifacealias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(wiface_sec), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "wifacealias", value);
 	return 0;
 }
 
 int set_wlan_conf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *wiface_sec = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(wiface_sec), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(wiface_sec, "wifacealias", value);
+			dmuci_set_value_by_section(dmmap_section, "wifacealias", value);
 			return 0;
 	}
 	return 0;
@@ -180,9 +186,13 @@ int browselaninterface_wlanInst(struct dmctx *dmctx, DMNODE *parent_node, void *
 {
 	struct uci_section *s = NULL;
 	char *wi, *wi_last = NULL;
-	uci_foreach_sections("wireless", "wifi-iface", s) {
-		wi =  handle_update_instance(1, dmctx, &wi_last, update_instance_alias, 3, s, "wifaceinstance", "wifacealias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, wi) == DM_STOP)
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
+
+	synchronize_specific_config_sections_with_dmmap("wireless", "wifi-iface", "dmmap_wireless", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		wi =  handle_update_instance(1, dmctx, &wi_last, update_instance_alias, 3, p->dmmap_section, "wifaceinstance", "wifacealias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, wi) == DM_STOP)
 			break;
 	}
 	return 0;
