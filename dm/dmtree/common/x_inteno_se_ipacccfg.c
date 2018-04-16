@@ -815,7 +815,6 @@ int browseport_forwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *pr
 	char *iforward = NULL, *iforward_last = NULL;
 	struct uci_section *s = NULL;
 	struct dmmap_dup *p;
-	struct list_head *ilist;
 	LIST_HEAD(dup_list);
 
 	synchronize_specific_config_sections_with_dmmap_eq("firewall", "redirect", "dmmap_firewall", "target", "DNAT", &dup_list);

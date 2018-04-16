@@ -977,6 +977,7 @@ void synchronize_specific_config_sections_with_dmmap(char *package, char *sectio
 	struct uci_section *s, *stmp, *dmmap_sect;
 	FILE *fp;
 	char *v, *dmmap_file_path;
+
 	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
 	if (access(dmmap_file_path, F_OK)) {
 		/*
@@ -1016,6 +1017,7 @@ void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *sec
 	struct uci_section *s, *stmp, *dmmap_sect;
 	FILE *fp;
 	char *v, *dmmap_file_path;
+
 	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
 	if (access(dmmap_file_path, F_OK)) {
 		/*
@@ -1053,7 +1055,6 @@ void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *sec
 void get_dmmap_section_of_config_section(struct uci_section *config_section, char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
 	struct uci_section* s;
 	char *section_name_conf =section_name(config_section);
-
 	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, "section_name", section_name_conf, s){
 		*dmmap_section= s;
 		return;

@@ -7,6 +7,7 @@
  *	Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Imen Bhiri <imen.bhiri@pivasoftware.com>
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author: Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <ctype.h>
@@ -450,8 +451,8 @@ int add_profile_object(char *refparam, struct dmctx *ctx, void *data, char **ins
 	char account[16];
 	char bufinst[4];
 	int sipidx;
-	char *add_value, *instance, *max_instance;	
-	struct uci_section *voice_profile_section;
+	char *add_value, *instance, *max_instance, *v;
+	struct uci_section *voice_profile_section= NULL, *dmmap_voice_section= NULL;
 	
 	sipidx = get_cfg_sipidx();
 	sprintf(sname, "sip%d", sipidx);
@@ -473,7 +474,12 @@ int add_profile_object(char *refparam, struct dmctx *ctx, void *data, char **ins
 	dmuci_set_value("voice_client", sname, "cbbs_maxretry", "5");
 	dmuci_set_value("voice_client", sname, "cbbs_retrytime", "300");
 	dmuci_set_value("voice_client", sname, "cbbs_waittime", "30");
-	*instancepara = get_last_instance("voice_client", "sip_service_provider", "profileinstance");
+	instance = get_last_instance_icwmpd("dmmap_voice_client", "sip_service_provider", "profileinstance");
+
+	dmuci_add_section_icwmpd("dmmap_voice_client", "sip_service_provider", &dmmap_voice_section, &v);
+	dmuci_set_value_by_section(dmmap_voice_section, "section_name", sname);
+	*instancepara = update_instance_icwmpd(dmmap_voice_section, instance, "profileinstance");
+
 	return 0;
 }
 
@@ -494,15 +500,21 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 	int found = 0;
 	struct uci_section *s, *ss = NULL;
 	struct sip_args *sipargs = (struct sip_args *)data;
+	struct uci_section *dmmap_section;
 	
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			delete_associated_line_instances(section_name(sipargs->sip_section));
 			dmuci_delete_by_section(sipargs->sip_section, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("voice_client", "sip_service_provider", s) {
 				if (found != 0) {
+					get_dmmap_section_of_config_section(s, "dmmap_voice_client", "sip_service_provider", section_name(s), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					delete_associated_line_instances(section_name(ss));
 					dmuci_delete_by_section(ss, NULL, NULL);
 				}
@@ -510,6 +522,9 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 				found++;
 			}
 			if (ss != NULL) {
+				get_dmmap_section_of_config_section(ss, "dmmap_voice_client", "sip_service_provider", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				delete_associated_line_instances(section_name(ss));
 				dmuci_delete_by_section(ss, NULL, NULL);
 			}
@@ -528,14 +543,16 @@ int get_line_max_instance(struct uci_section **brcm_section)
 	char *value;
 	
 	line_number = get_voice_service_max_line();
-	line_number--;
 	
 	uci_foreach_sections("voice_client", "brcm_line", s) {
 		i++;
 		dmuci_get_value_by_section_string(s, "sip_account", &value);
+
 		if (strcmp(value, "-") == 0)
+		{
 			break;
-		else if (i > line_number) {
+		}
+		else if (i >= line_number) {
 			i = 0;
 			break;
 		}
@@ -549,15 +566,17 @@ int get_line_max_instance(struct uci_section **brcm_section)
 
 char *update_vp_line_instance(struct uci_section *brcm_s, char *sipx)
 {
-	struct uci_section *s = NULL;
+	struct uci_section *s = NULL, *dmmap_section= NULL, *dmmap_dup= NULL;
 	int last_instance = 0, i_instance;
 	char *instance, buf[8];
-
-	dmuci_get_value_by_section_string(brcm_s, "lineinstance", &instance);
-	if(instance[0] != '\0')
+	get_dmmap_section_of_config_section(brcm_s, "dmmap_voice_client", "brcm_line", section_name(brcm_s), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "lineinstance", &instance);
+	if(instance[0] != '\0'){
 		return instance;
+	}
 	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", sipx, s) {
-		dmuci_get_value_by_section_string(s, "lineinstance", &instance);
+		get_dmmap_section_of_config_section(s, "dmmap_voice_client", "brcm_line", section_name(brcm_s), &dmmap_dup);
+		dmuci_get_value_by_section_string(dmmap_dup, "lineinstance", &instance);
 		if (instance[0] != '\0') {
 			i_instance = atoi(instance);
 			if ( i_instance > last_instance)
@@ -565,7 +584,7 @@ char *update_vp_line_instance(struct uci_section *brcm_s, char *sipx)
 		}
 	}
 	sprintf(buf, "%d", last_instance + 1);
-	instance = dmuci_set_value_by_section(brcm_s, "lineinstance", buf);
+	instance = dmuci_set_value_by_section(dmmap_section, "lineinstance", buf);
 	return instance;
 }
 
@@ -614,16 +633,22 @@ int add_line(struct uci_section *s, char *s_name)
 int add_line_object(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {	
 	int i;
-	char *value;
+	char *value, *v, *voice_profile_key;
 	char instance[4];
 	char call_lines[16] = {0};
 	struct uci_section *s = NULL;
 	struct sip_args *sipargs = (struct sip_args *)data;
+	struct uci_section *dmmap_voice_line_section, *dmmap_section;
 	int last_instance;
 	i = get_line_max_instance(&s);
 	if (i == 0)
 		return FAULT_9004;
 	add_line(s, section_name(sipargs->sip_section));
+	dmuci_add_section_icwmpd("dmmap_voice_client", "brcm_line", &dmmap_voice_line_section, &v);
+	dmuci_set_value_by_section(dmmap_voice_line_section, "section_name", section_name(s));
+	get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &voice_profile_key);
+	dmuci_set_value_by_section(dmmap_voice_line_section, "voice_profile_key", voice_profile_key);
 	*instancepara = update_vp_line_instance(s, section_name(sipargs->sip_section)); //TODO: To Check
 	dmuci_get_value_by_section_string(sipargs->sip_section, "call_lines", &value);
 	if (value[0] == '\0') {
@@ -675,16 +700,22 @@ int delete_line_object(char *refparam, struct dmctx *ctx, void *data, char *inst
 	struct uci_section *s;
 	struct sip_args *sipargs;
 	struct brcm_args *bargs; //profile_num must be added to brcm_args
+	struct uci_section *dmmap_section;
 	
 	switch (del_action) {
 		case DEL_INST:
 			bargs = (struct brcm_args *)data;
+			get_dmmap_section_of_config_section(bargs->brcm_section, "dmmap_voice_client", "brcm_line", section_name(bargs->brcm_section), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			delete_line(bargs->brcm_section, bargs->sip_section);
 			break;
 		case DEL_ALL:
 			sipargs = (struct sip_args *)data;
 			s_name = section_name(sipargs->sip_section);
 			uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", s_name, s) {
+				get_dmmap_section_of_config_section(s, "dmmap_voice_client", "brcm_line", section_name(s), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				delete_line(s, sipargs->sip_section);
 			}
 			break;
@@ -833,17 +864,11 @@ int get_voice_service_max_line()
 	int num = 0;
 	json_object *res;
 	json_object *brcm = NULL;
-	
-	dmubus_call("voice.asterisk", "status", UBUS_ARGS{}, 0, &res);
-	if(res)
-		brcm = dmjson_get_obj(res, 1, "brcm");
-	if(brcm) {
-		json_object_object_foreach(brcm, key, val) {
-			if (strstr(key, "brcm"))
-				num++;
-		}
-	}
-	return num;
+	char *num_lines= NULL;
+
+	db_get_value_string("hw", "board", "VoicePorts", &num_lines);
+	if(num_lines) return atoi(num_lines);
+	return 0;
 }
 
 int get_voice_profile_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
@@ -2169,6 +2194,7 @@ int get_service_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 int set_service_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *service_section = (struct uci_section *)data;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -2202,18 +2228,25 @@ int set_cap_codec_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 int get_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
-	dmuci_get_value_by_section_string(sipargs->sip_section, "profilealias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "profilealias", value);
 	return 0;
 }
 
 int set_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(sipargs->sip_section, "profilealias", value);
+			dmuci_set_value_by_section(dmmap_section, "profilealias", value);
 			return 0;
 	}
 	return 0;
@@ -2257,7 +2290,9 @@ int set_line_codec_list_alias(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 ///////////////////////////////////////
-
+void set_voice_profile_key_of_line(struct uci_section *dmmap_line_section, char* prev_instance){
+	DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_line_section, "voice_profile_key", prev_instance);
+}
 
 int browseVoiceServiceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
@@ -2300,14 +2335,17 @@ int browseProfileInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	struct uci_section *sip_section;
 	char *profile_num = NULL, *profile_num_last = NULL;
 	struct sip_args curr_sip_args = {0};
-
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 	wait_voice_service_up();
-	uci_foreach_sections("voice_client", "sip_service_provider", sip_section) {
-		profile_num = handle_update_instance(2, dmctx, &profile_num_last, update_instance_alias, 3, sip_section, "profileinstance", "profilealias");
-		init_sip_args(&curr_sip_args, sip_section, profile_num_last);
+	synchronize_specific_config_sections_with_dmmap("voice_client", "sip_service_provider", "dmmap_voice_client", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		profile_num = handle_update_instance(2, dmctx, &profile_num_last, update_instance_alias, 3, p->dmmap_section, "profileinstance", "profilealias");
+		init_sip_args(&curr_sip_args, p->config_section, profile_num_last);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_sip_args, profile_num) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -2319,16 +2357,23 @@ int browseLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 	json_object *res, *jobj;
 	struct sip_args *sipargs = (struct sip_args *)prev_data;
 	struct brcm_args curr_brcm_args = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
+
 	maxLine = get_voice_service_max_line();
-	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", section_name(sipargs->sip_section), b_section) {
-		line_id = atoi(section_name(b_section) + sizeof("brcm") - 1);
+
+	synchronize_specific_config_sections_with_dmmap_eq("voice_client", "brcm_line", "dmmap_voice_client", "sip_account", section_name(sipargs->sip_section), &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		line_id = atoi(section_name(p->config_section) + sizeof("brcm") - 1);
 		if ( line_id >= maxLine )
 			continue;
-		line_num = handle_update_instance(3, dmctx, &last_inst, update_vp_line_instance_alias, 2, b_section, section_name(sipargs->sip_section));
-		init_brcm_args(&curr_brcm_args, b_section, sipargs->sip_section, sipargs->profile_num); //check difference between sipargs->profile_num and profile_num
+		set_voice_profile_key_of_line(p->dmmap_section, prev_instance);
+		line_num = handle_update_instance(3, dmctx, &last_inst, update_instance_alias, 3, p->dmmap_section, "lineinstance", "linealias");
+		init_brcm_args(&curr_brcm_args, p->config_section, sipargs->sip_section, sipargs->profile_num); //check difference between sipargs->profile_num and profile_num
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_brcm_args, line_num) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
