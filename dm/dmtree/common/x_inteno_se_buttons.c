@@ -151,7 +151,7 @@ int get_x_inteno_button_alias(char *refparam, struct dmctx *ctx, void *data, cha
 {
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section((struct uci_section *)data, "dmmap_buttons", "button", section_name((struct uci_section *)data), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_buttons", "button", section_name((struct uci_section *)data), &dmmap_section);
 	dmuci_get_value_by_section_string(dmmap_section, "buttonalias", value);
 	return 0;
 }
@@ -160,7 +160,7 @@ int set_x_inteno_button_alias(char *refparam, struct dmctx *ctx, void *data, cha
 {
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section((struct uci_section *)data, "dmmap_buttons", "button", section_name((struct uci_section *)data), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_buttons", "button", section_name((struct uci_section *)data), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;

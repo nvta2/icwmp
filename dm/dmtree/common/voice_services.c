@@ -483,14 +483,18 @@ int add_profile_object(char *refparam, struct dmctx *ctx, void *data, char **ins
 	return 0;
 }
 
-int delete_associated_line_instances(char *sip_id)
+int delete_associated_line_instances(char *sip_id, char* profile_key)
 {
 	struct uci_section *s;
+	char *stmp;
 
 	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", sip_id, s) {
 		dmuci_set_value_by_section(s, "sip_account", "-");
 		dmuci_set_value_by_section(s, "lineinstance", "");
 		dmuci_set_value_by_section(s, "linealias", "");
+	}
+	uci_path_foreach_option_eq_safe(icwmpd, "dmmap_voice_client", "brcm_line", "voice_profile_key", profile_key, stmp, s) {
+		dmuci_delete_by_section(s, NULL, NULL);
 	}
 	return 0;
 }
@@ -501,31 +505,31 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 	struct uci_section *s, *ss = NULL;
 	struct sip_args *sipargs = (struct sip_args *)data;
 	struct uci_section *dmmap_section;
+	char *v= NULL;
 	
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &v);
 	switch (del_action) {
 		case DEL_INST:
-			get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
 			dmuci_delete_by_section(dmmap_section, NULL, NULL);
-			delete_associated_line_instances(section_name(sipargs->sip_section));
+			delete_associated_line_instances(section_name(sipargs->sip_section), v);
 			dmuci_delete_by_section(sipargs->sip_section, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("voice_client", "sip_service_provider", s) {
 				if (found != 0) {
-					get_dmmap_section_of_config_section(s, "dmmap_voice_client", "sip_service_provider", section_name(s), &dmmap_section);
 					if(dmmap_section != NULL)
 						dmuci_delete_by_section(dmmap_section, NULL, NULL);
-					delete_associated_line_instances(section_name(ss));
+					delete_associated_line_instances(section_name(ss), v);
 					dmuci_delete_by_section(ss, NULL, NULL);
 				}
 				ss = s;
 				found++;
 			}
 			if (ss != NULL) {
-				get_dmmap_section_of_config_section(ss, "dmmap_voice_client", "sip_service_provider", section_name(ss), &dmmap_section);
 				if(dmmap_section != NULL)
 					dmuci_delete_by_section(dmmap_section, NULL, NULL);
-				delete_associated_line_instances(section_name(ss));
+				delete_associated_line_instances(section_name(ss), v);
 				dmuci_delete_by_section(ss, NULL, NULL);
 			}
 			break;
@@ -573,13 +577,13 @@ char *update_vp_line_instance(struct uci_section *brcm_s, char *sipx)
 	struct uci_section *s = NULL, *dmmap_section= NULL, *dmmap_dup= NULL;
 	int last_instance = 0, i_instance;
 	char *instance, buf[8];
-	get_dmmap_section_of_config_section(brcm_s, "dmmap_voice_client", "brcm_line", section_name(brcm_s), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(brcm_s), &dmmap_section);
 	dmuci_get_value_by_section_string(dmmap_section, "lineinstance", &instance);
 	if(instance[0] != '\0'){
 		return instance;
 	}
 	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", sipx, s) {
-		get_dmmap_section_of_config_section(s, "dmmap_voice_client", "brcm_line", section_name(brcm_s), &dmmap_dup);
+		get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(s), &dmmap_dup);
 		dmuci_get_value_by_section_string(dmmap_dup, "lineinstance", &instance);
 		if (instance[0] != '\0') {
 			i_instance = atoi(instance);
@@ -650,7 +654,7 @@ int add_line_object(char *refparam, struct dmctx *ctx, void *data, char **instan
 	add_line(s, section_name(sipargs->sip_section));
 	dmuci_add_section_icwmpd("dmmap_voice_client", "brcm_line", &dmmap_voice_line_section, &v);
 	dmuci_set_value_by_section(dmmap_voice_line_section, "section_name", section_name(s));
-	get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
 	dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &voice_profile_key);
 	dmuci_set_value_by_section(dmmap_voice_line_section, "voice_profile_key", voice_profile_key);
 	*instancepara = update_vp_line_instance(s, section_name(sipargs->sip_section)); //TODO: To Check
@@ -709,7 +713,7 @@ int delete_line_object(char *refparam, struct dmctx *ctx, void *data, char *inst
 	switch (del_action) {
 		case DEL_INST:
 			bargs = (struct brcm_args *)data;
-			get_dmmap_section_of_config_section(bargs->brcm_section, "dmmap_voice_client", "brcm_line", section_name(bargs->brcm_section), &dmmap_section);
+			get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(bargs->brcm_section), &dmmap_section);
 			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			delete_line(bargs->brcm_section, bargs->sip_section);
 			break;
@@ -717,7 +721,7 @@ int delete_line_object(char *refparam, struct dmctx *ctx, void *data, char *inst
 			sipargs = (struct sip_args *)data;
 			s_name = section_name(sipargs->sip_section);
 			uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", s_name, s) {
-				get_dmmap_section_of_config_section(s, "dmmap_voice_client", "brcm_line", section_name(s), &dmmap_section);
+				get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(s), &dmmap_section);
 				if(dmmap_section != NULL)
 					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				delete_line(s, sipargs->sip_section);
@@ -2234,7 +2238,7 @@ int get_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char 
 	struct sip_args *sipargs = (struct sip_args *)data;
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
 	dmuci_get_value_by_section_string(dmmap_section, "profilealias", value);
 	return 0;
 }
@@ -2244,7 +2248,7 @@ int set_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char 
 	struct sip_args *sipargs = (struct sip_args *)data;
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section(sipargs->sip_section, "dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
 
 	switch (action) {
 		case VALUECHECK:
@@ -2259,18 +2263,24 @@ int set_voice_profile_alias(char *refparam, struct dmctx *ctx, void *data, char 
 int get_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct brcm_args *brcmarg = (struct brcm_args *)data;
-	dmuci_get_value_by_section_string(brcmarg->brcm_section, "linealias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(brcmarg->brcm_section), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "linealias", value);
 	return 0;
 }
 
 int set_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct brcm_args *brcmarg = (struct brcm_args *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(brcmarg->brcm_section), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(brcmarg->brcm_section, "linealias", value);
+			dmuci_set_value_by_section(dmmap_section, "linealias", value);
 			return 0;
 	}
 	return 0;

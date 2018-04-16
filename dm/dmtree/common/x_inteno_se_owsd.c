@@ -325,7 +325,7 @@ int get_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *d
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section(owsd_listensection, "dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
 	dmuci_get_value_by_section_string(dmmap_section, "olistenalias", value);
 	return 0;
 }
@@ -335,7 +335,7 @@ int set_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *d
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section(owsd_listensection, "dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -377,14 +377,14 @@ int delete_owsd_listen_instance(char *refparam, struct dmctx *ctx, void *data, c
 	int found = 0;
 	switch (del_action) {
 		case DEL_INST:
-			get_dmmap_section_of_config_section(owsd_listensection, "dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
+			get_dmmap_section_of_config_section("dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
 			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(owsd_listensection, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("owsd", "owsd-listen", s) {
 				if (found != 0){
-					get_dmmap_section_of_config_section(s, "dmmap_owsd", "listen", section_name(s), &dmmap_section);
+					get_dmmap_section_of_config_section("dmmap_owsd", "listen", section_name(s), &dmmap_section);
 					if(dmmap_section != NULL)
 						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
@@ -393,7 +393,7 @@ int delete_owsd_listen_instance(char *refparam, struct dmctx *ctx, void *data, c
 				found++;
 			}
 			if (ss != NULL){
-				get_dmmap_section_of_config_section(ss, "dmmap_owsd", "listen", section_name(ss), &dmmap_section);
+				get_dmmap_section_of_config_section("dmmap_owsd", "listen", section_name(ss), &dmmap_section);
 				if(dmmap_section != NULL)
 					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);

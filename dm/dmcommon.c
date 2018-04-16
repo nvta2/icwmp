@@ -1052,10 +1052,10 @@ void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *sec
 	}
 }
 
-void get_dmmap_section_of_config_section(struct uci_section *config_section, char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
+void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
 	struct uci_section* s;
-	char *section_name_conf =section_name(config_section);
-	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, "section_name", section_name_conf, s){
+
+	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, "section_name", section_name, s){
 		*dmmap_section= s;
 		return;
 	}
