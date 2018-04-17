@@ -37,7 +37,6 @@ int browseXIntenoButton(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	char *ibutton = NULL, *ibutton_last = NULL;
 	struct uci_section *s = NULL;
 	struct dmmap_dup *p;
-	struct list_head *ilist;
 	LIST_HEAD(dup_list);
 
 	synchronize_specific_config_sections_with_dmmap("buttons", "button", "dmmap_buttons", &dup_list);

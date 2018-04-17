@@ -214,17 +214,23 @@ int set_wifi_dfsenable(char *refparam, struct dmctx *ctx, void *data, char *inst
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 static int get_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string((struct uci_section *)data, "radioalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_wireless", "wifi-device", section_name((struct uci_section *)data), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "radioalias", value);
 	return 0;
 }
 
 static int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section((struct uci_section *)data, "radioalias", value);
+			get_dmmap_section_of_config_section("dmmap_wireless", "wifi-device", section_name((struct uci_section *)data), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "radioalias", value);
 			return 0;
 	}
 	return 0;
@@ -235,11 +241,15 @@ int browsesewifiradioInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_d
 {
 	char *wnum = NULL, *wnum_last = NULL;
 	struct uci_section *s = NULL;
-	uci_foreach_sections("wireless", "wifi-device", s) {
-		wnum =  handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, s, "radioinstance", "radioalias");
-		//SUBENTRY(entry_sewifi_radio_instance, ctx, wnum);
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, wnum) == DM_STOP)
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
+
+	synchronize_specific_config_sections_with_dmmap("wireless", "wifi-device", "dmmap_wireless", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		wnum =  handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, p->dmmap_section, "radioinstance", "radioalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, wnum) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
