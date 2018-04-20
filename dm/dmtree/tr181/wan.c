@@ -780,10 +780,11 @@ int get_ptm_enable(char *refparam, struct dmctx *ctx, void *data, char *instance
 int add_atm_link(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 	char *instance = NULL;
-	char *atm_device = NULL;
+	char *atm_device = NULL, *v= NULL;
 	char *instance_update = NULL;
+	struct uci_section *dmmap_atm=NULL;
 
-	instance = get_last_instance("dsl", "atm-device", "atmlinkinstance");
+	instance = get_last_instance_icwmpd("dmmap_dsl", "atm-device", "atmlinkinstance");
 	dmasprintf(&atm_device, "atm%d", instance ? atoi(instance) : 0);
 	dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
 	dmuci_set_value("dsl", atm_device, "", "atm-device");
@@ -794,17 +795,20 @@ int add_atm_link(char *refparam, struct dmctx *ctx, void *data, char **instancep
 	dmuci_set_value("dsl", atm_device, "link_type", "eoa");
 	dmuci_set_value("dsl", atm_device, "encapsulation", "llc");
 	dmuci_set_value("dsl", atm_device, "qos_class", "ubr");
-	*instancepara = dmuci_set_value("dsl", atm_device, "atmlinkinstance", instance_update);
+	dmuci_add_section_icwmpd("dmmap_dsl", "atm-device", &dmmap_atm, &v);
+	dmuci_set_value_by_section(dmmap_atm, "section_name", atm_device);
+	*instancepara = update_instance_icwmpd(dmmap_atm, instance, "atmlinkinstance");
 	return 0;
 }
 
 int add_ptm_link(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 	char *instance = NULL;
-	char *ptm_device = NULL;
+	char *ptm_device = NULL, *v= NULL;
 	char *instance_update = NULL;
+	struct uci_section *dmmap_ptm=NULL;
 
-	instance = get_last_instance("dsl", "ptm-device", "ptmlinkinstance");
+	instance = get_last_instance_icwmpd("dmmap_dsl", "ptm-device", "ptmlinkinstance");
 	dmasprintf(&ptm_device, "ptm%d", instance ? atoi(instance) : 0);
 	dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
 	dmuci_set_value("dsl", ptm_device, "", "ptm-device");
@@ -812,7 +816,9 @@ int add_ptm_link(char *refparam, struct dmctx *ctx, void *data, char **instancep
 	dmuci_set_value("dsl", ptm_device, "device", ptm_device);
 	dmuci_set_value("dsl", ptm_device, "priority", "1");
 	dmuci_set_value("dsl", ptm_device, "portid", "1");
-	*instancepara = dmuci_set_value("dsl", ptm_device, "ptmlinkinstance", instance_update);
+	dmuci_add_section_icwmpd("dmmap_dsl", "ptm-device", &dmmap_ptm, &v);
+	dmuci_set_value_by_section(dmmap_ptm, "section_name", ptm_device);
+	*instancepara = update_instance_icwmpd(dmmap_ptm, instance, "ptmlinkinstance");
 	return 0;
 }
 
@@ -821,11 +827,14 @@ int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct uci_section *ns = NULL;
-	struct uci_section *nss = NULL;
+	struct uci_section *nss = NULL, *dmmap_section= NULL;
 	char *ifname;
 
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(((struct atm_args *)data)->atm_sec), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(((struct atm_args *)data)->atm_sec, NULL, NULL);
 			uci_foreach_option_cont("network", "interface", "ifname", ((struct atm_args *)data)->ifname, s) {
 				if (ss && ifname!=NULL)
@@ -838,6 +847,9 @@ int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 		case DEL_ALL:
 			uci_foreach_sections("dsl", "atm-device", s) {
 				if (ss){
+					get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_get_value_by_section_string(ss, "device", &ifname);
 					dmuci_delete_by_section(ss, NULL, NULL);
 					uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
@@ -851,6 +863,9 @@ int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 				ss = s;
 			}
 			if (ss != NULL) {
+				get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(s), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_get_value_by_section_string(ss, "device", &ifname);
 				dmuci_delete_by_section(ss, NULL, NULL);
 				uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
@@ -872,10 +887,13 @@ int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct uci_section *ns = NULL;
-	struct uci_section *nss = NULL;
+	struct uci_section *nss = NULL, *dmmap_section= NULL;
 
 	switch (del_action) {
 	case DEL_INST:
+		get_dmmap_section_of_config_section("dmmap_dsl", "ptm-device", section_name(((struct ptm_args *)data)->ptm_sec), &dmmap_section);
+		if(dmmap_section != NULL)
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 		dmuci_delete_by_section(((struct ptm_args *)data)->ptm_sec, NULL, NULL);
 		uci_foreach_option_cont("network", "interface", "ifname", ((struct ptm_args *)data)->ifname, s) {
 			if (ss && ifname!=NULL)
@@ -888,6 +906,9 @@ int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	case DEL_ALL:
 		uci_foreach_sections("dsl", "ptm-device", s) {
 			if (ss){
+				get_dmmap_section_of_config_section("dmmap_dsl", "ptm-device", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_get_value_by_section_string(ss, "device", &ifname);
 				dmuci_delete_by_section(ss, NULL, NULL);
 				uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
@@ -901,6 +922,9 @@ int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 			ss = s;
 		}
 		if (ss != NULL) {
+			get_dmmap_section_of_config_section("dmmap_dsl", "ptm-device", section_name(ss), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_get_value_by_section_string(ss, "device", &ifname);
 			dmuci_delete_by_section(ss, NULL, NULL);
 			uci_foreach_option_cont("network", "interface", "ifname", ifname, ns) {
@@ -956,17 +980,23 @@ int set_channel_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 
 int get_atm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct atm_args *)data)->atm_sec, "atmlinkalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(((struct atm_args *)data)->atm_sec), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "atmlinkalias", value);
 	return 0;
 }
 
 int set_atm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct atm_args *)data)->atm_sec, "atmlinkalias", value);
+			get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(((struct atm_args *)data)->atm_sec), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "atmlinkalias", value);
 			return 0;
 	}
 	return 0;
@@ -974,17 +1004,23 @@ int set_atm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 
 int get_ptm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct ptm_args *)data)->ptm_sec, "ptmlinkalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dsl", "ptm-device", section_name(((struct atm_args *)data)->atm_sec), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "ptmlinkalias", value);
 	return 0;
 }
 
 int set_ptm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct ptm_args *)data)->ptm_sec, "ptmlinkalias", value);
+			get_dmmap_section_of_config_section("dmmap_dsl", "ptm-device", section_name(((struct atm_args *)data)->atm_sec), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "ptmlinkalias", value);
 			return 0;
 	}
 	return 0;
@@ -1057,14 +1093,18 @@ int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	char *wnum = NULL, *channel_last = NULL, *ifname;
 	struct uci_section *s = NULL;
 	struct atm_args curr_atm_args = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("dsl", "atm-device", s) {
-		dmuci_get_value_by_section_string(s, "device", &ifname);
-		init_atm_link(&curr_atm_args, s, ifname);
-		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, s, "atmlinkinstance", "atmlinkalias");
+	synchronize_specific_config_sections_with_dmmap("dsl", "atm-device", "dmmap_dsl", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->config_section, "device", &ifname);
+		init_atm_link(&curr_atm_args, p->config_section, ifname);
+		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, p->dmmap_section, "atmlinkinstance", "atmlinkalias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_atm_args, wnum) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -1073,11 +1113,14 @@ int browsePtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	char *wnum = NULL, *channel_last = NULL, *ifname;
 	struct uci_section *s = NULL;
 	struct ptm_args curr_ptm_args = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("dsl", "ptm-device", s) {
-		dmuci_get_value_by_section_string(s, "device", &ifname);
-		init_ptm_link(&curr_ptm_args, s, ifname);
-		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, s, "ptmlinkinstance", "ptmlinkalias"); //finish here
+	synchronize_specific_config_sections_with_dmmap("dsl", "ptm-device", "dmmap_dsl", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->config_section, "device", &ifname);
+		init_ptm_link(&curr_ptm_args, p->config_section, ifname);
+		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, p->dmmap_section, "ptmlinkinstance", "ptmlinkalias"); //finish here
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_ptm_args, wnum) == DM_STOP)
 			break;
 	}

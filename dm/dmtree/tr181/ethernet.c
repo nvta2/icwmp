@@ -88,9 +88,10 @@ inline int init_eth_port(struct eth_port_args *args, struct uci_section *s, char
 ***************************************************************************/
 int get_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *eth_instance;
+	struct uci_section *dmmap_section;
 
-	dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "eth_port_alias", value);
+	get_dmmap_section_of_config_section("dmmap_ports", "ethport", section_name(((struct eth_port_args *)data)->eth_port_sec), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "eth_port_alias", value);
 	if(*value == NULL || strlen(*value)<1)
 	{
 		dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "name", value);
@@ -101,11 +102,14 @@ int get_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *inst
 
 int set_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_ports", "ethport", section_name(((struct eth_port_args *)data)->eth_port_sec), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct eth_port_args *)data)->eth_port_sec, "eth_port_alias", value);
+			dmuci_set_value_by_section(dmmap_section, "eth_port_alias", value);
 			return 0;
 	}
 	return 0;
@@ -385,20 +389,24 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 	char *int_num = NULL, *int_num_last = NULL, *ifname;
 	struct uci_section *ss = NULL;
 	struct eth_port_args curr_eth_port_args = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
+	synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_ifname);
-	uci_foreach_sections("ports", "ethport", ss) {
-		dmuci_get_value_by_section_string(ss, "ifname", &ifname);
+	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->config_section, "ifname", &ifname);
 		if (strcmp(ifname, wan_ifname) == 0) {
 #ifndef EX400
 			dmasprintf(&ifname, "%s.1", ifname);
 #endif
 		}
-		init_eth_port(&curr_eth_port_args, ss, ifname);
-		int_num =  handle_update_instance(1, dmctx, &int_num_last, update_instance_alias, 3, ss, "eth_port_instance", "eth_port_alias");
+		init_eth_port(&curr_eth_port_args, p->config_section, ifname);
+		int_num =  handle_update_instance(1, dmctx, &int_num_last, update_instance_alias, 3, p->dmmap_section, "eth_port_instance", "eth_port_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_eth_port_args, int_num) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
