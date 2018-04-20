@@ -90,14 +90,14 @@ int upnp_deviceinfo_get_provisionning_code(char *refparam, struct dmctx *ctx, vo
 
 int upnp_deviceinfo_get_software_version(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	char *v = NULL, *tmp = NULL, *val = NULL;
-	char delimiter[] = "_";
+
 	db_get_value_string("hw", "board", "iopVersion", &v);
 	if(v == NULL || strlen(v)<=0) {
 		*value = NULL;
 		return 0;
 	}
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
-	*value = cut_fx(tmp, delimiter, 1);
+	*value = tmp;
 	return 0;
 }
 
@@ -151,15 +151,14 @@ int upnp_deviceinfo_get_manufacturer_oui(char *refparam, struct dmctx *ctx, void
 
 int upnp_deviceinfo_get_product_class(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	char *v = NULL, *tmp = NULL, *val = NULL;
-	char delimiter[] = "_";
 
-	db_get_value_string("hw", "board", "iopVersion", &v);
+	db_get_value_string("hw", "board", "iopVerBoard", &v);
 	if(v == NULL || strlen(v)<=NULL){
 		*value = NULL;
 		return 0;
 	}
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
-	val = cut_fx(tmp, delimiter, 1);
+	val = tmp;
 	return 0;
 }
 

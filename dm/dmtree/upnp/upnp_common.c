@@ -76,12 +76,11 @@ int upnp_get_IPInterfaceNumberOfEntries(){
 char *upnp_get_softwareversion()
 {
 	char *v=NULL, *tmp=NULL, *val=NULL;
-	char delimiter[] = "_";
 
 	db_get_value_string("hw", "board", "iopVersion", &v);
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
 	if(!tmp) return NULL;
-	val = cut_fx(tmp, delimiter, 2);
+	val = tmp;
 	return val;
 }
 
