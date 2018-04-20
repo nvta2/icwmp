@@ -148,11 +148,10 @@ not_found:
 char *get_deviceid_productclass()
 {
 	char *v, *tmp, *val;
-	char delimiter[] = "_";
 	
-	db_get_value_string("hw", "board", "iopVersion", &v);
+	db_get_value_string("hw", "board", "iopVerBoard", &v);
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
-	val = cut_fx(tmp, delimiter, 1);
+	val = tmp;
 	return val;
 }
 
@@ -167,11 +166,10 @@ char *get_deviceid_serialnumber()
 char *get_softwareversion()
 {
 	char *v, *tmp, *val;
-	char delimiter[] = "_";
 	
 	db_get_value_string("hw", "board", "iopVersion", &v);
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
-	val = cut_fx(tmp, delimiter, 1);
+	val = tmp;
 	return val;
 }
 
