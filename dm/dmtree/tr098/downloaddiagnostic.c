@@ -202,7 +202,34 @@ int get_download_diagnostic_tcp_open_response_time(char *refparam, struct dmctx 
 	return 0;
 }
 
+int get_download_diagnostic_dscp(char *refparam, struct dmctx *ctx, char **value)
+{
 
+	dmuci_get_varstate_string("cwmp", "@downloaddiagnostic[0]", "DSCP", value);
+	if ((*value)[0] == '\0')
+		*value = "0";
+	return 0;
+}
+
+int set_download_diagnostic_dscp(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	char *tmp;
+	struct uci_section *curr_section = NULL;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			DOWNLOAD_DIAGNOSTIC_STOP
+			curr_section = dmuci_walk_state_section("cwmp", "downloaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			if(!curr_section)
+			{
+				dmuci_add_state_section("cwmp", "downloaddiagnostic", &curr_section, &tmp);
+			}
+			dmuci_set_varstate_value("cwmp", "@downloaddiagnostic[0]", "DSCP", value);
+			return 0;
+	}
+	return 0;
+}
 
 int entry_method_root_Download_Diagnostics(struct dmctx *ctx)
 {
@@ -220,6 +247,7 @@ int entry_method_root_Download_Diagnostics(struct dmctx *ctx)
 		DMPARAM("TotalBytesReceived", ctx, "0", get_download_diagnostic_totalbytes, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("TCPOpenRequestTime", ctx, "0", get_download_diagnostic_tcp_open_request_time, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
 		DMPARAM("TCPOpenResponseTime", ctx, "0", get_download_diagnostic_tcp_open_response_time, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
+		DMPARAM("DSCP", ctx, "0", get_download_diagnostic_dscp, set_download_diagnostic_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;
