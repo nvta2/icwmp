@@ -512,14 +512,20 @@ int delete_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *dat
 
 int add_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char *instance;
 	struct uci_section *s = NULL;
+	struct uci_section *dmmap_serving_pool=NULL;
 
-	instance = get_last_instance("dhcp", "vendorclass", "poulinstance");
+	check_create_dmmap_package("dmmap_dhcp");
+	instance = get_last_instance_icwmpd("dmmap_dhcp", "vendorclass", "poulinstance");
 	dmuci_add_section("dhcp", "vendorclass", &s, &value);
 	dmuci_set_value_by_section(s, "dhcp_option", "");
 	*instancepara = update_instance(s, instance, "poulinstance");
+
+	dmuci_add_section_icwmpd("dmmap_dhcp", "vendorclass", &dmmap_serving_pool, &v);
+	dmuci_set_value_by_section(dmmap_serving_pool, "section_name", section_name(s));
+	*instancepara = update_instance_icwmpd(dmmap_serving_pool, instance, "poulinstance");
 	return 0;
 }
 
@@ -531,7 +537,7 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct uci_section *dmmap_s = NULL;
-	struct uci_section *dmmap_ss = NULL;
+	struct uci_section *dmmap_ss = NULL, *dmmap_section= NULL;
 
 	switch (del_action) {
 		case DEL_INST:
@@ -544,6 +550,10 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 			}
 			if (dmmap_ss != NULL)
 				DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
+
+			get_dmmap_section_of_config_section("dmmap_dhcp", "vendorclass", section_name(poolargs), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(poolargs, NULL, NULL);
 			return 0;
 		case DEL_ALL:
@@ -561,6 +571,9 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 						DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
 					dmmap = 0;
 					dmmap_ss = NULL;
+					get_dmmap_section_of_config_section("dmmap_dhcp", "vendorclass", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
 				}
 				ss = s;
@@ -577,6 +590,9 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 				}
 				if (dmmap_ss != NULL)
 					DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_ss, NULL, NULL);
+				get_dmmap_section_of_config_section("dmmap_dhcp", "vendorclass", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
 			}
 			return 0;
@@ -3284,17 +3300,23 @@ void lan_eth_update_section_option_list (char *name, char *sec_name, char *wan_e
 /////////////////////////SET AND GET ALIAS/////////////////////////////////
 int get_lan_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct ldlanargs *)data)->ldlansection, "ldalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ldlanargs *)data)->ldlansection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "ldalias", value);
 	return 0;
 }
 
 int set_lan_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ldlanargs *)data)->ldlansection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct ldlanargs *)data)->ldlansection, "ldalias", value);
+			dmuci_set_value_by_section(dmmap_section, "ldalias", value);
 			return 0;
 	}
 	return 0;
@@ -3303,18 +3325,24 @@ int set_lan_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 int get_lan_ip_int_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *ldipsection = (struct uci_section *)data;
-	dmuci_get_value_by_section_string(ldipsection, "lipalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ldipsection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "lipalias", value);
 	return 0;
 }
 
 int set_lan_ip_int_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *ldipsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ldipsection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(ldipsection, "lipalias", value);
+			dmuci_set_value_by_section(dmmap_section, "lipalias", value);
 			return 0;
 	}
 	return 0;
@@ -3414,17 +3442,23 @@ int set_lan_eth_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 
 int get_dhcp_conditional_servingpool_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string((struct uci_section *)data, "poulalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dhcp", "vendorclass", section_name((struct uci_section *)data), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "poulalias", value);
 	return 0;
 }
 
 int set_dhcp_conditional_servingpool_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dhcp", "vendorclass", section_name((struct uci_section *)data), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section((struct uci_section *)data, "poulalias", value);
+			dmuci_set_value_by_section(dmmap_section, "poulalias", value);
 			return 0;
 	}
 	return 0;
@@ -3593,13 +3627,18 @@ int browselandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	struct uci_section *s = NULL;
 	char *idev = NULL, *idev_last = NULL;
 	struct ldlanargs curr_lanargs = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_filter_func("network", "interface", NULL, &filter_lan_device_interface, s) {
-		idev = handle_update_instance(1, dmctx, &idev_last, update_instance_alias, 3, s, "ldinstance", "ldalias");
-		init_ldargs_lan(&curr_lanargs, s, idev);
+	synchronize_specific_config_sections_with_dmmap("network", "interface", "dmmap_network", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		if(filter_lan_device_interface(p->config_section, "")!=0) continue;
+		idev = handle_update_instance(1, dmctx, &idev_last, update_instance_alias, 3, p->dmmap_section, "ldinstance", "ldalias");
+		init_ldargs_lan(&curr_lanargs, p->config_section, idev);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_lanargs, idev) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -3610,10 +3649,14 @@ int browseIPInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_d
 	char *ilan = NULL, *ilan_last = NULL;
 	char *idhcp = NULL, *idhcp_last = NULL;
 	struct ldlanargs *lanargs = (struct ldlanargs *)prev_data;
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_filter_func("network", "interface", lanargs->ldlansection, filter_lan_ip_interface, ss) {
-		ilan = handle_update_instance(2, dmctx, &ilan_last, update_instance_alias, 3, ss, "lipinstance", "lipalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)ss, ilan) == DM_STOP)
+	synchronize_specific_config_sections_with_dmmap("network", "interface", "dmmap_network", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		if(filter_lan_ip_interface(p->config_section, lanargs->ldlansection)!=0) continue;
+		ilan = handle_update_instance(2, dmctx, &ilan_last, update_instance_alias, 3, p->dmmap_section, "lipinstance", "lipalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, ilan) == DM_STOP)
 			break;
 		/*SUBENTRY(entry_landevice_ipinterface_instance, ctx, idev, ilan);
 	uci_foreach_option_cont("dhcp", "host", "interface", section_name(ss), sss) {
@@ -3795,11 +3838,16 @@ int browselandevice_lanhostconfigmanagement_dhcpconditionalservingpool_instance(
 {
 	struct uci_section *s = NULL;
 	char *icondpool = NULL, *icondpool_last = NULL;
-	uci_foreach_sections("dhcp", "vendorclass", s) {
-		icondpool =  handle_update_instance(1, dmctx, &icondpool_last, update_instance_alias, 3, s, "poulinstance", "poulalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, icondpool) == DM_STOP)
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
+
+	synchronize_specific_config_sections_with_dmmap("dhcp", "vendorclass", "dmmap_dhcp", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		icondpool =  handle_update_instance(1, dmctx, &icondpool_last, update_instance_alias, 3, p->dmmap_section, "poulinstance", "poulalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, icondpool) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 

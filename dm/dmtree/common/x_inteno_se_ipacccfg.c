@@ -799,7 +799,6 @@ int browseAccListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	char *irule = NULL, *irule_last = NULL;
 	struct uci_section *s = NULL;
 	struct dmmap_dup *p;
-	struct list_head *ilist;
 	LIST_HEAD(dup_list);
 
 	synchronize_specific_config_sections_with_dmmap("firewall", "rule", "dmmap_firewall", &dup_list);
