@@ -62,17 +62,23 @@ DMLEAF tStatsParam[] = {
 
 int get_ppp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct uci_section *)data), "ppp_int_alias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name((struct uci_section *)data), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "ppp_int_alias", value);
 	return 0;
 }
 
 int set_ppp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name((struct uci_section *)data), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct uci_section *)data), "ppp_int_alias", value);
+			dmuci_set_value_by_section(dmmap_section, "ppp_int_alias", value);
 			return 0;
 	}
 	return 0;
@@ -252,15 +258,19 @@ int browseInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	struct uci_section *net_sec = NULL;
 	char *ppp_int = NULL, *ppp_int_last = NULL;
 	char *proto;
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("network", "interface", net_sec) {
-		dmuci_get_value_by_section_string(net_sec, "proto", &proto);
+	synchronize_specific_config_sections_with_dmmap("network", "interface", "dmmap_network", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->config_section, "proto", &proto);
 		if (!strstr(proto, "ppp"))
 			continue;
-		ppp_int = handle_update_instance(1, dmctx, &ppp_int_last, update_instance_alias, 3, net_sec, "ppp_int_instance", "ppp_int_alias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)net_sec, ppp_int) == DM_STOP)
+		ppp_int = handle_update_instance(1, dmctx, &ppp_int_last, update_instance_alias, 3, p->dmmap_section, "ppp_int_instance", "ppp_int_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, ppp_int) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 

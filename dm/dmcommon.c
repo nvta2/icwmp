@@ -1061,3 +1061,17 @@ void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type
 	}
 	*dmmap_section= NULL;
 }
+
+void check_create_dmmap_package(char *dmmap_package){
+	FILE *fp;
+	char *dmmap_file_path;
+
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+}
