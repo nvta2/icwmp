@@ -132,6 +132,7 @@ int add_dhcp_server(char *refparam, struct dmctx *ctx, void *data, char **instan
 	char *instance;
 	struct uci_section *s = NULL, *dmmap_dhcp= NULL;
 	
+	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_icwmpd("dmmap_dhcp", "dhcp", "dhcp_instance");
 	dmuci_add_section("dhcp", "dhcp", &s, &value);
 	dmuci_set_value_by_section(s, "start", "100");

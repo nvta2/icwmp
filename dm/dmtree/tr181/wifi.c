@@ -1567,6 +1567,7 @@ int add_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char **instance
 	char *inst;
 	struct uci_section *s = NULL;
 	struct uci_section *dmmap_wifi=NULL;
+
 	check_create_dmmap_package("dmmap_wireless");
 	inst = get_last_instance_icwmpd("dmmap_wireless", "wifi-iface", "ssidinstance");
 	sprintf(ssid, "Inteno_%d", inst ? (atoi(inst)+1) : 1);

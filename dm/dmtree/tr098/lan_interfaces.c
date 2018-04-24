@@ -195,5 +195,6 @@ int browselaninterface_wlanInst(struct dmctx *dmctx, DMNODE *parent_node, void *
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, wi) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }

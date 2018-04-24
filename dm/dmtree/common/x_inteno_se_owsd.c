@@ -353,6 +353,7 @@ int add_owsd_listen(char *refparam, struct dmctx *ctx, void *data, char **instan
 	char *instance;
 	struct uci_section *listen_sec = NULL, *dmmap_sec= NULL;
 
+	check_create_dmmap_package("dmmap_owsd");
 	instance = get_last_instance_icwmpd("dmmap_owsd", "owsd-listen", "olisteninstance");
 
 	dmuci_add_section("owsd", "owsd-listen", &listen_sec, &value);

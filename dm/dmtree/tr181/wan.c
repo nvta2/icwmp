@@ -784,6 +784,7 @@ int add_atm_link(char *refparam, struct dmctx *ctx, void *data, char **instancep
 	char *instance_update = NULL;
 	struct uci_section *dmmap_atm=NULL;
 
+	check_create_dmmap_package("dmmap_dsl");
 	instance = get_last_instance_icwmpd("dmmap_dsl", "atm-device", "atmlinkinstance");
 	dmasprintf(&atm_device, "atm%d", instance ? atoi(instance) : 0);
 	dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
@@ -808,6 +809,7 @@ int add_ptm_link(char *refparam, struct dmctx *ctx, void *data, char **instancep
 	char *instance_update = NULL;
 	struct uci_section *dmmap_ptm=NULL;
 
+	check_create_dmmap_package("dmmap_dsl");
 	instance = get_last_instance_icwmpd("dmmap_dsl", "ptm-device", "ptmlinkinstance");
 	dmasprintf(&ptm_device, "ptm%d", instance ? atoi(instance) : 0);
 	dmasprintf(&instance_update, "%d", instance ? atoi(instance)+ 1 : 1);
@@ -1124,5 +1126,6 @@ int browsePtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_ptm_args, wnum) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }

@@ -454,6 +454,7 @@ int add_profile_object(char *refparam, struct dmctx *ctx, void *data, char **ins
 	char *add_value, *instance, *max_instance, *v;
 	struct uci_section *voice_profile_section= NULL, *dmmap_voice_section= NULL;
 	
+	check_create_dmmap_package("dmmap_voice_client");
 	sipidx = get_cfg_sipidx();
 	sprintf(sname, "sip%d", sipidx);
 	sprintf(account, "Account %d", sipidx);
@@ -648,6 +649,8 @@ int add_line_object(char *refparam, struct dmctx *ctx, void *data, char **instan
 	struct sip_args *sipargs = (struct sip_args *)data;
 	struct uci_section *dmmap_voice_line_section, *dmmap_section;
 	int last_instance;
+
+	check_create_dmmap_package("dmmap_voice_client");
 	i = get_line_max_instance(&s);
 	if (i == 0)
 		return FAULT_9004;
