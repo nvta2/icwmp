@@ -223,6 +223,35 @@ int get_upload_diagnostic_tcp_open_response_time(char *refparam, struct dmctx *c
 	return 0;
 }
 
+int set_upload_diagnostics_dscp (char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	char *tmp;
+	struct uci_section *curr_section = NULL;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			UPLOAD_DIAGNOSTIC_STOP
+			curr_section = dmuci_walk_state_section("cwmp", "uploaddiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			if(!curr_section)
+			{
+				dmuci_add_state_section("cwmp", "uploaddiagnostic", &curr_section, &tmp);
+			}
+			dmuci_set_varstate_value("cwmp", "@uploaddiagnostic[0]", "DSCP", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_upload_diagnostics_dscp (char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_varstate_string("cwmp", "@uploaddiagnostic[0]", "DSCP", value);
+	if ((*value)[0] == '\0')
+		*value = "0";
+	return 0;
+}
+
 int entry_method_root_Upload_Diagnostics(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"UploadDiagnostics.") {
@@ -231,7 +260,7 @@ int entry_method_root_Upload_Diagnostics(struct dmctx *ctx)
 		//DMPARAM("Interface", ctx, "1", get_upload_diagnostics_interface, set_upload_diagnostics_interface, NULL, 0, 1, UNDEF, NULL); //TODO
 		DMPARAM("UploadURL", ctx, "1", get_upload_diagnostics_url, set_upload_diagnostics_url, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("TestFileLength", ctx, "1", get_upload_diagnostic_test_file_length, set_upload_diagnostic_test_file_length, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		//DMPARAM("DSCP", ctx, "1", get_upload_diagnostics_dscp, set_upload_diagnostics_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("DSCP", ctx, "1", get_upload_diagnostics_dscp, set_upload_diagnostics_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("EthernetPriority", ctx, "1", get_upload_diagnostics_ethernet_priority, set_upload_diagnostics_ethernet_priority, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("ROMTime", ctx, "0", get_upload_diagnostic_romtime, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
 		DMPARAM("BOMTime", ctx, "0", get_upload_diagnostic_bomtime, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);

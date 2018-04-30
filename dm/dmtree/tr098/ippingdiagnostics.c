@@ -227,6 +227,31 @@ int get_ipping_max_response_time(char *refparam, struct dmctx *ctx, char **value
 	return 0;
 }
 
+int get_ipping_dscp (char *refparam, struct dmctx *ctx, char **value)
+{
+	*value = ipping_get("DSCP", "0");
+	return 0;
+}
+
+int set_ipping_dscp (char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	char *tmp;
+	struct uci_section *curr_section = NULL;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			IPPING_STOP
+			curr_section = dmuci_walk_state_section("cwmp", "ippingdiagnostic", NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION);
+			if(!curr_section)
+			{
+				dmuci_add_state_section("cwmp", "ippingdiagnostic", &curr_section, &tmp);
+			}
+			dmuci_set_varstate_value("cwmp", "@ippingdiagnostic[0]", "DSCP", value);
+	}
+	return 0;
+}
+
 int entry_method_root_IPPingDiagnostics(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"IPPingDiagnostics.") {
@@ -237,7 +262,7 @@ int entry_method_root_IPPingDiagnostics(struct dmctx *ctx)
 		DMPARAM("NumberOfRepetitions", ctx, "1", get_ipping_repetition_number, set_ipping_repetition_number, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("Timeout", ctx, "1", get_ipping_timeout, set_ipping_timeout, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("DataBlockSize", ctx, "1", get_ipping_block_size, set_ipping_block_size, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
-		//DMPARAM("DSCP", ctx, "1", get_ipping_dscp, set_ipping_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("DSCP", ctx, "1", get_ipping_dscp, set_ipping_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("SuccessCount", ctx, "0", get_ipping_success_count, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("FailureCount", ctx, "0", get_ipping_failure_count, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("AverageResponseTime", ctx, "0", get_ipping_average_response_time, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
