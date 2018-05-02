@@ -59,7 +59,7 @@ int http_client_init(struct cwmp *cwmp)
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
 #ifdef HTTP_CURL
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
-		uci_get_value(UCI_DHCP_ACS_URL, &acs_var_stat);
+		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
 		if (asprintf(&http_c.url, "%s",
 				acs_var_stat) == -1)
 				return -1;
