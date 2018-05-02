@@ -3510,36 +3510,11 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
                 }
                 else
                 {
-                	bkp_session_insert_transfer_complete(ptransfer_complete);
-                    bkp_session_save();
-                    //external_apply("download", pdownload->file_type); !!!
-                    external_handle_action(cwmp_handle_uploadFault); //IBH TO ADD
-                    external_fetch_uploadFaultResp(&fault_code); //IBH TO ADD
-                    if(fault_code != NULL)
-                    {
-                        if(fault_code[0]=='9')
-                        {
-                            for(i=1;i<__FAULT_CPE_MAX;i++)
-                            {
-                                if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0)
-                                {
-                                    error = i;
-                                    break;
-                                }
-                            }
-                        }
-                        free(fault_code);
-                        if((error == FAULT_CPE_NO_FAULT) &&
-                            (pupload->file_type[0] == '1' || pupload->file_type[0] == '3')) //IBH TO ADD
-                        {
-                            exit(EXIT_SUCCESS);
-                        }
-                        bkp_session_delete_transfer_complete(ptransfer_complete);
-                        ptransfer_complete->fault_code = error;
-                        bkp_session_insert_transfer_complete(ptransfer_complete);
-                        bkp_session_save();
-                        cwmp_root_cause_TransferComplete (cwmp,ptransfer_complete);
-                    }
+					bkp_session_delete_transfer_complete(ptransfer_complete);
+					ptransfer_complete->fault_code = error;
+					bkp_session_insert_transfer_complete(ptransfer_complete);
+					bkp_session_save();
+					cwmp_root_cause_TransferComplete (cwmp,ptransfer_complete);
                 }
                 external_exit();
                 pthread_mutex_unlock (&(cwmp->mutex_session_send));

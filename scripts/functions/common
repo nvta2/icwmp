@@ -5,29 +5,39 @@
 #  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 
 icwmp_fault_output() {
-	
-	local MSG=""
-	local fault_code="$2"
-	if [ "$action" = "apply_du_download" ] 
-	then
-		local package_name="$3"
-		local package_version="$4"
-	fi
-	case "$action" in
-		*download)
-		json_init
-		json_add_string "fault_code" "$fault_code"
-		if [ "$#" = "4" ] 
-		then 
-			json_add_string "package_name" "$package_name"
-			json_add_string "package_version" "$package_version" 
-		fi
-		json_close_object
-		MSG=`json_dump`
-		;;
-	esac
-	
-	echo "$MSG"
+
+        local MSG=""
+        local fault_code="$2"
+        if [ "$action" = "apply_du_download" ]
+        then
+                local package_name="$3"
+                local package_version="$4"
+        fi
+        case "$action" in
+                *download)
+                json_init
+                json_add_string "fault_code" "$fault_code"
+                if [ "$#" = "4" ]
+                then
+                        json_add_string "package_name" "$package_name"
+                        json_add_string "package_version" "$package_version"
+                fi
+                json_close_object
+                MSG=`json_dump`
+                ;;
+                *upload)
+                json_init
+                json_add_string "fault_code" "$fault_code"
+                if [ "$#" = "4" ]
+                then
+                        json_add_string "package_name" "$package_name"
+                        json_add_string "package_version" "$package_version"
+                fi
+                json_close_object
+                MSG=`json_dump`
+                ;;
+        esac
+        echo "$MSG"
 }
 
 
