@@ -331,12 +331,12 @@ handle_action() {
 					$UCI_EXPORT "$__arg5" > "/tmp/${__arg5}"
 				fi
 				if [ "$__arg3" = "" -o "$__arg4" = "" ];then
-						curl -T "/tmp/${__arg5}" "$__arg1" 2> /dev/null
-						if [ "$?" != "0" ];then
+					curl -T "/tmp/${__arg5}" "$__arg1" 2> /dev/null
+					if [ "$?" != "0" ];then
 						let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
 						icwmp_fault_output "" "$fault_code"
 						return 1
-				fi
+					fi
 				else
 					curl -T "/tmp/${__arg5}" -u $__arg3:$__arg4 "$__arg1" 2> /dev/null
 					if [ "$?" != "0" ];then
@@ -354,12 +354,12 @@ handle_action() {
 					return 1
 				fi
 				if [ "$__arg3" = "" -o "$__arg4" = "" ];then
-						curl -T "$flname" "$__arg1" 2> /dev/null
-						if [ "$?" != "0" ];then
-							let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
-							icwmp_fault_output "" "$fault_code"
-							return 1
-						fi
+					curl -T "$flname" "$__arg1" 2> /dev/null
+					if [ "$?" != "0" ];then
+						let fault_code=$fault_code+$FAULT_CPE_UPLOAD_FAILURE
+						icwmp_fault_output "" "$fault_code"
+						return 1
+					fi
 				else
 					curl -T "$flname" -u $__arg3:$__arg4 "$__arg1" 2> /dev/null
 					if [ "$?" != "0" ];then
