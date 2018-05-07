@@ -24,6 +24,7 @@ FAULT_CPE_DOWNLOAD_FAILURE="10"
 FAULT_CPE_UPLOAD_FAILURE="11"
 FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER="15"
 FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED="18"
+FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION="19"
 
 for ffile in `ls /usr/share/icwmp/functions/`; do
 . /usr/share/icwmp/functions/$ffile
@@ -249,8 +250,12 @@ handle_action() {
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
 				icwmp_fault_output "" "$fault_code"
 				return 1
+			elif [ "$resp" == "401" ];then
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION
+				icwmp_fault_output "" "$fault_code"
+				return 1
 			elif [ "$resp" != "200" ];then
--				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
 				icwmp_fault_output "" "$fault_code"
 				return 1
 			fi
@@ -267,6 +272,10 @@ handle_action() {
 			resp=`echo $resp| awk '{print $NF}'`
 			if [ "$resp" == "404" ];then
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
+				icwmp_fault_output "" "$fault_code"
+				return 1
+			elif [ "$resp" == "401" ];then
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION
 				icwmp_fault_output "" "$fault_code"
 				return 1
 			elif [ "$resp" != "200" ];then
