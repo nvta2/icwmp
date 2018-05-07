@@ -71,6 +71,7 @@ int cwmp_get_int_event_code(char *code)
 	else 
 		return EVENT_IDX_6CONNECTION_REQUEST;
 }
+
 struct rpc *cwmp_add_session_rpc_acs (struct session *session, int type)
 {
     struct rpc     *rpc_acs;

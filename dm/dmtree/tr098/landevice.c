@@ -3665,6 +3665,7 @@ int browseIPInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_d
 		SUBENTRY(entry_landevice_dhcpstaticaddress_instance, ctx, idev, idhcp);
 		}*/
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 

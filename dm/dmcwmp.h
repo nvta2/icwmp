@@ -508,6 +508,7 @@ void dm_update_enabled_notify_byname(char *name, char *new_value);
 char *get_last_instance(char *package, char *section, char *opt_inst);
 char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst);
 char *get_last_instance_lev2(char *package, char *section, char *opt_inst, char *opt_check, char *value_check);
+char *get_last_instance_lev2_icwmpd(char *package, char *section, char* dmmap_package, char *opt_inst, char *opt_check, char *value_check);
 char *handle_update_instance(int instance_ranck, struct dmctx *ctx, char **last_inst, char * (*up_instance)(int action, char **last_inst, void *argv[]), int argc, ...);
 int dm_add_end_session(struct dmctx *ctx, void(*function)(struct execute_end_session *), int action, void *data);
 int apply_end_session();

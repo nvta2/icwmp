@@ -574,6 +574,22 @@ char *get_last_instance(char *package, char *section, char *opt_inst)
 	return inst;
 }
 
+char *get_last_instance_lev2_icwmpd(char *package, char *section, char* dmmap_package, char *opt_inst, char *opt_check, char *value_check)
+{
+	struct uci_section *s, *dmmap_section;
+	char *instance = NULL;
+	char *last_inst = NULL;
+
+	uci_foreach_option_cont(package, section, opt_check, value_check, s) {
+		get_dmmap_section_of_config_section(dmmap_package, section, section_name(s), &dmmap_section);
+		instance = update_instance_icwmpd(dmmap_section, last_inst, opt_inst);
+		if(last_inst)
+			dmfree(last_inst);
+		last_inst = dmstrdup(instance);
+	}
+	return instance;
+}
+
 char *get_last_instance_lev2(char *package, char *section, char *opt_inst, char *opt_check, char *value_check)
 {
 	struct uci_section *s;
