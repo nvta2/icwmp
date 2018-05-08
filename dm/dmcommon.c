@@ -1052,6 +1052,46 @@ void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *sec
 	}
 }
 
+void synchronize_specific_config_sections_with_dmmap_cont(char *package, char *section_type, char *dmmap_package,char* option_name, char* option_value, struct list_head *dup_list)
+{
+	struct uci_section *s, *stmp, *dmmap_sect;
+	FILE *fp;
+	char *v, *dmmap_file_path;
+
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+	uci_foreach_option_cont(package, section_type, option_name, option_value, s) {
+		/*
+		 * create/update corresponding dmmap section that have same config_section link and using param_value_array
+		 */
+		if ((dmmap_sect = get_dup_section_in_dmmap(dmmap_package, section_type, section_name(s))) == NULL) {
+			dmuci_add_section_icwmpd(dmmap_package, section_type, &dmmap_sect, &v);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section_name", section_name(s));
+		}
+
+		/*
+		 * Add system and dmmap sections to the list
+		 */
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect);
+	}
+
+	/*
+	 * Delete unused dmmap sections
+	 */
+	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
+		dmuci_get_value_by_section_string(s, "section_name", &v);
+		if(get_origin_section_from_config(package, section_type, v) == NULL){
+			dmuci_delete_by_section(s, NULL, NULL);
+		}
+	}
+}
+
 void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
 	struct uci_section* s;
 
@@ -1060,6 +1100,18 @@ void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type
 		return;
 	}
 	*dmmap_section= NULL;
+}
+
+void get_config_section_of_dmmap_section(char* package, char* section_type, char *section_name, struct uci_section **config_section){
+	struct uci_section* s;
+
+	uci_foreach_sections(package, section_type, s){
+		if(strcmp(section_name(s), section_name)==0){
+			*config_section= s;
+			return;
+		}
+	}
+	*config_section= NULL;
 }
 
 void check_create_dmmap_package(char *dmmap_package){
