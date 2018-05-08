@@ -648,14 +648,16 @@ int delete_landevice_dhcpstaticaddress(char *refparam, struct dmctx *ctx, void *
 
 int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char ssid[16] = {0};
 	char *instance;
-	struct uci_section *s = NULL;
+	struct uci_section *s = NULL, *dmmap_wireless_wlanconfig;
 	struct ldlanargs *lanargs = (struct ldlanargs *)data;
 	char *lan_name = section_name(lanargs->ldlansection);
 	
-	instance = get_last_instance_lev2("wireless", "wifi-iface", "lwlaninstance", "network", lan_name);
+	check_create_dmmap_package("dmmap_wireless");
+
+	instance = get_last_instance_lev2_icwmpd("wireless", "wifi-iface", "dmmap_wireless", "lwlaninstance", "network", lan_name);
 	sprintf(ssid, "Inteno_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
 	dmuci_add_section("wireless", "wifi-iface", &s, &value);
 	dmuci_set_value_by_section(s, "device", "wl0");
@@ -664,7 +666,11 @@ int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *dat
 	dmuci_set_value_by_section(s, "mode", "ap");
 	dmuci_set_value_by_section(s, "network", lan_name);
 	dmuci_set_value_by_section(s, "ssid", ssid);
-	*instancepara = update_instance(s, instance, "lwlaninstance");
+
+	dmuci_add_section_icwmpd("dmmap_wireless", "wifi-iface", &dmmap_wireless_wlanconfig, &v);
+	dmuci_set_value_by_section(dmmap_wireless_wlanconfig, "section_name", section_name(s));
+	*instancepara = update_instance_icwmpd(dmmap_wireless_wlanconfig, instance, "lwlaninstance");
+
 	return 0;
 }
 
@@ -673,26 +679,34 @@ int delete_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *
 	int found = 0;
 	char *lan_name;
 	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL;
+	struct uci_section *ss = NULL, *dmmap_section= NULL;
 	struct ldlanargs *lanargs;
 	struct ldwlanargs *wlanargs;
 	
 	switch (del_action) {
 		case DEL_INST:
 			wlanargs = (struct ldwlanargs *)data;
+			get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(wlanargs->lwlansection), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(wlanargs->lwlansection, NULL, NULL);
 			return 0;
 		case DEL_ALL:
 			lanargs = (struct ldlanargs *)data;
 			lan_name = section_name(lanargs->ldlansection);
 			uci_foreach_option_eq("wireless", "wifi-iface", "network", lan_name, s) {
-				if (found != 0)
-						dmuci_delete_by_section(ss, NULL, NULL);
+				if (found != 0){
+					get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(ss), &dmmap_section);
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
 				ss = s;
 				found++;
 			}
-			if (ss != NULL)
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(ss), &dmmap_section);
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			return 0;
 	}
 	return 0;
@@ -3370,17 +3384,23 @@ int set_dhcp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance
 
 int get_wlan_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct ldwlanargs *)data)->lwlansection, "lwlanalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(((struct ldwlanargs *)data)->lwlansection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "lwlanalias", value);
 	return 0;
 }
 
 int set_wlan_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_wireless", "wifi-iface", section_name(((struct ldwlanargs *)data)->lwlansection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct ldwlanargs *)data)->lwlansection, "lwlanalias", value);
+			dmuci_set_value_by_section(dmmap_section, "lwlanalias", value);
 			return 0;
 	}
 	return 0;
@@ -3717,31 +3737,38 @@ int browseWlanConfigurationInst(struct dmctx *dmctx, DMNODE *parent_node, void *
 	struct uci_section *sss = NULL;
 	json_object *res;
 	char *iwlan = NULL, *iwlan_last = NULL;
-	char *network , *wiface, buf[8], *lan_sec;
+	char *network , *wiface, buf[8], *lan_sec, *wifi_iface_device;
 	struct ldlanargs *lanargs = (struct ldlanargs *)prev_data;
 	struct ldwlanargs curr_wlanargs = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
 	lan_sec = section_name(lanargs->ldlansection);
 	iwlan = get_last_instance_lev2("wireless", "wifi-iface", "lwlaninstance", "network", lan_sec);
+	synchronize_specific_config_sections_with_dmmap("wireless", "wifi-iface", "dmmap_wireless", &dup_list);
 	uci_foreach_sections("wireless", "wifi-device", ss) {
 		int wlctl_num=0;
-		uci_foreach_option_eq("wireless", "wifi-iface", "device", section_name(ss), sss) {
-			dmuci_get_value_by_section_string(sss, "network", &network);
+		list_for_each_entry(p, &dup_list, list) {
+			dmuci_get_value_by_section_string(p->config_section, "device", &wifi_iface_device);
+			if(strcmp(wifi_iface_device, section_name(ss)) != 0) continue;
+		//uci_foreach_option_eq("wireless", "wifi-iface", "device", section_name(ss), sss) {
+			dmuci_get_value_by_section_string(p->config_section, "network", &network);
 			if (strcmp(network, lan_sec) != 0)
 				continue;
-			iwlan = handle_update_instance(2, dmctx, &iwlan_last, update_instance_alias, 3, sss, "lwlaninstance", "lwlanalias");
+			iwlan = handle_update_instance(2, dmctx, &iwlan_last, update_instance_alias, 3, p->dmmap_section, "lwlaninstance", "lwlanalias");
 			wiface = section_name(ss);
 			if (wlctl_num != 0) {
 				sprintf(buf, "%s.%d", wiface, wlctl_num);
 				wiface = buf;
 			}
 			dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", wiface, String}}, 1, &res);
-			init_ldargs_wlan(&curr_wlanargs, sss, wlctl_num, ss, section_name(ss), wiface, res, 0);
+			init_ldargs_wlan(&curr_wlanargs, p->config_section, wlctl_num, ss, section_name(ss), wiface, res, 0);
 			wlctl_num++;
 			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_wlanargs, iwlan) == DM_STOP)
 				goto end;
 		}
 	}
+	free_dmmap_config_dup_list(&dup_list);
 end:
 	return 0;
 }
