@@ -594,10 +594,14 @@ char *get_last_instance_lev2_icwmpd(char *package, char *section, char* dmmap_pa
 {
 	struct uci_section *s, *dmmap_section;
 	char *instance = NULL;
-	char *last_inst = NULL;
+	char *last_inst = NULL, *v= NULL;
 
 	uci_foreach_option_cont(package, section, opt_check, value_check, s) {
 		get_dmmap_section_of_config_section(dmmap_package, section, section_name(s), &dmmap_section);
+		if(dmmap_section == NULL){
+			dmuci_add_section_icwmpd(dmmap_package, package, &dmmap_section, &v);
+			dmuci_set_value_by_section(dmmap_section, "section_name", section_name(s));
+		}
 		instance = update_instance_icwmpd(dmmap_section, last_inst, opt_inst);
 		if(last_inst)
 			dmfree(last_inst);

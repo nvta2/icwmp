@@ -602,16 +602,19 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 
 int add_landevice_dhcpstaticaddress(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char *instance;
-	struct uci_section *s = NULL;
+	struct uci_section *s = NULL, *dmmap_dhcpstcaddress;
 	struct ldlanargs *lanargs = (struct ldlanargs *)data;
 	char *lan_name = section_name(lanargs->ldlansection);
 	
-instance = get_last_instance_lev2("dhcp", "host", "ldhcpinstance", "dhcp", lan_name);
+	check_create_dmmap_package("dmmap_dhcp");
+	instance = get_last_instance_lev2_icwmpd("dhcp", "host", "dmmap_dhcp", "ldhcpinstance", "dhcp", lan_name);
 	dmuci_add_section("dhcp", "host", &s, &value);
 	dmuci_set_value_by_section(s, "dhcp", lan_name);
-	*instancepara = update_instance(s, instance, "ldhcpinstance");
+	dmuci_add_section_icwmpd("dmmap_dhcp", "host", &dmmap_dhcpstcaddress, &v);
+	dmuci_set_value_by_section(dmmap_dhcpstcaddress, "section_name", section_name(s));
+	*instancepara = update_instance_icwmpd(dmmap_dhcpstcaddress, instance, "ldhcpinstance");
 	return 0;
 }
 
@@ -622,24 +625,32 @@ int delete_landevice_dhcpstaticaddress(char *refparam, struct dmctx *ctx, void *
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct ldlanargs *lanargs;
-	struct uci_section *lddhcpsection;
+	struct uci_section *lddhcpsection, *dmmap_section;
 	
 	switch (del_action) {
 		case DEL_INST:
 			lddhcpsection = (struct uci_section *)data;
+			get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(lddhcpsection), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(lddhcpsection, NULL, NULL);
 			return 0;
 		case DEL_ALL:
 			lanargs = (struct ldlanargs *)data;
 			lan_name = section_name(lanargs->ldlansection);
 			uci_foreach_option_eq("dhcp", "host", "dhcp", lan_name, s) {
-				if (found != 0)
+				if (found != 0){
+					get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(ss), &dmmap_section);
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
+				}
 				ss = s;
 				found++;
 			}
-			if (ss != NULL)
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(ss), &dmmap_section);
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			return 0;
 	}
 	return 0;
@@ -3365,18 +3376,24 @@ int set_lan_ip_int_alias(char *refparam, struct dmctx *ctx, void *data, char *in
 int get_dhcp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *lddhcpsection = (struct uci_section *)data;
-	dmuci_get_value_by_section_string(lddhcpsection, "ldhcpalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(lddhcpsection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "ldhcpalias", value);
 	return 0;
 }
 
 int set_dhcp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *lddhcpsection = (struct uci_section *)data;
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(lddhcpsection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(lddhcpsection, "ldhcpalias", value);
+			dmuci_set_value_by_section(dmmap_section, "ldhcpalias", value);
 			return 0;
 	}
 	return 0;
@@ -3691,20 +3708,28 @@ int browseIPInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_d
 
 int browseDhcp_static_addressInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *ss = NULL;
-	struct uci_section *sss = NULL;
 	char *ilan = NULL, *ilan_last = NULL;
 	char *idhcp = NULL, *idhcp_last = NULL;
 	struct ldlanargs *lanargs = (struct ldlanargs *)prev_data;
+	struct dmmap_dup *p, *p1;
+	LIST_HEAD(dup_list);
+	LIST_HEAD(dup_list_dhcp);
 
-	uci_foreach_filter_func("network", "interface", lanargs->ldlansection, filter_lan_ip_interface, ss) {
-		ilan = handle_update_instance(2, dmctx, &ilan_last, update_instance_alias, 3, ss, "lipinstance", "lipalias");
-		uci_foreach_option_cont("dhcp", "host", "dhcp", section_name(ss), sss) {
-			idhcp = handle_update_instance(2, dmctx, &idhcp_last, update_instance_alias, 3, sss, "ldhcpinstance", "ldhcpalias");
-			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)sss, idhcp) == DM_STOP)
+	synchronize_specific_config_sections_with_dmmap("network", "interface", "dmmap_network", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+
+		if(filter_lan_ip_interface(p->config_section, lanargs->ldlansection) != 0) continue;
+
+		ilan = handle_update_instance(2, dmctx, &ilan_last, update_instance_alias, 3, p->dmmap_section, "lipinstance", "lipalias");
+		synchronize_specific_config_sections_with_dmmap_cont("dhcp", "host", "dmmap_dhcp", "dhcp", section_name(p->config_section), &dup_list_dhcp);
+		list_for_each_entry(p1, &dup_list_dhcp, list) {
+			idhcp = handle_update_instance(2, dmctx, &idhcp_last, update_instance_alias, 3, p1->dmmap_section, "ldhcpinstance", "ldhcpalias");
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p1->config_section, idhcp) == DM_STOP)
 				goto end;
 		}
+		free_dmmap_config_dup_list(&dup_list_dhcp);
 	}
+	free_dmmap_config_dup_list(&dup_list);
 end:
 	return 0;
 }
