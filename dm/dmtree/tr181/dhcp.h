@@ -23,6 +23,14 @@ struct dhcp_static_args
 	struct uci_section *dhcpsection;
 };
 
+struct dhcp_option_args
+{
+	struct uci_section *dhcpoptionsection;
+	struct uci_section *dhcppoolsection;
+	char *poolinstance;
+	char *poolinterface;
+};
+
 struct client_args
 {
 	json_object *client;

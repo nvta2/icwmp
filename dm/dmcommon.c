@@ -28,37 +28,6 @@
 #include "dmcommon.h"
 #include "dmjson.h"
 
-int set_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char *option, char *value)
-{
-	struct uci_list *v;
-	struct uci_element *e, *tmp;
-	char *pch, *spch, bufopt[8];
-	int len = 0;
-	if (value == NULL)
-		return -1;
-
-	dmuci_get_value_by_section_list(s, "dhcp_option", &v);
-	if (v != NULL) {
-		uci_foreach_element(v, e) {
-			pch = strchr(e->name, ',');
-			if (pch) {
-				len = pch - e->name;
-				strncpy(bufopt, e->name, len);
-				bufopt[len] = '\0';
-				if (strcmp(bufopt, option) == 0) {
-					dmuci_del_list_value_by_section(s, "dhcp_option", e->name);
-					break;
-				}
-			}
-		}
-	}
-	if (value[0] != '\0') {
-		dmasprintf(&spch, "%s,%s", option, value);
-		dmuci_add_list_value_by_section(s, "dhcp_option", spch);
-	}
-	return 0;
-}
-
 int update_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char *option, char *new_option, char *value)
 {
 	struct uci_list *v;
@@ -67,7 +36,6 @@ int update_uci_dhcpserver_option(struct dmctx *ctx, struct uci_section *s, char 
 	int len = 0;
 	if (value == NULL)
 		return -1;
-
 	dmuci_get_value_by_section_list(s, "dhcp_option", &v);
 	if (v != NULL) {
 		uci_foreach_element(v, e) {
@@ -780,5 +748,63 @@ int check_ifname_is_vlan(char *ifname)
 	pch = strrchr(ifname, '.');
 	if (pch && atoi(pch+1) >= 2)
 		return 1;
+	return 0;
+}
+
+int get_uci_dhcpserver_option(struct uci_section *s, char *option, char *value)
+{
+	struct uci_list *v;
+	struct uci_element *e;
+	char *pch;
+	char bufopt[8];
+	int len = 0;
+
+	dmuci_get_value_by_section_list(s, "dhcp_option", &v);
+	if (v == NULL)
+		return -1;
+	uci_foreach_element(v, e) {
+		pch = strchr(e->name, ',');
+		if (pch) {
+			len = pch - e->name;
+			strncpy(bufopt, e->name, len);
+			bufopt[len] = '\0';
+			if (strcmp(bufopt, option) == 0) {
+				strcpy(value, pch + 1);
+				return 0;
+			}
+		}
+	}
+	return -1;
+}
+
+int set_uci_dhcpserver_option(struct uci_section *s, char *option, char *value)
+{
+	struct uci_list *v;
+	struct uci_element *e;
+	char *pch, bufopt[8];
+	int len = 0;
+
+	if (value == NULL)
+		return -1;
+
+	dmuci_get_value_by_section_list(s, "dhcp_option", &v);
+	if (v != NULL) {
+		uci_foreach_element(v, e) {
+			pch = strchr(e->name, ',');
+			if (pch) {
+				len = pch - e->name;
+				strncpy(bufopt, e->name, len);
+				bufopt[len] = '\0';
+				if (strcmp(bufopt, option) == 0) {
+					dmuci_del_list_value_by_section(s, "dhcp_option", e->name);
+					break;
+				}
+			}
+		}
+	}
+	if (value[0] != '\0') {
+		dmasprintf(&pch, "%s,%s", option, value);
+		dmuci_add_list_value_by_section(s, "dhcp_option", pch);
+	}
 	return 0;
 }
