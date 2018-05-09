@@ -410,13 +410,13 @@ int check_multiwan_interface(struct uci_section *interface_section, char *fwan)
 }
 
 /****** ADD-DEL OBJECT *******************/
-char *get_last_instance_proto(char *package, char *section, char *opt_inst, char *opt_check, char *value_check, char *opt_check1, int value_check1)
+char *get_last_instance_proto(char *dmmap_package, char *package, char *section, char *opt_inst, char *opt_check, char *value_check, char *opt_check1, int value_check1)
 {
-	struct uci_section *s;
+	struct uci_section *s, *dmmap_section;
 	char *instance = NULL;
-	char *value = NULL;
+	char *value = NULL, *v= NULL;
 	int proto = -1;
-	
+
 	uci_foreach_option_cont(package, section, opt_check, value_check, s) {
 		dmuci_get_value_by_section_string(s, opt_check1, &value);
 		if (strstr(value, "ppp"))
@@ -425,8 +425,14 @@ char *get_last_instance_proto(char *package, char *section, char *opt_inst, char
 			proto = WAN_PROTO_IP;
 		else
 			proto = WAN_PROTO_NIL;
+
 		if (proto == value_check1) {
-			instance = update_instance(s, instance, opt_inst);
+			get_dmmap_section_of_config_section(dmmap_package, section, section_name(s), &dmmap_section);
+			if(dmmap_section == NULL){
+				dmuci_add_section_icwmpd(dmmap_package, section, &dmmap_section, &v);
+				dmuci_set_value_by_section(dmmap_section, "section_name", section_name(s));
+			}
+			instance = update_instance_icwmpd(dmmap_section, instance, opt_inst);
 		}		
 	}
 	return instance;
@@ -552,9 +558,11 @@ int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char 
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 	char sname[16] = {0};
 	char ifname[8] = {0};
-	char *instance;
+	char *instance, *v;
+	struct uci_section *dmmap_wanip;
 	
-	instance = get_last_instance_proto("network", "interface", "conipinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_IP);
+	check_create_dmmap_package("dmmap_network");
+	instance = get_last_instance_proto("dmmap_network", "network", "interface", "conipinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_IP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1); //MEM WILL BE FREED IN DMMEMCLEAN
 #ifdef EX400
 	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
@@ -566,7 +574,10 @@ int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char 
 	dmuci_set_value("network", sname, NULL, "interface");
 	dmuci_set_value("network", sname, "ifname", ifname);
 	dmuci_set_value("network", sname, "proto", "dhcp");
-	dmuci_set_value("network", sname, "conipinstance", *instancepara);
+
+	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_wanip, &v);
+	dmuci_set_value_by_section(dmmap_wanip, "section_name", sname);
+	dmuci_set_value_by_section(dmmap_wanip, "conipinstance", *instancepara);
 	return 0;
 }
 
@@ -574,11 +585,13 @@ int delete_wan_wanipconnectiondevice(char *refparam, struct dmctx *ctx, void *da
 {
 	char *ifname, *iproto;
 	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL;
+	struct uci_section *ss = NULL, *dmmap_section= NULL;
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(wandcdevargs->wancprotosection), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(wandcdevargs->wancprotosection, NULL, NULL);
 			return 0;
 		case DEL_ALL:
@@ -586,13 +599,19 @@ int delete_wan_wanipconnectiondevice(char *refparam, struct dmctx *ctx, void *da
 			uci_foreach_option_eq("network", "interface", "ifname", ifname, s) {
 				dmuci_get_value_by_section_string(s, "proto", &iproto);
 				if (strcmp(iproto, "dhcp") == 0 || strcmp(iproto, "static") == 0) {
-					if (ss)
+					if (ss){
+						get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 						dmuci_delete_by_section(ss, NULL, NULL);
+					}
 					ss = s;
 				}
 			}
-			if (ss != NULL)
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			return 0;
 	}
 	return 0;
@@ -603,9 +622,11 @@ int add_wan_wanpppconnection(char *refparam, struct dmctx *ctx, void *data, char
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 	char sname[16] = {0};
 	char ifname[8] = {0};
-	char *instance;
+	char *instance, *v;
+	struct uci_section *dmmap_wanip;
 
-	instance = get_last_instance_proto("network", "interface", "conpppinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_PPP);
+	check_create_dmmap_package("dmmap_network");
+	instance = get_last_instance_proto("dmmap_network", "network", "interface", "conpppinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_PPP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1);
 #ifdef EX400
 	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WANPPPConnection, *instancepara);
@@ -617,7 +638,10 @@ int add_wan_wanpppconnection(char *refparam, struct dmctx *ctx, void *data, char
 	dmuci_set_value("network", sname, NULL, "interface");
 	dmuci_set_value("network", sname, "ifname", ifname);
 	dmuci_set_value("network", sname, "proto", "pppoe");
-	dmuci_set_value("network", sname, "conpppinstance", *instancepara); //MEM WILL BE FREED IN DMMEMCLEAN
+
+	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_wanip, &v);
+	dmuci_set_value_by_section(dmmap_wanip, "section_name", sname);
+	dmuci_set_value_by_section(dmmap_wanip, "conpppinstance", *instancepara);
 	return 0;
 }
 
@@ -626,11 +650,13 @@ int delete_wan_wanpppconnectiondevice(char *refparam, struct dmctx *ctx, void *d
 	int found = 0;
 	char *ifname, *iproto;
 	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL;
+	struct uci_section *ss = NULL, *dmmap_section= NULL;
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 
 	switch (del_action) {
 			case DEL_INST:
+				get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(wandcdevargs->wancprotosection), &dmmap_section);
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(wandcdevargs->wancprotosection, NULL, NULL);
 				return 0;
 			case DEL_ALL:
@@ -638,13 +664,19 @@ int delete_wan_wanpppconnectiondevice(char *refparam, struct dmctx *ctx, void *d
 				uci_foreach_option_eq("network", "interface", "ifname", ifname, s) {
 					dmuci_get_value_by_section_string(s, "proto", &iproto);
 					if (strstr(iproto, "ppp")) { //CHECK IF WE CAN OPTIMISE AND IF iproto can be pppoa
-						if (ss)
+						if (ss){
+							get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+							dmuci_delete_by_section(dmmap_section, NULL, NULL);
 							dmuci_delete_by_section(ss, NULL, NULL);
+						}
 						ss = s;
 					}
 				}
-				if (ss != NULL)
+				if (ss != NULL){
+					get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					dmuci_delete_by_section(ss, NULL, NULL);
+				}
 				return 0;
 		}
 	return 0;
@@ -2260,17 +2292,23 @@ int set_wan_con_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int get_wan_ip_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct wanargs *)data)->wancprotosection, "conipalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct wanargs *)data)->wancprotosection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "conipalias", value);
 	return 0;
 }
 
 int set_wan_ip_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct wanargs *)data)->wancprotosection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct wanargs *)data)->wancprotosection, "conipalias", value);
+			dmuci_set_value_by_section(dmmap_section, "conipalias", value);
 			return 0;
 	}
 	return 0;
@@ -2278,18 +2316,23 @@ int set_wan_ip_con_alias(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int get_wan_ppp_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	struct uci_section *dmmap_section;
 
-	dmuci_get_value_by_section_string(((struct wanargs *)data)->wancprotosection, "conpppalias", value);
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct wanargs *)data)->wancprotosection), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "conpppalias", value);
 	return 0;
 }
 
 int set_wan_ppp_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct wanargs *)data)->wancprotosection), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct wanargs *)data)->wancprotosection, "conpppalias", value);
+			dmuci_set_value_by_section(dmmap_section, "conpppalias", value);
 			return 0;
 	}
 	return 0;
@@ -2514,6 +2557,9 @@ int browsewanprotocolconnectionipInst(struct dmctx *dmctx, DMNODE *parent_node, 
 	char *freq, **value;
 	json_object *res;
 	char *isrepeater;
+	struct dmmap_dup *dmdup;
+	LIST_HEAD(dup_list);
+
 	dmuci_get_option_value_string("netmode", "setup", "curmode", &isrepeater);
 	containsrepeater = strstr(isrepeater, "repeater");
 	if(containsrepeater){
@@ -2532,9 +2578,10 @@ int browsewanprotocolconnectionipInst(struct dmctx *dmctx, DMNODE *parent_node, 
 		dmasprintf(&wan_interface, "%s", curr_wanargs->fwan);
 	}
 
-	uci_foreach_option_cont("network", "interface", "ifname", wan_interface, ss) {
-		dmuci_get_value_by_section_string(ss, "proto", &p);
-		lan_name = section_name(ss);
+	synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", wan_interface, &dup_list);
+	list_for_each_entry(dmdup, &dup_list, list) {
+		dmuci_get_value_by_section_string(dmdup->config_section, "proto", &p);
+		lan_name = section_name(dmdup->config_section);
 		if (strcmp(p, "dhcp") == 0 || strcmp(p, "static") == 0)
 			proto = WAN_PROTO_IP;
 		else
@@ -2544,13 +2591,14 @@ int browsewanprotocolconnectionipInst(struct dmctx *dmctx, DMNODE *parent_node, 
 			forced_notify = 2;
 			notif_permission = false;
 		}
-		if (check_multiwan_interface(ss, curr_wanargs->fwan) != 0)
+		if (check_multiwan_interface(dmdup->config_section, curr_wanargs->fwan) != 0)
 			continue;
-		init_wancprotoargs(curr_wanargs, ss);
-		iconp = handle_update_instance(3, dmctx, &iconp_ip_last, update_instance_alias, 3, ss, "conipinstance", "conipalias");
+		init_wancprotoargs(curr_wanargs, dmdup->config_section);
+		iconp = handle_update_instance(3, dmctx, &iconp_ip_last, update_instance_alias, 3, dmdup->dmmap_section, "conipinstance", "conipalias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iconp) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -2573,6 +2621,10 @@ int browsewanprotocolconnectionpppInst(struct dmctx *dmctx, DMNODE *parent_node,
 	char *freq, **value;
 	json_object *res;
 	char *isrepeater;
+
+	struct dmmap_dup *dmdup;
+	LIST_HEAD(dup_list);
+
 	dmuci_get_option_value_string("netmode", "setup", "curmode", &isrepeater);
 	containsrepeater = strstr(isrepeater, "repeater");
 	if(containsrepeater){
@@ -2591,25 +2643,29 @@ int browsewanprotocolconnectionpppInst(struct dmctx *dmctx, DMNODE *parent_node,
 		dmasprintf(&wan_interface, "%s", curr_wanargs->fwan);
 	}
 
-	uci_foreach_option_cont("network", "interface", "ifname", wan_interface, ss) {
-		dmuci_get_value_by_section_string(ss, "proto", &p);
-		lan_name = section_name(ss);
+	synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", wan_interface, &dup_list);
+	list_for_each_entry(dmdup, &dup_list, list) {
+		dmuci_get_value_by_section_string(dmdup->config_section, "proto", &p);
+		lan_name = section_name(dmdup->config_section);
 		if (strstr(p, "ppp"))
 			proto = WAN_PROTO_PPP;
 		else
-		return 0;
+			continue;
+
 		if (strcmp(lan_name, default_wan) == 0) {
 			forced_inform_eip = true;
 			forced_notify = 2;
 			notif_permission = false;
 		}
-		if (check_multiwan_interface(ss, curr_wanargs->fwan) != 0)
+		if (check_multiwan_interface(dmdup->config_section, curr_wanargs->fwan) != 0)
 			continue;
-		init_wancprotoargs(curr_wanargs, ss);
-		iconp = handle_update_instance(3, dmctx, &iconp_ppp_last, update_instance_alias, 3, ss, "conpppinstance", "conpppalias");
+
+		init_wancprotoargs(curr_wanargs, dmdup->config_section);
+		iconp = handle_update_instance(3, dmctx, &iconp_ppp_last, update_instance_alias, 3, dmdup->dmmap_section, "conpppinstance", "conpppalias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iconp) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
