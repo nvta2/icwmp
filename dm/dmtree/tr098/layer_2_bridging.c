@@ -86,6 +86,10 @@ DMLEAF tbridge_vlanParam[] = {
 };
 
 
+void set_network_interface_bridge(struct uci_section *dmmap_bridge_section){
+	DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_bridge_section, "type", "bridge");
+}
+
 int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	int i = 0;
@@ -162,14 +166,19 @@ int browselayer2_bridgeInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 	char *bridge_instance = NULL, *bridge_instance_last = NULL;
 	struct uci_section *bridge_s;
 	struct args_layer2 curr_args = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname);
-	uci_foreach_option_eq("network", "interface", "type", "bridge", bridge_s) {
-		bridge_instance =  handle_update_instance(1, dmctx, &bridge_instance_last, update_instance_alias, 3, bridge_s, "bridge_instance", "bridge_alias");
-		init_args_layer2(&curr_args, bridge_s, NULL, NULL, bridge_instance_last, NULL, NULL);
+	synchronize_specific_config_sections_with_dmmap_eq("network", "interface", "dmmap_network", "type", "bridge", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		set_network_interface_bridge(p->dmmap_section);
+		bridge_instance =  handle_update_instance(1, dmctx, &bridge_instance_last, update_instance_alias, 3, p->dmmap_section, "bridge_instance", "bridge_alias");
+		init_args_layer2(&curr_args, p->config_section, NULL, NULL, bridge_instance_last, NULL, NULL);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, bridge_instance) == DM_STOP)
 			break;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -1113,11 +1122,13 @@ struct uci_section *update_availableinterface_list(struct dmctx *ctx, char *ifac
 
 int add_layer2bridging_bridge(char *refparam, struct dmctx *ctx, void *data, char **instance)
 {
-	char *last_instance;
+	char *last_instance, *v;
 	char bridge_name[16], ib[8];
 	char *p = bridge_name;
+	struct uci_section *dmmap_network;
 
-	last_instance = get_last_instance_lev2("network", "interface", "bridge_instance", "type", "bridge");
+	check_create_dmmap_package("dmmap_network");
+	last_instance = get_last_instance_lev2_icwmpd("network", "interface", "dmmap_network", "bridge_instance", "type", "bridge");
 	sprintf(ib, "%d", last_instance ? atoi(last_instance)+1 : 1);
 	dmstrappendstr(p, "bridge_0_");
 	dmstrappendstr(p, ib);
@@ -1125,21 +1136,25 @@ int add_layer2bridging_bridge(char *refparam, struct dmctx *ctx, void *data, cha
 	dmuci_set_value("network", bridge_name, "", "interface");
 	dmuci_set_value("network", bridge_name, "type", "bridge");
 	dmuci_set_value("network", bridge_name, "proto", "dhcp");
-	*instance = dmuci_set_value("network", bridge_name, "bridge_instance", ib);
+
+	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_network, &v);
+	dmuci_set_value_by_section(dmmap_network, "section_name", bridge_name);
+	*instance = dmuci_set_value_by_section(dmmap_network, "bridge_instance", ib);
 	return 0;
 }
 
 int delete_layer2bridging_bridge(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	struct args_layer2 *args_bridge = (struct args_layer2 *)data;
-	struct uci_section *bridge_s, *vlan_s, *prev_s = NULL;
+	struct uci_section *bridge_s, *vlan_s, *prev_s = NULL, *dmmap_section= NULL;
 	char *bridgekey = NULL, *bridge_instance;
 
 	switch (del_action) {
 		case DEL_INST:
-			dmuci_get_value_by_section_string(args_bridge->layer2section, "bridge_instance", &bridge_instance);
+			get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(args_bridge->layer2section), &dmmap_section);
+			dmuci_get_value_by_section_string(dmmap_section, "bridge_instance", &bridge_instance);
 			dmuci_set_value_by_section(args_bridge->layer2section, "type", "");
-			dmuci_set_value_by_section(args_bridge->layer2section, "bridge_instance", "");
+			DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_section, NULL, NULL);
 			uci_path_foreach_option_eq(icwmpd, "dmmap", "vlan_bridge", "bridgekey", bridge_instance, vlan_s) {
 				if (prev_s)
 					DMUCI_DELETE_BY_SECTION(icwmpd, prev_s, NULL, NULL);
@@ -1150,8 +1165,9 @@ int delete_layer2bridging_bridge(char *refparam, struct dmctx *ctx, void *data, 
 			return 0;
 		case DEL_ALL:
 			uci_foreach_option_eq("network", "interface", "type", "bridge", bridge_s) {
+				get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(bridge_s), &dmmap_section);
 				dmuci_set_value_by_section(bridge_s, "type", "");
-				dmuci_set_value_by_section(bridge_s, "bridge_instance", "");
+				DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_section, NULL, NULL);
 			}
 			uci_path_foreach_sections(icwmpd, "dmmap", "vlan_bridge", vlan_s) {
 				if(prev_s != NULL && bridgekey[0] != '\0')
@@ -1395,17 +1411,23 @@ int set_marking_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 
 int get_bridge_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct args_layer2 *)data)->layer2section, "bridge_alias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct args_layer2 *)data)->layer2section), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "bridge_alias", value);
 	return 0;
 }
 
 int set_bridge_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct args_layer2 *)data)->layer2section), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct args_layer2 *)data)->layer2section, "bridge_alias", value);
+			dmuci_set_value_by_section(dmmap_section, "bridge_alias", value);
 			return 0;
 	}
 	return 0;

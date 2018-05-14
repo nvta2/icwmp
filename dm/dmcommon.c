@@ -630,6 +630,28 @@ void update_section_option_list(char *config, char *section, char *option, char 
 	}
 }
 
+void update_section_list_icwmpd(char *config, char *section, char *option, int number, char *filter, char *option1, char *val1,  char *option2, char *val2){
+	char *add_value;
+	struct uci_section *s = NULL;
+	int i = 0;
+
+	if (option) {
+		uci_path_foreach_option_eq(icwmpd, config, section, option, filter, s) {
+			return;
+		}
+	} else {
+		uci_path_foreach_sections(icwmpd, config, section, s) {
+			return;
+		}
+	}
+	while (i < number) {
+		DMUCI_ADD_SECTION(icwmpd, config, section, &s, &add_value);
+		if (option)DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, option, filter);
+		if (option1)DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, option1, val1);
+		if (option2)DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, option2, val2);
+		i++;
+	}
+}
 
 void update_section_list(char *config, char *section, char *option, int number, char *filter, char *option1, char *val1,  char *option2, char *val2)
 {
