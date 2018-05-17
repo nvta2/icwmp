@@ -941,7 +941,7 @@ void ip_to_hex(char *address, char *ret)
 /*
  * dmmap_config sections list manipulation
  */
-void add_sectons_list_paramameter(struct list_head *dup_list, struct uci_section *config_section, struct uci_section *dmmap_section)
+void add_sectons_list_paramameter(struct list_head *dup_list, struct uci_section *config_section, struct uci_section *dmmap_section, void* additional_attribute)
 {
 	struct dmmap_dup *dmmap_config;
 	struct list_head *ilist;
@@ -950,6 +950,7 @@ void add_sectons_list_paramameter(struct list_head *dup_list, struct uci_section
 	list_add_tail(&dmmap_config->list, dup_list);
 	dmmap_config->config_section = config_section;
 	dmmap_config->dmmap_section = dmmap_section;
+	dmmap_config->additional_attribute = additional_attribute;
 }
 
 
@@ -976,8 +977,9 @@ struct uci_section *get_origin_section_from_config(char *package, char *section_
 	struct uci_section *s;
 
 	uci_foreach_sections(package, section_type, s) {
-		if (strcmp(section_name(s), orig_section_name) == 0)
+		if (strcmp(section_name(s), orig_section_name) == 0){
 			return s;
+		}
 	}
 	return NULL;
 }
@@ -1020,7 +1022,7 @@ void synchronize_specific_config_sections_with_dmmap(char *package, char *sectio
 		/*
 		 * Add system and dmmap sections to the list
 		 */
-		add_sectons_list_paramameter(dup_list, s, dmmap_sect);
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect, NULL);
 	}
 
 	/*
@@ -1060,7 +1062,7 @@ void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *sec
 		/*
 		 * Add system and dmmap sections to the list
 		 */
-		add_sectons_list_paramameter(dup_list, s, dmmap_sect);
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect, NULL);
 	}
 
 	/*
@@ -1100,7 +1102,7 @@ void synchronize_specific_config_sections_with_dmmap_cont(char *package, char *s
 		/*
 		 * Add system and dmmap sections to the list
 		 */
-		add_sectons_list_paramameter(dup_list, s, dmmap_sect);
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect, NULL);
 	}
 
 	/*
@@ -1108,12 +1110,117 @@ void synchronize_specific_config_sections_with_dmmap_cont(char *package, char *s
 	 */
 	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
 		dmuci_get_value_by_section_string(s, "section_name", &v);
+
 		if(get_origin_section_from_config(package, section_type, v) == NULL){
 			dmuci_delete_by_section(s, NULL, NULL);
 		}
 	}
 }
 
+bool synchronize_multi_config_sections_with_dmmap_eq(char *package, char *section_type, char *dmmap_package, char* dmmap_section, char* option_name, char* option_value, void* additional_attribute, struct list_head *dup_list)
+{
+	struct uci_section *s, *stmp, *dmmap_sect;
+	FILE *fp;
+	char *v, *dmmap_file_path, *pack, *sect;
+	bool found= false;
+
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+
+	uci_foreach_option_eq(package, section_type, option_name, option_value, s) {
+		found = true;
+		/*
+		 * create/update corresponding dmmap section that have same config_section link and using param_value_array
+		 */
+		if ((dmmap_sect = get_dup_section_in_dmmap(dmmap_package, dmmap_section, section_name(s))) == NULL) {
+			dmuci_add_section_icwmpd(dmmap_package, dmmap_section, &dmmap_sect, &v);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section_name", section_name(s));
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "package", package);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section", section_type);
+		}
+
+		/*
+		 * Add system and dmmap sections to the list
+		 */
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect, additional_attribute);
+	}
+
+	/*
+	 * Delete unused dmmap sections
+	 */
+	uci_path_foreach_sections_safe(icwmpd, dmmap_package, dmmap_section, stmp, s) {
+		dmuci_get_value_by_section_string(s, "section_name", &v);
+		dmuci_get_value_by_section_string(s, "package", &pack);
+		dmuci_get_value_by_section_string(s, "section", &sect);
+		if(v!=NULL && strlen(v)>0 && strcmp(package, pack)==0 && strcmp(section_type, sect)== 0){
+			if(get_origin_section_from_config(package, section_type, v) == NULL){
+				dmuci_delete_by_section(s, NULL, NULL);
+			}
+		}
+	}
+
+	return found;
+}
+
+bool synchronize_multi_config_sections_with_dmmap_eq_diff(char *package, char *section_type, char *dmmap_package, char* dmmap_section, char* option_name, char* option_value, char* opt_diff_name, char* opt_diff_value, void* additional_attribute, struct list_head *dup_list)
+{
+	struct uci_section *s, *stmp, *dmmap_sect;
+	FILE *fp;
+	char *v, *dmmap_file_path, *pack, *sect, *optval;
+	bool found= false;
+
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+
+	uci_foreach_option_eq(package, section_type, option_name, option_value, s) {
+		found = true;
+		dmuci_get_value_by_section_string(s, opt_diff_name, &optval);
+		if (strcmp(optval, opt_diff_value) != 0) {
+			/*
+			 * create/update corresponding dmmap section that have same config_section link and using param_value_array
+			 */
+			if ((dmmap_sect = get_dup_section_in_dmmap(dmmap_package, dmmap_section, section_name(s))) == NULL) {
+				dmuci_add_section_icwmpd(dmmap_package, dmmap_section, &dmmap_sect, &v);
+				DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section_name", section_name(s));
+				DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "package", package);
+				DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section", section_type);
+			}
+
+			/*
+			 * Add system and dmmap sections to the list
+			 */
+			add_sectons_list_paramameter(dup_list, s, dmmap_sect, additional_attribute);
+		}
+	}
+
+	/*
+	 * Delete unused dmmap sections
+	 */
+	uci_path_foreach_sections_safe(icwmpd, dmmap_package, dmmap_section, stmp, s) {
+		dmuci_get_value_by_section_string(s, "section_name", &v);
+		dmuci_get_value_by_section_string(s, "package", &pack);
+		dmuci_get_value_by_section_string(s, "section", &sect);
+		if(v!=NULL && strlen(v)>0 && strcmp(package, pack)==0 && strcmp(section_type, sect)== 0){
+			if(get_origin_section_from_config(package, section_type, v) == NULL){
+				dmuci_delete_by_section(s, NULL, NULL);
+			}
+		}
+	}
+
+	return found;
+}
 void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
 	struct uci_section* s;
 
