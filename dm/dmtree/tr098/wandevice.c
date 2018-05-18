@@ -2471,7 +2471,7 @@ int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void
 	if (i == WAN_IDX_ETH){
 		synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
 		list_for_each_entry(p, &dup_list, list) {
-			if(!strcmp(s->e.name, "WAN")){
+			if(!strcmp(p->config_section->e.name, "WAN")){
 				dmuci_get_value_by_section_string(p->config_section, "ifname", &fwan);
 				dmuci_get_option_value_string("network", "wan", "ifname", &wan_ifname);
 				if (strstr(default_wan_ifname, fwan)) {
