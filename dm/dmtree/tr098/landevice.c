@@ -1001,6 +1001,8 @@ int get_lan_dhcp_leasetime(char *refparam, struct dmctx *ctx, char **value)
 				mtime +=  atoi(pch);
 		}
 	}
+	if (strcmp(ltime, "infinite") == 0)
+		mtime = -1;
 	dmfree(tmp);
 	dmfree(tmp_ini);
 
@@ -1021,7 +1023,10 @@ int set_lan_dhcp_leasetime(char *refparam, struct dmctx *ctx, int action, char *
 		case VALUESET:
 			uci_foreach_option_eq("dhcp", "dhcp", "interface", lan_name, s) {
 				int val = atoi(value);
-				sprintf(buf, "%ds", val);
+				if (val == -1)
+					sprintf(buf, "infinite");
+				else
+					sprintf(buf, "%ds", val);
 				dmuci_set_value_by_section(s, "leasetime",  buf);
 				break;
 			}
