@@ -596,6 +596,7 @@ char *get_last_instance_lev2_icwmpd(char *package, char *section, char* dmmap_pa
 	char *instance = NULL;
 	char *last_inst = NULL, *v= NULL;
 
+	check_create_dmmap_package(dmmap_package);
 	uci_foreach_option_cont(package, section, opt_check, value_check, s) {
 		get_dmmap_section_of_config_section(dmmap_package, section, section_name(s), &dmmap_section);
 		if(dmmap_section == NULL){

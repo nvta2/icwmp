@@ -263,7 +263,7 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 		}
 	}
 #else
-	synchronize_specific_config_sections_with_dmmap("ports", wan_interface_tab[i].section, "dmmap_ports", &dup_list);
+	synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
 		if(!strcmp(p->config_section->e.name, "WAN")){
 			waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");

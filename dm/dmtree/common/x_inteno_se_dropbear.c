@@ -41,10 +41,13 @@ int browseXIntenoDropbear(struct dmctx *dmctx, DMNODE *parent_node, void *prev_d
 {
 	char *idropbear = NULL, *idropbear_last = NULL;
 	struct uci_section *s = NULL;
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("dropbear", "dropbear", s) {
-		idropbear =  handle_update_instance(1, dmctx, &idropbear_last, update_instance_alias, 3, s, "dropbearinstance", "dropbearalias");
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, idropbear) == DM_STOP)
+	synchronize_specific_config_sections_with_dmmap("dropbear", "dropbear", "dmmap_dropbear", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		idropbear =  handle_update_instance(1, dmctx, &idropbear_last, update_instance_alias, 3, p->dmmap_section, "dropbearinstance", "dropbearalias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, idropbear) == DM_STOP)
 			break;
 	}
 	return 0;
@@ -366,17 +369,23 @@ int set_x_inteno_dropbear_banner_file(char *refparam, struct dmctx *ctx, void *d
 
 int get_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string((struct uci_section *)data, "dropbearalias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name((struct uci_section *)data), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "dropbearalias", value);
 	return 0;
 }
 
 int set_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name((struct uci_section *)data), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section((struct uci_section *)data, "dropbearalias", value);
+			dmuci_set_value_by_section(dmmap_section, "dropbearalias", value);
 			return 0;
 	}
 	return 0;
@@ -385,11 +394,13 @@ int set_x_inteno_dropbear_alias(char *refparam, struct dmctx *ctx, void *data, c
 /***** ADD DEL OBJ *******/
 int add_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value;
+	char *value, *v;
 	char *instance;
-	struct uci_section *dropbear_sec = NULL;
+	struct uci_section *dropbear_sec = NULL, *dmmap_sec= NULL;
 
-	instance = get_last_instance("dropbear", "dropbear", "dropbearinstance");
+	check_create_dmmap_package("dmmap_dropbear");
+	instance = get_last_instance_icwmpd("dmmap_dropbear", "dropbear", "dropbearinstance");
+
 	dmuci_add_section("dropbear", "dropbear", &dropbear_sec, &value);
 	dmuci_set_value_by_section(dropbear_sec, "verbose", "0");
 	dmuci_set_value_by_section(dropbear_sec, "Port", "22");
@@ -397,7 +408,10 @@ int add_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char **
 	dmuci_set_value_by_section(dropbear_sec, "GatewayPorts", "0");
 	dmuci_set_value_by_section(dropbear_sec, "SSHKeepAlive", "300");
 	dmuci_set_value_by_section(dropbear_sec, "IdleTimeout", "0");
-	*instancepara = update_instance(dropbear_sec, instance, "dropbearinstance");
+
+	dmuci_add_section_icwmpd("dmmap_dropbear", "dropbear", &dmmap_sec, &v);
+	dmuci_set_value_by_section(dmmap_sec, "section_name", section_name(dropbear_sec));
+	*instancepara = update_instance_icwmpd(dmmap_sec, instance, "dropbearinstance");
 	return 0;
 }
 
@@ -405,20 +419,32 @@ int delete_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char
 {
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
+	struct uci_section *dmmap_section;
 	int found = 0;
+
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name((struct uci_section *)data), &dmmap_section);
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section((struct uci_section *)data, NULL, NULL);
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("dropbear", "dropbear", s) {
-		if (found != 0)
+		if (found != 0){
+			get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(ss), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(ss, NULL, NULL);
+		}
 		ss = s;
 		found++;
 		}
-		if (ss != NULL)
+		if (ss != NULL){
+			get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(ss), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			dmuci_delete_by_section(ss, NULL, NULL);
+		}
 		return 0;
 	}
 	return 0;

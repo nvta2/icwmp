@@ -3769,14 +3769,14 @@ int browseWlanConfigurationInst(struct dmctx *dmctx, DMNODE *parent_node, void *
 	LIST_HEAD(dup_list);
 
 	lan_sec = section_name(lanargs->ldlansection);
-	iwlan = get_last_instance_lev2("wireless", "wifi-iface", "lwlaninstance", "network", lan_sec);
+	iwlan = get_last_instance_lev2_icwmpd("wireless", "wifi-iface", "dmmap_wireless", "lwlaninstance", "network", lan_sec);
+
 	synchronize_specific_config_sections_with_dmmap("wireless", "wifi-iface", "dmmap_wireless", &dup_list);
 	uci_foreach_sections("wireless", "wifi-device", ss) {
 		int wlctl_num=0;
 		list_for_each_entry(p, &dup_list, list) {
 			dmuci_get_value_by_section_string(p->config_section, "device", &wifi_iface_device);
 			if(strcmp(wifi_iface_device, section_name(ss)) != 0) continue;
-		//uci_foreach_option_eq("wireless", "wifi-iface", "device", section_name(ss), sss) {
 			dmuci_get_value_by_section_string(p->config_section, "network", &network);
 			if (strcmp(network, lan_sec) != 0)
 				continue;
