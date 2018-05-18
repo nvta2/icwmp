@@ -226,13 +226,13 @@ static struct uci_section *update_route_dynamic_section(struct proc_routing *pro
 {
 	struct uci_section *s = NULL;
 	char *name, *mask;
-	uci_path_foreach_option_eq(icwmpd, "dmmap", "route_dynamic", "target", proute->destination, s) {
+	uci_path_foreach_option_eq(icwmpd, "dmmap_route_forwarding", "route_dynamic", "target", proute->destination, s) {
 			dmuci_get_value_by_section_string(s, "netmask", &mask);
 			if (strcmp(proute->mask, mask) == 0)
 				return s;
 		}
 		if (!s) {
-			DMUCI_ADD_SECTION(icwmpd, "dmmap", "route_dynamic", &s, &name);
+			DMUCI_ADD_SECTION(icwmpd, "dmmap_route_forwarding", "route_dynamic", &s, &name);
 			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "target", proute->destination);
 			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "netmask", proute->mask);
 		}
@@ -632,18 +632,35 @@ int get_layer3_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int get_layer3_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	struct uci_section *dmmap_section;
 	*value = "";
-	if (((struct routingfwdargs *)data)->routefwdsection) dmuci_get_value_by_section_string(((struct routingfwdargs *)data)->routefwdsection, "routealias", value);
+	if(((struct routingfwdargs *)data)->type == ROUTE_DYNAMIC)
+		dmmap_section= ((struct routingfwdargs *)data)->routefwdsection;
+	else if (((struct routingfwdargs *)data)->type == ROUTE_STATIC)
+		get_dmmap_section_of_config_section("dmmap_route_forwarding", "route", section_name(((struct routingfwdargs *)data)->routefwdsection), &dmmap_section);
+	else
+		get_dmmap_section_of_config_section("dmmap_route_forwarding", "route_disabled", section_name(((struct routingfwdargs *)data)->routefwdsection), &dmmap_section);
+
+		dmuci_get_value_by_section_string(dmmap_section, "routealias", value);
 	return 0;
 }
 
 int set_layer3_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	if(((struct routingfwdargs *)data)->type == ROUTE_DYNAMIC)
+		dmmap_section= ((struct routingfwdargs *)data)->routefwdsection;
+	else if (((struct routingfwdargs *)data)->type == ROUTE_STATIC)
+		get_dmmap_section_of_config_section("dmmap_route_forwarding", "route", section_name(((struct routingfwdargs *)data)->routefwdsection), &dmmap_section);
+	else
+		get_dmmap_section_of_config_section("dmmap_route_forwarding", "route_disabled", section_name(((struct routingfwdargs *)data)->routefwdsection), &dmmap_section);
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			if (((struct routingfwdargs *)data)->routefwdsection) dmuci_set_value_by_section(((struct routingfwdargs *)data)->routefwdsection, "routealias", value);
+			dmuci_set_value_by_section(dmmap_section, "routealias", value);
 			return 0;
 	}
 	return 0;
@@ -666,19 +683,25 @@ int browseForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 	struct proc_routing proute;
 	bool find_max = true;
 	struct routingfwdargs curr_routefwdargs = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
-	uci_foreach_sections("network", "route", s) {
-		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_STATIC);
-		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
+	synchronize_specific_config_sections_with_dmmap("network", "route", "dmmap_route_forwarding", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		init_args_rentry(&curr_routefwdargs, p->config_section, "1", NULL, ROUTE_STATIC);
+		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, p->dmmap_section, "routeinstance", "routealias", &find_max);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
 			goto end;
 	}
-	uci_foreach_sections("network", "route_disabled", s) {
-		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_DISABLED);
-		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
+	free_dmmap_config_dup_list(&dup_list);
+	synchronize_specific_config_sections_with_dmmap("network", "route_disabled", "dmmap_route_forwarding", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		init_args_rentry(&curr_routefwdargs, p->config_section, "1", NULL, ROUTE_DISABLED);
+		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, p->dmmap_section, "routeinstance", "routealias", &find_max);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
 			goto end;
 	}
+	free_dmmap_config_dup_list(&dup_list);
 	fp = fopen(ROUTE_FILE, "r");
 	if ( fp != NULL)
 	{
