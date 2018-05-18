@@ -52,7 +52,6 @@ int browseXIntenoOwsdListenObj(struct dmctx *dmctx, DMNODE *parent_node, void *p
 	char *iowsd_listen = NULL, *iowsd_listen_last = NULL;
 	struct uci_section *s = NULL;
 	struct dmmap_dup *p;
-	struct list_head *ilist;
 	LIST_HEAD(dup_list);
 
 	synchronize_specific_config_sections_with_dmmap("owsd", "owsd-listen", "dmmap_owsd", &dup_list);
