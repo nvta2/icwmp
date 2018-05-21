@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 #ifndef __DHCP_H
@@ -22,9 +23,23 @@ struct dhcp_static_args
 	struct uci_section *dhcpsection;
 };
 
+struct dhcp_option_args
+{
+	struct uci_section *dhcpoptionsection;
+	struct uci_section *dhcppoolsection;
+	char *poolinstance;
+	char *poolinterface;
+};
+
 struct client_args
 {
 	json_object *client;
+};
+
+struct dhcp_client_ipv4address_args {
+	char *mac;
+	char *ip;
+	unsigned int leasetime;
 };
 
 int entry_method_root_dhcp(struct dmctx *ctx);

@@ -7,6 +7,7 @@
  *	Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Imen Bhiri <imen.bhiri@pivasoftware.com>
  *		Author: Feten Besbes <feten.besbes@pivasoftware.com>
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
  
 #include <ctype.h>

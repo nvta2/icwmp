@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <uci.h>
@@ -632,107 +632,120 @@ int get_access_point_security_supported_modes(char *refparam, struct dmctx *ctx,
 	return 0;
 }
 
-int get_access_point_security_modes(char *refparam, struct dmctx *ctx, char **value)
+static void get_secuity_modes(char **security_modes)
 {
 	char *encryption, *cipher;
 
-	*value = "";
+	*security_modes = "";
 	dmuci_get_value_by_section_string(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", &encryption);
 	dmuci_get_value_by_section_string(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", &cipher);
+
 	if (strcmp(encryption, "none") == 0)
-		*value = "None";
+		*security_modes = "None";
 	else if (strcmp(encryption, "wep-open") == 0 || strcmp(encryption, "wep-shared") == 0)
-		*value = "WEP-64";
+		*security_modes = "WEP-64";
 	else if (strcmp(encryption, "psk") == 0)
-		*value = "WPA-Personal";
+		*security_modes = "WPA-Personal";
 	else if (strcmp(encryption, "wpa") == 0)
-		*value = "WPA-Enterprise";
-	else if (strcmp(encryption, "psk2") == 0 && strcmp(cipher, "ccmp") == 0)
-		*value = "WPA2-Personal";
+		*security_modes = "WPA-Enterprise";
+	else if ((strcmp(encryption, "psk2") == 0 && strcmp(cipher, "auto") == 0) || (strcmp(encryption, "psk2") == 0 && strcmp(cipher, "ccmp") == 0))
+		*security_modes = "WPA2-Personal";
 	else if (strcmp(encryption, "wpa2") == 0)
-		*value = "WPA2-Enterprise";
-	else if (strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "tkip+ccmp") == 0)
-		*value = "WPA-WPA2-Personal";
+		*security_modes = "WPA2-Enterprise";
+	else if ((strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "auto") == 0) || (strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "ccmp") == 0) || (strcmp(encryption, "mixed-psk") == 0 && strcmp(cipher, "tkip+ccmp") == 0))
+		*security_modes = "WPA-WPA2-Personal";
 	else if (strcmp(encryption, "mixed-wpa") == 0)
-		*value = "WPA-WPA2-Enterprise";
+		*security_modes = "WPA-WPA2-Enterprise";
+}
+
+int get_access_point_security_modes(char *refparam, struct dmctx *ctx, char **value)
+{
+	char *data;
+
+	get_secuity_modes(&data);
+	*value = data;
+
 	return 0;
 }
 
 int set_access_point_security_modes(char *refparam, struct dmctx *ctx, int action, char *value)
 {
-	char *option, *gnw;
+	char *option, *gnw, *data;
 	char strk64[4][11];
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
 			//dmuci_get_value_by_section_string(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", &encryption);
-			if (strcmp(value, "None") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "none");
-			}
-			else if (strcmp(value, "WEP-64") == 0 || strcmp(value, "WEP-128") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "wep-open");
-				wepkey64("Inteno", strk64);
-				int i = 0;
-				while (i < 4) {
-					dmasprintf(&option, "key%d", i + 1);
-					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, option, strk64[i]);
-					dmfree(option);
-					i++;
+			get_secuity_modes(&data);
+			if (strcmp(value, data) != 0){
+				if (strcmp(value, "None") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "none");
 				}
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", "1");
-			}
-			else if (strcmp(value, "WPA-Personal") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				gnw = get_nvram_wpakey();
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "psk");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", gnw);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", "tkip");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "gtk_rekey", "3600");
-				dmfree(gnw);
-			}
-			else if (strcmp(value, "WPA-Enterprise") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "wpa");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_server", "");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_port", "1812");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_secret", "");
-			}
-			else if (strcmp(value, "WPA2-Personal") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				gnw = get_nvram_wpakey();
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "psk2");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", gnw);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", "ccmp");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "gtk_rekey", "3600");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "wps_pbc", "1");
-				dmfree(gnw);
-			}
-			else if (strcmp(value, "WPA2-Enterprise") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "wpa2");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_server", "");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_port", "1812");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_secret", "");
-			}
-			else if (strcmp(value, "WPA-WPA2-Personal") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				gnw = get_nvram_wpakey();
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "mixed-psk");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", gnw);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", "tkip+ccmp");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "gtk_rekey", "3600");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "wps_pbc", "1");
-				dmfree(gnw);
-			}
-			else if (strcmp(value, "WPA-WPA2-Enterprise") == 0) {
-				reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "mixed-wpa");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_server", "");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_port", "1812");
-				dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_secret", "");
+				else if (strcmp(value, "WEP-64") == 0 || strcmp(value, "WEP-128") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "wep-open");
+					wepkey64("Inteno", strk64);
+					int i = 0;
+					while (i < 4) {
+						dmasprintf(&option, "key%d", i + 1);
+						dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, option, strk64[i]);
+						dmfree(option);
+						i++;
+					}
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", "1");
+				}
+				else if (strcmp(value, "WPA-Personal") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					gnw = get_nvram_wpakey();
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "psk");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", gnw);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", "tkip");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "gtk_rekey", "3600");
+					dmfree(gnw);
+				}
+				else if (strcmp(value, "WPA-Enterprise") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "wpa");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_server", "");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_port", "1812");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_secret", "");
+				}
+				else if (strcmp(value, "WPA2-Personal") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					gnw = get_nvram_wpakey();
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "psk2");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", gnw);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", "ccmp");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "gtk_rekey", "3600");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "wps_pbc", "1");
+					dmfree(gnw);
+				}
+				else if (strcmp(value, "WPA2-Enterprise") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "wpa2");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_server", "");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_port", "1812");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_secret", "");
+				}
+				else if (strcmp(value, "WPA-WPA2-Personal") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					gnw = get_nvram_wpakey();
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "mixed-psk");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "key", gnw);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "cipher", "tkip+ccmp");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "gtk_rekey", "3600");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "wps_pbc", "1");
+					dmfree(gnw);
+				}
+				else if (strcmp(value, "WPA-WPA2-Enterprise") == 0) {
+					reset_wlan(cur_wifi_ssid_args.wifi_ssid_sec);
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "encryption", "mixed-wpa");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_server", "");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_port", "1812");
+					dmuci_set_value_by_section(cur_wifi_ssid_args.wifi_ssid_sec, "radius_secret", "");
+				}
 			}
 			return 0;
 	}
@@ -1041,6 +1054,36 @@ int delete_wifi_ssid(struct dmctx *ctx)
 	dmuci_delete_by_section(cur_wifi_ssid_args.wifi_ssid_sec, NULL, NULL);
 	return 0;
 }
+
+int get_access_point_associative_device_lastdatadownlinkrate(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->lastdatadownloadlinkrate);
+	return 0;
+}
+
+int get_access_point_associative_device_lastdatauplinkrate(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->lastdatauplinkrate);
+	return 0;
+}
+
+int get_access_point_associative_device_signalstrength(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->signalstrength);
+	return 0;
+}
+
+int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, cur_wifi_associative_device_args_ptr->macaddress);
+	return 0;
+}
+int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, char **value){
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)ctx->args;
+	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->active);
+	return 0;
+}
+
 /////////////SUB ENTRIES///////////////
 inline int entry_wifi_radio(struct dmctx *ctx)
 {
@@ -1073,6 +1116,58 @@ inline int entry_wifi_ssid(struct dmctx *ctx)
 	}
 	return 0;
 }
+
+inline int entry_wifi_access_point_associative_device(struct dmctx *ctx, char *wnum){
+	json_object *res, *associated_client_obj;
+	struct uci_section *ss = NULL;
+	char *value, *ap_ifname, *ad_ifname, *is_wireless;
+	int id = 0;
+	char *idx, *idx_last = NULL;
+	char *macaddr= NULL, *active= NULL, *lastdatadownloadlinkrate= NULL, *lastdatauplinkrate= NULL, *signalstrength= NULL;
+
+	struct wifi_associative_device_args cur_wifi_associative_device_args = {0}, *args;
+
+	uci_foreach_sections("wireless", "wifi-iface", ss) {
+		dmuci_get_value_by_section_string(ss, "accesspointinstance", &value);
+		if(!strcmp(value, wnum)){
+			dmuci_get_value_by_section_string(ss, "ifname", &ap_ifname);
+			break;
+		}
+	}
+
+	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
+	if (res) {
+		json_object_object_foreach(res, key, associated_client_obj) {
+			is_wireless = dmjson_get_value(associated_client_obj, 1, "wireless");
+			if(!strcmp(is_wireless, "true")){
+				ad_ifname = dmjson_get_value(associated_client_obj, 1, "wdev");
+				if(!strcmp(ad_ifname, ap_ifname)){
+					macaddr=dmjson_get_value(associated_client_obj, 1, "macaddr");
+					if(macaddr!=NULL && strlen(macaddr)>0) dmasprintf(&(cur_wifi_associative_device_args.macaddress),dmjson_get_value(associated_client_obj, 1, "macaddr"));
+					active=dmjson_get_value(associated_client_obj, 1, "connected");
+					if(active !=NULL && strlen(active)>0){
+						if(!strcmp(active, "true")) cur_wifi_associative_device_args.active= 1; else cur_wifi_associative_device_args.active= 0;
+					}
+					lastdatadownloadlinkrate=dmjson_get_value(associated_client_obj, 1, "rx_rate");
+					if(lastdatadownloadlinkrate!=NULL && strlen(lastdatadownloadlinkrate)>0) cur_wifi_associative_device_args.lastdatadownloadlinkrate= atoi(lastdatadownloadlinkrate);
+					else cur_wifi_associative_device_args.lastdatadownloadlinkrate = 0;
+					lastdatauplinkrate=dmjson_get_value(associated_client_obj, 1, "tx_rate");
+					if(lastdatauplinkrate!=NULL && strlen(lastdatauplinkrate)>0) cur_wifi_associative_device_args.lastdatauplinkrate= atoi(lastdatauplinkrate);
+					else cur_wifi_associative_device_args.lastdatauplinkrate = 0;
+					signalstrength=dmjson_get_value(associated_client_obj, 1, "rssi");
+					if(signalstrength!=NULL && strlen(signalstrength)>0) cur_wifi_associative_device_args.signalstrength= atoi(signalstrength);
+					else cur_wifi_associative_device_args.signalstrength = 0;
+					args= &cur_wifi_associative_device_args;
+					ctx->args = (void*)args;
+					idx = handle_update_instance(3, ctx, &idx_last, update_instance_without_section, 1, ++id);
+					SUBENTRY(entry_wifi_access_point_associative_device_instance, ctx, wnum, idx);
+				}
+			}
+		}
+	}
+
+}
+
 ///////////////////WIFI ENTRY///////////////////
 
 int entry_method_root_Wifi(struct dmctx *ctx)
@@ -1165,7 +1260,24 @@ inline int entry_wifi_access_point_instance(struct dmctx *ctx, char *wnum)
 		DMPARAM("RadiusServerIPAddr", ctx, "1", get_access_point_security_radius_ip_address, set_access_point_security_radius_ip_address, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("RadiusServerPort", ctx, "1", get_access_point_security_radius_server_port, set_access_point_security_radius_server_port, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("RadiusSecret", ctx, "1", get_empty, set_access_point_security_radius_secret, NULL, 0, 1, UNDEF, NULL);
+		DMOBJECT(DMROOT"WiFi.AccessPoint.%s.AssociatedDevice.", ctx, "0", 1, NULL, NULL, NULL, wnum);
+		SUBENTRY(entry_wifi_access_point_associative_device, ctx, wnum);
 		return 0;
 	}
 	return FAULT_9005;
+}
+
+inline int entry_wifi_access_point_associative_device_instance(struct dmctx *dmctx, char *wnum, char *wnum1){
+	char linker[18];
+	struct wifi_associative_device_args cur_wifi_associative_device_args = *((struct wifi_associative_device_args*)dmctx->args);
+	//strcat(linker, section_name(cur_wifi_radio_args.wifi_radio_sec));
+	IF_MATCH(dmctx, DMROOT"WiFi.AccessPoint.%s.AssociatedDevice.%s.", wnum, wnum1){
+		strcpy(linker, cur_wifi_associative_device_args.macaddress);
+		DMOBJECT(DMROOT"WiFi.AccessPoint.%s.AssociatedDevice.%s.", dmctx, "0", 1, NULL, NULL, linker, wnum, wnum1);
+		DMPARAM("Active", dmctx, "0",  get_access_point_associative_device_active, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
+		DMPARAM("MACAddress", dmctx, "0",  get_access_point_associative_device_mac, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("LastDataDownlinkRate", dmctx, "0",  get_access_point_associative_device_lastdatadownlinkrate, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("LastDataUplinkRate", dmctx, "0",  get_access_point_associative_device_lastdatauplinkrate, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("SignalStrength", dmctx, "0",  get_access_point_associative_device_signalstrength, NULL, "xsd:int", 0, 1, UNDEF, NULL);
+	}
 }

@@ -8,6 +8,7 @@
  *	  Author MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 #ifndef __DMCWMP_H__
@@ -70,7 +71,9 @@
 }
 
 #define SUBENTRY(f, ctx, ...) {			\
+	void *parent_args = ctx->args;		\
 	int error = f(ctx, ## __VA_ARGS__);	\
+	ctx->args = parent_args;			\
 	if ((ctx)->stop) return error;		\
 }
 
@@ -263,6 +266,8 @@ void dm_update_enabled_notify_byname(char *name, char *new_value);
 char *get_last_instance(char *package, char *section, char *opt_inst);
 char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst);
 char *get_last_instance_lev2(char *package, char *section, char *opt_inst, char *opt_check, char *value_check);
+int get_dhcp_option_last_inst(struct uci_section *ss, char *inst_opt);
+char *dhcp_option_update_instance_alias_icwmpd(int action, char **last_inst, void *argv[]);
 char *handle_update_instance(int instance_ranck, struct dmctx *ctx, char **last_inst, char * (*up_instance)(int action, char **last_inst, void *argv[]), int argc, ...);
 
 void free_all_list_enabled_lwnotify();
@@ -274,9 +279,10 @@ static inline void trace_empty_func()
 #if TRACE_TYPE == 2
 #define TRACE(MESSAGE,args...) do { \
 	const char *A[] = {MESSAGE}; \
-	printf("TRACE: %s %s %d\n",__FUNCTION__,__FILE__,__LINE__); fflush(stdout);\
+	printf("TRACE: %s %s %d    ",__FUNCTION__,__FILE__,__LINE__); \
 	if(sizeof(A) > 0) \
 		printf(*A,##args); \
+	printf("\n"); fflush(stdout); \
 } while(0)
 #elif TRACE_TYPE == 1
 #define TRACE(MESSAGE, ...) printf(MESSAGE, ## __VA_ARGS__)

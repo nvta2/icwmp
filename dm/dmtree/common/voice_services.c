@@ -305,24 +305,25 @@ int get_line_max_instance(struct uci_section **brcm_section)
 	int line_number, i=0;
 	json_object *res;
 	char *value;
-	
+	int found=0;
 	line_number = get_voice_service_max_line();
-	line_number--;
-	
 	uci_foreach_sections("voice_client", "brcm_line", s) {
 		i++;
 		dmuci_get_value_by_section_string(s, "sip_account", &value);
-		if (strcmp(value, "-") == 0)
+		if (strcmp(value, "-") == 0){
+			found = 1;
 			break;
-		else if (i > line_number) {
+		}else if (i > line_number) {
 			i = 0;
 			break;
 		}
 	}
-	if (i != 0)
+	if (found == 1)
 		*brcm_section = s;
-	else 
+	else {
+		i=0;
 		*brcm_section = NULL;
+	}
 	return i;
 }
 
@@ -389,6 +390,7 @@ int add_line(struct uci_section *s, char *s_name)
 	dmuci_set_value_by_section(s, "sip_account", s_name);
 	return 0;
 }
+
 
 int add_line_object(struct dmctx *ctx, char **instancepara)
 {	
@@ -606,21 +608,11 @@ int get_capabilities_sip_pperiod(char *refparam, struct dmctx *ctx, char **value
 
 int get_voice_service_max_line()
 {
-	int num = 0;
-	json_object *res;
-	json_object *brcm = NULL;
-	
-  //dmubus_call("asterisk.brcm", "dump", UBUS_ARGS{}, 0, &res);
-	dmubus_call("asterisk", "status", UBUS_ARGS{}, 0, &res);
-	if(res)
-		brcm = dmjson_get_obj(res, 1, "brcm");
-	if(brcm) {
-		json_object_object_foreach(brcm, key, val) {
-			if (strstr(key, "brcm"))
-				num++;
-		}
-	}
-	return num;
+	char *v;
+	int val;
+	db_get_value_string("hw", "board", "VoicePorts", &v);
+	val = atoi(v);
+	return val;
 }
 
 int get_voice_profile_enable(char *refparam, struct dmctx *ctx, char **value)

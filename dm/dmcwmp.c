@@ -4,7 +4,7 @@
  *	  Author MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
- *
+ *    Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <uci.h>
@@ -51,6 +51,7 @@
 #include "x_inteno_se_dropbear.h"
 #include "x_inteno_se_buttons.h"
 #include "deviceconfig.h"
+#include "userinterface.h"
 
 static char *get_parameter_notification (struct dmctx *ctx, char *param);
 static int remove_parameter_notification(char *param);
@@ -152,6 +153,7 @@ struct prefix_method prefix_methods[] = {
 	{ DMROOT"PPP.", 1, NULL, 0, &entry_method_root_ppp },
 	{ DMROOT"Routing.", 1, NULL, 0, &entry_method_root_routing },
 	{ DMROOT"NAT.", 1, NULL, 0, &entry_method_root_nat },
+	{ DMROOT"USerInterface.", 1, NULL, 0, &entry_method_root_userinterface },
 #endif
 };
 
@@ -264,7 +266,6 @@ char *update_instance_alias(int action, char **last_inst , void *argv[])
 	struct uci_section *s = (struct uci_section *) argv[0];
 	char *inst_opt = (char *) argv[1];
 	char *alias_opt = (char *) argv[2];
-
 	dmuci_get_value_by_section_string(s, inst_opt, &instance);
 	if (instance[0] == '\0') {
 		if (*last_inst == NULL)
@@ -324,6 +325,62 @@ char *get_last_instance(char *package, char *section, char *opt_inst)
 		}
 	}
 	return inst;
+}
+
+int get_dhcp_option_last_inst(struct uci_section *ss, char *inst_opt)
+{
+	char *drinst = NULL, *tmp;
+	int dr = 0;
+	struct uci_section *s;
+	uci_path_foreach_sections(icwmpd, "dmmap", section_name(ss), s) {
+		dmuci_get_value_by_section_string(s, inst_opt, &tmp);
+		if (tmp[0] == '\0')
+			break;
+		drinst = tmp;
+	}
+	if (drinst) dr = atoi(drinst);
+	return dr;
+}
+
+char *dhcp_option_update_instance_alias_icwmpd(int action, char **last_inst, void *argv[])
+{
+	char *instance, *alias;
+	char buf[8] = {0};
+	char itf_name[32] = {0};
+
+	struct uci_section *s = (struct uci_section *) argv[0];
+	char *inst_opt = (char *) argv[1];
+	char *alias_opt = (char *) argv[2];
+	bool *find_max = (bool *) argv[3];
+
+	dmuci_get_value_by_section_string(s, inst_opt, &instance);
+	TRACE("instance :%s", instance);
+	if (instance[0] == '\0') {
+		if (*find_max) {
+			int m = get_dhcp_option_last_inst(s, inst_opt);
+			sprintf(buf, "%d", m+1);
+			*find_max = false;
+		}
+		else
+		if (last_inst == NULL) {
+			sprintf(buf, "%d", 1);
+		}
+		else {
+			sprintf(buf, "%d", atoi(*last_inst)+1);
+		}
+		instance = DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, inst_opt, buf);
+	}
+	*last_inst = instance;
+	if (action == INSTANCE_MODE_ALIAS) {
+		dmuci_get_value_by_section_string(s, alias_opt, &alias);
+		if (alias[0] == '\0') {
+			sprintf(buf, "cpe-%s", instance);
+			alias = DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, alias_opt, buf);
+		}
+		sprintf(buf, "[%s]", alias);
+		instance = dmstrdup(buf);
+	}
+	return instance;
 }
 
 char *get_last_instance_lev2(char *package, char *section, char *opt_inst, char *opt_check, char *value_check)

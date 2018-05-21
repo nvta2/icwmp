@@ -211,6 +211,28 @@ int set_x_bcm_com_ip_acc_list_cfgobj_acc_port(char *refparam, struct dmctx *ctx,
 	return 0;
 }
 
+int get_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, char **value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	dmuci_get_value_by_section_string(accargs->ipaccsection, "target", value);
+	return 0;
+}
+
+int set_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct ipaccargs *accargs = (struct ipaccargs *)ctx->args;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(accargs->ipaccsection, "target", value);
+			return 0;
+	}
+	return 0;
+}
+
 
 
 /************************************************************************************* 
@@ -635,7 +657,7 @@ int add_ipacccfg_rule(struct dmctx *ctx, char **instancepara)
 	dmuci_set_value_by_section(rule, "type", "generic");
 	dmuci_set_value_by_section(rule, "name", "new_rule");
 	dmuci_set_value_by_section(rule, "proto", "all");
-	dmuci_set_value_by_section(rule, "target", "REJECT");
+	dmuci_set_value_by_section(rule, "target", "ACCEPT");
 	dmuci_set_value_by_section(rule, "family", "ipv4");
 	dmuci_set_value_by_section(rule, "enabled", "1");
 	dmuci_set_value_by_section(rule, "hidden", "1");
@@ -757,6 +779,7 @@ inline int entry_xinteno_ipacccfg_listcfgobj_instance(struct dmctx *ctx, char *i
 		DMPARAM("FilterName", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_name, set_x_bcm_com_ip_acc_list_cfgobj_name, "xsd:string", 0, 1, UNDEF, NULL);
 		DMPARAM("AccAddressAndNetMask", ctx, "1", get_x_inteno_cfgobj_address_netmask, set_x_inteno_cfgobj_address_netmask, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("AccPort", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_acc_port, set_x_bcm_com_ip_acc_list_cfgobj_acc_port, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Target", ctx, "1", get_x_bcm_com_ip_acc_list_cfgobj_target, set_x_bcm_com_ip_acc_list_cfgobj_target, "xsd:string", 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;

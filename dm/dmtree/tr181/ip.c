@@ -6,7 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
- *
+ *		Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <uci.h>
@@ -254,6 +254,14 @@ int get_ip_ping_max_response_time(char *refparam, struct dmctx *ctx, char **valu
 	return 0;
 }
 
+int get_ip_interface_status(char *refparam, struct dmctx *ctx, char **value){
+	json_object *res;
+	char *lan_name = section_name(cur_ip_args.ip_sec), *val= NULL;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	val = dmjson_get_value(res, 1, "up");
+	*value = !strcmp(val, "true") ? "Up" : "Down";
+	return 0;
+}
 
 int get_ip_interface_enable(char *refparam, struct dmctx *ctx, char **value)
 {
@@ -765,6 +773,7 @@ inline int entry_ip_interface_instance(struct dmctx *ctx, char *int_num)
 		DMOBJECT(DMROOT"IP.Interface.%s.", ctx, "1", 1, NULL, delete_ip_interface, linker, int_num);
 		DMPARAM("Alias", ctx, "1", get_ip_int_alias, set_ip_int_alias, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Enable", ctx, "1", get_ip_interface_enable, set_ip_interface_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
+		DMPARAM("Status", ctx, "0", get_ip_interface_status, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Name", ctx, "0", get_ip_interface_name, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("LowerLayers", ctx, "1", get_ip_int_lower_layer, set_ip_int_lower_layer, NULL, 0, 1, UNDEF, NULL);//TODO
 		DMOBJECT(DMROOT"IP.Interface.%s.IPv4Address.", ctx, "1", 1, add_ipv4, NULL, NULL, int_num);
