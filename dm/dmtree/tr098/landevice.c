@@ -671,7 +671,11 @@ int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *dat
 	instance = get_last_instance_lev2_icwmpd("wireless", "wifi-iface", "dmmap_wireless", "lwlaninstance", "network", lan_name);
 	sprintf(ssid, "Inteno_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
 	dmuci_add_section("wireless", "wifi-iface", &s, &value);
+#ifdef EX400
+	dmuci_set_value_by_section(s, "device", "ra0");
+#else
 	dmuci_set_value_by_section(s, "device", "wl0");
+#endif
 	dmuci_set_value_by_section(s, "encryption", "none");
 	dmuci_set_value_by_section(s, "macfilter", "0");
 	dmuci_set_value_by_section(s, "mode", "ap");
@@ -3776,7 +3780,8 @@ int browseWlanConfigurationInst(struct dmctx *dmctx, DMNODE *parent_node, void *
 		int wlctl_num=0;
 		list_for_each_entry(p, &dup_list, list) {
 			dmuci_get_value_by_section_string(p->config_section, "device", &wifi_iface_device);
-			if(strcmp(wifi_iface_device, section_name(ss)) != 0) continue;
+			if(strcmp(wifi_iface_device, section_name(ss)) != 0)
+				continue;
 			dmuci_get_value_by_section_string(p->config_section, "network", &network);
 			if (strcmp(network, lan_sec) != 0)
 				continue;

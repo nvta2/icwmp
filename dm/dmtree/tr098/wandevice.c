@@ -630,15 +630,16 @@ int add_wan_wanpppconnection(char *refparam, struct dmctx *ctx, void *data, char
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1);
 #ifdef EX400
 	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WANPPPConnection, *instancepara);
+	sprintf(ifname, "%s", wandcdevargs->fwan);
 
 #else
 	sprintf(sname,"wan_%s_%s_%d_%s", wan_devices[wandcdevargs->instance].instance, wandcdevargs->iwan, WANPPPConnection, *instancepara);
-#endif
 	sprintf(ifname, "%s.1", wandcdevargs->fwan);
+#endif
+
 	dmuci_set_value("network", sname, NULL, "interface");
 	dmuci_set_value("network", sname, "ifname", ifname);
 	dmuci_set_value("network", sname, "proto", "pppoe");
-
 	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_wanip, &v);
 	dmuci_set_value_by_section(dmmap_wanip, "section_name", sname);
 	dmuci_set_value_by_section(dmmap_wanip, "conpppinstance", *instancepara);
