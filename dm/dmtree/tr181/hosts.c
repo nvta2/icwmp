@@ -288,13 +288,16 @@ int get_host_nbr_entries(char *refparam, struct dmctx *ctx, void *data, char *in
 int browsehostInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	json_object *res, *client_obj;
-	char *idx, *idx_last = NULL;
+	char *idx, *idx_last = NULL, *connected;
 	int id = 0;
 	struct host_args curr_host_args = {0};
 
 	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
 	if (res) {
 		json_object_object_foreach(res, key, client_obj) {
+			connected = dmjson_get_value(client_obj, 1, "connected");
+			if(strcmp(connected, "false") == 0)
+				continue;
 			init_host_args(&curr_host_args, client_obj, key);
 			idx = handle_update_instance(2, dmctx, &idx_last, update_instance_without_section, 1, ++id);
 			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_host_args, idx) == DM_STOP)
