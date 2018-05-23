@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
  *
  */
 
@@ -26,6 +27,7 @@ DMOBJ tWifiObj[] = {
 {"Radio", &DMWRITE, NULL, NULL, NULL, browseWifiRadioInst, NULL, NULL, tWifiRadioStatsObj, tWifiRadioParams, get_linker_Wifi_Radio},
 {"SSID", &DMWRITE, add_wifi_ssid, delete_wifi_ssid, NULL, browseWifiSsidInst, NULL, NULL, tWifiSsidStatsObj, tWifiSsidParams, get_linker_Wifi_Ssid},
 {"AccessPoint", &DMREAD, NULL, NULL, NULL, browseWifiAccessPointInst, NULL, NULL, tAcessPointSecurityObj, tWifiAcessPointParams, NULL},
+{"NeighboringWiFiDiagnostic", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tNeighboringWiFiDiagnosticObj, tNeighboringWiFiDiagnosticParams, NULL},
 {0}
 };
 
@@ -175,6 +177,32 @@ DMLEAF tWifiAcessPointAssociatedDeviceStatsParams[] = {
 {"FailedRetransCount", &DMREAD, DMT_UNINT, get_access_point_associative_device_statistics_failed_retrans_count, NULL, NULL, NULL},
 {"RetryCount	", &DMREAD, DMT_UNINT, get_access_point_associative_device_statistics_retry_count, NULL, NULL, NULL},
 {"MultipleRetryCount", &DMREAD, DMT_UNINT, get_access_point_associative_device_statistics_multiple_retry_count, NULL, NULL, NULL},
+{0}
+};
+
+/*** WiFi.NeighboringWiFiDiagnostic. ***/
+DMOBJ tNeighboringWiFiDiagnosticObj[] = {
+/* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf*/
+{"Result", &DMREAD, NULL, NULL, NULL, browseWifiNeighboringWiFiDiagnosticResultInst, NULL, NULL, NULL, tNeighboringWiFiDiagnosticResultParams, NULL},
+{0}
+};
+
+DMLEAF tNeighboringWiFiDiagnosticParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"DiagnosticsState", &DMWRITE, DMT_STRING, get_neighboring_wifi_diagnostics_diagnostics_state, set_neighboring_wifi_diagnostics_diagnostics_state, NULL, NULL},
+{"ResultNumberOfEntries", &DMREAD, DMT_UNINT, get_neighboring_wifi_diagnostics_result_number_entries, NULL, NULL, NULL},
+{0}
+};
+
+/*** WiFi.NeighboringWiFiDiagnostic.Result. ***/
+DMLEAF tNeighboringWiFiDiagnosticResultParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
+{"SSID", &DMREAD, DMT_STRING, get_neighboring_wifi_diagnostics_result_ssid, NULL, NULL, NULL},
+{"BSSID", &DMREAD, DMT_STRING, get_neighboring_wifi_diagnostics_result_bssid, NULL, NULL, NULL},
+{"Channel", &DMREAD, DMT_UNINT, get_neighboring_wifi_diagnostics_result_channel, NULL, NULL, NULL},
+{"SignalStrength", &DMREAD, DMT_INT, get_neighboring_wifi_diagnostics_result_signal_strength, NULL, NULL, NULL},
+{"OperatingFrequencyBand", &DMREAD, DMT_STRING, get_neighboring_wifi_diagnostics_result_operating_frequency_band, NULL, NULL, NULL},
+{"Noise", &DMREAD, DMT_INT, get_neighboring_wifi_diagnostics_result_noise, NULL, NULL, NULL},
 {0}
 };
 
@@ -1445,6 +1473,108 @@ int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
+int get_neighboring_wifi_diagnostics_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *ss;
+	json_object *res, *neighboring_wifi_obj;
+
+	uci_foreach_sections("wireless", "wifi-device", ss) {
+		dmubus_call("router.wireless", "scanresults", UBUS_ARGS{{"radio", section_name(ss), String}}, 1, &res);
+		neighboring_wifi_obj = dmjson_select_obj_in_array_idx(res, 0, 1, "access_points");
+		if(neighboring_wifi_obj) {
+			*value = "Complete";
+			break;
+		}
+		else
+			*value = "None";
+	}
+	return 0;
+}
+
+int set_neighboring_wifi_diagnostics_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	struct uci_section *ss;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			if (strcmp(value, "Requested") == 0) {
+				uci_foreach_sections("wireless", "wifi-device", ss) {
+					dmubus_call_set("router.wireless", "scan", UBUS_ARGS{{"radio", section_name(ss), String}}, 1);
+				}
+				dmubus_call_set("tr069", "inform", UBUS_ARGS{{"event", "8 DIAGNOSTICS COMPLETE", String}}, 1);
+			}
+			return 0;
+	}
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_number_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *ss;
+	json_object *res, *jobj;
+	int entries = 0, result = 0;
+	*value = "0";
+
+	uci_foreach_sections("wireless", "wifi-device", ss) {
+		dmubus_call("router.wireless", "scanresults", UBUS_ARGS{{"radio", section_name(ss), String}}, 1, &res);
+		while (res) {
+			jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "access_points");
+			if(jobj)
+				entries++;
+			else
+				break;
+		}
+		result = result + entries;
+		entries = 0;
+	}
+	dmasprintf(value, "%d", result); // MEM WILL BE FREED IN DMMEMCLEAN
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_neighboring_diagnostic_args *cur_wifi_neighboring_diagnostic_args_ptr=(struct wifi_neighboring_diagnostic_args*)data;
+	dmasprintf(value, cur_wifi_neighboring_diagnostic_args_ptr->ssid);
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_neighboring_diagnostic_args *cur_wifi_neighboring_diagnostic_args_ptr=(struct wifi_neighboring_diagnostic_args*)data;
+	dmasprintf(value, cur_wifi_neighboring_diagnostic_args_ptr->bssid);
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_channel(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_neighboring_diagnostic_args *cur_wifi_neighboring_diagnostic_args_ptr=(struct wifi_neighboring_diagnostic_args*)data;
+	dmasprintf(value, "%d", cur_wifi_neighboring_diagnostic_args_ptr->channel);
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_signal_strength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_neighboring_diagnostic_args *cur_wifi_neighboring_diagnostic_args_ptr=(struct wifi_neighboring_diagnostic_args*)data;
+	dmasprintf(value, "%d", cur_wifi_neighboring_diagnostic_args_ptr->signalstrength);
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_operating_frequency_band(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_neighboring_diagnostic_args *cur_wifi_neighboring_diagnostic_args_ptr=(struct wifi_neighboring_diagnostic_args*)data;
+	dmasprintf(value, cur_wifi_neighboring_diagnostic_args_ptr->operatingfrequencyband);
+	return 0;
+}
+
+int get_neighboring_wifi_diagnostics_result_noise(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct wifi_neighboring_diagnostic_args *cur_wifi_neighboring_diagnostic_args_ptr=(struct wifi_neighboring_diagnostic_args*)data;
+	dmasprintf(value, "%d", cur_wifi_neighboring_diagnostic_args_ptr->noise);
+	return 0;
+}
+
 /**************************************************************************
 * SET AND GET ALIAS
 ***************************************************************************/
@@ -1694,7 +1824,7 @@ int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void
 	int id = 0;
 	char *idx, *idx_last = NULL;
 	char *macaddr= NULL, *active= NULL, *lastdatadownloadlinkrate= NULL, *lastdatauplinkrate= NULL, *signalstrength= NULL;
-	struct wifi_associative_device_args cur_wifi_associative_device_args = {0}, *args;
+	struct wifi_associative_device_args cur_wifi_associative_device_args = {0};
 	struct uci_section *dmmap_section;
 
 	uci_foreach_sections("wireless", "wifi-iface", ss) {
@@ -1739,12 +1869,60 @@ int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void
 						cur_wifi_associative_device_args.signalstrength= atoi(signalstrength);
 					else
 						cur_wifi_associative_device_args.signalstrength = 0;
-					args= &cur_wifi_associative_device_args;
 					idx = handle_update_instance(3, dmctx, &idx_last, update_instance_without_section, 1, ++id);
 					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&cur_wifi_associative_device_args, idx) == DM_STOP)
 						break;
 				}
 			}
 		}
+	}
+}
+
+int browseWifiNeighboringWiFiDiagnosticResultInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
+	struct wifi_neighboring_diagnostic_args cur_wifi_neighboring_diagnostic_args = {0};
+	json_object *res, *neighboring_wifi_obj;
+	struct uci_section *ss;
+	char *bssid, *ssid, *signalstrength, *channel, *frequency, *noise, *idx, *idx_last = NULL;
+	int entries = 0, id = 0;
+
+	uci_foreach_sections("wireless", "wifi-device", ss) {
+		dmubus_call("router.wireless", "scanresults", UBUS_ARGS{{"radio", section_name(ss), String}}, 1, &res);
+		while (res) {
+			neighboring_wifi_obj = dmjson_select_obj_in_array_idx(res, entries, 1, "access_points");
+			if(neighboring_wifi_obj) {
+				bssid=dmjson_get_value(neighboring_wifi_obj, 1, "bssid");
+				if(bssid!=NULL && strlen(bssid)>0)
+					dmasprintf(&(cur_wifi_neighboring_diagnostic_args.bssid),dmjson_get_value(neighboring_wifi_obj, 1, "bssid"));
+				ssid=dmjson_get_value(neighboring_wifi_obj, 1, "ssid");
+				if(ssid!=NULL && strlen(ssid)>0)
+					dmasprintf(&(cur_wifi_neighboring_diagnostic_args.ssid),dmjson_get_value(neighboring_wifi_obj, 1, "ssid"));
+				channel=dmjson_get_value(neighboring_wifi_obj, 1, "channel");
+				if(channel!=NULL && strlen(channel)>0)
+					cur_wifi_neighboring_diagnostic_args.channel= atoi(channel);
+				else
+					cur_wifi_neighboring_diagnostic_args.channel = 0;
+				signalstrength=dmjson_get_value(neighboring_wifi_obj, 1, "rssi");
+				if(signalstrength!=NULL && strlen(signalstrength)>0)
+					cur_wifi_neighboring_diagnostic_args.signalstrength= atoi(signalstrength);
+				else
+					cur_wifi_neighboring_diagnostic_args.signalstrength = 0;
+				frequency=dmjson_get_value(neighboring_wifi_obj, 1, "frequency");
+				if(frequency!=NULL && strlen(frequency)>0)
+					dmasprintf(&(cur_wifi_neighboring_diagnostic_args.operatingfrequencyband),dmjson_get_value(neighboring_wifi_obj, 1, "frequency"));
+				noise=dmjson_get_value(neighboring_wifi_obj, 1, "noise");
+				if(noise!=NULL && strlen(noise)>0)
+					cur_wifi_neighboring_diagnostic_args.noise= atoi(noise);
+				else
+					cur_wifi_neighboring_diagnostic_args.noise = 0;
+				entries++;
+				idx = handle_update_instance(3, dmctx, &idx_last, update_instance_without_section, 1, ++id);
+				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&cur_wifi_neighboring_diagnostic_args, idx) == DM_STOP)
+					break;
+			}
+			else
+				break;
+		}
+		entries = 0;
 	}
 }

@@ -38,6 +38,16 @@ struct wifi_associative_device_args
 	char *wdev;
 };
 
+struct wifi_neighboring_diagnostic_args
+{
+	char *ssid;
+	char *bssid;
+	char *operatingfrequencyband;
+	int channel;
+	int signalstrength;
+	int noise;
+};
+
 extern DMOBJ tWifiObj[];
 extern DMLEAF tWifiParams[];
 extern DMOBJ tWifiRadioStatsObj[];
@@ -52,11 +62,15 @@ extern DMOBJ tWifiAcessPointAssociatedDeviceObj[];
 extern DMLEAF tWifiAcessPointAssociatedDeviceStatsParams[];
 extern DMLEAF tWifiRadioStatsParams[];
 extern DMLEAF tWifiSsidStatsParams[];
+extern DMOBJ tNeighboringWiFiDiagnosticObj[];
+extern DMLEAF tNeighboringWiFiDiagnosticParams[];
+extern DMLEAF tNeighboringWiFiDiagnosticResultParams[];
 
 int browseWifiSsidInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseWifiAccessPointInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseWifiRadioInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browseWifiNeighboringWiFiDiagnosticResultInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 int add_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
 int delete_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
@@ -124,6 +138,14 @@ int get_access_point_associative_device_statistics_retrans_count(char *refparam,
 int get_access_point_associative_device_statistics_failed_retrans_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_statistics_retry_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_statistics_multiple_retry_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_number_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_bssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_channel(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_signal_strength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_operating_frequency_band(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_neighboring_wifi_diagnostics_result_noise(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_Wifi_Radio(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_Wifi_Ssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
@@ -155,5 +177,6 @@ int set_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, 
 int set_access_point_security_radius_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_radius_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_radius_secret(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_neighboring_wifi_diagnostics_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif
