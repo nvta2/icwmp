@@ -29,6 +29,9 @@
 
 #define DM_PROMPT "icwmp>"
 
+#define DM_ENABLED_NOTIFY "/etc/icwmpd/.dm_enabled_notify"
+#define DM_ENABLED_NOTIFY_TEMPORARY "/tmp/.dm_enabled_notify_temporary"
+
 #ifdef UPNP_TR064
 #define UPNP_CFG "tr064"
 #endif
@@ -488,6 +491,7 @@ int dm_entry_delete_object(struct dmctx *ctx);
 int dm_entry_set_value(struct dmctx *ctx);
 int dm_entry_set_notification(struct dmctx *ctx);
 int dm_entry_enabled_notify(struct dmctx *ctx);
+int dm_entry_enabled_notify_check_value_change(struct dmctx *dmctx);
 int dm_entry_get_linker(struct dmctx *ctx);
 int dm_entry_get_linker_value(struct dmctx *ctx);
 #ifdef UPNP_TR064
@@ -504,6 +508,7 @@ void free_all_list_enabled_notify();
 void free_all_list_upnp_param_track(struct list_head *head);
 #endif
 void dm_update_enabled_notify(struct dm_enabled_notify *p, char *new_value);
+int dm_update_file_enabled_notify(char *param, char *new_value);
 void dm_update_enabled_notify_byname(char *name, char *new_value);
 char *get_last_instance(char *package, char *section, char *opt_inst);
 char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst);

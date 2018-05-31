@@ -5,6 +5,55 @@
 #include "dmjson.h"
 #include "dmmem.h"
 
+static json_object *dmjson_jobj = NULL;
+
+void dm_add_json_obj(json_object *json_obj_out, char *object, char *string)
+{
+	json_object *json_obj_tmp = json_object_new_string(string);
+	json_object_object_add(json_obj_out, object, json_obj_tmp);
+}
+
+static void inline __dmjson_fprintf(FILE *fp, int argc, struct dmjson_arg dmarg[])
+{
+	int i;
+	char *arg;
+	json_object *json_obj_out = json_object_new_object();
+	if (json_obj_out == NULL)
+		return;
+
+	if (argc) {
+		for (i = 0; i < argc; i++) {
+			dm_add_json_obj(json_obj_out, dmarg[i].key, dmarg[i].val);
+		}
+		arg = (char *)json_object_to_json_string(json_obj_out);
+		fprintf(fp, "%s\n", arg);
+	}
+
+	json_object_put(json_obj_out);
+}
+
+void dmjson_fprintf(FILE *fp, int argc, struct dmjson_arg dmarg[])
+{
+	__dmjson_fprintf(fp, argc, dmarg);
+}
+
+void dmjson_parse_init(char *msg)
+{
+	if (dmjson_jobj) {
+		json_object_put(dmjson_jobj);
+		dmjson_jobj = NULL;
+	}
+	dmjson_jobj = json_tokener_parse(msg);
+}
+
+void dmjson_parse_fini(void)
+{
+	if (dmjson_jobj) {
+		json_object_put(dmjson_jobj);
+		dmjson_jobj = NULL;
+	}
+}
+
 static char *dmjson_print_value(json_object *jobj)
 {
 	enum json_type type;
@@ -219,4 +268,20 @@ char *__dmjson_get_value_array_all(json_object *mainjobj, char *delim, int argc,
 	va_end(arg);
 	ret = ____dmjson_get_value_array_all(mainjobj, delim, argv);
 	return ret;
+}
+
+void dmjson_get_var(char *jkey, char **jval)
+{
+	enum json_type type;
+	*jval = "";
+
+	if (dmjson_jobj == NULL)
+		return;
+
+	json_object_object_foreach(dmjson_jobj, key, val) {
+		if (strcmp(jkey, key) == 0) {
+			*jval = dmjson_print_value(val);
+			return;
+		}
+	}
 }

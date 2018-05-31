@@ -27,6 +27,7 @@
 #include "dmentry.h"
 #include "deviceinfo.h"
 #include "config.h"
+#include "dmjson.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
@@ -166,12 +167,13 @@ void free_dm_parameter_all_fromlist(struct list_head *list)
 	}
 }
 
-inline void add_list_value_change(char *param_name, char *param_data, char *param_type)
+void add_list_value_change(char *param_name, char *param_data, char *param_type)
 {
 	pthread_mutex_lock(&(mutex_value_change));
 	add_dm_parameter_tolist(&list_value_change, param_name, param_data, param_type);
 	pthread_mutex_unlock(&(mutex_value_change));
 }
+
 inline void add_lw_list_value_change(char *param_name, char *param_data, char *param_type)
 {
 	add_dm_parameter_tolist(&list_lw_value_change, param_name, param_data, param_type);
@@ -277,10 +279,55 @@ void cwmp_lwnotification()
 	FREE(msg_out);
 }
 
+int copy_temporary_file_to_original_file(char *f1, char *f2)
+{
+	FILE *fp, *ftmp;
+	char buf[512];
+
+	ftmp = fopen(f2, "r");
+	if (ftmp == NULL)
+		return 0;
+
+	fp = fopen(f1, "w");
+	if (fp == NULL) {
+	  fclose(ftmp);
+	  return 0;
+	}
+
+	while( fgets(buf, 512, ftmp) !=NULL )
+	{
+		fprintf(fp, "%s", buf);
+	}
+	fclose(ftmp);
+	fclose(fp);
+	return 1;
+}
+
+void send_active_value_change(void)
+{
+	struct cwmp   *cwmp = &cwmp_main;
+	struct event_container   *event_container;
+
+	pthread_mutex_lock(&(cwmp->mutex_session_queue));
+	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+	if (event_container == NULL)
+	{
+		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+		return;
+	}
+	cwmp_save_event_container(cwmp,event_container);
+	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+	pthread_cond_signal(&(cwmp->threshold_session_send));
+	return;
+}
+
 void cwmp_add_notification(void)
 {
-	int fault;
+	int fault, iscopy;
 	int i = 0;
+	FILE *fp;
+	char buf[512];
+	char *parameter, *notification, *value, *jval;
 	struct event_container   *event_container;
 	struct cwmp   *cwmp = &cwmp_main;
 	struct dm_enabled_notify *p;
@@ -296,26 +343,43 @@ void cwmp_add_notification(void)
 	pthread_mutex_lock(&(cwmp->mutex_handle_notify));
 	cwmp->count_handle_notify = 0;
 	pthread_mutex_unlock(&(cwmp->mutex_handle_notify));
-
 	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
-	list_for_each_entry(p, &list_enabled_notify, list) {
+
+	fp = fopen(DM_ENABLED_NOTIFY, "r");
+	if (fp == NULL)
+		return 0;
+
+	while (fgets(buf, 512, fp) != NULL) {
 		dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 		initiate = true;
-		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, p->name, NULL, NULL);
+		int len = strlen(buf);
+		if (len)
+			buf[len-1] = '\0';
+		dmjson_parse_init(buf);
+		dmjson_get_var("parameter", &jval);
+		parameter = dmstrdup(jval);
+		dmjson_get_var("value", &jval);
+		value = dmstrdup(jval);
+		dmjson_get_var("notification", &jval);
+		notification = dmstrdup(jval);
+		dmjson_parse_fini();
+		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (strcmp(dm_parameter->data, p->value) != 0) {
-				dm_update_enabled_notify(p, dm_parameter->data);
-				if (p->notification[0] == '1' || p->notification[0] == '2' || p->notification[0] == '4' || p->notification[0] == '6' ) 
-				add_list_value_change(p->name, dm_parameter->data, dm_parameter->type);
-				if (p->notification[0] == '2')
+			if (strcmp(dm_parameter->data, value) != 0) {
+				dm_update_file_enabled_notify(parameter, dm_parameter->data);
+				iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
+				if(iscopy)
+					remove(DM_ENABLED_NOTIFY_TEMPORARY);
+				if (notification[0] == '1' || notification[0] == '2' || notification[0] == '4' || notification[0] == '6' )
+					add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
+				if (notification[0] == '2')
 					isactive = true;
 			}
 		}
-		//dm_ctx_clean_sub(&dmctx);
 	}
-	//dm_ctx_clean(&dmctx);
-	//dm_ctx_init(&dmctx);
+	fclose(fp);
+
 	list_for_each_entry(p, &list_enabled_lw_notify, list) {
 		if (!initiate || i != 0)		
 			dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
@@ -341,19 +405,7 @@ void cwmp_add_notification(void)
 	}
 	pthread_mutex_unlock(&(cwmp->mutex_session_send));
 	if (isactive)
-	{
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-		if (event_container == NULL)
-		{
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-			return;
-		}
-		cwmp_save_event_container(cwmp,event_container);
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-		pthread_cond_signal(&(cwmp->threshold_session_send));
-		return;
-	}
+		send_active_value_change();
 }
 
 void cwmp_root_cause_event_ipdiagnostic(void)

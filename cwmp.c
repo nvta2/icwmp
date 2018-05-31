@@ -679,12 +679,12 @@ int main(int argc, char **argv)
     error = pthread_create(&periodic_event_thread, NULL, &thread_event_periodic, (void *)cwmp);
     if (error<0)
     {
-        CWMP_LOG(ERROR,"Error error when creating the periodic event thread!");
+        CWMP_LOG(ERROR,"Error when creating the periodic event thread!");
     }
     error = pthread_create(&handle_notify_thread, NULL, &thread_handle_notify, (void *)cwmp);
 	if (error<0)
 	{
-		CWMP_LOG(ERROR,"Error error when creating the handle notify thread!");
+		CWMP_LOG(ERROR,"Error when creating the handle notify thread!");
 	}
     error = pthread_create(&scheduleInform_thread, NULL, &thread_cwmp_rpc_cpe_scheduleInform, (void *)cwmp);
     if (error<0)

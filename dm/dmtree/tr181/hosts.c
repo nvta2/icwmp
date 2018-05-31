@@ -34,18 +34,18 @@ DMLEAF thostsParam[] = {
 
 /*** Hosts.Host ***/
 DMLEAF thostParam[] = {
-{"AssociatedDevice", &DMREAD, DMT_STRING, get_host_associateddevice, NULL, NULL, &DMNONE},
-{"Layer3Interface", &DMREAD, DMT_STRING, get_host_layer3interface, NULL, NULL, &DMNONE},
-{"IPAddress", &DMREAD, DMT_STRING, get_host_ipaddress, NULL, NULL, &DMNONE},
-{"HostName", &DMREAD, DMT_STRING, get_host_hostname, NULL, NULL, &DMNONE},
-{"Active", &DMREAD, DMT_BOOL, get_host_active, NULL, NULL, &DMNONE},
-{"PhysAddress", &DMREAD, DMT_STRING, get_host_phy_address, NULL, NULL, &DMNONE},
-{"X_INTENO_SE_InterfaceType", &DMREAD, DMT_STRING, get_host_interfacetype, NULL, NULL, &DMNONE},
-{"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, &DMNONE},
-{"LeaseTimeRemaining", &DMREAD, DMT_STRING, get_host_leasetime_remaining, NULL, NULL, &DMNONE},
+{"AssociatedDevice", &DMREAD, DMT_STRING, get_host_associateddevice, NULL, NULL, NULL},
+{"Layer3Interface", &DMREAD, DMT_STRING, get_host_layer3interface, NULL, NULL, NULL},
+{"IPAddress", &DMREAD, DMT_STRING, get_host_ipaddress, NULL, NULL, NULL},
+{"HostName", &DMREAD, DMT_STRING, get_host_hostname, NULL, NULL, NULL},
+{"Active", &DMREAD, DMT_BOOL, get_host_active, NULL, NULL, NULL},
+{"PhysAddress", &DMREAD, DMT_STRING, get_host_phy_address, NULL, NULL, NULL},
+{"X_INTENO_SE_InterfaceType", &DMREAD, DMT_STRING, get_host_interfacetype, NULL, NULL, NULL},
+{"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, NULL},
+{"LeaseTimeRemaining", &DMREAD, DMT_STRING, get_host_leasetime_remaining, NULL, NULL, NULL},
 {"DHCPClient", &DMREAD, DMT_STRING, get_host_dhcp_client, NULL, NULL, NULL},
-{"X_IOPSYS_InterfaceType", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, &DMNONE},
-{"X_IOPSYS_ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, &DMNONE},
+{"X_IOPSYS_InterfaceType", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, NULL},
+{"X_IOPSYS_ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, NULL},
 {0}
 };
 

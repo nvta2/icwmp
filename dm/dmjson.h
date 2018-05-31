@@ -13,7 +13,11 @@ struct dmjson_arg {
 
 #define DMJSON_ARGS (struct dmjson_arg[])
 
+void dm_add_json_obj(json_object *json_obj_out, char *object, char *string);
 void dmjson_printf(int argc, struct dmjson_arg dmarg[]);
+void dmjson_fprintf(FILE *fp, int argc, struct dmjson_arg dmarg[]);
+void dmjson_parse_init(char *msg);
+void dmjson_parse_fini(void);
 void dmjson_get_var(char *jkey, char **jval);
 json_object *dmjson_select_obj(json_object * jobj, char *argv[]);
 json_object *__dmjson_get_obj(json_object *mainjobj, int argc, ...);

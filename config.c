@@ -1354,6 +1354,6 @@ int cwmp_config_reload(struct cwmp *cwmp)
 	if (conf->xmpp_enable && conf->xmpp_connection_id != 0)
 		cwmp_get_xmpp_param(cwmp);
 #endif
-    dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+    dm_entry_reload_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }

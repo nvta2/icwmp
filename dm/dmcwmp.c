@@ -49,6 +49,7 @@
 #include "nat.h"
 #include "xmpp.h"
 #include "dmcwmp.h"
+#include "dmjson.h"
 
 static char *get_parameter_notification(struct dmctx *ctx, char *param);
 static int remove_parameter_notification(char *param);
@@ -108,6 +109,8 @@ static int enabled_tracked_param_check_param(DMPARAM_ARGS);
 #endif
 static int enabled_notify_check_obj(DMOBJECT_ARGS);
 static int enabled_notify_check_param(DMPARAM_ARGS);
+static int enabled_notify_check_value_change_param(DMPARAM_ARGS);
+static int enabled_notify_check_value_change_obj(DMOBJECT_ARGS);
 static int get_linker_check_obj(DMOBJECT_ARGS);
 static int get_linker_check_param(DMPARAM_ARGS);
 static int get_linker_value_check_obj(DMOBJECT_ARGS);
@@ -734,17 +737,6 @@ void free_all_list_fault_param(struct dmctx *ctx)
 	}
 }
 
-void add_list_enabled_notify(struct dmctx *dmctx, char *param, char *notification, char *value)
-{
-	struct dm_enabled_notify *dm_enabled_notify;
-
-	dm_enabled_notify = calloc(1, sizeof(struct dm_enabled_notify)); // Should be calloc and not dmcalloc
-	list_add_tail(&dm_enabled_notify->list, &list_enabled_notify);
-	dm_enabled_notify->name = strdup(param); // Should be strdup and not dmstrdup
-	dm_enabled_notify->value = value ? strdup(value) : strdup(""); // Should be strdup and not dmstrdup
-	dm_enabled_notify->notification =  strdup(notification); // Should be strdup and not dmstrdup
-}
-
 void add_list_enabled_lwnotify(struct dmctx *dmctx, char *param, char *notification, char *value)
 {
 	struct dm_enabled_notify *dm_enabled_notify;
@@ -765,15 +757,6 @@ void del_list_enabled_notify(struct dm_enabled_notify *dm_enabled_notify)
 	free(dm_enabled_notify);
 }
 
-void free_all_list_enabled_notify()
-{
-	struct dm_enabled_notify *dm_enabled_notify;
-	while (list_enabled_notify.next != &list_enabled_notify) {
-		dm_enabled_notify = list_entry(list_enabled_notify.next, struct dm_enabled_notify, list);
-		del_list_enabled_notify(dm_enabled_notify);
-	}
-}
-
 void free_all_list_enabled_lwnotify()
 {
 	struct dm_enabled_notify *dm_enabled_notify;
@@ -781,6 +764,47 @@ void free_all_list_enabled_lwnotify()
 		dm_enabled_notify = list_entry(list_enabled_lw_notify.next, struct dm_enabled_notify, list);
 		del_list_enabled_notify(dm_enabled_notify);
 	}
+}
+
+int dm_update_file_enabled_notify(char *param, char *new_value)
+{
+	FILE *fp, *ftmp;
+	char buf[512];
+	char *parameter, *notification, *value, *type, *jval;
+
+	fp = fopen(DM_ENABLED_NOTIFY, "r");
+	if (fp == NULL)
+		return 0;
+
+	ftmp = fopen(DM_ENABLED_NOTIFY_TEMPORARY, "a");
+	if (ftmp == NULL) {
+		fclose(fp);
+		return 0;
+	}
+
+	while (fgets(buf, 512, fp) != NULL) {
+		int len = strlen(buf);
+		if (len)
+			buf[len-1] = '\0';
+		dmjson_parse_init(buf);
+		dmjson_get_var("parameter", &jval);
+		parameter = dmstrdup(jval);
+		dmjson_get_var("value", &jval);
+		value = dmstrdup(jval);
+		dmjson_get_var("notification", &jval);
+		notification = dmstrdup(jval);
+		dmjson_get_var("type", &jval);
+		type = dmstrdup(jval);
+		dmjson_parse_fini();
+		if (strcmp(parameter, param) == 0)
+			dmjson_fprintf(ftmp, 4, DMJSON_ARGS{{"parameter", parameter}, {"notification", notification}, {"value", new_value}, {"type", type}});
+		else
+			dmjson_fprintf(ftmp, 4, DMJSON_ARGS{{"parameter", parameter}, {"notification", notification}, {"value", value}, {"type", type}});
+	}
+	fclose(fp);
+	fclose(ftmp);
+
+	return 0;
 }
 
 void dm_update_enabled_notify(struct dm_enabled_notify *p, char *new_value)
@@ -791,12 +815,13 @@ void dm_update_enabled_notify(struct dm_enabled_notify *p, char *new_value)
 
 void dm_update_enabled_notify_byname(char *name, char *new_value)
 {
-	struct dm_enabled_notify *p;
+	int iscopy;
+	dm_update_file_enabled_notify(name, new_value);
+	remove(DM_ENABLED_NOTIFY);
+	iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
+	if(iscopy)
+		remove(DM_ENABLED_NOTIFY_TEMPORARY);
 
-	list_for_each_entry(p, &list_enabled_notify, list) {
-		if (strcmp(p->name, name) == 0)
-			dm_update_enabled_notify(p, new_value);
-	}
 }
 
 int update_param_instance_alias(struct dmctx *ctx, char *param, char **new_param)
@@ -1638,12 +1663,12 @@ int dm_entry_enabled_notify(struct dmctx *dmctx)
 	int err;
 	DMOBJ *root = dmctx->dm_entryobj;
 	DMNODE node = { .current_object = "" };
-	//unsigned char findparam_check = 0;
 
 	dmctx->method_obj = enabled_notify_check_obj;
 	dmctx->method_param = enabled_notify_check_param;
 	dmctx->checkobj = NULL ;
 	dmctx->checkleaf = NULL;
+	remove(DM_ENABLED_NOTIFY);
 	err = dm_browse(dmctx, &node, root, NULL, NULL);
 	return err;
 
@@ -1653,12 +1678,11 @@ static int enabled_notify_check_obj(DMOBJECT_ARGS)
 {
 	return FAULT_9005;
 }
-// TO check
+
 static int enabled_notify_check_param(DMPARAM_ARGS)
 {
-	char *refparam;
-	char *value = "";
-	char *notif;
+	char *refparam, *stype, *notif, *value = "";
+	FILE *fp;
 
 	dmastrcat(&refparam, node->current_object, lastname);
 
@@ -1674,11 +1698,81 @@ static int enabled_notify_check_param(DMPARAM_ARGS)
 		return 0;
 	}
 	(get_cmd)(refparam, dmctx, data, instance, &value);
-	if (notif[0] == '1' || notif[0] == '2'
-			|| notif[0] == '4' || notif[0] == '6')
-		add_list_enabled_notify(dmctx, refparam, notif, value);
+	fp = fopen(DM_ENABLED_NOTIFY, "a");
+	if (fp == NULL) {
+		dmfree(refparam);
+		return 0;
+	}
+	if (notif[0] == '1' || notif[0] == '2' || notif[0] == '4' || notif[0] == '6') {
+		stype = DMT_TYPE[type];
+		dmjson_fprintf(fp, 4, DMJSON_ARGS{{"parameter", refparam}, {"notification", notif}, {"value", value}, {"type", stype}});
+	}
+	fclose(fp);
+
 	if (notif[0] >= '3') {
 		add_list_enabled_lwnotify(dmctx, refparam, notif, value);
+	}
+	dmfree(refparam);
+	return 0;
+}
+
+/*********************
+ * Check enabled notify value change
+ ********************/
+int dm_entry_enabled_notify_check_value_change(struct dmctx *dmctx)
+{
+	DMOBJ *root = dmctx->dm_entryobj;
+	FILE *fp;
+	char buf[512];
+	char *jval;
+
+	fp = fopen(DM_ENABLED_NOTIFY, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+
+	while (fgets(buf, 512, fp) != NULL) {
+		DMNODE node = {.current_object = ""};
+		int len = strlen(buf);
+		if (len)
+			buf[len-1] = '\0';
+		dmjson_parse_init(buf);
+		dmjson_get_var("parameter", &jval);
+		dmctx->in_param = dmstrdup(jval);
+		dmjson_get_var("value", &jval);
+		dmctx->in_value = dmstrdup(jval);
+		dmjson_get_var("notification", &jval);
+		dmctx->in_notification = dmstrdup(jval);
+		dmjson_parse_fini();
+		dmctx->checkobj = NULL ;
+		dmctx->checkleaf = NULL;
+		dmctx->method_obj = enabled_notify_check_value_change_obj;
+		dmctx->method_param = enabled_notify_check_value_change_param;
+		dm_browse(dmctx, &node, root, NULL, NULL);
+	}
+	fclose(fp);
+	return 0;
+}
+
+static int enabled_notify_check_value_change_obj(DMOBJECT_ARGS)
+{
+	return FAULT_9005;
+}
+
+static int enabled_notify_check_value_change_param(DMPARAM_ARGS)
+{
+	char *refparam, *value = "";
+
+	dmastrcat(&refparam, node->current_object, lastname);
+	if (strcmp(refparam, dmctx->in_param) != 0) {
+		dmfree(refparam);
+		return FAULT_9005;
+	}
+	(get_cmd)(refparam, dmctx, data, instance, &value);
+	if (strcmp(value, dmctx->in_value) != 0) {
+		add_list_value_change(refparam, value, DMT_TYPE[type]);
+		if(dmctx->in_notification[0] =='2')
+			send_active_value_change();
 	}
 	dmfree(refparam);
 	return 0;

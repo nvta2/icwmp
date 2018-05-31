@@ -27,9 +27,9 @@ DMOBJ tnatObj[] = {
 
 /*** NAT.InterfaceSetting. ***/
 DMLEAF tInterfaceSettingParam[] = {
-{"Enable", &DMREAD, DMT_BOOL, get_nat_enable, NULL, NULL, &DMNONE},
-{"Alias", &DMWRITE, DMT_STRING, get_nat_alias, set_nat_alias, NULL, &DMNONE},
-{"Interface", &DMREAD, DMT_STRING, get_nat_interface, NULL, NULL, &DMNONE},
+{"Enable", &DMREAD, DMT_BOOL, get_nat_enable, NULL, NULL, NULL},
+{"Alias", &DMWRITE, DMT_STRING, get_nat_alias, set_nat_alias, NULL, NULL},
+{"Interface", &DMREAD, DMT_STRING, get_nat_interface, NULL, NULL, NULL},
 {0}
 };
 

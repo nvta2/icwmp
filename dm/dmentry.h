@@ -16,6 +16,7 @@ int dm_ctx_init_sub(struct dmctx *ctx, unsigned int dm_type, unsigned int amd_ve
 int dm_entry_param_method(struct dmctx *ctx, int cmd, char *inparam, char *arg1, char *arg2);
 int dm_entry_apply(struct dmctx *ctx, int cmd, char *arg1, char *arg2);
 int dm_entry_load_enabled_notify(unsigned int dm_type, unsigned int amd_version, int instance_mode);
+int dm_entry_reload_enabled_notify(unsigned int dm_type, unsigned int amd_version, int instance_mode);
 int adm_entry_get_linker_param(struct dmctx *ctx, char *param, char *linker, char **value);
 int adm_entry_get_linker_value(struct dmctx *ctx, char *param, char **value);
 int dm_entry_restart_services(void);
