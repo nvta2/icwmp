@@ -853,12 +853,12 @@ int get_global_config(struct config *conf)
 		if((error = uci_get_value(UCI_XMPP_ENABLE,&value)) == CWMP_OK)
 		{
 		    if(value != NULL)
-				{
+			{
 				if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
 				{
 					conf->xmpp_enable = true;
-					CWMP_LOG(INFO,"Xmpp connection id is %d \n", conf->xmpp_enable);
-					}
+					CWMP_LOG(INFO,"Xmpp connection id is %d", conf->xmpp_enable);
+				}
 				value = NULL;
 			}
 		}
@@ -878,7 +878,7 @@ int get_global_config(struct config *conf)
 		    }
 		    else
 		    {
-				CWMP_LOG(INFO,"Xmpp connection id :%d \n", a);
+				CWMP_LOG(INFO,"Xmpp connection id :%d", a);
 		        conf->xmpp_connection_id = a;
 		    }
 		}
@@ -1265,7 +1265,7 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 			cwmp->xmpp_param.retry_max_interval = (cwmp->xmpp_param.retry_max_interval) ? cwmp->xmpp_param.retry_max_interval : DEFAULT_RETRY_MAX_INTERVAL;
 		}
 		cwmp_dm_ctx_clean(cwmp, &dmctx);
-		check_xmpp_config(cwmp);
+		//check_xmpp_config(cwmp);
 	}
     else
     {
@@ -1316,6 +1316,8 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
 #ifdef XMPP_ENABLE
 	if (conf->xmpp_enable && conf->xmpp_connection_id > 0)
 		cwmp_get_xmpp_param(cwmp);
+    else
+        CWMP_LOG(INFO,"XMPP is Disabled");
 #endif
     dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
