@@ -60,4 +60,8 @@ config xmpp_connection
 	option domain 	''
 	option resource 'icwmp'
 	option interval '300'
+	option attempt '16'
+	option initial_retry_interval ''
+	option retry_interval_multiplier ''
+	option retry_max_interval ''
 

@@ -33,7 +33,7 @@ DMLEAF tXMPPParams[] = {
 DMLEAF tConnectionParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"Enable", &DMWRITE, DMT_BOOL, get_connection_enable, set_connection_enable, NULL, NULL},
-//{"Username", &DMWRITE, DMT_STRING, get_xmpp_connection_username, set_xmpp_connection_username, NULL, NULL},
+{"Username", &DMWRITE, DMT_STRING, get_xmpp_connection_username, set_xmpp_connection_username, NULL, NULL},
 {"Password", &DMWRITE, DMT_STRING, get_xmpp_connection_password, set_xmpp_connection_password, NULL, NULL},
 {"Domain", &DMWRITE, DMT_STRING, get_xmpp_connection_domain, set_xmpp_connection_domain, NULL, NULL},
 {"Resource", &DMWRITE, DMT_STRING, get_xmpp_connection_resource, set_xmpp_connection_resource, NULL, NULL},
@@ -242,15 +242,36 @@ int set_connection_enable(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
-int get_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_xmpp_connection_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(connsection, "password", value);
+	dmuci_get_value_by_section_string(connsection, "username", value);
 	return 0;
 }
 
-int set_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action) 
+int set_xmpp_connection_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	struct uci_section *connsection = (struct uci_section *)data;
+	bool b;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(connsection, "username", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "";
+	return 0;
+}
+
+int set_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
 	bool b;
@@ -269,7 +290,7 @@ int get_xmpp_connection_domain(char *refparam, struct dmctx *ctx, void *data, ch
 {
 	struct uci_section *connsection = (struct uci_section *)data;
 
-	dmuci_get_value_by_section_string(connsection, "password", value);
+	dmuci_get_value_by_section_string(connsection, "domain", value);
 	return 0;
 }
 
@@ -282,7 +303,7 @@ int set_xmpp_connection_domain(char *refparam, struct dmctx *ctx, void *data, ch
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(connsection, "password", value);
+			dmuci_set_value_by_section(connsection, "domain", value);
 			return 0;
 	}
 	return 0;
