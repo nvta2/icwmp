@@ -148,8 +148,15 @@ not_found:
 char *get_deviceid_productclass()
 {
 	char *v, *tmp, *val;
-	
-	db_get_value_string("hw", "board", "iopVerBoard", &v);
+	dmuci_get_option_value_string("cwmp", "cpe", "override_productclass", &v);
+	if (v[0] == '\0')
+	{
+		db_get_value_string("hw", "board", "iopVerBoard", &v);
+		tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
+		val = tmp;
+		return val;
+	}
+
 	tmp = dmstrdup(v);// MEM WILL BE FREED IN DMMEMCLEAN
 	val = tmp;
 	return val;
