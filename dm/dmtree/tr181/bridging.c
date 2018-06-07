@@ -262,45 +262,13 @@ char *br_port_update_instance_alias(int action, char **last_inst, void *argv[])
 int reset_br_port(char *br_key)
 {
 	struct uci_section *s, *prev_s = NULL;
-	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
-		dmuci_set_value_by_section(s, "bridge_port_instance", "");
-		dmuci_set_value_by_section(s, "bridge_port_alias", "");
-		dmuci_set_value_by_section(s, "bridge_key", "");
-		dmuci_set_value_by_section(s, "penable", "0");
-	}
-#ifndef EX400
-	uci_foreach_option_eq("dsl", "atm-device", "bridge_key", br_key, s) {
-		dmuci_set_value_by_section(s, "bridge_port_instance", "");
-		dmuci_set_value_by_section(s, "bridge_port_alias", "");
-		dmuci_set_value_by_section(s, "bridge_key", "");
-		dmuci_set_value_by_section(s, "penable", "0");
-	}
-	uci_foreach_option_eq("dsl", "ptm-device", "bridge_key", br_key, s) {
-		dmuci_set_value_by_section(s, "bridge_port_instance", "");
-		dmuci_set_value_by_section(s, "bridge_port_alias", "");
-		dmuci_set_value_by_section(s, "bridge_key", "");
-		dmuci_set_value_by_section(s, "penable", "0");
-	}
-	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
-#else
-	uci_foreach_option_eq("ports", "ethport", "bridge_key", br_key, s) {
-#endif
-		dmuci_set_value_by_section(s, "bridge_port_instance", "");
-		dmuci_set_value_by_section(s, "bridge_port_alias", "");
-		dmuci_set_value_by_section(s, "bridge_key", "");
-		dmuci_set_value_by_section(s, "penable", "0");
-	}
-	uci_foreach_option_eq("wireless", "wifi-iface", "bridge_key", br_key, s) {
-		dmuci_set_value_by_section(s, "bridge_port_instance", "");
-		dmuci_set_value_by_section(s, "bridge_port_alias", "");
-		dmuci_set_value_by_section(s, "bridge_key", "");
-		dmuci_set_value_by_section(s, "penable", "0");
-	}
-	uci_foreach_option_eq("network", "device", "bridge_key", br_key, s) {
+
+	uci_path_foreach_option_eq(icwmpd, "dmmap_bridge_port", "bridge_port", "bridge_key", br_key, s){
 		if (prev_s)
 			dmuci_delete_by_section(prev_s, NULL, NULL);
 		prev_s = s;
 	}
+
 	if (prev_s)
 		dmuci_delete_by_section(prev_s, NULL, NULL);
 	return 0;
@@ -319,49 +287,53 @@ int check_ifname_is_not_lan_port(char *ifname)
 
 int update_port_parameters(char *linker, char *br_key, char *br_pt_inst, char *mg_port)
 {
-	struct uci_section *s;
+	struct uci_section *s, *dmmap_section;
 	if (check_ifname_is_vlan(linker)) {
 		uci_foreach_option_eq("network", "device", "ifname", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(s), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "bridge_key", br_key);
+			dmuci_set_value_by_section(dmmap_section, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(dmmap_section, "mg_port", mg_port);
 			break;
 		}
-#ifndef EX400
 	} else if (strncmp(linker, "ptm", 3) == 0) {
 		uci_foreach_option_eq("dsl", "ptm-device", "device", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(s), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "bridge_key", br_key);
+			dmuci_set_value_by_section(dmmap_section, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(dmmap_section, "mg_port", mg_port);
 			break;
 		}
 	} else if (strncmp(linker, "atm", 3) == 0) {
 		uci_foreach_option_eq("dsl", "atm-device", "device", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(s), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "bridge_key", br_key);
+			dmuci_set_value_by_section(dmmap_section, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(dmmap_section, "mg_port", mg_port);
 			break;
 		}
-#endif
 	} else if (strncmp(linker, "wl", 2) == 0) {
 		uci_foreach_option_eq("wireless", "wifi-iface", "ifname", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(s), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "bridge_key", br_key);
+			dmuci_set_value_by_section(dmmap_section, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(dmmap_section, "mg_port", mg_port);
 			break;
 		}
 	} else if (strncmp(linker, "eth0", 4) == 0) {
 		uci_foreach_option_eq("network", "device", "name", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(s), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "bridge_key", br_key);
+			dmuci_set_value_by_section(dmmap_section, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(dmmap_section, "mg_port", mg_port);
 			break;
 		}
 	} else {
 		uci_foreach_option_eq("ports", "ethport", "ifname", linker, s) {
-			dmuci_set_value_by_section(s, "bridge_key", br_key);
-			dmuci_set_value_by_section(s, "bridge_port_instance", br_pt_inst);
-			dmuci_set_value_by_section(s, "mg_port", mg_port);
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(s), &dmmap_section);
+			dmuci_set_value_by_section(dmmap_section, "bridge_key", br_key);
+			dmuci_set_value_by_section(dmmap_section, "bridge_port_instance", br_pt_inst);
+			dmuci_set_value_by_section(dmmap_section, "mg_port", mg_port);
 			break;
 		}
 	}
@@ -948,6 +920,9 @@ int delete_br_port(char *refparam, struct dmctx *ctx, void *data, char *instance
 int check_port_with_ifname (char *ifname, struct uci_section **ss)
 {
 	struct uci_section *s;
+	char *file_config_name;
+
+	dmasprintf(&file_config_name, "%s","/etc/config/dsl");
 
 	if (check_ifname_is_vlan(ifname)) {
 		uci_foreach_option_eq("network", "device", "ifname", ifname, s) {
@@ -955,33 +930,28 @@ int check_port_with_ifname (char *ifname, struct uci_section **ss)
 			break;
 		}
 	}
-#ifndef EX400
 	else if (strncmp(ifname, "ptm", 3) == 0) {
-		uci_foreach_option_eq("dsl", "ptm-device", "device", ifname, s) {
-			*ss = s;
-			break;
+		if(access( file_config_name, F_OK ) != -1){
+			uci_foreach_option_eq("dsl", "ptm-device", "device", ifname, s) {
+				*ss = s;
+				break;
+			}
 		}
 	}
 	else if (strncmp(ifname, "atm", 3) == 0) {
-		uci_foreach_option_eq("dsl", "atm-device", "device", ifname, s) {
-			*ss = s;
-			break;
+		if(access( file_config_name, F_OK ) != -1){
+			uci_foreach_option_eq("dsl", "atm-device", "device", ifname, s) {
+				*ss = s;
+				break;
+			}
 		}
 	}
-	else if (strncmp(ifname, "wl", 2) == 0) {
+	else if(strncmp(ifname, "wl", 2) != 0) {
 		uci_foreach_option_eq("wireless", "wifi-iface", "ifname", ifname, s) {
 			*ss = s;
 			break;
 		}
 	}
-#else
-	else if(strncmp(ifname, "eth", 3) != 0) {
-		uci_foreach_option_eq("wireless", "wifi-iface", "ifname", ifname, s) {
-			*ss = s;
-			break;
-		}
-	}
-#endif
 	else {
 		uci_foreach_option_eq("ports", "ethport", "ifname", ifname, s) {
 			*ss = s;
@@ -1006,10 +976,8 @@ int get_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 		ifname_dup = dmstrdup(ifname);
 		p = lbuf;
 		for (pch = strtok_r(ifname_dup, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
-#ifndef EX400
 			if (strstr(pch, "atm") || strstr(pch, "ptm") || strstr(pch, wan_baseifname))
 				continue;
-#endif
 			check_port_with_ifname(pch, &s);
 			if(s == NULL)
 				continue;
@@ -1229,13 +1197,14 @@ void set_bridge_port_parameters(struct uci_section *dmmap_section, char* bridge_
 int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance){
 	struct uci_section *s, *eth_s = NULL, *atm_s = NULL, *ptm_s = NULL, *wl_s = NULL, *vlan_s = NULL, *w_eth_s = NULL, *new_port = NULL;
 	char *port = NULL, *port_last = NULL, *vlan = NULL, *vlan_last = NULL;
-	char *ifname_dup = NULL, *pch, *spch, *type, *is_dmmap;
+	char *ifname_dup = NULL, *pch, *spch, *type, *is_dmmap, *file_config_name;
 	bool find_max = true;
 	struct bridging_port_args curr_bridging_port_args = {0};
 	bool found = false;
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
 
+	dmasprintf(&file_config_name, "%s","/etc/config/dsl");
 	check_create_dmmap_package("dmmap_bridge_port");
 	update_section_list_icwmpd("dmmap_bridge_port","bridge_port", "bridge_key", 1, ((struct bridging_args *)prev_data)->br_key, "mg_port", "true", "bridge_port_instance", "1");
 	uci_path_foreach_option_eq(icwmpd, "dmmap_bridge_port", "bridge_port", "bridge_key",  ((struct bridging_args *)prev_data)->br_key, new_port) {
@@ -1260,13 +1229,14 @@ int browseBridgePortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 		if(!found)
 			found= synchronize_multi_config_sections_with_dmmap_eq("wireless", "wifi-iface", "dmmap_bridge_port", "bridge_port", "device", pch, pch, &dup_list);
 
-#ifndef EX400
-		if(!found)
-			found= synchronize_multi_config_sections_with_dmmap_eq("dsl", "atm-device", "dmmap_bridge_port", "bridge_port", "device", pch, pch, &dup_list);
 
-		if(!found)
-			found= synchronize_multi_config_sections_with_dmmap_eq("dsl", "ptm-device", "dmmap_bridge_port", "bridge_port", "device", pch, pch, &dup_list);
-#endif
+		if(access( file_config_name, F_OK ) != -1){
+			if(!found)
+				found= synchronize_multi_config_sections_with_dmmap_eq("dsl", "atm-device", "dmmap_bridge_port", "bridge_port", "device", pch, pch, &dup_list);
+
+			if(!found)
+				found= synchronize_multi_config_sections_with_dmmap_eq("dsl", "ptm-device", "dmmap_bridge_port", "bridge_port", "device", pch, pch, &dup_list);
+		}
 
 		if(!found){
 			if(strncmp(pch, wan_baseifname, strlen(wan_baseifname))==0){//just if we are in wan eth ifname

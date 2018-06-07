@@ -21,13 +21,11 @@
 
 const char *vlan_ifname[3] = {"eth","atm", "ptm"};
 static char *wan_baseifname = NULL;
-#ifndef EX400
 struct wan_interface wan_interface_tab[3] = {
 {"1", "ethernet", "ports", "ethport"},
 {"2", "adsl", "dsl", "atm-device"},
 {"3", "vdsl", "dsl", "ptm-device"}
 };
-#endif
 
 /*************************************************************
 * LAYER2-DM OBJ & PARAM
@@ -95,6 +93,7 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 	int i = 0;
 	char *oface, *phy_interface, *ch_ptr, *saveptr, *waninstance = NULL, *phy_interface_dup = NULL;
 	char *base_ifname, *available_inst = NULL;
+	char *file_config_name= NULL;
 	struct uci_section *wifi_s , *wan_s, *ai_s, *s;
 	char *instance_last = NULL;
 	struct args_layer2 curr_args = {0};
@@ -102,7 +101,6 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
 
-#ifndef EX400
 	for (i=0; i<3; i++) {
 		if(i==0){
 			synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
@@ -119,32 +117,24 @@ int browselayer2_availableinterfaceInst(struct dmctx *dmctx, DMNODE *parent_node
 			}
 			free_dmmap_config_dup_list(&dup_list);
 		}else{
-			synchronize_specific_config_sections_with_dmmap("dsl", wan_interface_tab[i].section, "dmmap_dsl", &dup_list);
-			list_for_each_entry(p, &dup_list, list) {
-				waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");
-				dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
-				dmuci_get_value_by_section_string(p->config_section, "device", &base_ifname);
-				ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
-				init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
-				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, available_inst) == DM_STOP)
-					goto end;
+			dmasprintf(&file_config_name, "/etc/config/%s",wan_interface_tab[i].package);
+			if(access( file_config_name, F_OK ) != -1){
+				synchronize_specific_config_sections_with_dmmap("dsl", wan_interface_tab[i].section, "dmmap_dsl", &dup_list);
+				list_for_each_entry(p, &dup_list, list) {
+					waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");
+					dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+					dmuci_get_value_by_section_string(p->config_section, "device", &base_ifname);
+					ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
+					init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
+					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, available_inst) == DM_STOP)
+						goto end;
+				}
+				free_dmmap_config_dup_list(&dup_list);
 			}
+			else
+				continue;
 		}
 	}
-#else
-	synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
-	list_for_each_entry(p, &dup_list, list) {
-		if(!strcmp(p->config_section->e.name, "WAN")){
-			waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");
-			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
-			dmuci_get_value_by_section_string(p->config_section, "baseifname", &base_ifname);
-			ai_s = update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
-			init_args_layer2(&curr_args, ai_s, NULL, instance_last, NULL, "WANInterface", oface);
-			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_args, available_inst) == DM_STOP)
-				goto end;
-		}
-	}
-#endif
 	db_get_value_string("hw", "board", "ethernetLanPorts", &phy_interface);
 	phy_interface_dup = dmstrdup(phy_interface);
 	i = 0;
@@ -231,14 +221,13 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 {
 	int i = 0;
 	char *oface, *phy_interface, *ch_ptr, *saveptr, *waninstance = NULL, *phy_interface_dup = NULL;
-	char *base_ifname, *available_inst = NULL;
+	char *base_ifname, *available_inst = NULL, *file_config_name;
 	struct uci_section *wifi_s , *wan_s, *ai_s;
 	char *instance_last = NULL;
 	char *dmmap_package;
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
 
-#ifndef EX400
 	for (i=0; i<3; i++) {
 		if(i==0){
 			synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
@@ -252,28 +241,19 @@ int synchronize_availableinterfaceInst(struct dmctx *dmctx)
 			}
 			free_dmmap_config_dup_list(&dup_list);
 		}else{
-			synchronize_specific_config_sections_with_dmmap("dsl", wan_interface_tab[i].section, "dmmap_dsl", &dup_list);
-			list_for_each_entry(p, &dup_list, list) {
-				waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");
-				dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
-				dmuci_get_value_by_section_string(p->config_section, "device", &base_ifname);
-				update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
+			dmasprintf(&file_config_name, "/etc/config/%s",wan_interface_tab[i].package);
+			if(access(file_config_name, F_OK ) != -1){
+				synchronize_specific_config_sections_with_dmmap("dsl", wan_interface_tab[i].section, "dmmap_dsl", &dup_list);
+				list_for_each_entry(p, &dup_list, list) {
+					waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");
+					dmasprintf(&oface, "%s%cWANDevice%c%s%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, wan_interface_tab[i].instance, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
+					dmuci_get_value_by_section_string(p->config_section, "device", &base_ifname);
+					update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
+				}
+				free_dmmap_config_dup_list(&dup_list);
 			}
-			free_dmmap_config_dup_list(&dup_list);
 		}
 	}
-#else
-	synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
-	list_for_each_entry(p, &dup_list, list) {
-		if(!strcmp(p->config_section->e.name, "WAN")){
-			waninstance = update_instance(p->dmmap_section, waninstance, "waninstance");
-			dmasprintf(&oface, "%s%cWANDevice%c1%cWANConnectionDevice%c%s%c", dmroot, dm_delim, dm_delim, dm_delim, dm_delim, waninstance, dm_delim); // MEM WILL BE FREED IN DMMEMCLEAN
-			dmuci_get_value_by_section_string(p->config_section, "baseifname", &base_ifname);
-			update_availableinterface_list(dmctx, base_ifname, &available_inst, &instance_last);
-		}
-	}
-	free_dmmap_config_dup_list(&dup_list);
-#endif
 	db_get_value_string("hw", "board", "ethernetLanPorts", &phy_interface);
 	phy_interface_dup = dmstrdup(phy_interface);
 	i = 0;

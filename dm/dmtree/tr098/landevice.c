@@ -656,6 +656,16 @@ int delete_landevice_dhcpstaticaddress(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
+int get_wifi_device_name(char **wifi_dev_name){
+	struct uci_section *s;
+
+	uci_foreach_sections("wireless", "wifi-device", s) {
+		*wifi_dev_name=section_name(s);
+		return 0;
+	}
+	*wifi_dev_name= NULL;
+	return 0;
+}
 
 int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
@@ -665,17 +675,15 @@ int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *dat
 	struct uci_section *s = NULL, *dmmap_wireless_wlanconfig;
 	struct ldlanargs *lanargs = (struct ldlanargs *)data;
 	char *lan_name = section_name(lanargs->ldlansection);
+	char *wifi_dev_name;
 	
 	check_create_dmmap_package("dmmap_wireless");
 
 	instance = get_last_instance_lev2_icwmpd("wireless", "wifi-iface", "dmmap_wireless", "lwlaninstance", "network", lan_name);
 	sprintf(ssid, "Inteno_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
 	dmuci_add_section("wireless", "wifi-iface", &s, &value);
-#ifdef EX400
-	dmuci_set_value_by_section(s, "device", "ra0");
-#else
-	dmuci_set_value_by_section(s, "device", "wl0");
-#endif
+	get_wifi_device_name(&wifi_dev_name);
+	dmuci_set_value_by_section(s, "device", wifi_dev_name);
 	dmuci_set_value_by_section(s, "encryption", "none");
 	dmuci_set_value_by_section(s, "macfilter", "0");
 	dmuci_set_value_by_section(s, "mode", "ap");

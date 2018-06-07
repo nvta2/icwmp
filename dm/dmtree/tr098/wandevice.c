@@ -31,9 +31,7 @@ DMOBJ tWANDeviceObj[] = {
 //dynamic
 {"WANConnectionDevice", &DMWANConnectionDevice, add_wan_wanconnectiondevice, delete_wan_wanconnectiondevice, NULL, browsewanconnectiondeviceInst, &DMFINFRM, &DMWANConnectionDevicenotif, tWANConnectionDeviceObj, tWANConnectionDeviceParam, NULL},
 {"WANCommonInterfaceConfig", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWANCommonInterfaceConfigParam, NULL},
-#ifndef EX400
 {"WANDSLInterfaceConfig", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWANDSLInterfaceConfigParam, NULL},
-#endif
 {"WANEthernetInterfaceConfig", &DMREAD, NULL, NULL, check_wan_is_ethernet, NULL, NULL, NULL, tWANEthernetInterfaceConfigObj, tWANEthernetInterfaceConfigParam, NULL},
 {0}
 };
@@ -48,9 +46,7 @@ DMOBJ tWANConnectionDeviceObj[] = {
 {"WANIPConnection", &DMWRITE, add_wan_wanipconnection, delete_wan_wanipconnectiondevice, NULL, browsewanprotocolconnectionipInst, &DMFINFRM, &DMWANConnectionDevicenotif, tWANConnectionObj, tWANIPConnectionParam, get_protocol_connection_linker},
 {"WANPPPConnection", &DMWRITE, add_wan_wanpppconnection, delete_wan_wanpppconnectiondevice, NULL, browsewanprotocolconnectionpppInst, &DMFINFRM, &DMWANConnectionDevicenotif, tWANConnectionObj, tWANPPPConnectionParam, get_protocol_connection_linker},
 //Depend on wandev type
-#ifndef EX400
 {"WANDSLLinkConfig", &DMREAD, NULL, NULL, check_wan_is_atm, NULL, NULL, NULL, NULL, tWANDSLLinkConfigParam, NULL},
-#endif
 {0}
 };
 
@@ -119,11 +115,9 @@ DMLEAF tWANConnection_VLANParam[] = {
 
 /*** WANDevice.{i}.WANConnectionDevice.{i}.WANDSLLinkConfig. ***/
 DMLEAF tWANDSLLinkConfigParam[] = {
-#ifndef EX400
 {"Enable", &DMREAD, DMT_BOOL, get_wan_dsl_link_config_enable, NULL, NULL, NULL},
 {"DestinationAddress", &DMWRITE, DMT_STRING, get_wan_dsl_link_config_destination_address, set_wan_dsl_link_config_destination_address, NULL, NULL},
 {"ATMEncapsulation", &DMWRITE, DMT_STRING, get_wan_dsl_link_config_atm_encapsulation, set_wan_dsl_link_config_atm_encapsulation, NULL, NULL},
-#endif
 {0}
 };
 
@@ -135,7 +129,6 @@ DMLEAF tWANCommonInterfaceConfigParam[] = {
 
 /*** WANDevice.{i}.WANDSLInterfaceConfig. ***/
 DMLEAF tWANDSLInterfaceConfigParam[] = {
-#ifndef EX400
 {"Status", &DMREAD, DMT_STRING, get_wan_device_wan_dsl_interface_config_status, NULL, NULL, NULL},
 {"ModulationType", &DMREAD, DMT_STRING, get_wan_device_wan_dsl_interface_config_modulation_type, NULL, NULL, NULL},
 {"DataPath", &DMREAD, DMT_STRING, get_wan_device_dsl_datapath, NULL, NULL, NULL},
@@ -148,7 +141,6 @@ DMLEAF tWANDSLInterfaceConfigParam[] = {
 {"UpstreamAttenuation", &DMREAD, DMT_INT, get_wan_device_dsl_upstreamattenuation, NULL, NULL, NULL},
 {"UpstreamNoiseMargin", &DMREAD, DMT_INT, get_wan_device_dsl_upstreamnoisemargin, NULL, NULL, NULL},
 {"X_INTENO_SE_AnnexMEnable", &DMWRITE, DMT_BOOL, get_annexm_status, set_annexm_enable, NULL, NULL},
-#endif
 {0}
 };
 
@@ -200,7 +192,6 @@ enum enum_wan_proto {
 	WAN_PROTO_IP
 };
 
-#ifndef EX400
 struct wan_device 
 {
 	char *instance;
@@ -214,7 +205,6 @@ struct wan_device wan_devices[WAN_DEVICE] = {
 	[WAN_IDX_ATM] = {"2", "atm", "atm-device", "dsl"},
 	[WAN_IDX_PTM] = {"3", "ptm", "ptm-device", "dsl"}
 };
-#endif
 
 static char *default_wan;
 static char *default_wan_ifname;
@@ -283,46 +273,18 @@ inline int add_wvlan(char *baseifname, char *ifname, char *vid, char *prioprity,
 void set_bridge_layer2(struct dmctx *ctx, char *bridge, struct wanargs *wandcprotoargs)
 {
 	char *wifname, *dup, *pch, *spch;
-	struct uci_section *s;
+	struct uci_section *s, *dmmap_section;
 
 	dmuci_get_value_by_section_string(wandcprotoargs->wancprotosection, "ifname", &wifname);
 	dup = dmstrdup(wifname); // MEM will be freed in the DMMCLEAN
 	for (pch = strtok_r(dup, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch))
 	{
-		if (atoi(pch + 5) > 1) {
+		if (atoi(pch + 5) > 1 || strstr(pch, "atm") || strstr(pch, "ptm") || strstr(pch, eth_wan)) {
 			uci_foreach_option_eq("network", "device", "ifname", pch, s)
 			{
-				dmuci_set_value_by_section(s, "bridge", bridge);
+				get_dmmap_section_of_config_section("dmmap_network", "device", section_name(s), &dmmap_section);
+				if (dmmap_section!=NULL) dmuci_set_value_by_section(dmmap_section, "bridge", bridge);
 			}
-		}
-#ifndef EX400
-		else if (strstr(pch, "atm")) {
-			uci_foreach_option_eq("network", "device", "name", pch, s)
-			{
-				dmuci_set_value_by_section(s, "bridge", bridge);
-			}
-		}
-		else if (strstr(pch, "ptm")) {
-			uci_foreach_option_eq("network", "device", "name", pch, s)
-			{
-				dmuci_set_value_by_section(s, "bridge", bridge);
-			}
-		}
-#endif
-		else if (strstr(pch, eth_wan)) {
-#ifdef EX400
-
-			uci_foreach_option_eq("network", "interface", "ifname", pch, s)
-			{
-				dmuci_set_value_by_section(s, "bridge", bridge);
-			}
-
-#else
-			uci_foreach_option_eq("network", "device", "name", pch, s)
-			{
-				dmuci_set_value_by_section(s, "bridge", bridge);
-			}
-#endif
 		}
 	}
 }
@@ -440,7 +402,7 @@ char *get_last_instance_proto(char *dmmap_package, char *package, char *section,
 
 int add_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-#ifndef EX400
+
 	char *instance, *v;
 	char *device = NULL;
 	char *instance_update = NULL;
@@ -481,15 +443,14 @@ int add_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data, c
 		*instancepara = update_instance_icwmpd(dmmap_ptm, instance, "waninstance");
 		return 0;
 	}
-	return FAULT_9005;
-#else
-	return FAULT_9008;
-#endif
+	else
+		return FAULT_9005;
+	return 0;
+
 }
 
 int delete_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-#ifndef EX400
 	struct uci_section *s = NULL; 
 	struct uci_section *ss = NULL, *dmmap_section= NULL;
 	struct wanargs *wandargs;
@@ -548,9 +509,6 @@ int delete_wan_wanconnectiondevice(char *refparam, struct dmctx *ctx, void *data
 			return 0;
 	}
 	return 0;
-#else
-	return FAULT_9008;
-#endif
 }
 
 int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
@@ -564,17 +522,16 @@ int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char 
 	check_create_dmmap_package("dmmap_network");
 	instance = get_last_instance_proto("dmmap_network", "network", "interface", "conipinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_IP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1); //MEM WILL BE FREED IN DMMEMCLEAN
-#ifdef EX400
-	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
+	sprintf(sname,"wan_%d_%s_%d_%s", atoi(wan_devices[wandcdevargs->instance].instance) - 1, wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
 
-#else
-	sprintf(sname,"wan_%s_%s_%d_%s", wan_devices[wandcdevargs->instance].instance, wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
-#endif
-	sprintf(ifname, "%s.1", wandcdevargs->fwan);
+	if(strchr(wandcdevargs->fwan, '.')== NULL)
+		sprintf(ifname, "%s.1", wandcdevargs->fwan);
+	else
+		sprintf(ifname, "%s", wandcdevargs->fwan);
+
 	dmuci_set_value("network", sname, NULL, "interface");
 	dmuci_set_value("network", sname, "ifname", ifname);
 	dmuci_set_value("network", sname, "proto", "dhcp");
-
 	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_wanip, &v);
 	dmuci_set_value_by_section(dmmap_wanip, "section_name", sname);
 	dmuci_set_value_by_section(dmmap_wanip, "conipinstance", *instancepara);
@@ -628,14 +585,12 @@ int add_wan_wanpppconnection(char *refparam, struct dmctx *ctx, void *data, char
 	check_create_dmmap_package("dmmap_network");
 	instance = get_last_instance_proto("dmmap_network", "network", "interface", "conpppinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_PPP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1);
-#ifdef EX400
-	sprintf(sname,"wan_1_%s_%d_%s", wandcdevargs->iwan, WANPPPConnection, *instancepara);
-	sprintf(ifname, "%s", wandcdevargs->fwan);
+	sprintf(sname,"wan_%d_%s_%d_%s", atoi(wan_devices[wandcdevargs->instance].instance) - 1, wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
 
-#else
-	sprintf(sname,"wan_%s_%s_%d_%s", wan_devices[wandcdevargs->instance].instance, wandcdevargs->iwan, WANPPPConnection, *instancepara);
-	sprintf(ifname, "%s.1", wandcdevargs->fwan);
-#endif
+	if(strchr(wandcdevargs->fwan, '.')== NULL)
+		sprintf(ifname, "%s.1", wandcdevargs->fwan);
+	else
+		sprintf(ifname, "%s", wandcdevargs->fwan);
 
 	dmuci_set_value("network", sname, NULL, "interface");
 	dmuci_set_value("network", sname, "ifname", ifname);
@@ -2395,14 +2350,13 @@ int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	struct uci_section *s = NULL;
 	char *dev, *dev_last= NULL;
 	struct wanargs curr_wanargs = {0};
+	char *file_config_name;
 
 	dmuci_get_option_value_string("cwmp", "cpe", "default_wan_interface", &default_wan);
 	dmuci_get_option_value_string("network", default_wan, "ifname", &default_wan_ifname);
 	dmuci_get_option_value_string("network", default_wan, "proto", &defwanproto);
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &eth_wan);
-#ifndef EX400
 	wan_devices[WAN_IDX_ETH].fdev = eth_wan;
-#endif
 
 	if (strstr(defwanproto, "ppp"))
 		default_wan_proto = WAN_PROTO_PPP;
@@ -2412,39 +2366,38 @@ int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 		default_wan_proto = WAN_PROTO_NIL;
 	update_section_list(DMMAP,"wan_dev", NULL, 3, NULL, NULL, NULL, NULL, NULL);
 	uci_path_foreach_sections(icwmpd, "dmmap", "wan_dev", s) {
-#ifdef EX400
+
 		if(i==WAN_IDX_ETH){
 			init_wanargs(&curr_wanargs, i+1, eth_wan, s);
 			if (strstr(default_wan_ifname, eth_wan))
 				notif_permission = false;
 			else
 				notif_permission = true;
+		} else {
+			dmasprintf(&file_config_name, "/etc/config/%s",wan_devices[i].cdev);
+			if(access( file_config_name, F_OK ) != -1){
+				init_wanargs(&curr_wanargs, i+1, wan_devices[i].fdev, s);
+				if (strstr(default_wan_ifname, wan_devices[i].fdev))
+					notif_permission = false;
+				else
+					notif_permission = true;
+			}
+			else
+				continue;
+
 		}
-#else
-		init_wanargs(&curr_wanargs, i+1, wan_devices[i].fdev, s);
-		if (strstr(default_wan_ifname, wan_devices[i].fdev))
-			notif_permission = false;
-		else
-			notif_permission = true;
-#endif
+
 
 		if (i == WAN_IDX_ETH)
 			cwritable = "0";
-#ifndef EX400
 		else
 			cwritable = "1";
-#endif
 
 		dev = handle_update_instance(1, dmctx, &dev_last, update_instance_alias_icwmpd, 3, s, "wan_dev_instance", "wan_dev_alias");
-#ifdef EX400
-		if(i==WAN_IDX_ETH){
-			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_wanargs, dev) == DM_STOP)
-				break;
-		}
-#else
+
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_wanargs, dev) == DM_STOP)
 			break;
-#endif
+
 		i++;
 	}
 	return 0;
@@ -2468,27 +2421,7 @@ int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void
 
 	i = curr_wanargs->instance - 1;
 
-#ifdef EX400
-	if (i == WAN_IDX_ETH){
-		synchronize_specific_config_sections_with_dmmap("ports", "ethport", "dmmap_ports", &dup_list);
-		list_for_each_entry(p, &dup_list, list) {
-			if(!strcmp(p->config_section->e.name, "WAN")){
-				dmuci_get_value_by_section_string(p->config_section, "ifname", &fwan);
-				dmuci_get_option_value_string("network", "wan", "ifname", &wan_ifname);
-				if (strstr(default_wan_ifname, fwan)) {
-					notif_permission = false;
-					if (default_wan_proto == WAN_PROTO_IP) ipn_perm = false;
-					else if (default_wan_proto == WAN_PROTO_PPP) pppn_perm = false;
-				}
-				iwan = handle_update_instance(2, dmctx, &iwan_last, update_instance_alias, 3, p->dmmap_section, "waninstance", "wanalias");
-				init_wancdevargs(curr_wanargs, p->config_section, fwan, iwan_last, wan_ifname);
-				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)curr_wanargs, iwan) == DM_STOP)
-					break;
-			}
-		}
-		free_dmmap_config_dup_list(&dup_list);
-	}
-#else
+
 	pack = wan_devices[i].cdev;
 	stype = wan_devices[i].stype;
 
@@ -2499,7 +2432,10 @@ int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void
 		list_for_each_entry(p, &dup_list, list) {
 			if(!strcmp(p->config_section->e.name, "WAN")){
 				fwan = eth_wan; //eth0
-				sprintf(uname, "%s.1", fwan);
+				if(strchr(fwan, '.')== NULL)
+					sprintf(uname, "%s.1", fwan);
+				else
+					sprintf(uname, "%s", fwan);
 				wan_ifname = dmstrdup(uname); //eth0.1
 				if (strstr(default_wan_ifname, fwan)) {
 					notif_permission = false;
@@ -2534,7 +2470,6 @@ int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void
 		}
 		free_dmmap_config_dup_list(&dup_list);
 	}
-#endif
 end:
 	return 0;
 }
