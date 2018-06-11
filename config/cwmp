@@ -7,7 +7,6 @@ config cwmp 'acs'
 	option periodic_inform_time '0'
 	option ParameterKey ''
 	option dhcp_discovery 'enable'
-	option dhcp_url_path 'provisioning.iup.urlcwmp'
 	# compression possible configs: GZIP, Deflate, Disabled
 	option compression 'Disabled'
 	#­ possible configs interval :[1:65535]

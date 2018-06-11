@@ -32,8 +32,7 @@ get_acs_url() {
 	local default_acs="http://10.10.1.6:8000/openacs/acs"
 	local acs_dhcp_discovery="$(uci -q get cwmp.acs.dhcp_discovery)"
 	local url="$(uci -q get cwmp.acs.url)"
-	local dhcp_url_path="$(uci -q get cwmp.acs.dhcp_url_path)"
-	local dhcp_url="$(uci -P /var/state -q get $dhcp_url_path)"
+	local dhcp_url="$(uci -P /var/state -q get cwmp.acs.dhcp_url)"
 
 	if [ "$acs_dhcp_discovery" == "enable" -a -n "$dhcp_url" -o -z "$url" ]; then
 		url="$dhcp_url"
@@ -98,12 +97,11 @@ enable_dhcp_option43() {
 
 wait_for_option43() {
 	local time=$1
-	local default_wan_interface dhcp_discovery url dhcp_url_path
+	local default_wan_interface dhcp_discovery url
 
 	config_get default_wan_interface cpe default_wan_interface "wan"
 	config_get dhcp_discovery acs dhcp_discovery "0"
 	config_get url acs url
-	config_get dhcp_url_path acs dhcp_url_path
 
 	enable_dhcp_option43 $default_wan_interface $dhcp_discovery
 
@@ -114,7 +112,7 @@ wait_for_option43() {
 		echo "Waiting for discovery of ACS URL from dhcp server ..."
 		while [ $tm -le $time ]
 		do
-			acs_url=`uci -P /var/state -q get $dhcp_url_path`
+			acs_url=`uci -P /var/state -q get cwmp.acs.dhcp_url`
 			if [ "$acs_url" != "" ]
 			then
 				break

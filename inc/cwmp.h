@@ -43,7 +43,6 @@
 #define DEFAULT_SESSION_TIMEOUT				60
 #define DEFAULT_ACSURL						"http://192.168.1.1:8080/openacs/acs"
 #define UCI_DHCP_DISCOVERY_PATH				"cwmp.acs.dhcp_discovery"
-#define UCI_DHCP_ACS_URL_PATH				"cwmp.acs.dhcp_url_path"
 #define UCI_ACS_URL_PATH					"cwmp.acs.url"
 #define UCI_PERIODIC_INFORM_TIME_PATH		"cwmp.acs.periodic_inform_time"
 #define UCI_PERIODIC_INFORM_INTERVAL_PATH	"cwmp.acs.periodic_inform_interval"
@@ -77,7 +76,7 @@
 #define LW_NOTIFICATION_ENABLE              "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME            "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT                "cwmp.lwn.port"
-#define UCI_DHCP_ACS_URL					"provisioning.iup.urlcwmp"
+#define UCI_DHCP_ACS_URL				"cwmp.acs.dhcp_url"
 
 #define UCI_XMPP_ENABLE		                "cwmp.xmpp.enable"
 #define UCI_XMPP_CONNECTION_ID				"cwmp.xmpp.id"
@@ -175,7 +174,6 @@ typedef struct config {
 	char								*https_ssl_capath;
     char                                *cpe_userid;
     char                                *cpe_passwd;
-    char                                *dhcp_url_path;
     char								*ip;
     char								*ipv6;
     char								*interface;
