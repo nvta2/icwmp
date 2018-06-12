@@ -429,6 +429,26 @@ int dmcmd_no_wait(char *cmd, int n, ...)
 		return -1;
 	return 0;
 }
+
+void dmcmd_read_alloc(int pipe, char **value)
+{
+	char *c = NULL;
+	char buffer[64];
+	ssize_t rxed;
+	int t, len = 1;
+
+	*value = NULL;
+	while ((rxed = read(pipe, buffer, sizeof(buffer) - 1)) > 0) {
+		t = len;
+		len += rxed;
+		*value = dmrealloc(*value, len);
+		memcpy(*value + t - 1, buffer, rxed);
+		*(*value + len -1) = '\0';
+	}
+	if (*value == NULL)
+		*value = dmstrdup("");
+}
+
 int dmcmd_read(int pipe, char *buffer, int size)
 {
 	int rd;

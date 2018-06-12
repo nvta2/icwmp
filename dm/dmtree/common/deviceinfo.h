@@ -20,8 +20,20 @@ extern DMLEAF tDeviceInfoParams[];
 extern DMLEAF tCatTvParams[];
 extern DMLEAF tVcfParams[];
 extern DMLEAF tVlfParams[];
+extern DMLEAF tMemoryStatusParams[];
+extern DMLEAF tProcessStatusParams[];
 extern DMOBJ tDeviceInfoObj[];
+extern DMOBJ tProcessEntriesObj[];
+extern DMLEAF tProcessEntrieParams[];
 
+struct process_args{
+	char *pid;
+	char *command;
+	char* size;
+	int priority;
+	char *cputime;
+	char *state;
+};
 char *get_deviceid_manufacturer();
 char *get_deviceid_manufactureroui();
 char *get_deviceid_productclass();
@@ -30,6 +42,7 @@ char *get_softwareversion();
 int lookup_vcf_name(char *instance, char **value);
 int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseVlfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 int get_device_manufacturer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_device_manufactureroui(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -60,6 +73,16 @@ int get_vlf_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 int get_vlf_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_vlf_max_size(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_vlf_persistent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_memory_status_total(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_memory_status_free(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_cpu_usage(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_number_of_entries(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_pid(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_command(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_size(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_priority(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_cpu_time(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_process_state(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_device_provisioningcode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_device_catvenabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);

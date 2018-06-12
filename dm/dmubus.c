@@ -144,7 +144,7 @@ static inline json_object *ubus_call_req(char *obj, char *method, struct ubus_ar
 {
 #if !DM_USE_LIBUBUS
 	json_object *res = NULL;
-	char bufres[UBUS_BUFFEER_SIZE], bufargs[256], *p;
+	char *ubus_return, bufargs[256], *p;
 	int i, pp = 0, r;
 	p = bufargs;
 
@@ -165,10 +165,10 @@ static inline json_object *ubus_call_req(char *obj, char *method, struct ubus_ar
 		pp = dmcmd("ubus", 6, "-S", "-t", "1", "call", obj, method); //TODO wait to fix uloop ubus freeze
 	}
 	if (pp) {
-		r = dmcmd_read(pp, bufres, UBUS_BUFFEER_SIZE);
+		dmcmd_read_alloc(pp, &ubus_return);
 		close(pp);
-		if (r > 0) {
-			res = json_tokener_parse((const char *)bufres);
+		if (ubus_return) {
+			res = json_tokener_parse(ubus_return);
 			if (res != NULL && (is_error(res))) {
 				json_object_put(res);
 				res = NULL;
