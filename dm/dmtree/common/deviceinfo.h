@@ -30,7 +30,7 @@ struct process_args{
 	char *pid;
 	char *command;
 	char* size;
-	int priority;
+	char* priority;
 	char *cputime;
 	char *state;
 };

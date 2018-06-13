@@ -115,7 +115,7 @@ DMLEAF tVlfParams[] = {
 /*************************************************************
  * INIT
 /*************************************************************/
-inline int init_process_args(struct process_args *args, char *pid, char *command, char* size, int priority, char *cputime, char *state)
+inline int init_process_args(struct process_args *args, char *pid, char *command, char* size, char* priority, char *cputime, char *state)
 {
 	args->pid = pid;
 	args->command= command;
@@ -640,45 +640,21 @@ int get_process_command(char* refparam, struct dmctx *ctx, void *data, char *ins
 
 int get_process_size(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct process_args *proc_args= (struct process_args*) data;
-	char *tot_mem_size= NULL, *perc_mem_val_str= NULL;
-	json_object *res;
-	int total_memory_size, perc_mem_val, proc_mem_size;
-
-	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
-	tot_mem_size = dm_ubus_get_value(res, 2, "memoryKB", "total");
-	if(tot_mem_size){
-		total_memory_size= atoi(tot_mem_size);
-		perc_mem_val_str= (char*)dmcalloc(3, sizeof(char));
-		memcpy(perc_mem_val_str, proc_args->size, strlen(proc_args->size)-1);
-		proc_mem_size=atoi(perc_mem_val_str)*total_memory_size/100;
-		dmasprintf(value, "%d", proc_mem_size);
-		return 0;
-	}
-	*value= "";
+	if(proc_args->size!=NULL) *value= proc_args->size;
+	else *value= "0";
 	return 0;
 }
 
 int get_process_priority(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct process_args *proc_args= (struct process_args*) data;
-	dmasprintf(value, "%d", proc_args->priority);
+	if(proc_args->priority!=NULL) *value= proc_args->priority;
+	else *value= "0";
 	return 0;
 }
 
 int get_process_cpu_time(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct process_args *proc_args= (struct process_args*) data;
-	json_object *res;
-	char *tot_cpu_time_str, *proc_cpu_perc=NULL;
-	int days=0, hours=0, minutes=0, seconds=0, tot_cpu_time, proc_cpu_time;
-
-	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
-	tot_cpu_time_str = dm_ubus_get_value(res, 2, "systime", "uptime");
-	sscanf(tot_cpu_time_str, "%dd %dh %dm %ds", days, hours, minutes, seconds);
-	tot_cpu_time= days*24*60*60 + hours*60*60 + minutes*60 +seconds;
-	proc_cpu_perc= (char*)dmmalloc(3*sizeof(char));
-	memcpy(proc_cpu_perc, proc_args->cputime, strlen(proc_args->cputime)-1);
-	proc_cpu_time= atoi(proc_cpu_perc) * tot_cpu_time / 100;
-	dmasprintf(value, "%d", proc_cpu_time);
-
+	if(proc_args->cputime!=NULL) *value= proc_args->cputime;
 	return 0;
 }
 
@@ -686,6 +662,9 @@ int get_process_state(char* refparam, struct dmctx *ctx, void *data, char *insta
 	struct process_args *proc_args= (struct process_args*) data;
 	if(strchr(proc_args->state, 'S')!=NULL) *value="Sleeping";
 	else if(strchr(proc_args->state, 'R')!=NULL) *value= "Running";
+	else if(strchr(proc_args->state, 'T')!=NULL) *value= "Stopped";
+	else if(strchr(proc_args->state, 'D')!=NULL) *value= "Uninterruptible";
+	else if(strchr(proc_args->state, 'Z')!=NULL) *value= "Zombie";
 	else *value= proc_args->state;
 
 	return 0;
@@ -693,7 +672,7 @@ int get_process_state(char* refparam, struct dmctx *ctx, void *data, char *insta
 
 int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance){
 	json_object *res,  *processes, *fields, *process;
-	char *pid_field, *command_field, *state_field, *mem_size_field, *cpu_usage_field, *pid, *command, *mem_size, *state, *cpu_usage, *idx, *idx_last;
+	char *pid_field, *command_field, *state_field, *mem_size_field, *cpu_time_field, *priority_field, *pid, *command, *mem_size, *state, *cpu_time, *priority, *idx, *idx_last;
 	int i, id=0;
 	struct process_args proc_args={};
 
@@ -704,8 +683,9 @@ int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 	pid_field= dmjson_get_value_in_array_idx(fields, 0, 0, NULL);
 	command_field= dmjson_get_value_in_array_idx(fields, 7, 0, NULL);
 	state_field= dmjson_get_value_in_array_idx(fields, 3, 0, NULL);
-	mem_size_field= dmjson_get_value_in_array_idx(fields, 5, 0, NULL);
-	cpu_usage_field= dmjson_get_value_in_array_idx(fields, 6, 0, NULL);
+	mem_size_field= dmjson_get_value_in_array_idx(fields, 4, 0, NULL);
+	priority_field= dmjson_get_value_in_array_idx(fields, 8, 0, NULL);
+	cpu_time_field= dmjson_get_value_in_array_idx(fields, 9, 0, NULL);
 
 	if(nbre_process>0){
 		for(i=0; i<nbre_process; i++){
@@ -714,8 +694,10 @@ int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 			command = dmjson_get_value(process, 1, command_field);
 			state = dmjson_get_value(process, 1, state_field);
 			mem_size= dmjson_get_value(process, 1, mem_size_field);
-			cpu_usage= dmjson_get_value(process, 1, cpu_usage_field);
-			init_process_args(&proc_args, pid, command, mem_size, i+1, cpu_usage, state);
+			cpu_time= dmjson_get_value(process, 1, cpu_time_field);
+			priority= dmjson_get_value(process, 1, priority_field);
+
+			init_process_args(&proc_args, pid, command, mem_size, priority, cpu_time, state);
 
 			idx = handle_update_instance(2, dmctx, &idx_last, update_instance_without_section, 1, ++id);
 			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&proc_args, idx) == DM_STOP)
