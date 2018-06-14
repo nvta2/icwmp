@@ -647,7 +647,13 @@ int get_process_size(char* refparam, struct dmctx *ctx, void *data, char *instan
 
 int get_process_priority(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct process_args *proc_args= (struct process_args*) data;
-	if(proc_args->priority!=NULL) *value= proc_args->priority;
+	long val;
+
+	if(proc_args->priority!=NULL) {
+		val = atol(proc_args->priority);
+		if(val<0) val=0;
+		dmasprintf(value, "%ld", val);
+	}
 	else *value= "0";
 	return 0;
 }
