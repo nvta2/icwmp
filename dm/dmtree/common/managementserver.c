@@ -43,6 +43,10 @@ DMLEAF tManagementServerParams[] = {
 {"CWMPRetryIntervalMultiplier", &DMWRITE, DMT_UNINT, get_management_server_retry_interval_multiplier, set_management_server_retry_interval_multiplier, NULL, NULL},
 {"AliasBasedAddressing", &DMREAD, DMT_BOOL, get_alias_based_addressing, NULL, &DMFINFRM, NULL},
 {"InstanceMode", &DMWRITE, DMT_STRING, get_instance_mode, set_instance_mode, NULL, NULL},
+{"ConnReqAllowedJabberIDs", &DMWRITE, DMT_STRING, get_management_server_conn_rep_allowed_jabber_id, set_management_server_conn_rep_allowed_jabber_id, NULL, NULL},
+{"ConnReqJabberID", &DMREAD, DMT_STRING, get_management_server_conn_req_jabber_id, NULL, NULL, NULL},
+{"ConnReqXMPPConnection", &DMWRITE, DMT_STRING, get_management_server_conn_req_xmpp_connection, set_management_server_conn_req_xmpp_connection, NULL, NULL},
+{"SupportedConnReqMethods", &DMREAD, DMT_STRING, get_management_server_supported_conn_req_methods, NULL, NULL, NULL},
 {0}
 };
 
@@ -438,4 +442,67 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *insta
 	return 0;
 }
 
+int get_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	dmuci_get_option_value_string("cwmp", "xmpp", "allowed_jid", value);
+	return 0;
+}
 
+int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("cwmp", "xmpp", "allowed_jid", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_management_server_conn_req_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *s;
+	char *username, *domain, *resource;
+
+	uci_foreach_sections("cwmp", "xmpp_connection", s) {
+		dmuci_get_value_by_section_string(s, "username", &username);
+		dmuci_get_value_by_section_string(s, "domain", &domain);
+		dmuci_get_value_by_section_string(s, "resource", &resource);
+		if(*resource != '\0' || *domain != '\0' || *username != '\0')
+			dmasprintf(value, "%s@%s/%s", username, domain, resource);
+		else
+			*value = "";
+	}
+	return 0;
+}
+
+int get_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *id, *datamodel;
+	dmuci_get_option_value_string("cwmp", "xmpp", "id", &id);
+	dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &datamodel);
+	if(strcmp(datamodel, "tr181") == 0)
+		asprintf(value, "Device.XMPP.Connection.%s.", id);
+	else
+		asprintf(value, "InternetGatewayDevice.XMPP.Connection.%s.", id);
+	return 0;
+}
+
+int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+
+			return 0;
+	}
+	return 0;
+}
+
+int get_management_server_supported_conn_req_methods(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "HTTP, XMPP";
+	return 0;
+}

@@ -249,11 +249,13 @@ struct xmpp_param {
 	char *password;
 	char *domain;
 	char *ressource;
+	char *serveraddress;
 	int keepalive_interval;
 	int connect_attempt;
 	int retry_initial_interval;
 	int retry_interval_multiplier;
-	int retry_max_interval;	
+	int retry_max_interval;
+	int port;
 };
 
 typedef struct cwmp {

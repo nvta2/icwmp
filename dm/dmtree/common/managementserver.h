@@ -32,6 +32,10 @@ int get_management_server_retry_min_wait_interval(char *refparam, struct dmctx *
 int get_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_alias_based_addressing(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_management_server_conn_req_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_management_server_supported_conn_req_methods(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_management_server_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_management_server_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -49,5 +53,7 @@ int set_lwn_port(char *refparam, struct dmctx *ctx, void *data, char *instance, 
 int set_management_server_retry_min_wait_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif
