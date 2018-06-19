@@ -858,7 +858,7 @@ int get_global_config(struct config *conf)
 				if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
 				{
 					conf->xmpp_enable = true;
-					CWMP_LOG(INFO,"Xmpp connection id is %d", conf->xmpp_enable);
+					CWMP_LOG(INFO,"XMPP connection is %d", conf->xmpp_enable);
 				}
 				value = NULL;
 			}
@@ -874,12 +874,12 @@ int get_global_config(struct config *conf)
 		    }
 		    if(a==0)
 		    {
-		        CWMP_LOG(INFO,"Xmpp connection id :Empty");
+		        CWMP_LOG(INFO,"XMPP connection id :Empty");
 		        conf->xmpp_connection_id = 0;
 		    }
 		    else
 		    {
-				CWMP_LOG(INFO,"Xmpp connection id :%d", a);
+				CWMP_LOG(INFO,"XMPP connection id :%d", a);
 		        conf->xmpp_connection_id = a;
 		    }
 		}
@@ -1228,21 +1228,20 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 	struct dmctx dmctx = {0};
 	
 	struct config   *conf;
-	char *instance;
+	char *instance, *connection_enable, *connection, *connectionserver_enable, *connectionserver;
 	struct xmpp_param   *xmpp;
     conf = &(cwmp->conf);
 	xmpp = &(cwmp->xmpp_param);
 	
 	if (conf->xmpp_enable && conf->xmpp_connection_id > 0)
     {
-		char *enable;
 		asprintf(&instance, "%d", conf->xmpp_connection_id);
 		cwmp_dm_ctx_init(cwmp, &dmctx);
-		char *tmp;
-		asprintf(&tmp, "%s", get_xmpp_server_enable(instance));
-		//tmp = ;
-		enable = strdup(tmp);
-		if(enable[0] == '\0' || enable[0] == '0')
+		asprintf(&connection, "%s", get_xmppconnection_enable(instance));
+		asprintf(&connectionserver, "%s", get_xmppconnection_server_enable(instance));
+		connection_enable = strdup(connection);
+		connectionserver_enable = strdup(connectionserver);
+		if(connection_enable[0] == '\0' || connection_enable[0] == '0' || connectionserver_enable[0] == '\0' || connectionserver_enable[0] == '0')
 		{
 			conf->xmpp_enable = false;//disable xmpp_enable
 			goto end;
@@ -1250,10 +1249,12 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 		asprintf(&(cwmp->xmpp_param.local_jid), "%s-%s-%s", cwmp->deviceid.oui, cwmp->deviceid.productclass, cwmp->deviceid.serialnumber);
 		//xmpp->allowed_jid = strdup((const char *)get_xmpp_allowed_jid());
 		//xmpp->username = strdup(cwmp->xmpp_param.local_jid);
-		xmpp->username = strdup((const char *)get_xmpp_username(instance));
-		xmpp->password = strdup((const char *)get_xmpp_password(instance));
+		cwmp->xmpp_param.username = strdup((const char *)get_xmpp_username(instance));
+		cwmp->xmpp_param.password = strdup((const char *)get_xmpp_password(instance));
 		cwmp->xmpp_param.domain = strdup((const char *)get_xmpp_domain(instance));
-		cwmp->xmpp_param.ressource = strdup((const char *)get_xmpp_resource(instance));	
+		cwmp->xmpp_param.ressource = strdup((const char *)get_xmpp_resource(instance));
+		cwmp->xmpp_param.serveraddress = strdup((const char *)get_xmpp_server_address(instance));
+		cwmp->xmpp_param.port = strdup((const char *)get_xmpp_port(instance));
 		cwmp->xmpp_param.keepalive_interval = atoi((const char *)get_xmpp_keepalive_interval(instance));
 		cwmp->xmpp_param.connect_attempt = atoi((const char *)get_xmpp_connect_attempts(instance));
 		if(cwmp->xmpp_param.connect_attempt)

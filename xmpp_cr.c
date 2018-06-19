@@ -21,7 +21,7 @@
 #include <strophe.h>
 #endif
 
-int ping_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
+/*int ping_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
 	xmpp_stanza_t *reply, *body, *text;
 	char *intext = NULL, *replytext;
@@ -37,7 +37,7 @@ int ping_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * 
 		xmpp_send(conn, reply);
 	}
 return 1;
-}
+}*/
 
 static int send_stanza_cr_response(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
@@ -219,7 +219,7 @@ xmpp_end:
 	return 1;
 }
 
-int ping_send_handler(xmpp_conn_t * const conn, void * const userdata)
+/*int ping_send_handler(xmpp_conn_t * const conn, void * const userdata)
 {
 	char 			*jid;
 	struct cwmp 	*cwmp = &cwmp_main;
@@ -238,7 +238,7 @@ int ping_send_handler(xmpp_conn_t * const conn, void * const userdata)
 	xmpp_send(conn, reply);
 	free(jid);	
 	return 1;
-}
+}*/
 
 void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 const int error, xmpp_stream_error_t * const stream_error,
@@ -253,11 +253,13 @@ void * const userdata)
 		attempt = 0;
 		xmpp_stanza_t* pres;
 		CWMP_LOG(INFO,"XMPP Connection Established");
-		xmpp_handler_add(conn,cr_handler, NULL, "iq", NULL, ctx);
-		if (cwmp->xmpp_param.keepalive_interval > 0) {
+		xmpp_handler_add(conn, cr_handler, NULL, "iq", NULL, ctx);
+		/*if (cwmp->xmpp_param.keepalive_interval > 0) {
 			keepalive = cwmp->xmpp_param.keepalive_interval * 1000;
 			xmpp_timed_handler_add(conn,ping_send_handler, keepalive, ctx);
-		}
+			xmpp_conn_set_keepalive(conn, 30, 30);
+		}*/
+		xmpp_conn_set_keepalive(conn, 30, cwmp->xmpp_param.keepalive_interval);
 		pres = xmpp_stanza_new(ctx);
 		xmpp_stanza_set_name(pres, "presence");
 		xmpp_send(conn, pres);
@@ -312,9 +314,10 @@ void cwmp_xmpp_connect_client()
 	asprintf(&jid, "%s@%s/%s", cwmp->xmpp_param.username, cwmp->xmpp_param.domain, cwmp->xmpp_param.ressource);
 	xmpp_conn_set_jid(cwmp->xmpp_conn, jid);
 	xmpp_conn_set_pass(cwmp->xmpp_conn, cwmp->xmpp_param.password);
-	free(jid);	
+	free(jid);
 	/* initiate connection */
-	connected = xmpp_connect_client(cwmp->xmpp_conn, NULL, 0, conn_handler, cwmp->xmpp_ctx);
+	connected = xmpp_connect_client(cwmp->xmpp_conn, cwmp->xmpp_param.serveraddress[0] ? cwmp->xmpp_param.serveraddress : NULL,
+									cwmp->xmpp_param.port, conn_handler, cwmp->xmpp_ctx);
 	if (connected == -1 )
 	{
 		xmpp_stop(cwmp->xmpp_ctx);
