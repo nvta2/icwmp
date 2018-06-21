@@ -54,7 +54,7 @@ DMLEAF tDhcpServerPoolParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"DNSServers", &DMWRITE, DMT_STRING,  get_dns_server, set_dns_server, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING,  get_dhcp_status, NULL, NULL, NULL},
-{"X_INTENO_SE_DHCPServerConfigurable", &DMWRITE, DMT_BOOL, get_dhcp_configurable, set_dhcp_configurable, NULL, NULL},
+{CUSTOM_PREFIX"DHCPServerConfigurable", &DMWRITE, DMT_BOOL, get_dhcp_configurable, set_dhcp_configurable, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL,  get_dhcp_enable, set_dhcp_enable, NULL, NULL},
 {"MinAddress", &DMWRITE, DMT_STRING, get_dhcp_interval_address_min, set_dhcp_address_min, NULL, NULL},
 {"MaxAddress", &DMWRITE, DMT_STRING,get_dhcp_interval_address_max, set_dhcp_address_max, NULL, NULL},

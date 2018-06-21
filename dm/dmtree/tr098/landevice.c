@@ -200,12 +200,12 @@ DMLEAF tWlanConfigurationParam[] = {
 {"TotalPacketsReceived", &DMREAD, DMT_UNINT, get_wlan_devstatus_statistics_rx_packets, NULL, NULL, NULL},
 {"SSIDAdvertisementEnabled", &DMWRITE, DMT_BOOL, get_wlan_ssid_advertisement_enable, set_wlan_ssid_advertisement_enable, NULL, NULL},
 {"WMMEnable", &DMWRITE, DMT_BOOL, get_wmm_enabled, set_wmm_enabled, NULL, NULL},
-{"X_INTENO_SE_ChannelMode", &DMWRITE, DMT_STRING, get_x_inteno_se_channelmode, set_x_inteno_se_channelmode, NULL, NULL},
-{"X_INTENO_SE_SupportedStandards", &DMREAD, DMT_STRING, get_x_inteno_se_supported_standard, NULL, NULL, NULL},
-{"X_INTENO_SE_OperatingChannelBandwidth", &DMWRITE, DMT_STRING, get_x_inteno_se_operating_channel_bandwidth, set_x_inteno_se_operating_channel_bandwidth, NULL, NULL},
-{"X_INTENO_SE_MaxSSID", &DMWRITE, DMT_STRING, get_x_inteno_se_maxssid, set_x_inteno_se_maxssid, NULL, NULL},
-{"X_INTENO_SE_ScanTimer", &DMWRITE, DMT_STRING, get_x_inteno_se_scantimer, set_x_inteno_se_scantimer, NULL, NULL},
-{"X_INTENO_SE_Frequency", &DMWRITE, DMT_STRING, get_x_inteno_se_frequency, set_x_inteno_se_frequency, NULL, NULL},
+{CUSTOM_PREFIX"ChannelMode", &DMWRITE, DMT_STRING, get_x_inteno_se_channelmode, set_x_inteno_se_channelmode, NULL, NULL},
+{CUSTOM_PREFIX"SupportedStandards", &DMREAD, DMT_STRING, get_x_inteno_se_supported_standard, NULL, NULL, NULL},
+{CUSTOM_PREFIX"OperatingChannelBandwidth", &DMWRITE, DMT_STRING, get_x_inteno_se_operating_channel_bandwidth, set_x_inteno_se_operating_channel_bandwidth, NULL, NULL},
+{CUSTOM_PREFIX"MaxSSID", &DMWRITE, DMT_STRING, get_x_inteno_se_maxssid, set_x_inteno_se_maxssid, NULL, NULL},
+{CUSTOM_PREFIX"ScanTimer", &DMWRITE, DMT_STRING, get_x_inteno_se_scantimer, set_x_inteno_se_scantimer, NULL, NULL},
+{CUSTOM_PREFIX"Frequency", &DMWRITE, DMT_STRING, get_x_inteno_se_frequency, set_x_inteno_se_frequency, NULL, NULL},
 {0}
 };
 

@@ -51,7 +51,7 @@ DMLEAF tBridgeVlanParams[] = {
 {"Enable", &DMWRITE, DMT_BOOL, get_br_vlan_enable, set_br_vlan_enable, NULL, NULL},
 {"Name", &DMWRITE, DMT_STRING, get_br_vlan_name, set_br_vlan_name, NULL, NULL},
 {"VLANID", &DMWRITE, DMT_STRING,get_br_vlan_vid, set_br_vlan_vid, NULL, NULL},
-{"X_INTENO_SE_VLANPriority", &DMWRITE, DMT_STRING, get_br_vlan_priority, set_br_vlan_priority, NULL, NULL},
+{CUSTOM_PREFIX"VLANPriority", &DMWRITE, DMT_STRING, get_br_vlan_priority, set_br_vlan_priority, NULL, NULL},
 {0}
 };
 

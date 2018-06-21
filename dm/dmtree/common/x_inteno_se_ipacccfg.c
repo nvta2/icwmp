@@ -22,8 +22,8 @@
 /*** DMROOT.X_INTENO_SE_IpAccCfg. ***/
 DMOBJ tSe_IpAccObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
-{"X_INTENO_SE_IpAccListCfgObj", &DMWRITE, add_ipacccfg_rule, delete_ipacccfg_rule, NULL, browseAccListInst, NULL, NULL, NULL, tSe_IpAccCfgParam, NULL},
-{"X_INTENO_SE_PortForwarding", &DMWRITE, add_ipacccfg_port_forwarding, delete_ipacccfg_port_forwarding, NULL, browseport_forwardingInst, NULL, NULL, NULL, tSe_PortForwardingParam, NULL},
+{CUSTOM_PREFIX"IpAccListCfgObj", &DMWRITE, add_ipacccfg_rule, delete_ipacccfg_rule, NULL, browseAccListInst, NULL, NULL, NULL, tSe_IpAccCfgParam, NULL},
+{CUSTOM_PREFIX"PortForwarding", &DMWRITE, add_ipacccfg_port_forwarding, delete_ipacccfg_port_forwarding, NULL, browseport_forwardingInst, NULL, NULL, NULL, tSe_PortForwardingParam, NULL},
 {0}
 };
 

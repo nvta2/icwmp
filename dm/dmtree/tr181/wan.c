@@ -70,7 +70,7 @@ DMLEAF tDslChanelParams[] = {
 {"LowerLayers", &DMREAD, DMT_STRING, get_channel_lower_layer, NULL, NULL, NULL},
 {"DownstreamCurrRate", &DMREAD, DMT_UNINT, get_dsl_channel_downstreamcurrrate, NULL, NULL, NULL},
 {"UpstreamCurrRate", &DMREAD, DMT_UNINT, get_dsl_channel_upstreamcurrrate, NULL, NULL, NULL},
-{"X_INTENO_SE_AnnexMEnable", &DMWRITE, DMT_BOOL,  get_channel_annexm_status, set_channel_annexm_status, NULL, NULL},
+{CUSTOM_PREFIX"AnnexMEnable", &DMWRITE, DMT_BOOL,  get_channel_annexm_status, set_channel_annexm_status, NULL, NULL},
 {"LinkEncapsulationSupported", &DMREAD, DMT_STRING, get_channel_supported_encap, NULL, NULL, NULL},
 {"LinkEncapsulationUsed", &DMREAD, DMT_STRING, get_empty, NULL, NULL, NULL},
 {0}

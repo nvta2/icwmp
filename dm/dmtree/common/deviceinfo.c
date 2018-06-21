@@ -25,7 +25,7 @@
 /*** DeviceInfo. ***/
 DMOBJ tDeviceInfoObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
-{"X_INTENO_SE_CATV", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tCatTvParams, NULL},
+{CUSTOM_PREFIX"CATV", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tCatTvParams, NULL},
 {"VendorConfigFile", &DMREAD, NULL, NULL, NULL, browseVcfInst, NULL, NULL, NULL, tVcfParams, NULL},
 {"VendorLogFile", &DMREAD, NULL, NULL, NULL, browseVlfInst, NULL, NULL, NULL, tVlfParams, NULL},
 {"MemoryStatus", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tMemoryStatusParams, NULL},
@@ -73,9 +73,9 @@ DMLEAF tDeviceInfoParams[] = {
 {"DeviceLog", &DMREAD, DMT_STRING, get_device_devicelog, NULL, NULL, NULL},
 {"SpecVersion", &DMREAD, DMT_STRING, get_device_specversion, NULL,  &DMFINFRM, NULL},
 {"ProvisioningCode", &DMWRITE, DMT_STRING, get_device_provisioningcode, set_device_provisioningcode, &DMFINFRM, &DMACTIVE},
-{"X_INTENO_SE_BaseMacAddr", &DMREAD, DMT_STRING, get_base_mac_addr, NULL, NULL, NULL},
-{"X_INTENO_SE_CATVEnabled", &DMWRITE, DMT_STRING, get_catv_enabled, set_device_catvenabled, NULL, NULL},
-{"X_INTENO_SE_MemoryBank", &DMWRITE, DMT_STRING, get_device_memory_bank, set_device_memory_bank, NULL, NULL},
+{CUSTOM_PREFIX"BaseMacAddr", &DMREAD, DMT_STRING, get_base_mac_addr, NULL, NULL, NULL},
+{CUSTOM_PREFIX"CATVEnabled", &DMWRITE, DMT_STRING, get_catv_enabled, set_device_catvenabled, NULL, NULL},
+{CUSTOM_PREFIX"MemoryBank", &DMWRITE, DMT_STRING, get_device_memory_bank, set_device_memory_bank, NULL, NULL},
 {0}
 };
 

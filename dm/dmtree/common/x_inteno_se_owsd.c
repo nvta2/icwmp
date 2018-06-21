@@ -30,8 +30,8 @@ DMLEAF XIntenoSeOwsdParams[] = {
 
 DMOBJ XIntenoSeOwsdObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf*/
-{"X_INTENO_SE_UbusProxy", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, UbusProxyParams, NULL},
-{"X_INTENO_SE_ListenObj", &DMWRITE, add_owsd_listen, delete_owsd_listen_instance, NULL, browseXIntenoOwsdListenObj, NULL, NULL, NULL, X_INTENO_SE_ListenObjParams, NULL},
+{CUSTOM_PREFIX"UbusProxy", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, UbusProxyParams, NULL},
+{CUSTOM_PREFIX"ListenObj", &DMWRITE, add_owsd_listen, delete_owsd_listen_instance, NULL, browseXIntenoOwsdListenObj, NULL, NULL, NULL, X_INTENO_SE_ListenObjParams, NULL},
 {0}
 };
 

@@ -221,7 +221,7 @@ DMLEAF tLineParams[] = {
 {"CallState", &DMREAD, DMT_STRING, get_voice_profile_line_callstate, set_line_alias, NULL, NULL},
 {"X_002207_LineProfile", &DMWRITE, DMT_STRING, get_line_x_002207_line_profile, set_line_x_002207_line_profile, NULL, NULL},
 {"X_002207_BRCMLine", &DMWRITE, DMT_STRING, get_line_x_002207_brcm_line, set_line_x_002207_brcm_line, NULL, NULL},
-{"X_INTENO_SE_Confort_Noise_Enable", &DMWRITE, DMT_BOOL, get_line_confort_noise_enable, set_line_confort_noise_enable, NULL, NULL},
+{CUSTOM_PREFIX"Confort_Noise_Enable", &DMWRITE, DMT_BOOL, get_line_confort_noise_enable, set_line_confort_noise_enable, NULL, NULL},
 {0}
 };
 

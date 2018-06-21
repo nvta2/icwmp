@@ -33,7 +33,7 @@ DMOBJ tWifiObj[] = {
 
 DMLEAF tWifiParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
-{"X_INTENO_SE_Bandsteering_Enable", &DMWRITE, DMT_BOOL, get_wifi_bandsteering_enable, set_wifi_bandsteering_enable, NULL, NULL},
+{CUSTOM_PREFIX"Bandsteering_Enable", &DMWRITE, DMT_BOOL, get_wifi_bandsteering_enable, set_wifi_bandsteering_enable, NULL, NULL},
 {0}
 };
 
@@ -53,8 +53,8 @@ DMLEAF tWifiRadioParams[] = {
 {"OperatingFrequencyBand", &DMREAD, DMT_STRING, get_radio_frequency, NULL, NULL, NULL},
 {"SupportedFrequencyBands", &DMREAD, DMT_STRING, get_radio_supported_frequency_bands, NULL, NULL, NULL},
 {"OperatingChannelBandwidth", &DMWRITE, DMT_STRING,  get_radio_operating_channel_bandwidth, set_radio_operating_channel_bandwidth, NULL, NULL},
-{"X_INTENO_SE_MaxAssociations", &DMWRITE, DMT_STRING, get_radio_maxassoc, set_radio_maxassoc, NULL, NULL},
-{"X_INTENO_SE_DFSEnable", &DMWRITE, DMT_BOOL, get_radio_dfsenable, set_radio_dfsenable, NULL, NULL},
+{CUSTOM_PREFIX"MaxAssociations", &DMWRITE, DMT_STRING, get_radio_maxassoc, set_radio_maxassoc, NULL, NULL},
+{CUSTOM_PREFIX"DFSEnable", &DMWRITE, DMT_BOOL, get_radio_dfsenable, set_radio_dfsenable, NULL, NULL},
 {"SupportedStandards", &DMREAD, DMT_STRING, get_radio_supported_standard, NULL, NULL, NULL},
 {"OperatingStandards", &DMWRITE, DMT_STRING, get_radio_operating_standard, set_radio_operating_standard, NULL, NULL},
 {"ChannelsInUse", &DMREAD, DMT_STRING, get_radio_channel, NULL, NULL, NULL},
@@ -137,7 +137,7 @@ DMLEAF tWifiAcessPointSecurityParams[] = {
 {"ModesSupported", &DMREAD, DMT_STRING, get_access_point_security_supported_modes, NULL, NULL, NULL},
 {"ModeEnabled", &DMWRITE, DMT_STRING ,get_access_point_security_modes, set_access_point_security_modes, NULL, NULL},
 {"WEPKey", &DMWRITE, DMT_STRING, get_empty, set_access_point_security_wepkey, NULL, NULL},
-{"X_INTENO_SE_WEPKeyIndex", &DMWRITE, DMT_UNINT, get_access_point_security_wepkey_index, set_access_point_security_wepkey_index, NULL, NULL},
+{CUSTOM_PREFIX"WEPKeyIndex", &DMWRITE, DMT_UNINT, get_access_point_security_wepkey_index, set_access_point_security_wepkey_index, NULL, NULL},
 {"PreSharedKey", &DMWRITE, DMT_STRING, get_empty, set_access_point_security_shared_key, NULL, NULL},
 {"KeyPassphrase", &DMWRITE, DMT_STRING, get_empty, set_access_point_security_passphrase, NULL, NULL},
 {"RekeyingInterval", &DMWRITE, DMT_UNINT, get_access_point_security_rekey_interval, set_access_point_security_rekey_interval, NULL, NULL},

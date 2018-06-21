@@ -140,7 +140,7 @@ DMLEAF tWANDSLInterfaceConfigParam[] = {
 {"UpstreamMaxRate", &DMREAD, DMT_UNINT, get_wan_device_dsl_upstreammaxrate, NULL, NULL, NULL},
 {"UpstreamAttenuation", &DMREAD, DMT_INT, get_wan_device_dsl_upstreamattenuation, NULL, NULL, NULL},
 {"UpstreamNoiseMargin", &DMREAD, DMT_INT, get_wan_device_dsl_upstreamnoisemargin, NULL, NULL, NULL},
-{"X_INTENO_SE_AnnexMEnable", &DMWRITE, DMT_BOOL, get_annexm_status, set_annexm_enable, NULL, NULL},
+{CUSTOM_PREFIX"AnnexMEnable", &DMWRITE, DMT_BOOL, get_annexm_status, set_annexm_enable, NULL, NULL},
 {0}
 };
 
