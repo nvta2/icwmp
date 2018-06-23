@@ -455,6 +455,7 @@ int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmct
 			return 0;
 		case VALUESET:
 			dmuci_set_value("cwmp", "xmpp", "allowed_jid", value);
+			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -463,39 +464,67 @@ int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmct
 int get_management_server_conn_req_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
-	char *username, *domain, *resource;
+	char *username, *domain, *resource, *tmpPtr, *strResponse = "";
+	*value = "";
 
 	uci_foreach_sections("cwmp", "xmpp_connection", s) {
 		dmuci_get_value_by_section_string(s, "username", &username);
 		dmuci_get_value_by_section_string(s, "domain", &domain);
 		dmuci_get_value_by_section_string(s, "resource", &resource);
-		if(*resource != '\0' || *domain != '\0' || *username != '\0')
-			dmasprintf(value, "%s@%s/%s", username, domain, resource);
-		else
-			*value = "";
+		if(*username != '\0' || *domain != '\0' || *resource != '\0') {
+			if(*strResponse == '\0')
+				dmasprintf(&strResponse, "%s@%s/%s", username, domain, resource);
+			else {
+				tmpPtr = dmstrdup(strResponse);
+				dmasprintf(&strResponse, "%s, %s@%s/%s", tmpPtr, username, domain, resource);
+			}
+		}
 	}
+	*value = dmstrdup(strResponse);
 	return 0;
 }
 
 int get_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *id, *datamodel;
+
 	dmuci_get_option_value_string("cwmp", "xmpp", "id", &id);
 	dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &datamodel);
 	if(strcmp(datamodel, "tr181") == 0)
-		asprintf(value, "Device.XMPP.Connection.%s.", id);
+		dmasprintf(value, "Device.XMPP.Connection.%s", id);
 	else
-		asprintf(value, "InternetGatewayDevice.XMPP.Connection.%s.", id);
+		dmasprintf(value, "InternetGatewayDevice.XMPP.Connection.%s", id);
 	return 0;
 }
 
 int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	char *datamodel, *str, *connection_instance;
+	struct uci_section *s = NULL;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-
+			dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &datamodel);
+			if(strcmp(datamodel, "tr181") == 0) {
+				if (str = strstr(value, "Device.XMPP.Connection.")) {
+					value = dmstrdup(str + sizeof("Device.XMPP.Connection.") - 1); //MEM WILL BE FREED IN DMMEMCLEAN
+				}
+			}
+			else {
+				if (str = strstr(value, "InternetGatewayDevice.XMPP.Connection.")) {
+					value = dmstrdup(str + sizeof("InternetGatewayDevice.XMPP.Connection.") - 1); //MEM WILL BE FREED IN DMMEMCLEAN
+				}
+			}
+			uci_foreach_sections("cwmp", "xmpp_connection", s) {
+				dmuci_get_value_by_section_string(s, "connection_instance", &connection_instance);
+				if(strcmp(value, connection_instance) == 0) {
+					dmuci_set_value("cwmp", "xmpp", "id", value);
+					cwmp_set_end_session(END_SESSION_RELOAD);
+					break;
+				}
+			}
 			return 0;
 	}
 	return 0;
