@@ -4,8 +4,9 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2015 Inteno Broadband Technology AB
- *	  *	  Author Imen Bhiri		<imen.bhiri@pivasoftware.com>
+ *	Copyright (C) 2018 Inteno Broadband Technology AB
+ *	    Author Imen Bhiri <imen.bhiri@pivasoftware.com>
+ *      Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
  *
  */
 
@@ -21,29 +22,9 @@
 #include <strophe.h>
 #endif
 
-/*int ping_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
-{
-	xmpp_stanza_t *reply, *body, *text;
-	char *intext = NULL, *replytext;
-	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-	if(xmpp_stanza_get_child_by_name(stanza, "ping")) {
-		intext = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "ping"));
-		reply = xmpp_stanza_new(ctx);
-		xmpp_stanza_set_name(reply, "iq");
-		xmpp_stanza_set_type(reply, "result");
-		xmpp_stanza_set_id(reply, xmpp_stanza_get_id(stanza));
-		xmpp_stanza_set_attribute(reply, "from", xmpp_stanza_get_attribute(stanza, "to"));
-		xmpp_stanza_set_attribute(reply, "to", xmpp_stanza_get_attribute(stanza, "from"));
-		xmpp_send(conn, reply);
-	}
-return 1;
-}*/
-
 static int send_stanza_cr_response(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
-	size_t len;	
-	char *ns, *buf;
-	xmpp_stanza_t *reply, *cr, *name, *pass, *text, *error, *service;
+	xmpp_stanza_t *reply;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	
     reply = xmpp_stanza_new(ctx);
@@ -61,45 +42,69 @@ static int send_stanza_cr_response(xmpp_conn_t * const conn, xmpp_stanza_t * con
 	return 0;
 }
 
-static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, void * const userdata, int xmpp_error)
+static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata, int xmpp_error)
 {
-	size_t len;	
-	char *ns, *buf, *to;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-	xmpp_stanza_t *stanza, *reply, *cr, *name, *pass, *text, *error, *service;
-    
-	reply = xmpp_stanza_new(ctx);
-	if (!reply) {
+	xmpp_stanza_t *cr_stanza, *child, *child1, *child2, *child3, *child4, *child5, *stext, *stext2, *mech;
+	char *username, *password;
+
+	cr_stanza = xmpp_stanza_new(ctx);
+	if (!cr_stanza) {
 		CWMP_LOG(ERROR,"XMPP CR response Error");
-		return 0; 
+		return -1;
 	}
-	stanza = xmpp_stanza_clone(stanza1);
-	to = strdup(xmpp_stanza_get_attribute(stanza1, "to"));
-	error = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_attribute(reply, "to", xmpp_stanza_get_attribute(stanza1, "from"));
-	xmpp_stanza_set_attribute(reply, "from", to);
-	free(to);
-	xmpp_stanza_set_name(error, "error");
+	xmpp_stanza_set_name(cr_stanza, "iq");
+	xmpp_stanza_set_type(cr_stanza, "error");
+	xmpp_stanza_set_attribute(cr_stanza, "id", xmpp_stanza_get_attribute(stanza, "id"));
+	xmpp_stanza_set_attribute(cr_stanza, "to", xmpp_stanza_get_attribute(stanza, "from"));
+	xmpp_stanza_set_attribute(cr_stanza, "from", xmpp_stanza_get_attribute(stanza, "to"));
+	child1 = xmpp_stanza_get_child_by_name(stanza, "connectionRequest");
+	if(child1) {
+		mech = xmpp_stanza_get_child_by_name(child1, "username");
+		if (mech)
+			username = xmpp_stanza_get_text(mech);
+		mech = xmpp_stanza_get_next(mech);
+		if (strcmp(xmpp_stanza_get_name(mech), "password") == 0)
+			password = xmpp_stanza_get_text(mech);
+	}
+	child3 = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name( child3, "connectionRequest");
+	xmpp_stanza_set_ns(child3, XMPP_CR_NS);
+	child4 = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name( child4, "username");
+	stext = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_text(stext, username);
+	xmpp_stanza_add_child(child4, stext);
+	xmpp_stanza_add_child(child3, child4);
+	child5 = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name( child5, "password");
+	stext2 = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_text(stext2, password);
+	xmpp_stanza_add_child(child5, stext2);
+	xmpp_stanza_add_child(child3, child5);
+	xmpp_stanza_add_child(cr_stanza, child3);
+	child = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name(child, "error");
 	if (xmpp_error == XMPP_SERVICE_UNAVAILABLE)
-		xmpp_stanza_set_attribute(error, "code", "503");
-	xmpp_stanza_set_attribute(error, "type", "cancel");
-	xmpp_stanza_add_child(stanza, error);
-	service = xmpp_stanza_new(ctx);
+		xmpp_stanza_set_attribute(child, "code", "503");
+	xmpp_stanza_set_type(child, "cancel");
+	child2 = xmpp_stanza_new(ctx);
 	if (xmpp_error == XMPP_SERVICE_UNAVAILABLE)
-		xmpp_stanza_set_name(service, "service-unavailable");
+		xmpp_stanza_set_name(child2, "service-unavailable");
 	else if (xmpp_error == XMPP_NOT_AUTHORIZED)
-		xmpp_stanza_set_name(service, "not-autorized");
-	xmpp_stanza_set_attribute(service, "xmlns", XMPP_ERROR_NS);
-	xmpp_stanza_add_child(error, service);
-	xmpp_send(conn, stanza);
-	xmpp_stanza_release(stanza);
+		xmpp_stanza_set_name(child2, "not-autorized");
+	xmpp_stanza_set_attribute(child2, "xmlns", XMPP_ERROR_NS);
+	xmpp_stanza_add_child(child, child2);
+	xmpp_stanza_add_child(cr_stanza, child);
+	xmpp_send(conn, cr_stanza);
+	xmpp_stanza_release(cr_stanza);
 	return 0;
 }
 
 int check_xmpp_authorized(char *from)
 {
 	char *pch, *spch, *str;
-	struct cwmp 	*cwmp = &cwmp_main;
+	struct cwmp *cwmp = &cwmp_main;
 	
 	if (cwmp->conf.xmpp_allowed_jid == NULL || cwmp->conf.xmpp_allowed_jid[0] == '\0')
 		return 1;
@@ -125,10 +130,9 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 	time_t current_time;
 	static int request = 0;
     static time_t restrict_start_time = 0;
-	struct cwmp *cwmp = &cwmp_main;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-	char *intext = NULL, *replytext, *name_space, *text, *from;	
-	xmpp_stanza_t *reply, *body, *child, *mech, *message, *stanza;	
+	char *intext = NULL, *name_space, *text, *from, *username, *password;
+	xmpp_stanza_t *child, *mech;
 	bool valid_ns = true, auth_status = false, service_available = false, permitted = true;
 
     if(xmpp_stanza_get_child_by_name(stanza1, "connectionRequest")) {
@@ -174,11 +178,13 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 		mech = xmpp_stanza_get_child_by_name(child, "username");
 		if (mech) {
 			text = xmpp_stanza_get_text(mech);
-			if(strcmp(text, cwmp->xmpp_param.username) == 0) {
+			uci_get_value(UCI_CPE_USERID_PATH,&username);
+			if(strcmp(text, username) == 0) {
 				mech = xmpp_stanza_get_next(mech);
 				if (strcmp(xmpp_stanza_get_name(mech), "password") == 0) {
 					text = xmpp_stanza_get_text(mech);
-					if(strcmp(text, cwmp->xmpp_param.password) == 0)
+					uci_get_value(UCI_CPE_PASSWD_PATH,&password);
+					if(strcmp(text, password) == 0)
 						auth_status = true;
 					else
 						auth_status = false;	
@@ -212,33 +218,13 @@ xmpp_end:
 		send_stanza_cr_error(conn, stanza1, userdata, XMPP_NOT_AUTHORIZED);
 		return 1;
 	} else {
+		CWMP_LOG(INFO,"XMPP Authorized");
 		send_stanza_cr_response(conn, stanza1, userdata);
 		http_success_cr();
 		return 1;
 	}
 	return 1;
 }
-
-/*int ping_send_handler(xmpp_conn_t * const conn, void * const userdata)
-{
-	char 			*jid;
-	struct cwmp 	*cwmp = &cwmp_main;
-	xmpp_stanza_t 	*reply, *body, *text;
-	char 			*intext = NULL, *replytext;
-	xmpp_ctx_t		*ctx = (xmpp_ctx_t*)userdata;
-	
-	CWMP_LOG(DEBUG,"XMPP KEEPALIVE ");
-	reply = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_name(reply, "iq");
-	xmpp_stanza_set_type(reply, "get");
-	xmpp_stanza_set_id(reply, "cs1");
-	asprintf(&jid, "%s@%s/%s", cwmp->xmpp_param.username, cwmp->xmpp_param.domain, cwmp->xmpp_param.ressource);
-	xmpp_stanza_set_attribute(reply, "from", jid);
-	xmpp_stanza_set_attribute(reply, "to", cwmp->xmpp_param.domain);
-	xmpp_send(conn, reply);
-	free(jid);	
-	return 1;
-}*/
 
 void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 const int error, xmpp_stream_error_t * const stream_error,
@@ -254,16 +240,11 @@ void * const userdata)
 		xmpp_stanza_t* pres;
 		CWMP_LOG(INFO,"XMPP Connection Established");
 		xmpp_handler_add(conn, cr_handler, NULL, "iq", NULL, ctx);
-		/*if (cwmp->xmpp_param.keepalive_interval > 0) {
-			keepalive = cwmp->xmpp_param.keepalive_interval * 1000;
-			xmpp_timed_handler_add(conn,ping_send_handler, keepalive, ctx);
-			xmpp_conn_set_keepalive(conn, 30, 30);
-		}*/
-		xmpp_conn_set_keepalive(conn, 30, cwmp->xmpp_param.keepalive_interval);
 		pres = xmpp_stanza_new(ctx);
 		xmpp_stanza_set_name(pres, "presence");
 		xmpp_send(conn, pres);
 		xmpp_stanza_release(pres);
+		xmpp_conn_set_keepalive(conn, 30, cwmp->xmpp_param.keepalive_interval);
 	}
 	else 
 	{

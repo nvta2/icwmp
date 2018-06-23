@@ -636,7 +636,6 @@ int main(int argc, char **argv)
         return error;
     }
 #ifdef XMPP_ENABLE
-    xmpp_stanza_t 					*reply;
 	if(cwmp->conf.xmpp_enable) {
 		error = pthread_create(&xmpp_client_thread, NULL, &thread_xmpp_client_listen, NULL);
 		if (error<0)

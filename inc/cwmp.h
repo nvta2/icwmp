@@ -76,7 +76,7 @@
 #define LW_NOTIFICATION_ENABLE              "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME            "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT                "cwmp.lwn.port"
-#define UCI_DHCP_ACS_URL				"cwmp.acs.dhcp_url"
+#define UCI_DHCP_ACS_URL					"cwmp.acs.dhcp_url"
 
 #define UCI_XMPP_ENABLE		                "cwmp.xmpp.enable"
 #define UCI_XMPP_CONNECTION_ID				"cwmp.xmpp.id"

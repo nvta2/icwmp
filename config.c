@@ -858,7 +858,7 @@ int get_global_config(struct config *conf)
 				if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
 				{
 					conf->xmpp_enable = true;
-					CWMP_LOG(INFO,"XMPP connection is %d", conf->xmpp_enable);
+					CWMP_LOG(INFO,"XMPP connection is Enabled (%d)", conf->xmpp_enable);
 				}
 				value = NULL;
 			}
@@ -1247,14 +1247,12 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 			goto end;
 		}
 		asprintf(&(cwmp->xmpp_param.local_jid), "%s-%s-%s", cwmp->deviceid.oui, cwmp->deviceid.productclass, cwmp->deviceid.serialnumber);
-		//xmpp->allowed_jid = strdup((const char *)get_xmpp_allowed_jid());
-		//xmpp->username = strdup(cwmp->xmpp_param.local_jid);
 		cwmp->xmpp_param.username = strdup((const char *)get_xmpp_username(instance));
 		cwmp->xmpp_param.password = strdup((const char *)get_xmpp_password(instance));
 		cwmp->xmpp_param.domain = strdup((const char *)get_xmpp_domain(instance));
 		cwmp->xmpp_param.ressource = strdup((const char *)get_xmpp_resource(instance));
 		cwmp->xmpp_param.serveraddress = strdup((const char *)get_xmpp_server_address(instance));
-		cwmp->xmpp_param.port = strdup((const char *)get_xmpp_port(instance));
+		cwmp->xmpp_param.port = atoi((const char *)get_xmpp_port(instance));
 		cwmp->xmpp_param.keepalive_interval = atoi((const char *)get_xmpp_keepalive_interval(instance));
 		cwmp->xmpp_param.connect_attempt = atoi((const char *)get_xmpp_connect_attempts(instance));
 		if(cwmp->xmpp_param.connect_attempt)
@@ -1339,6 +1337,8 @@ int cwmp_config_reload(struct cwmp *cwmp)
 #ifdef XMPP_ENABLE
 	if (conf->xmpp_enable && conf->xmpp_connection_id != 0)
 		cwmp_get_xmpp_param(cwmp);
+	else
+		CWMP_LOG(INFO,"XMPP is Disabled");
 #endif
     dm_entry_reload_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
