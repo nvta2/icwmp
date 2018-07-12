@@ -257,6 +257,9 @@ end:
 
 
 /*******************ADD-DEL OBJECT*********************/
+int add_lan_device (struct dmctx *ctx, char **instancepara)
+{}
+
 int add_dhcp_serving_pool_option(struct dmctx *ctx, char **instancepara)
 {
 
@@ -3577,7 +3580,7 @@ int entry_method_root_LANDevice(struct dmctx *ctx)
 inline int entry_landevice_sub_instance(struct dmctx *ctx, struct uci_section *landevice_section, char *interface, char *idev)
 {
 	IF_MATCH(ctx, DMROOT"LANDevice.%s.", idev) {
-		DMOBJECT(DMROOT"LANDevice.%s.", ctx, "0", 0, NULL, NULL, NULL, idev);
+		DMOBJECT(DMROOT"LANDevice.%s.", ctx, "1", 0, add_lan_device,  delete_landevice_all, NULL, idev);
 		DMPARAM("Alias", ctx, "1", get_lan_dev_alias, set_lan_dev_alias, NULL, 0, 1, UNDEF, NULL);
 		DMOBJECT(DMROOT"LANDevice.%s.LANHostConfigManagement.", ctx, "0", 1, NULL, NULL, NULL, idev);
 		DMPARAM("DNSServers", ctx, "1", get_lan_dns, set_lan_dns, NULL, 0, 1, UNDEF, NULL);
