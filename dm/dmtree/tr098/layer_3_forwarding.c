@@ -214,7 +214,6 @@ char *forwarding_update_instance_alias_icwmpd(int action, char **last_inst, void
 	char *inst_opt = (char *) argv[1];
 	char *alias_opt = (char *) argv[2];
 	bool *find_max = (bool *) argv[3];
-
 	dmuci_get_value_by_section_string(s, inst_opt, &instance);
 	if (instance[0] == '\0') {
 		if (*find_max) {
@@ -340,6 +339,24 @@ int get_layer3_type(char *refparam, struct dmctx *ctx, char **value)
 	return 0;		
 }
 
+int set_layer3_type(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct routefwdargs *routeargs = (struct routefwdargs *)ctx->args;
+	
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			 if (strcmp(value, "host") == 0 || strcmp(value, "Host") == 0)
+			    value = dmstrdup("255.255.255.255");
+			 else
+			    value = dmstrdup("255.255.255.0");
+			dmuci_set_value_by_section(routeargs->routefwdsection, "netmask", value);
+			return 0;
+	}
+	return 0;	
+}
+
 int get_layer3_destip(char *refparam, struct dmctx *ctx, char **value)
 {
 	struct routefwdargs *routeargs = (struct routefwdargs *)ctx->args;
@@ -408,9 +425,33 @@ int get_layer3_src_address(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
+int set_layer3_src_address(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct routefwdargs *routeargs = (struct routefwdargs *)ctx->args;
+	switch (action) {
+		case VALUECHECK:			
+			return 0;
+		case VALUESET:
+			return 0;
+	}
+	return 0;
+}
+
 int get_layer3_src_mask(char *refparam, struct dmctx *ctx, char **value)
 {
 	*value = "0.0.0.0";
+	return 0;
+}
+
+int set_layer3_src_mask(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	struct routefwdargs *routeargs = (struct routefwdargs *)ctx->args;
+	switch (action) {
+		case VALUECHECK:			
+			return 0;
+		case VALUESET:
+			return 0;
+	}
 	return 0;
 }
 
@@ -728,18 +769,18 @@ inline int entry_layer3_forwarding_instance(struct dmctx *ctx, char *iroute, cha
 {	
 	IF_MATCH(ctx, DMROOT"Layer3Forwarding.Forwarding.%s.", iroute) {
 		DMOBJECT(DMROOT"Layer3Forwarding.Forwarding.%s.", ctx, "0", 1, NULL, NULL, NULL, iroute);
-		DMPARAM("Enable", ctx, permission, get_layer3_enable, set_layer3_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
+		DMPARAM("Enable", ctx, "1", get_layer3_enable, set_layer3_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMPARAM("Status", ctx, "0", get_layer3_status, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Alias", ctx, "1", get_layer3_alias, set_layer3_alias, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Type", ctx, "0", get_layer3_type, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("DestIPAddress", ctx, permission, get_layer3_destip, set_layer3_destip, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("DestSubnetMask", ctx, permission, get_layer3_destmask, set_layer3_destmask, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SourceIPAddress", ctx, "0", get_layer3_src_address, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("SourceSubnetMask", ctx, "0", get_layer3_src_mask, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("GatewayIPAddress", ctx, permission, get_layer3_gatewayip, set_layer3_gatewayip, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Interface", ctx, permission, get_layer3_interface_linker_parameter, set_layer3_interface_linker_parameter, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("ForwardingMetric", ctx, permission, get_layer3_metric, set_layer3_metric, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("MTU", ctx, permission, get_layer3_mtu, set_layer3_mtu, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Type", ctx, "1", get_layer3_type, set_layer3_type, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("DestIPAddress", ctx, "1", get_layer3_destip, set_layer3_destip, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("DestSubnetMask", ctx, "1", get_layer3_destmask, set_layer3_destmask, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("SourceIPAddress", ctx, "1", get_layer3_src_address, set_layer3_src_address, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("SourceSubnetMask", ctx, "1", get_layer3_src_mask, set_layer3_src_mask, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("GatewayIPAddress", ctx, "1", get_layer3_gatewayip, set_layer3_gatewayip, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Interface", ctx, "1", get_layer3_interface_linker_parameter, set_layer3_interface_linker_parameter, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("ForwardingMetric", ctx, "1", get_layer3_metric, set_layer3_metric, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("MTU", ctx, "1", get_layer3_mtu, set_layer3_mtu, NULL, 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;

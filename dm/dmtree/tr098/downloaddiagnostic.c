@@ -247,7 +247,7 @@ int entry_method_root_Download_Diagnostics(struct dmctx *ctx)
 		DMPARAM("TotalBytesReceived", ctx, "0", get_download_diagnostic_totalbytes, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		DMPARAM("TCPOpenRequestTime", ctx, "0", get_download_diagnostic_tcp_open_request_time, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
 		DMPARAM("TCPOpenResponseTime", ctx, "0", get_download_diagnostic_tcp_open_response_time, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("DSCP", ctx, "0", get_download_diagnostic_dscp, set_download_diagnostic_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMPARAM("DSCP", ctx, "1", get_download_diagnostic_dscp, set_download_diagnostic_dscp, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;

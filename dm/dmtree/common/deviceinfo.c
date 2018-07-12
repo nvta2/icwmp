@@ -381,6 +381,19 @@ int get_vcf_version(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
+int set_vcf_version(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+	switch (action) {
+		case VALUECHECK:			
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section_icwmpd(cur_dev_vcf.vcf_sec, "version", value);
+			return 0;
+	}
+	return 0;
+}
+
 int get_vcf_date(char *refparam, struct dmctx *ctx, char **value)
 {
 	DIR *dir;
@@ -416,15 +429,54 @@ int get_vcf_desc(char *refparam, struct dmctx *ctx, char **value)
 	return 0;
 }
 
+int set_vcf_desc(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+	switch (action) {
+		case VALUECHECK:			
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section_icwmpd(cur_dev_vcf.vcf_sec, "description", value);
+			return 0;
+	}
+	return 0;
+}
+
 int get_vcf_alias(char *refparam, struct dmctx *ctx, char **value)
 {
 	dmuci_get_value_by_section_string(cur_dev_vcf.vcf_sec, "vcf_alias", value);
 	return 0;
 }
 
+int set_vcf_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+	switch (action) {
+		case VALUECHECK:			
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section_icwmpd(cur_dev_vcf.vcf_sec, "vcf_alias", value);
+			return 0;
+	}
+	return 0;
+}
+
 int get_vlf_alias(char *refparam, struct dmctx *ctx, char **value)
 {
 	dmuci_get_value_by_section_string(cur_dev_vlf.vlf_sec, "vlf_alias", value);
+	return 0;
+}
+
+int set_vlf_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+	switch (action) {
+		case VALUECHECK:			
+			return 0;
+		case VALUESET:
+			dmuci_set_value("system", cur_dev_vlf.vlf_sec, "vlf_alias", value);
+			return 0;
+	}
 	return 0;
 }
 
@@ -537,11 +589,11 @@ inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf)
 {
 	IF_MATCH(ctx, DMROOT"DeviceInfo.VendorConfigFile.%s.", ivcf) {
 		DMOBJECT(DMROOT"DeviceInfo.VendorConfigFile.%s.", ctx, "0", 1, NULL, NULL, NULL, ivcf);
-		DMPARAM("Alias", ctx, "0", get_vcf_alias, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Alias", ctx, "1", get_vcf_alias, set_vcf_alias, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Name", ctx, "0",  get_vcf_name, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Version", ctx, "0",  get_vcf_version, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Version", ctx, "1",  get_vcf_version, set_vcf_version, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Date", ctx, "0",  get_vcf_date, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("Description", ctx, "0",  get_vcf_desc, NULL, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Description", ctx, "1",  get_vcf_desc, set_vcf_desc, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("UseForBackupRestore", ctx, "0",  get_vcf_backup_restore, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
 		return 0;
 	}
