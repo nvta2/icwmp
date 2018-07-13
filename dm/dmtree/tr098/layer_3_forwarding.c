@@ -835,7 +835,7 @@ int entry_method_root_layer3_forwarding(struct dmctx *ctx)
 inline int entry_layer3_forwarding_instance(struct dmctx *ctx, char *iroute, char *permission)
 {	
 	IF_MATCH(ctx, DMROOT"Layer3Forwarding.Forwarding.%s.", iroute) {
-		DMOBJECT(DMROOT"Layer3Forwarding.Forwarding.%s.", ctx, "1", 1, NULL, delete_layer3_forwarding, NULL, iroute);
+		DMOBJECT(DMROOT"Layer3Forwarding.Forwarding.%s.", ctx, "0", 1, NULL, delete_layer3_forwarding, NULL, iroute);
 		DMPARAM("Enable", ctx, "1", get_layer3_enable, set_layer3_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMPARAM("Status", ctx, "0", get_layer3_status, NULL, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Alias", ctx, "1", get_layer3_alias, set_layer3_alias, NULL, 0, 1, UNDEF, NULL);
