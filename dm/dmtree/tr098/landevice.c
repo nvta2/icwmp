@@ -257,6 +257,53 @@ end:
 
 
 /*******************ADD-DEL OBJECT*********************/
+int add_landevice(struct dmctx *ctx, char **instancepara)
+{
+	char *value;
+	char *instance;
+	struct uci_section *lan_sec = NULL;
+	uci_foreach_option_eq("network", "interface", "is_lan", "1", lan_sec)
+	{
+		instance = update_instance(lan_sec, instance, "ldinstance");
+	}
+	dmuci_add_section("network", "interface", &lan_sec, &value);
+	dmuci_set_value_by_section(lan_sec, "is_lan", "1");
+	dmuci_set_value_by_section(lan_sec, "auto", "1");
+	dmuci_set_value_by_section(lan_sec, "enabled", "1");
+	dmuci_set_value_by_section(lan_sec, "peerdns", "1");
+	dmuci_set_value_by_section(lan_sec, "delay", "0");
+	dmuci_set_value_by_section(lan_sec, "proto", "dhcp");
+	*instancepara = update_instance(lan_sec, instance, "ldinstance");
+	return 0;
+
+}
+
+int delete_landevice_all(struct dmctx *ctx)
+{
+	int found = 0;
+	char *lan_name;
+	struct uci_section *lan_sec = NULL;
+	struct uci_section *ss = NULL;
+
+	uci_foreach_option_eq("network", "interface", "is_lan", "1", lan_sec)
+	{
+		if (found != 0)
+			dmuci_delete_by_section(ss, NULL, NULL);
+		ss = lan_sec;
+		found++;
+	}
+	if (ss != NULL)
+		dmuci_delete_by_section(ss, NULL, NULL);
+	return 0;
+}
+
+int delete_landevice(struct dmctx *ctx)
+{
+	dmuci_delete_by_section(cur_lanargs.ldlansection, NULL, NULL);
+	return 0;
+}
+
+
 int add_dhcp_serving_pool_option(struct dmctx *ctx, char **instancepara)
 {
 
@@ -419,56 +466,6 @@ int delete_landevice_dhcpstaticaddress(struct dmctx *ctx)
 	return 0;
 }
 
-
-int add_landevice_wlanconfiguration(struct dmctx *ctx, char **instancepara)
-{
-	char *value;
-	char ssid[16] = {0};
-	char *instance;
-	struct uci_section *s = NULL;
-	struct ldlanargs *lanargs = (struct ldlanargs *)ctx->args;
-	char *lan_name = section_name(lanargs->ldlansection);
-	
-	instance = get_last_instance_lev2("wireless", "wifi-iface", "lwlaninstance", "network", lan_name);
-	sprintf(ssid, "Inteno_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
-	dmuci_add_section("wireless", "wifi-iface", &s, &value);
-	dmuci_set_value_by_section(s, "device", "wl0");
-	dmuci_set_value_by_section(s, "encryption", "none");
-	dmuci_set_value_by_section(s, "macfilter", "0");
-	dmuci_set_value_by_section(s, "mode", "ap");
-	dmuci_set_value_by_section(s, "network", lan_name);
-	dmuci_set_value_by_section(s, "ssid", ssid);
-	*instancepara = update_instance(s, instance, "lwlaninstance");
-	return 0;
-}
-
-int delete_landevice_wlanconfiguration_all(struct dmctx *ctx)
-{
-	int found = 0;
-	char *lan_name;
-	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL;
-	struct ldlanargs *lanargs = (struct ldlanargs *)ctx->args;
-	
-	lan_name = section_name(lanargs->ldlansection);
-	uci_foreach_option_eq("wireless", "wifi-iface", "network", lan_name, s) {
-		if (found != 0)
-				dmuci_delete_by_section(ss, NULL, NULL);
-		ss = s;
-		found++;
-	}
-	if (ss != NULL)
-		dmuci_delete_by_section(ss, NULL, NULL);
-	return 0;
-}
-
-int delete_landevice_wlanconfiguration(struct dmctx *ctx)
-{
-	struct ldwlanargs *wlanargs = (struct ldwlanargs *)ctx->args;
-	
-	dmuci_delete_by_section(wlanargs->lwlansection, NULL, NULL);
-	return 0;
-}
 /******************************************************/
 /************************************************************************** 
 **** ****  function related to landevice_lanhostconfigmanagement  **** ****
@@ -3567,7 +3564,7 @@ int entry_method_root_LANDevice(struct dmctx *ctx)
 {
 	//struct ldlanargs *(ctx->args) = (struct ldlanargs *)(ctx->args); //TO CHECK
 	IF_MATCH(ctx, DMROOT"LANDevice.") {
-		DMOBJECT(DMROOT"LANDevice.", ctx, "0", 0, NULL, NULL, NULL);
+		DMOBJECT(DMROOT"LANDevice.", ctx, "1", 0, add_landevice, delete_landevice_all, NULL);
 		SUBENTRY(entry_landevice_sub, ctx);
 		return 0;
 	}
@@ -3577,7 +3574,7 @@ int entry_method_root_LANDevice(struct dmctx *ctx)
 inline int entry_landevice_sub_instance(struct dmctx *ctx, struct uci_section *landevice_section, char *interface, char *idev)
 {
 	IF_MATCH(ctx, DMROOT"LANDevice.%s.", idev) {
-		DMOBJECT(DMROOT"LANDevice.%s.", ctx, "0", 0, NULL, NULL, NULL, idev);
+		DMOBJECT(DMROOT"LANDevice.%s.", ctx, "1", 0, NULL, delete_landevice, NULL, idev);
 		DMPARAM("Alias", ctx, "1", get_lan_dev_alias, set_lan_dev_alias, NULL, 0, 1, UNDEF, NULL);
 		DMOBJECT(DMROOT"LANDevice.%s.LANHostConfigManagement.", ctx, "0", 1, NULL, NULL, NULL, idev);
 		DMPARAM("DNSServers", ctx, "1", get_lan_dns, set_lan_dns, NULL, 0, 1, UNDEF, NULL);
@@ -3596,7 +3593,7 @@ inline int entry_landevice_sub_instance(struct dmctx *ctx, struct uci_section *l
 		DMOBJECT(DMROOT"LANDevice.%s.LANHostConfigManagement.IPInterface.", ctx, "0", 1, NULL, NULL, NULL, idev);
 		DMOBJECT(DMROOT"LANDevice.%s.LANHostConfigManagement.DHCPConditionalServingPool.", ctx, "1", 1, add_dhcp_conditional_serving_pool, delete_dhcp_conditional_serving_pool_all, NULL, idev);
 		DMOBJECT(DMROOT"LANDevice.%s.LANHostConfigManagement.DHCPStaticAddress.", ctx, "1", 1, add_landevice_dhcpstaticaddress, delete_landevice_dhcpstaticaddress_all, NULL, idev);
-		DMOBJECT(DMROOT"LANDevice.%s.WLANConfiguration.", ctx, "1", 0, add_landevice_wlanconfiguration, delete_landevice_wlanconfiguration_all, NULL, idev);
+		DMOBJECT(DMROOT"LANDevice.%s.WLANConfiguration.", ctx, "0", 0, NULL, NULL, NULL, idev);
 		DMOBJECT(DMROOT"LANDevice.%s.LANEthernetInterfaceConfig.", ctx, "0", 1, NULL, NULL, NULL, idev);/* TO CHECK */
 		SUBENTRY(entry_landevice_ipinterface_and_dhcpstaticaddress, ctx, landevice_section, idev);
 		SUBENTRY(entry_landevice_wlanconfiguration, ctx, landevice_section, idev);
@@ -3670,7 +3667,7 @@ inline int entry_landevice_dhcpstaticaddress_instance(struct dmctx *ctx, char *i
 inline int entry_landevice_wlanconfiguration_instance(struct dmctx *ctx, char *idev,char *iwlan)
 {
 	IF_MATCH(ctx, DMROOT"LANDevice.%s.WLANConfiguration.%s.", idev, iwlan) {
-		DMOBJECT(DMROOT"LANDevice.%s.WLANConfiguration.%s.", ctx, "1", 0, NULL, delete_landevice_wlanconfiguration, NULL, idev, iwlan);
+		DMOBJECT(DMROOT"LANDevice.%s.WLANConfiguration.%s.", ctx, "0", 0, NULL, NULL, NULL, idev, iwlan);
 		DMPARAM("Alias", ctx, "1", get_wlan_alias, set_wlan_alias, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Enable", ctx, "1", get_wlan_enable, set_wlan_enable, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMPARAM("Status", ctx, "0", get_wlan_status, NULL, NULL, 0, 1, UNDEF, NULL);
