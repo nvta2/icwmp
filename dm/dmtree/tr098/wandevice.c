@@ -2311,7 +2311,7 @@ inline int entry_wandevice_sub_instance(struct dmctx *ctx, char *dev, int i, cha
 	IF_MATCH(ctx, DMROOT"WANDevice.%s.", dev) {
 		DMOBJECT(DMROOT"WANDevice.%s.", ctx, "0", notif_permission, NULL, NULL, NULL, dev);
 		DMPARAM("Alias", ctx, "1", get_wan_dev_alias, set_wan_dev_alias, NULL, 0, 1, UNDEF, NULL);
-		DMOBJECT(DMROOT"WANDevice.%s.WANConnectionDevice.", ctx, cwritable, notif_permission, add_wan_wanconnectiondevice, delete_wan_wanconnectiondevice_all, NULL, dev);
+		DMOBJECT(DMROOT"WANDevice.%s.WANConnectionDevice.", ctx, "1", notif_permission, add_wan_wanconnectiondevice, delete_wan_wanconnectiondevice_all, NULL, dev);
 		DMOBJECT(DMROOT"WANDevice.%s.WANCommonInterfaceConfig.", ctx, "0", 1, NULL, NULL, NULL, dev);
 		DMPARAM("WANAccessType", ctx, "0", get_wan_device_wan_access_type, NULL, NULL, 0, 1, UNDEF, NULL);
 #ifndef EX400
