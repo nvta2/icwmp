@@ -388,27 +388,6 @@ int check_global_config (struct config *conf)
     return CWMP_OK;
 }
 
-int check_xmpp_config (struct cwmp *cwmp)
-{
-    if ((cwmp->xmpp_param.username)[0] == '\0')
-    {
-        cwmp->conf.xmpp_enable = 0;
-    }
-	if ((cwmp->xmpp_param.password)[0] == '\0')
-    {
-        cwmp->conf.xmpp_enable = 0;
-    }
-	if ((cwmp->xmpp_param.domain)[0] == '\0')
-    {
-        cwmp->conf.xmpp_enable = 0;
-    }
-	if ((cwmp->xmpp_param.ressource)[0] == '\0')
-    {
-        cwmp->conf.xmpp_enable = 0;
-    }
-	return CWMP_OK;
-}
-
 static void uppercase ( char *sPtr )
 {
 	while ( *sPtr != '\0' )
@@ -1241,12 +1220,23 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 		asprintf(&connectionserver, "%s", get_xmppconnection_server_enable(instance));
 		connection_enable = strdup(connection);
 		connectionserver_enable = strdup(connectionserver);
-		if(connection_enable[0] == '\0' || connection_enable[0] == '0' || connectionserver_enable[0] == '\0' || connectionserver_enable[0] == '0')
-		{
-			conf->xmpp_enable = false;//disable xmpp_enable
-			goto end;
-		}
-		asprintf(&(cwmp->xmpp_param.local_jid), "%s-%s-%s", cwmp->deviceid.oui, cwmp->deviceid.productclass, cwmp->deviceid.serialnumber);
+        cwmp->xmpp_param.serveralgorithm = strdup((const char *)get_xmpp_serveralgorithm(instance));
+        if( strcmp(cwmp->xmpp_param.serveralgorithm,"DNS-SRV") == 0)
+        {
+             if(connection_enable[0] == '\0' || connection_enable[0] == '0')
+            {
+                conf->xmpp_enable = false;//disable xmpp_enable
+                goto end;
+            }
+        }
+        else
+        {
+            if(connection_enable[0] == '\0' || connection_enable[0] == '0' || connectionserver_enable[0] == '\0' || connectionserver_enable[0] == '0')
+            {
+                conf->xmpp_enable = false;//disable xmpp_enable
+                goto end;
+            }
+        }
 		cwmp->xmpp_param.username = strdup((const char *)get_xmpp_username(instance));
 		cwmp->xmpp_param.password = strdup((const char *)get_xmpp_password(instance));
 		cwmp->xmpp_param.domain = strdup((const char *)get_xmpp_domain(instance));
@@ -1265,7 +1255,6 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 			cwmp->xmpp_param.retry_max_interval = (cwmp->xmpp_param.retry_max_interval) ? cwmp->xmpp_param.retry_max_interval : DEFAULT_RETRY_MAX_INTERVAL;
 		}
 		cwmp_dm_ctx_clean(cwmp, &dmctx);
-		//check_xmpp_config(cwmp);
 	}
     else
     {

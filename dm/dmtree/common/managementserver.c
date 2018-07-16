@@ -455,7 +455,6 @@ int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmct
 			return 0;
 		case VALUESET:
 			dmuci_set_value("cwmp", "xmpp", "allowed_jid", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -521,7 +520,6 @@ int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx 
 				dmuci_get_value_by_section_string(s, "connection_instance", &connection_instance);
 				if(strcmp(value, connection_instance) == 0) {
 					dmuci_set_value("cwmp", "xmpp", "id", value);
-					cwmp_set_end_session(END_SESSION_RELOAD);
 					break;
 				}
 			}

@@ -242,14 +242,13 @@ struct deviceid {
 };
 
 struct xmpp_param {
-	bool xmpp_server_enable;
 	char *allowed_jid;
-	char *local_jid;
 	char *username;
 	char *password;
 	char *domain;
 	char *ressource;
 	char *serveraddress;
+    char *serveralgorithm;
 	int keepalive_interval;
 	int connect_attempt;
 	int retry_initial_interval;
