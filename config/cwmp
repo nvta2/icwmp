@@ -64,6 +64,7 @@ config xmpp_connection
 	option initial_retry_interval ''
 	option retry_interval_multiplier ''
 	option retry_max_interval ''
+	option serveralgorithm 'DNS-SRV'
 	
 config xmpp_connection_server
 	option id_connection '1'

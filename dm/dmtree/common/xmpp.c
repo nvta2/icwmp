@@ -126,7 +126,7 @@ char *get_xmpp_domain(char *instance)
 		dmuci_get_value_by_section_string(s, "domain", &v);
 		return v;
 	}
-	v = "";	
+	v = "";
 	return v;
 }
 
@@ -199,6 +199,18 @@ char *get_xmpp_connect_retry_max_interval(char *instance)
 		return v;
 	}
 	v = "";	
+	return v;
+}
+
+char *get_xmpp_serveralgorithm(char *instance)
+{
+	struct uci_section *s;
+	char *v;
+	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
+		dmuci_get_value_by_section_string(s, "serveralgorithm", &v);
+		return v;
+	}
+	v = "";
 	return v;
 }
 
@@ -301,7 +313,7 @@ int get_xmpp_connection_nbr_entry(char *refparam, struct dmctx *ctx, void *data,
 
 int get_xmpp_connection_supported_server_connect_algorithms(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = "DNS-SRV";
+	*value = "DNS-SRV , ServerTable";
 	return 0;
 }
 
@@ -325,7 +337,6 @@ int set_connection_enable(char *refparam, struct dmctx *ctx, void *data, char *i
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "enable", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -372,7 +383,6 @@ int set_xmpp_connection_username(char *refparam, struct dmctx *ctx, void *data, 
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "username", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -394,7 +404,6 @@ int set_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, 
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "password", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -418,7 +427,6 @@ int set_xmpp_connection_domain(char *refparam, struct dmctx *ctx, void *data, ch
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "domain", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -442,7 +450,6 @@ int set_xmpp_connection_resource(char *refparam, struct dmctx *ctx, void *data, 
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "resource", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -465,10 +472,8 @@ int set_xmpp_connection_server_connect_algorithm(char *refparam, struct dmctx *c
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			if(strcmp(value, "DNS-SRV") == 0) {
+			if(strcmp(value, "DNS-SRV") == 0 || strcmp(value, "ServerTable") == 0)
 				dmuci_set_value_by_section(connsection, "serveralgorithm", value);
-				cwmp_set_end_session(END_SESSION_RELOAD);
-			}
 			return 0;
 	}
 	return 0;
@@ -492,7 +497,6 @@ int set_xmpp_connection_keepalive_interval(char *refparam, struct dmctx *ctx, vo
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "interval", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -516,7 +520,6 @@ int set_xmpp_connection_server_attempts(char *refparam, struct dmctx *ctx, void 
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "attempt", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -540,7 +543,6 @@ int set_xmpp_connection_retry_initial_interval(char *refparam, struct dmctx *ctx
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "initial_retry_interval", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -564,7 +566,6 @@ int set_xmpp_connection_retry_interval_multiplier(char *refparam, struct dmctx *
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "retry_interval_multiplier", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -588,7 +589,6 @@ int set_xmpp_connection_retry_max_interval(char *refparam, struct dmctx *ctx, vo
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "retry_max_interval", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -614,7 +614,6 @@ int set_xmpp_connection_server_usetls(char *refparam, struct dmctx *ctx, void *d
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "usetls", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -674,7 +673,6 @@ int set_xmpp_connection_server_enable(char *refparam, struct dmctx *ctx, void *d
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "enable", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -720,7 +718,6 @@ int set_xmpp_connection_server_server_address(char *refparam, struct dmctx *ctx,
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "server_address", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
@@ -743,7 +740,6 @@ int set_xmpp_connection_server_port(char *refparam, struct dmctx *ctx, void *dat
 			return 0;
 		case VALUESET:
 			dmuci_set_value_by_section(connsection, "port", value);
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;

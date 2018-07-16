@@ -297,8 +297,11 @@ void cwmp_xmpp_connect_client()
 	xmpp_conn_set_pass(cwmp->xmpp_conn, cwmp->xmpp_param.password);
 	free(jid);
 	/* initiate connection */
-	connected = xmpp_connect_client(cwmp->xmpp_conn, cwmp->xmpp_param.serveraddress[0] ? cwmp->xmpp_param.serveraddress : NULL,
-									cwmp->xmpp_param.port, conn_handler, cwmp->xmpp_ctx);
+	if( strcmp(cwmp->xmpp_param.serveralgorithm,"DNS-SRV") == 0)
+		connected = xmpp_connect_client(cwmp->xmpp_conn, NULL, 0, conn_handler, cwmp->xmpp_ctx);
+	else
+		connected = xmpp_connect_client(cwmp->xmpp_conn, cwmp->xmpp_param.serveraddress[0] ? cwmp->xmpp_param.serveraddress : NULL,
+										cwmp->xmpp_param.port, conn_handler, cwmp->xmpp_ctx);
 	if (connected == -1 )
 	{
 		xmpp_stop(cwmp->xmpp_ctx);
@@ -331,7 +334,7 @@ void cwmp_xmpp_connect_client()
 	else
 	{
 		attempt = 0;
-		CWMP_LOG(DEBUG,"XMPP Handle Connection");
+		CWMP_LOG(INFO,"XMPP Handle Connection");
 		xmpp_run(cwmp->xmpp_ctx);
 	}
 }

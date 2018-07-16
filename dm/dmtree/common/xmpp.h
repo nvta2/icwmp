@@ -36,6 +36,7 @@ char *get_xmpp_connect_attempts(char *instance);
 char *get_xmpp_connect_initial_retry_interval(char *instance);
 char *get_xmpp_connect_retry_interval_multiplier(char *instance);
 char *get_xmpp_connect_retry_max_interval(char *instance);
+char *get_xmpp_serveralgorithm(char *instance);
 char *get_xmpp_server_address(char *instance);
 char *get_xmpp_port(char *instance);
 
