@@ -1,0 +1,9 @@
+config stun 'stun'
+	option username 'tr069_stun'
+	option password 'tr069_stun'
+	option server_address 'stun.l.google.com'
+	option server_port '19302'
+	option min_keepalive '30'
+	option max_keepalive '3600'
+#	option client_port 7547
+#if client_port option is not set or < 0 then use a random port for connection request source port 

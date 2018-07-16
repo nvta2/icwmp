@@ -19,6 +19,7 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "managementserver.h"
+#include "dmjson.h"
 
 /*** ManagementServer. ***/
 DMLEAF tManagementServerParams[] = {
@@ -47,6 +48,15 @@ DMLEAF tManagementServerParams[] = {
 {"ConnReqJabberID", &DMREAD, DMT_STRING, get_management_server_conn_req_jabber_id, NULL, NULL, NULL},
 {"ConnReqXMPPConnection", &DMWRITE, DMT_STRING, get_management_server_conn_req_xmpp_connection, set_management_server_conn_req_xmpp_connection, NULL, NULL},
 {"SupportedConnReqMethods", &DMREAD, DMT_STRING, get_management_server_supported_conn_req_methods, NULL, NULL, NULL},
+{"UDPConnectionRequestAddress", &DMREAD, DMT_STRING, get_upd_cr_address, NULL, NULL, NULL},
+{"STUNEnable", &DMWRITE, DMT_BOOL, get_stun_enable, set_stun_enable, NULL, NULL},
+{"STUNServerAddress", &DMWRITE, DMT_STRING, get_stun_server_address, set_stun_server_address, NULL, NULL},
+{"STUNServerPort", &DMWRITE, DMT_UNINT, get_stun_server_port, set_stun_server_port, NULL, NULL},
+{"STUNUsername", &DMWRITE, DMT_STRING, get_stun_username, set_stun_username, NULL, NULL},
+{"STUNPassword", &DMWRITE, DMT_STRING, get_stun_password, set_stun_password, NULL, NULL},
+{"STUNMaximumKeepAlivePeriod", &DMWRITE, DMT_INT, get_stun_maximum_keepalive_period, set_stun_maximum_keepalive_period, NULL, NULL},
+{"STUNMinimumKeepAlivePeriod", &DMWRITE, DMT_UNINT, get_stun_minimum_keepalive_period, set_stun_minimum_keepalive_period, NULL, NULL},
+{"NATDetected", &DMREAD, DMT_BOOL, get_nat_detected, NULL, NULL, NULL},
 {0}
 };
 
@@ -442,6 +452,160 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *insta
 	return 0;
 }
 
+/*
+ * STUN parameters
+ */
+
+int get_upd_cr_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "crudp_address", value);
+	return 0;
+}
+
+int get_stun_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	char *path = "/etc/rc.d/*icwmp_stund";
+	if (check_file(path))
+		*value = "1";
+	else
+		*value = "0";
+	return 0;
+}
+
+int set_stun_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	bool b;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			string_to_bool(value, &b);
+			if(b) {
+				DMCMD("/etc/rc.common", 2, "/etc/init.d/icwmp_stund", "enable");
+				DMCMD("/etc/rc.common", 2, "/etc/init.d/icwmp_stund", "start");
+			}
+			else {
+				DMCMD("/etc/rc.common", 2, "/etc/init.d/icwmp_stund", "disable");
+				DMCMD("/etc/rc.common", 2, "/etc/init.d/icwmp_stund", "stop");
+			}
+			return 0;
+	}
+	return 0;
+}
+int get_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "server_address", value);
+	return 0;
+}
+
+int set_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("icwmp_stun", "stun", "server_address", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "server_port", value);
+	return 0;
+}
+
+int set_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("icwmp_stun", "stun", "server_port", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_stun_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "username", value);
+	return 0;
+}
+
+int set_stun_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("icwmp_stun", "stun", "username", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_stun_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "password", value);
+	return 0;
+}
+
+int set_stun_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("icwmp_stun", "stun", "password", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "max_keepalive", value);
+	return 0;
+}
+
+int set_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("icwmp_stun", "stun", "max_keepalive", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("icwmp_stun", "stun", "min_keepalive", value);
+	return 0;
+}
+
+int set_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value("icwmp_stun", "stun", "min_keepalive", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	char *path = "/etc/rc.d/*icwmp_stund";
+	char *v;
+
+	if (check_file(path)) { //stun is enabled
+		dmuci_get_option_value_string("icwmp_stun", "stun", "nat_detected", &v);
+		*value = (*v == '1') ? "true" : "false";
+	}
+	else {
+		*value = "false";
+	}
+
+	return 0;
+}
+
+
+/*
+ * XMPP parameters
+ */
+
 int get_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "xmpp", "allowed_jid", value);
@@ -530,6 +694,6 @@ int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx 
 
 int get_management_server_supported_conn_req_methods(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = "HTTP, XMPP";
+	*value = "HTTP, XMPP, STUN";
 	return 0;
 }

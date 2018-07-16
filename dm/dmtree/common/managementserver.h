@@ -37,6 +37,17 @@ int get_management_server_conn_req_jabber_id(char *refparam, struct dmctx *ctx, 
 int get_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_management_server_supported_conn_req_methods(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
+int get_upd_cr_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_upd_cr_address_notification_limit(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+
 int set_management_server_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_management_server_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_management_server_passwd(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -56,4 +67,12 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *insta
 int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
+int set_upd_cr_address_notification_limit(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif
