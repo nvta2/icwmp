@@ -101,7 +101,39 @@ libdatamodel_la_CFLAGS+=-I../dm/dmtree/tr098
 libdatamodel_la_CFLAGS+=-I../dm/dmtree/tr181
 libdatamodel_la_CFLAGS+=-I../dm/dmtree/upnp
 
-bin_PROGRAMS = icwmpd
+bin_PROGRAMS = icwmpd icwmp_stund
+
+icwmp_stund_SOURCES =		    \
+	../stun/stun.c			\
+	../stun/stun.h			\
+	../stun/log.c			\
+	../stun/log.h			\
+	../stun/ubus.c			\
+	../stun/ubus.h			\
+	../stun/config.c 		\
+	../stun/config.h
+
+icwmp_stund_CFLAGS =			\
+	$(AM_CFLAGS)				\
+	$(LIBUCI_CFLAGS)			\
+	$(LIBUBUS_CFLAGS)			\
+	$(LIBUBOX_CFLAGS)
+
+icwmp_stund_LDFLAGS =			\
+	$(AM_LDFLAGS)				\
+	$(LIBUCI_LDFLAGS)			\
+	$(LIBUBUS_LDFLAGS)			\
+	$(LIBUBOX_LDFLAGS)			\
+	$(LIBJSONC_LDFLAGS)			
+
+icwmp_stund_LDADD =				\
+	$(AM_LIBS)					\
+	$(LIBUCI_LIBS)				\
+	$(LIBUBOX_LIBS)				\
+	$(LIBJSON_LIBS)			    \
+	$(LBLOBMSG_LIBS)			\
+	$(LIBUBUS_LIBS)				\
+	$(LCRYPTO_LIBS)
 
 icwmpd_SOURCES =			\
 	../backupSession.c		\
@@ -170,6 +202,8 @@ icwmpd_CFLAGS+=-I../dm/dmtree/common
 icwmpd_CFLAGS+=-I../dm/dmtree/tr098
 icwmpd_CFLAGS+=-I../dm/dmtree/tr181
 icwmpd_CFLAGS+=-I../dm/dmtree/upnp
+icwmpd_CFLAGS+=-I../stun/
+icwmpd_CFLAGS+=-I../stun/src/
 
 if XMPP_ENABLE
 bin_PROGRAMS += icwmp_xmppd
