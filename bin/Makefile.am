@@ -30,6 +30,11 @@ libdatamodel_la_SOURCES =	\
 	../dm/dmtree/common/x_inteno_se_buttons.c		\
 	../dm/dmtree/common/root.c
 
+if XMPP_ENABLE
+libdatamodel_la_SOURCES += 							\
+	../dm/dmtree/common/xmpp.c					
+endif
+
 libdatamodel_la_SOURCES += 							\
 	../dm/dmtree/tr098/lan_interfaces.c				\
 	../dm/dmtree/tr098/landevice.c					\
@@ -148,12 +153,6 @@ icwmpd_SOURCES =			\
 	../diagnostic.c			\
 	../zlib.c
 
-if XMPP_ENABLE
-icwmpd_SOURCES += 									\
-	../dm/dmtree/common/xmpp.c						\
-	../xmpp_cr.c					
-endif
-
 icwmpd_CFLAGS =			\
 	$(AM_CFLAGS)		\
 	$(LIBUCI_CFLAGS)	\
@@ -205,3 +204,36 @@ icwmpd_CFLAGS+=-I../dm/dmtree/tr181
 icwmpd_CFLAGS+=-I../dm/dmtree/upnp
 icwmpd_CFLAGS+=-I../stun/
 icwmpd_CFLAGS+=-I../stun/src/
+
+if XMPP_ENABLE
+bin_PROGRAMS += icwmp_xmppd
+
+icwmp_xmppd_SOURCES =		    \
+	../xmpp/xmpp.c				\
+	../xmpp/xmpp.h				\
+	../xmpp/xmppuci.c			\
+	../xmpp/xmppuci.h			\
+	../xmpp/xmppcmd.c			\
+	../xmpp/xmppcmd.h			\
+	../xmpp/xmpplog.c			\
+	../xmpp/xmpplog.h			\
+	../xmpp/xmppconfig.c		\
+	../xmpp/xmppconfig.h
+
+icwmp_xmppd_CFLAGS =			\
+	$(AM_CFLAGS)				\
+	$(LIBUCI_CFLAGS)			\
+	$(LIBUBOX_CFLAGS)
+
+icwmp_xmppd_LDFLAGS =			\
+	$(AM_LDFLAGS)				\
+	$(LIBUCI_LDFLAGS)			\
+	$(LIBUBOX_LDFLAGS)
+	
+icwmp_xmppd_LDADD =				\
+	$(AM_LIBS)					\
+	$(LIBUCI_LIBS)				\
+	$(LIBUBOX_LIBS)				\
+	$(LIBSTROPHE_LIBS)
+endif
+	

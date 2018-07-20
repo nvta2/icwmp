@@ -608,7 +608,7 @@ int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instan
 
 int get_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_option_value_string("cwmp", "xmpp", "allowed_jid", value);
+	dmuci_get_option_value_string("cwmp_xmpp", "xmpp", "allowed_jid", value);
 	return 0;
 }
 
@@ -618,7 +618,7 @@ int set_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmct
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("cwmp", "xmpp", "allowed_jid", value);
+			dmuci_set_value("cwmp_xmpp", "xmpp", "allowed_jid", value);
 			return 0;
 	}
 	return 0;
@@ -630,7 +630,7 @@ int get_management_server_conn_req_jabber_id(char *refparam, struct dmctx *ctx, 
 	char *username, *domain, *resource, *tmpPtr, *strResponse = "";
 	*value = "";
 
-	uci_foreach_sections("cwmp", "xmpp_connection", s) {
+	uci_foreach_sections("cwmp_xmpp", "xmpp_connection", s) {
 		dmuci_get_value_by_section_string(s, "username", &username);
 		dmuci_get_value_by_section_string(s, "domain", &domain);
 		dmuci_get_value_by_section_string(s, "resource", &resource);
@@ -651,7 +651,7 @@ int get_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx 
 {
 	char *id, *datamodel;
 
-	dmuci_get_option_value_string("cwmp", "xmpp", "id", &id);
+	dmuci_get_option_value_string("cwmp_xmpp", "xmpp", "id", &id);
 	dmuci_get_option_value_string("cwmp", "cpe", "datamodel", &datamodel);
 	if(strcmp(datamodel, "tr181") == 0)
 		dmasprintf(value, "Device.XMPP.Connection.%s", id);
@@ -680,10 +680,10 @@ int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx 
 					value = dmstrdup(str + sizeof("InternetGatewayDevice.XMPP.Connection.") - 1); //MEM WILL BE FREED IN DMMEMCLEAN
 				}
 			}
-			uci_foreach_sections("cwmp", "xmpp_connection", s) {
+			uci_foreach_sections("cwmp_xmpp", "xmpp_connection", s) {
 				dmuci_get_value_by_section_string(s, "connection_instance", &connection_instance);
 				if(strcmp(value, connection_instance) == 0) {
-					dmuci_set_value("cwmp", "xmpp", "id", value);
+					dmuci_set_value("cwmp_xmpp", "xmpp", "id", value);
 					break;
 				}
 			}

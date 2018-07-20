@@ -70,186 +70,20 @@ DMLEAF tXMPPConnectionServerParams[] = {
 {0}
 };
 
-char *get_xmppconnection_enable(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "enable", &v);
-		return v;
-	}
-	v = "";	
-	return v;
-}
-
-char *get_xmppconnection_server_enable(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection_server", "connection_server_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "enable", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_username(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "username", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_password(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "password", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_domain(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "domain", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_resource(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "resource", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_keepalive_interval(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "interval", &v);
-		return v;
-	}
-	v = "";	
-	return v;
-}
-
-char *get_xmpp_connect_attempts(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "attempt", &v);
-		return v;
-	}
-	v = "";	
-	return v;
-}
-
-char *get_xmpp_connect_initial_retry_interval(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "initial_retry_interval", &v);
-		return v;
-	}
-	v = "";	
-	return v;
-}
-
-char *get_xmpp_connect_retry_interval_multiplier(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "retry_interval_multiplier", &v);
-		return v;
-	}
-	v = "";	
-	return v;
-}
-
-char *get_xmpp_connect_retry_max_interval(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "retry_max_interval", &v);
-		return v;
-	}
-	v = "";	
-	return v;
-}
-
-char *get_xmpp_serveralgorithm(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection", "connection_instance", instance, s) {
-		dmuci_get_value_by_section_string(s, "serveralgorithm", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_server_address(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection_server", "id_connection", instance, s) {
-		dmuci_get_value_by_section_string(s, "server_address", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
-char *get_xmpp_port(char *instance)
-{
-	struct uci_section *s;
-	char *v;
-	uci_foreach_option_eq("cwmp", "xmpp_connection_server", "id_connection", instance, s) {
-		dmuci_get_value_by_section_string(s, "port", &v);
-		return v;
-	}
-	v = "";
-	return v;
-}
-
 int add_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 	struct uci_section *xmpp_connection, *xmpp_connection_server;
 	char *value1, *value2, *last_inst;
 
-	last_inst = get_last_instance("cwmp", "xmpp_connection", "connection_instance");
-	dmuci_add_section("cwmp", "xmpp_connection", &xmpp_connection, &value1);
-	dmuci_add_section("cwmp", "xmpp_connection_server", &xmpp_connection_server, &value2);
+	last_inst = get_last_instance("cwmp_xmpp", "xmpp_connection", "connection_instance");
+	dmuci_add_section("cwmp_xmpp", "xmpp_connection", &xmpp_connection, &value1);
+	dmuci_add_section("cwmp_xmpp", "xmpp_connection_server", &xmpp_connection_server, &value2);
 	dmasprintf(instancepara, "%d", atoi(last_inst)+1);
+	dmuci_set_value_by_section(xmpp_connection, "connection_instance", *instancepara);
 	dmuci_set_value_by_section(xmpp_connection, "enable", "0");
 	dmuci_set_value_by_section(xmpp_connection, "interval", "300");
 	dmuci_set_value_by_section(xmpp_connection, "attempt", "16");
+	dmuci_set_value_by_section(xmpp_connection, "serveralgorithm", "DNS-SRV");
 	dmuci_set_value_by_section(xmpp_connection_server, "id_connection", *instancepara);
 	dmuci_set_value_by_section(xmpp_connection_server, "connection_server_instance", "1");
 	dmuci_set_value_by_section(xmpp_connection_server, "enable", "0");
@@ -267,14 +101,14 @@ int delete_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *
 	switch (del_action) {
 		case DEL_INST:
 			dmuci_get_value_by_section_string(connsection, "connection_instance", &prev_connection_instance);
-			uci_foreach_option_eq("cwmp", "xmpp_connection_server", "id_connection", prev_connection_instance, s) {
+			uci_foreach_option_eq("cwmp_xmpp", "xmpp_connection_server", "id_connection", prev_connection_instance, s) {
 				dmuci_delete_by_section(s, NULL, NULL);
 				break;
 			}
 			dmuci_delete_by_section(connsection, NULL, NULL);
 			return 0;
 		case DEL_ALL:
-			uci_foreach_sections("cwmp", "xmpp_connection", s) {
+			uci_foreach_sections("cwmp_xmpp", "xmpp_connection", s) {
 					if (found != 0) {
 					dmuci_delete_by_section(ss, NULL, NULL);
 				}
@@ -284,7 +118,7 @@ int delete_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *
 			if (ss != NULL) {
 				dmuci_delete_by_section(ss, NULL, NULL);
 			}
-			uci_foreach_sections("cwmp", "xmpp_connection_server", s) {
+			uci_foreach_sections("cwmp_xmpp", "xmpp_connection_server", s) {
 					if (found != 0) {
 					dmuci_delete_by_section(ss, NULL, NULL);
 				}
@@ -304,7 +138,7 @@ int get_xmpp_connection_nbr_entry(char *refparam, struct dmctx *ctx, void *data,
 	struct uci_section *s;
 	int cnt = 0;
 
-	uci_foreach_sections("cwmp", "xmpp_connection", s) {
+	uci_foreach_sections("cwmp_xmpp", "xmpp_connection", s) {
 		cnt++;
 	}
 	dmasprintf(value, "%d", cnt); // MEM WILL BE FREED IN DMMEMCLEAN
@@ -771,7 +605,7 @@ int browsexmpp_connectionInst(struct dmctx *dmctx, DMNODE *parent_node, void *pr
 	char *iconnection = NULL, *iconnection_last = NULL;
 	struct uci_section *s = NULL;
 
-	uci_foreach_sections("cwmp", "xmpp_connection", s) {
+	uci_foreach_sections("cwmp_xmpp", "xmpp_connection", s) {
 		iconnection = handle_update_instance(1, dmctx, &iconnection_last, update_instance_alias, 3, s, "connection_instance", "connection_instance_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, iconnection) == DM_STOP)
 			break;
@@ -785,7 +619,7 @@ int browsexmpp_connection_serverInst(struct dmctx *dmctx, DMNODE *parent_node, v
 	struct uci_section *s = NULL, *connsection = (struct uci_section *)prev_data;
 
 	dmuci_get_value_by_section_string(connsection, "connection_instance", &prev_connection_instance);
-	uci_foreach_option_eq("cwmp", "xmpp_connection_server", "id_connection", prev_connection_instance, s) {
+	uci_foreach_option_eq("cwmp_xmpp", "xmpp_connection_server", "id_connection", prev_connection_instance, s) {
 	iconnectionserver = handle_update_instance(1, dmctx, &iconnectionserver_last, update_instance_alias, 3, s, "connection_server_instance", "connection_server_instance_alias");
 	if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)s, iconnectionserver) == DM_STOP)
 		break;

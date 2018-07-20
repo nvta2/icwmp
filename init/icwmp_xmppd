@@ -1,0 +1,49 @@
+#!/bin/sh /etc/rc.common
+#XMPP client software
+# Copyright (C) 2015-2018 Inteno Broadband Technology AB
+#Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
+
+START=99
+STOP=10
+
+USE_PROCD=1
+PROG="/usr/sbin/icwmp_xmppd"
+
+start_service() {
+	local enable_xmpp=`uci -q get cwmp_xmpp.xmpp.enable`
+	local id=`uci -q get cwmp_xmpp.xmpp.id`
+	local i=0
+	local inst=`uci get cwmp_xmpp.@xmpp_connection[$i].connection_instance`
+	while [ "$inst" != "" ]; do
+        if [ "$inst" = "$id" ]; then
+			local serveralgorithm=`uci get cwmp_xmpp.@xmpp_connection[$i].serveralgorithm`
+			local enable_conn=`uci -q get cwmp_xmpp.@xmpp_connection[$i].enable`
+			local enable_srv=`uci -q get cwmp_xmpp.@xmpp_connection_server[$i].enable`
+			if [ "$enable_xmpp" = "1" ]; then
+				if [ "$serveralgorithm" = "DNS-SRV" ] && [ "$enable_conn" = "1" ] || [ "$serveralgorithm" = "ServerTable" ] && [ "$enable_conn" = "1" ] && [ "$enable_srv" = "1" ]; then
+					procd_open_instance
+					procd_set_param command "$PROG"
+					procd_set_param respawn "3" "7" "0"
+					procd_close_instance
+				fi
+			fi
+			break
+        fi
+		i=$((i+1))
+		local inst=`uci get cwmp_xmpp.@xmpp_connection[$i].connection_instance`
+	done
+}
+
+boot() {
+	start
+}
+
+reload_service() {
+	stop
+	start 
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger cwmp_xmpp
+}
