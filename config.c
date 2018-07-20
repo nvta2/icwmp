@@ -827,63 +827,6 @@ int get_global_config(struct config *conf)
     {
         return error;
     }
-#ifdef XMPP_ENABLE
-	if(conf->amd_version >= AMD_5)
-	{
-		if((error = uci_get_value(UCI_XMPP_ENABLE,&value)) == CWMP_OK)
-		{
-		    if(value != NULL)
-			{
-				if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
-				{
-					conf->xmpp_enable = true;
-					CWMP_LOG(INFO,"XMPP connection is Enabled (%d)", conf->xmpp_enable);
-				}
-				value = NULL;
-			}
-		}
-		if((error = uci_get_value(UCI_XMPP_CONNECTION_ID,&value)) == CWMP_OK)
-		{
-		    int a = 0;
-		    if(value != NULL)
-		    {
-		        a = atoi(value);
-		        free(value);
-		        value = NULL;
-		    }
-		    if(a==0)
-		    {
-		        CWMP_LOG(INFO,"XMPP connection id :Empty");
-		        conf->xmpp_connection_id = 0;
-		    }
-		    else
-		    {
-				CWMP_LOG(INFO,"XMPP connection id :%d", a);
-		        conf->xmpp_connection_id = a;
-		    }
-		}
-		else
-		{
-		    return error;
-		}
-		if((error = uci_get_value(UCI_XMPP_ALLOWED_JID,&value)) == CWMP_OK)
-		{
-			if(value != NULL)
-		    {
-		        if (conf->xmpp_allowed_jid != NULL)
-		        {
-		            free(conf->xmpp_allowed_jid);
-		        }
-		        conf->xmpp_allowed_jid = value;
-		        value = NULL;
-		    }
-		}
-		else
-		{
-		    return error;
-		}
-	}
-#endif
 	return CWMP_OK;
 }
 
@@ -1202,69 +1145,6 @@ int cwmp_get_deviceid(struct cwmp *cwmp) {
 	return CWMP_OK;
 }
 
-#ifdef XMPP_ENABLE
-int cwmp_get_xmpp_param(struct cwmp *cwmp) {
-	struct dmctx dmctx = {0};
-	
-	struct config   *conf;
-	char *instance, *connection_enable, *connection, *connectionserver_enable, *connectionserver;
-	struct xmpp_param   *xmpp;
-    conf = &(cwmp->conf);
-	xmpp = &(cwmp->xmpp_param);
-	
-	if (conf->xmpp_enable && conf->xmpp_connection_id > 0)
-    {
-		asprintf(&instance, "%d", conf->xmpp_connection_id);
-		cwmp_dm_ctx_init(cwmp, &dmctx);
-		asprintf(&connection, "%s", get_xmppconnection_enable(instance));
-		asprintf(&connectionserver, "%s", get_xmppconnection_server_enable(instance));
-		connection_enable = strdup(connection);
-		connectionserver_enable = strdup(connectionserver);
-        cwmp->xmpp_param.serveralgorithm = strdup((const char *)get_xmpp_serveralgorithm(instance));
-        if( strcmp(cwmp->xmpp_param.serveralgorithm,"DNS-SRV") == 0)
-        {
-             if(connection_enable[0] == '\0' || connection_enable[0] == '0')
-            {
-                conf->xmpp_enable = false;//disable xmpp_enable
-                goto end;
-            }
-        }
-        else
-        {
-            if(connection_enable[0] == '\0' || connection_enable[0] == '0' || connectionserver_enable[0] == '\0' || connectionserver_enable[0] == '0')
-            {
-                conf->xmpp_enable = false;//disable xmpp_enable
-                goto end;
-            }
-        }
-		cwmp->xmpp_param.username = strdup((const char *)get_xmpp_username(instance));
-		cwmp->xmpp_param.password = strdup((const char *)get_xmpp_password(instance));
-		cwmp->xmpp_param.domain = strdup((const char *)get_xmpp_domain(instance));
-		cwmp->xmpp_param.ressource = strdup((const char *)get_xmpp_resource(instance));
-		cwmp->xmpp_param.serveraddress = strdup((const char *)get_xmpp_server_address(instance));
-		cwmp->xmpp_param.port = atoi((const char *)get_xmpp_port(instance));
-		cwmp->xmpp_param.keepalive_interval = atoi((const char *)get_xmpp_keepalive_interval(instance));
-		cwmp->xmpp_param.connect_attempt = atoi((const char *)get_xmpp_connect_attempts(instance));
-		if(cwmp->xmpp_param.connect_attempt)
-		{
-			cwmp->xmpp_param.retry_initial_interval = atoi((const char *)get_xmpp_connect_initial_retry_interval(instance));
-			cwmp->xmpp_param.retry_initial_interval = (cwmp->xmpp_param.retry_initial_interval) ? cwmp->xmpp_param.retry_initial_interval : DEFAULT_RETRY_INITIAL_INTERVAL;
-			cwmp->xmpp_param.retry_interval_multiplier = atoi((const char *)get_xmpp_connect_retry_interval_multiplier(instance));
-			cwmp->xmpp_param.retry_interval_multiplier = (cwmp->xmpp_param.retry_interval_multiplier) ? cwmp->xmpp_param.retry_interval_multiplier : DEFAULT_RETRY_INTERVAL_MULTIPLIER;
-			cwmp->xmpp_param.retry_max_interval = atoi((const char *)get_xmpp_connect_retry_max_interval(instance));
-			cwmp->xmpp_param.retry_max_interval = (cwmp->xmpp_param.retry_max_interval) ? cwmp->xmpp_param.retry_max_interval : DEFAULT_RETRY_MAX_INTERVAL;
-		}
-		cwmp_dm_ctx_clean(cwmp, &dmctx);
-	}
-    else
-    {
-        CWMP_LOG(INFO,"XMPP is Disabled");
-        return CWMP_OK;
-    }	
-end:	
-	return CWMP_OK;
-}
-#endif
 int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
 {
     int         error;
@@ -1302,12 +1182,6 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
         return error;
     }
     cwmp_get_deviceid(cwmp);
-#ifdef XMPP_ENABLE
-	if (conf->xmpp_enable && conf->xmpp_connection_id > 0)
-		cwmp_get_xmpp_param(cwmp);
-    else
-        CWMP_LOG(INFO,"XMPP is Disabled");
-#endif
     dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }
@@ -1323,12 +1197,6 @@ int cwmp_config_reload(struct cwmp *cwmp)
     {
         return error;
     }
-#ifdef XMPP_ENABLE
-	if (conf->xmpp_enable && conf->xmpp_connection_id != 0)
-		cwmp_get_xmpp_param(cwmp);
-	else
-		CWMP_LOG(INFO,"XMPP is Disabled");
-#endif
     dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }
