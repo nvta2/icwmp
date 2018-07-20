@@ -15,6 +15,7 @@
 #define DEFAULT_MINKEEPALIVE 30
 #define DEFAULT_RETRYTIME 3
 #define DEFAULT_MAXKEEPALIVE 3600
+#define DEFAULT_LOGLEVEL SINFO
 
 struct stun_config {
 	char *server_address;
@@ -24,6 +25,7 @@ struct stun_config {
 	int client_port;
 	int max_keepalive;
 	int min_keepalive;
+	int loglevel;
 };
 
 extern struct stun_config conf;

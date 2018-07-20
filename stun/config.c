@@ -70,6 +70,12 @@ int config_init(void)
 	else
 		conf.server_port = DEFAULT_SERVERPORT;
 
+	v = suci_get_value("icwmp_stun", "stun", "log_level");
+	if (*v)
+		conf.loglevel = atoi(v);
+	else
+		conf.loglevel = DEFAULT_LOGLEVEL;
+
 	v = suci_get_value("icwmp_stun", "stun", "min_keepalive");
 	if (*v)
 		conf.min_keepalive = atoi(v);
@@ -95,13 +101,17 @@ int config_init(void)
 	if (conf.server_port <= 0)
 		conf.server_port = DEFAULT_SERVERPORT;
 
+	if (conf.loglevel >= __MAX_SLOG || conf.loglevel < 0) {
+		conf.loglevel = DEFAULT_LOGLEVEL;
+	}
+
 	stun_log(SINFO, "STUN CONFIG - Server Address: %s", conf.server_address);
 	stun_log(SINFO, "STUN CONFIG - Username: %s", conf.username ? conf.username : "<not defined>");
 	stun_log(SINFO, "STUN CONFIG - Server port: %d", conf.server_port);
 	stun_log(SINFO, "STUN CONFIG - min keepalive: %d", conf.min_keepalive);
 	stun_log(SINFO, "STUN CONFIG - max keepalive: %d", conf.max_keepalive);
 	stun_log(SINFO, "STUN CONFIG - Client port: %d", (conf.client_port > 0) ? conf.client_port : -1);
-
+	stun_log(SINFO, "STUN CONFIG - LOG Level: %d (Critical=0, Warning=1, Notice=2, Info=3, Debug=4)", conf.loglevel);
 	suci_fini();
 	return 0;
 
