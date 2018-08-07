@@ -278,6 +278,11 @@ cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
 	}
 	else {
 		int event_code = cwmp_get_int_event_code(event);
+		if (event_code == 6)
+		{
+			CWMP_LOG(INFO,"Receive Connection Request: success authentication");
+			CWMP_LOG(INFO,"Connection Request thread: add connection request event in the queue");
+		}
 		pthread_mutex_lock (&(cwmp_main.mutex_session_queue));
 		cwmp_add_event_container (&cwmp_main, event_code, "");
 		pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));

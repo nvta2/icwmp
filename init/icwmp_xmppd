@@ -12,26 +12,19 @@ PROG="/usr/sbin/icwmp_xmppd"
 start_service() {
 	local enable_xmpp=`uci -q get cwmp_xmpp.xmpp.enable`
 	local id=`uci -q get cwmp_xmpp.xmpp.id`
-	local i=0
-	local inst=`uci get cwmp_xmpp.@xmpp_connection[$i].connection_instance`
-	while [ "$inst" != "" ]; do
-        if [ "$inst" = "$id" ]; then
-			local serveralgorithm=`uci get cwmp_xmpp.@xmpp_connection[$i].serveralgorithm`
-			local enable_conn=`uci -q get cwmp_xmpp.@xmpp_connection[$i].enable`
-			local enable_srv=`uci -q get cwmp_xmpp.@xmpp_connection_server[$i].enable`
-			if [ "$enable_xmpp" = "1" ]; then
-				if [ "$serveralgorithm" = "DNS-SRV" ] && [ "$enable_conn" = "1" ] || [ "$serveralgorithm" = "ServerTable" ] && [ "$enable_conn" = "1" ] && [ "$enable_srv" = "1" ]; then
-					procd_open_instance
-					procd_set_param command "$PROG"
-					procd_set_param respawn "3" "7" "0"
-					procd_close_instance
-				fi
-			fi
-			break
-        fi
-		i=$((i+1))
-		local inst=`uci get cwmp_xmpp.@xmpp_connection[$i].connection_instance`
-	done
+	local xmpp_connection=`uci show cwmp_xmpp | grep "cwmp_xmpp.@xmpp_connection.*connection_instance=\'$id\'" | cut -d "." -f 2`
+	local xmpp_connection_server=`uci show cwmp_xmpp | grep "cwmp_xmpp.@xmpp_connection.*id_connection=\'$id\'" | cut -d "." -f 2`
+	local serveralgorithm=`uci get cwmp_xmpp.$xmpp_connection.serveralgorithm`
+	local enable_conn=`uci -q get cwmp_xmpp.$xmpp_connection.enable`
+	local enable_srv=`uci -q get cwmp_xmpp.$xmpp_connection_server.enable`
+	if [ "$enable_xmpp" = "1" ]; then
+		if ([ "$serveralgorithm" = "DNS-SRV" ] && [ "$enable_conn" = "1" ]) || ([ "$serveralgorithm" = "ServerTable" ] && [ "$enable_conn" = "1" ] && [ "$enable_srv" = "1" ]); then
+			procd_open_instance
+			procd_set_param command "$PROG"
+			procd_set_param respawn "3" "7" "0"
+			procd_close_instance
+		fi
+	fi
 }
 
 boot() {

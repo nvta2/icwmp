@@ -114,16 +114,20 @@ static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const 
 int check_xmpp_authorized(char *from)
 {
 	char *pch, *spch, *str;
+	int len;
 
 	if (cur_xmpp_conf.xmpp_allowed_jid == NULL || cur_xmpp_conf.xmpp_allowed_jid[0] == '\0')
+	{
+		xmpp_log(SDEBUG,"xmpp connection request handler : allowed jid is empty");
 		return 1;
+	}
 	else
 	{
 		str = strdup(cur_xmpp_conf.xmpp_allowed_jid);
 		pch = strtok_r(str, ",", &spch);
-		int len = strlen(pch);
+		len = strlen(pch);
 		while (pch != NULL) {
-			if(strncmp(pch, from, len) == 0 && (from[len] == '\0' || from[len] == '/') ){
+			if(strncmp(pch, from, len) == 0){
 				free(str);
 				return 1;
 			}
@@ -140,12 +144,11 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 	static int request = 0;
     static time_t restrict_start_time = 0;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-	char *intext = NULL, *name_space, *text, *from, *username, *password;
+	char *name_space, *text, *from, *username, *password;
 	xmpp_stanza_t *child, *mech;
 	bool valid_ns = true, auth_status = false, service_available = false, permitted = true;
 
 	if(xmpp_stanza_get_child_by_name(stanza1, "connectionRequest")) {
-		intext = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza1, "connectionRequest"));
 		from = xmpp_stanza_get_attribute(stanza1, "from");
 		request++;
 		current_time = time(NULL);
@@ -168,13 +171,16 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
         }
 	}
 	else {
+		xmpp_log(SDEBUG,"xmpp connection request handler does not contain an iq type");
 		return 1;
 	}
 	if (!check_xmpp_authorized(from))
 	{
 		service_available = false;
+		xmpp_log(SDEBUG,"xmpp connection request handler not authorized by allowed jid");
 		goto xmpp_end;
 	}
+
 	child = xmpp_stanza_get_child_by_name(stanza1, "connectionRequest");
 	if(child) {
 		service_available = true;
@@ -347,7 +353,7 @@ void xmpp_connecting(void)
 	else
 	{
 		attempt = 0;
-		xmpp_log(SINFO,"XMPP Handle Connection");
+		xmpp_log(SDEBUG,"XMPP Handle Connection");
 		xmpp_run(ctx);
 	}
 }
@@ -368,19 +374,32 @@ void xmpp_global_conf(void)
 	value = dmuci_get_value("cwmp", "cpe", "amd_version");
 	if( atoi(value) >= 5)
 	{
+		value = dmuci_get_value("cwmp_xmpp", "xmpp", "loglevel");
+		if(value != NULL && *value != '\0')
+		{
+			b = atoi(value);
+			free(value);
+			value = NULL;
+			cur_xmpp_conf.xmpp_loglevel = b;
+		}
+		else
+			cur_xmpp_conf.xmpp_loglevel = DEFAULT_LOGLEVEL;
+		xmpp_log(SDEBUG,"Log Level of XMPP connection is :%d", cur_xmpp_conf.xmpp_loglevel);
+
 		value = dmuci_get_value("cwmp_xmpp", "xmpp", "enable");
-		if(value != NULL)
+		if(value != NULL && *value != '\0')
 		{
 			if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
 			{
 				cur_xmpp_conf.xmpp_enable = true;
-				xmpp_log(SINFO,"XMPP connection is Enabled (%d)", cur_xmpp_conf.xmpp_enable);
+				xmpp_log(SDEBUG,"XMPP connection is Enabled :%d", cur_xmpp_conf.xmpp_enable);
 			}
+			free(value);
 			value = NULL;
 		}
 
 		value = dmuci_get_value("cwmp_xmpp", "xmpp", "id");
-		if(value != NULL)
+		if(value != NULL && *value != '\0')
 		{
 			a = atoi(value);
 			free(value);
@@ -388,39 +407,31 @@ void xmpp_global_conf(void)
 		}
 		if(a==0)
 		{
-			xmpp_log(SINFO,"XMPP connection id :Empty");
+			xmpp_log(SDEBUG,"XMPP connection id :Empty");
 			cur_xmpp_conf.xmpp_connection_id = 0;
 		}
 		else
 		{
-			xmpp_log(SINFO,"XMPP connection id :%d", a);
+			xmpp_log(SDEBUG,"XMPP connection id :%d", a);
 			cur_xmpp_conf.xmpp_connection_id = a;
 		}
 
 		value = dmuci_get_value("cwmp_xmpp", "xmpp", "allowed_jid");
-		if(value != NULL)
+		if(value != NULL && *value != '\0')
 		{
 			if (cur_xmpp_conf.xmpp_allowed_jid != NULL)
 			{
 				free(cur_xmpp_conf.xmpp_allowed_jid);
 			}
-			cur_xmpp_conf.xmpp_allowed_jid = value;
-			value = NULL;
-		}
-
-		value = dmuci_get_value("cwmp_xmpp", "xmpp", "loglevel");
-		if(value != NULL)
-		{
-			b = atoi(value);
+			cur_xmpp_conf.xmpp_allowed_jid = strdup(value);
+			xmpp_log(SDEBUG,"XMPP connection allowed jaber id :%s", cur_xmpp_conf.xmpp_allowed_jid);
 			free(value);
 			value = NULL;
-			xmpp_log(SINFO,"Log Level of XMPP connection is :%d", b);
-			cur_xmpp_conf.xmpp_loglevel = b;
 		}
 		else
 		{
-			xmpp_log(SINFO,"Log Level of XMPP connection is :%d", DEFAULT_LOGLEVEL);
-			cur_xmpp_conf.xmpp_loglevel = DEFAULT_LOGLEVEL;
+			cur_xmpp_conf.xmpp_allowed_jid = strdup("");
+			xmpp_log(SDEBUG,"XMPP connection allowed jaber id is empty");
 		}
 	}
 }
@@ -435,6 +446,8 @@ int xmpp_con_init(void)
 	asprintf(&connectionserver, "%s", get_xmppconnection_server_enable(instance));
 	connection_enable = strdup(connection);
 	connectionserver_enable = strdup(connectionserver);
+	free(connection);
+	free(connectionserver);
 	cur_xmpp_con.serveralgorithm = strdup((const char *)get_xmpp_serveralgorithm(instance));
     if( strcmp(cur_xmpp_con.serveralgorithm,"DNS-SRV") == 0)
     {
@@ -469,6 +482,19 @@ int xmpp_con_init(void)
 		cur_xmpp_con.retry_max_interval = atoi((const char *)get_xmpp_connect_retry_max_interval(instance));
 		cur_xmpp_con.retry_max_interval = (cur_xmpp_con.retry_max_interval) ? cur_xmpp_con.retry_max_interval : DEFAULT_RETRY_MAX_INTERVAL;
 	}
+
+	xmpp_log(SDEBUG,"XMPP username: %s", cur_xmpp_con.username);
+	xmpp_log(SDEBUG,"XMPP password: %s", cur_xmpp_con.password);
+	xmpp_log(SDEBUG,"XMPP domain: %s", cur_xmpp_con.domain);
+	xmpp_log(SDEBUG,"XMPP resource: %s", cur_xmpp_con.resource);
+	xmpp_log(SDEBUG,"XMPP serveralgorithm: %s", cur_xmpp_con.serveralgorithm);
+	xmpp_log(SDEBUG,"XMPP server_address: %s", cur_xmpp_con.serveraddress);
+	xmpp_log(SDEBUG,"XMPP port: %d", cur_xmpp_con.port);
+	xmpp_log(SDEBUG,"XMPP keepalive_interval: %d", cur_xmpp_con.keepalive_interval);
+	xmpp_log(SDEBUG,"XMPP connect_attempt: %d", cur_xmpp_con.connect_attempt);
+	xmpp_log(SDEBUG,"XMPP retry_initial_interval: %d", cur_xmpp_con.retry_initial_interval);
+	xmpp_log(SDEBUG,"XMPP retry_interval_multiplier: %d", cur_xmpp_con.retry_interval_multiplier);
+	xmpp_log(SDEBUG,"XMPP retry_max_interval: %d", cur_xmpp_con.retry_max_interval);
 end:
 	dmuci_fini();
 	return 0;
