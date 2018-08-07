@@ -43,9 +43,11 @@ DMLEAF tManagementServerParams[] = {
 {"CWMPRetryIntervalMultiplier", &DMWRITE, DMT_UNINT, get_management_server_retry_interval_multiplier, set_management_server_retry_interval_multiplier, NULL, NULL},
 {"AliasBasedAddressing", &DMREAD, DMT_BOOL, get_alias_based_addressing, NULL, &DMFINFRM, NULL},
 {"InstanceMode", &DMWRITE, DMT_STRING, get_instance_mode, set_instance_mode, NULL, NULL},
+#ifdef XMPP_ENABLE
 {"ConnReqAllowedJabberIDs", &DMWRITE, DMT_STRING, get_management_server_conn_rep_allowed_jabber_id, set_management_server_conn_rep_allowed_jabber_id, NULL, NULL},
-{"ConnReqJabberID", &DMREAD, DMT_STRING, get_management_server_conn_req_jabber_id, NULL, NULL, NULL},
-{"ConnReqXMPPConnection", &DMWRITE, DMT_STRING, get_management_server_conn_req_xmpp_connection, set_management_server_conn_req_xmpp_connection, NULL, NULL},
+{"ConnReqJabberID", &DMREAD, DMT_STRING, get_management_server_conn_req_jabber_id, NULL, &DMFINFRM, &DMACTIVE},
+{"ConnReqXMPPConnection", &DMWRITE, DMT_STRING, get_management_server_conn_req_xmpp_connection, set_management_server_conn_req_xmpp_connection, &DMFINFRM, NULL},
+#endif
 {"SupportedConnReqMethods", &DMREAD, DMT_STRING, get_management_server_supported_conn_req_methods, NULL, NULL, NULL},
 {0}
 };
@@ -523,6 +525,7 @@ int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx 
 					break;
 				}
 			}
+			cwmp_set_end_session(END_SESSION_RELOAD);
 			return 0;
 	}
 	return 0;
