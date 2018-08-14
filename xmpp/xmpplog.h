@@ -42,5 +42,10 @@ enum xmpp_log_level_enum {
 };
 
 void xmpp_log(int priority, const char *format, ...);
+void cwmp_xmpp_log_handler(void * const userdata,
+			 const xmpp_log_level_t level,
+			 const char * const area,
+			 const char * const msg);
+xmpp_log_level_t xmpp_log_get_level(int conf_loglevel);
 
 #endif /* _XMPPLOG_H_ */
