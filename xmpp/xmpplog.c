@@ -26,8 +26,10 @@
 #include <syslog.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <strophe.h>
 #include "xmpplog.h"
 #include "xmpp.h"
+#define DEBUG
 
 static const int log_syslogmap[] = {
 	[SCRIT] = LOG_CRIT,
@@ -45,12 +47,13 @@ static const char* log_str[] = {
 	[SDEBUG] = "DEBUG"
 };
 
-void xmpp_log(int priority, const char *format, ...)
+void cwmp_xmpp_log(int priority, const char *format, ...)
 {
 	va_list vl;
 	char *log;
 
 	if (priority <= cur_xmpp_conf.xmpp_loglevel) {
+#ifdef DEBUG
 		time_t t = time(NULL);
 		struct tm tm = *localtime(&t);
 		va_start(vl, format);
@@ -58,10 +61,45 @@ void xmpp_log(int priority, const char *format, ...)
 		vprintf(format, vl);
 		va_end(vl);
 		printf("\n");
+#endif
 		openlog("xmpp", 0, LOG_DAEMON);
 		va_start(vl, format);
 		vsyslog(log_syslogmap[priority], format, vl);
 		va_end(vl);
 		closelog();
 	}
+}
+
+void cwmp_xmpp_log_handler(void * const userdata,
+			 const xmpp_log_level_t level,
+			 const char * const area,
+			 const char * const msg)
+{
+	int priority = SDEBUG;
+	xmpp_log_level_t filter_level = * (xmpp_log_level_t*)userdata;
+	if( level >= filter_level )
+	{
+		switch( level )
+		{
+		case XMPP_LEVEL_ERROR:	priority = SCRIT; break;
+		case XMPP_LEVEL_WARN:	priority = SWARNING; break;
+		case XMPP_LEVEL_INFO:	priority = SINFO; break;
+		case XMPP_LEVEL_DEBUG:	priority = SDEBUG; break;
+		}
+		cwmp_xmpp_log( priority, "%s %s", area, msg );
+	}
+}
+
+xmpp_log_level_t xmpp_log_get_level(int conf_loglevel)
+{
+	xmpp_log_level_t xmpp_level = XMPP_LEVEL_DEBUG;
+	switch( conf_loglevel )
+	{
+	case SCRIT:		xmpp_level = XMPP_LEVEL_ERROR; break;
+	case SWARNING:	xmpp_level = XMPP_LEVEL_WARN; break;
+	case SINFO:		xmpp_level = XMPP_LEVEL_INFO; break;
+	case SNOTICE:	xmpp_level = XMPP_LEVEL_INFO; break;
+	case SDEBUG:	xmpp_level = XMPP_LEVEL_DEBUG; break;
+	}
+	return xmpp_level;
 }
