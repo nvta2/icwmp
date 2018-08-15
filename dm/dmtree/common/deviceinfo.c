@@ -591,9 +591,9 @@ inline int entry_method_device_info_vcf_instance(struct dmctx *ctx, char *ivcf)
 		DMOBJECT(DMROOT"DeviceInfo.VendorConfigFile.%s.", ctx, "0", 1, NULL, NULL, NULL, ivcf);
 		DMPARAM("Alias", ctx, "1", get_vcf_alias, set_vcf_alias, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Name", ctx, "0",  get_vcf_name, NULL, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Version", ctx, "1",  get_vcf_version, set_vcf_version, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Version", ctx, "0",  get_vcf_version, set_vcf_version, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Date", ctx, "0",  get_vcf_date, NULL, "xsd:dateTime", 0, 1, UNDEF, NULL);
-		DMPARAM("Description", ctx, "1",  get_vcf_desc, set_vcf_desc, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Description", ctx, "0",  get_vcf_desc, set_vcf_desc, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("UseForBackupRestore", ctx, "0",  get_vcf_backup_restore, NULL, "xsd:boolean", 0, 1, UNDEF, NULL);
 		return 0;
 	}
