@@ -323,7 +323,7 @@ void xmpp_connecting(void)
 		connected = xmpp_connect_client(conn, cur_xmpp_con.serveraddress[0] ? cur_xmpp_con.serveraddress : NULL,
 										cur_xmpp_con.port, conn_handler, ctx);
 
-	if (connected == -1 )
+	if (connected < 0 )
 	{
 		xmpp_exit(ctx, conn);
 		cwmp_xmpp_log(SINFO,"XMPP Connection Retry");
