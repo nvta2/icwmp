@@ -49,46 +49,46 @@ int config_init(void)
 	suci_init();
 	memset(&conf, 0, sizeof(struct stun_config));
 
-	v = suci_get_value("icwmp_stun", "stun", "server_address");
+	v = suci_get_value("cwmp_stun", "stun", "server_address");
 	if (!*v) {
 		stun_log(SCRIT, "Missing Server Address in the STUN config");
 		goto error;
 	}
 	conf.server_address = strdup(v);
 
-	v = suci_get_value("icwmp_stun", "stun", "username");
+	v = suci_get_value("cwmp_stun", "stun", "username");
 	if (*v)
 		conf.username = strdup(v);
 
-	v = suci_get_value("icwmp_stun", "stun", "password");
+	v = suci_get_value("cwmp_stun", "stun", "password");
 	if (*v)
 		conf.password = strdup(v);
 
-	v = suci_get_value("icwmp_stun", "stun", "server_port");
+	v = suci_get_value("cwmp_stun", "stun", "server_port");
 	if (*v)
 		conf.server_port = atoi(v);
 	else
 		conf.server_port = DEFAULT_SERVERPORT;
 
-	v = suci_get_value("icwmp_stun", "stun", "log_level");
+	v = suci_get_value("cwmp_stun", "stun", "log_level");
 	if (*v)
 		conf.loglevel = atoi(v);
 	else
 		conf.loglevel = DEFAULT_LOGLEVEL;
 
-	v = suci_get_value("icwmp_stun", "stun", "min_keepalive");
+	v = suci_get_value("cwmp_stun", "stun", "min_keepalive");
 	if (*v)
 		conf.min_keepalive = atoi(v);
 	else
 		conf.min_keepalive = DEFAULT_MINKEEPALIVE;
 
-	v = suci_get_value("icwmp_stun", "stun", "max_keepalive");
+	v = suci_get_value("cwmp_stun", "stun", "max_keepalive");
 	if (*v)
 		conf.max_keepalive = atoi(v);
 	else
 		conf.max_keepalive = DEFAULT_MAXKEEPALIVE;
 
-	v = suci_get_value("icwmp_stun", "stun", "client_port");
+	v = suci_get_value("cwmp_stun", "stun", "client_port");
 	if (*v)
 		conf.client_port = atoi(v);
 

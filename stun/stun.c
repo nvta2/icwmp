@@ -474,7 +474,7 @@ static void save_udpcr_var_state(unsigned int ip, unsigned short port)
 	sprintf(buf, "%s:%d", inet_ntoa(ip_addr), ntohs(env.port));
 	stun_log(SINFO, "Save New UDPConnectionRequestAddress to /var/state %s", buf);
 	suci_init();
-	suci_set_value_state("icwmp_stun", "stun", "crudp_address", buf);
+	suci_set_value_state("cwmp_stun", "stun", "crudp_address", buf);
 	suci_fini();
 }
 
@@ -488,7 +488,7 @@ static int is_udpcr_changed(unsigned int ip, unsigned short port)
 	ip_addr.s_addr = ip;
 	sprintf(buf, "%s:%d", inet_ntoa(ip_addr), ntohs(port));
 	suci_init();
-	v = suci_get_value_state("icwmp_stun", "stun", "crudp_address");
+	v = suci_get_value_state("cwmp_stun", "stun", "crudp_address");
 	if (strcmp(buf, v) != 0)
 		changed = 1;
 	suci_fini();
@@ -517,15 +517,15 @@ static void save_natdetected_var_state(unsigned int ip)
 		freeifaddrs(ifaddrlist);
 
 	suci_init();
-	nd = suci_get_value_state("icwmp_stun", "stun", "nat_detected");
+	nd = suci_get_value_state("cwmp_stun", "stun", "nat_detected");
 
 	if (islocal && *nd != '\0') {
 		stun_log(SINFO, "Device is not behind NAT, set NATDetected to false");
-		suci_set_value_state("icwmp_stun", "stun", "nat_detected", "");
+		suci_set_value_state("cwmp_stun", "stun", "nat_detected", "");
 	}
 	else if (!islocal && *nd == '\0') {
 		stun_log(SINFO, "Device is behind NAT, set NATDetected to true");
-		suci_set_value_state("icwmp_stun", "stun", "nat_detected", "1");
+		suci_set_value_state("cwmp_stun", "stun", "nat_detected", "1");
 	}
 	suci_fini();
 }
