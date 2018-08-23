@@ -9,7 +9,7 @@ USE_PROCD=1
 PROG="/usr/sbin/icwmp_stund"
 
 start_service() {
-	local server=`uci -q get icwmp_stun.stun.server_address`
+	local server=`uci -q get cwmp_stun.stun.server_address`
 	[ "$server" = "" ] && exit 0
 	procd_open_instance
 	procd_set_param command "$PROG"
@@ -22,12 +22,12 @@ boot() {
 }
 
 reload_service() {
-	logger -p crit -t "icwmp_stun" "reloading service()"
+	logger -p crit -t "cwmp_stun" "reloading service()"
 	stop
 	start 
 }
 
 service_triggers()
 {
-	procd_add_reload_trigger icwmp_stun
+	procd_add_reload_trigger cwmp_stun
 }

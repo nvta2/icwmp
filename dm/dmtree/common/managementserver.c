@@ -459,7 +459,7 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *insta
  */
 
 int get_upd_cr_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "crudp_address", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "crudp_address", value);
 	return 0;
 }
 
@@ -493,7 +493,7 @@ int set_stun_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	return 0;
 }
 int get_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "server_address", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "server_address", value);
 	return 0;
 }
 
@@ -502,14 +502,14 @@ int set_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char 
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("icwmp_stun", "stun", "server_address", value);
+			dmuci_set_value("cwmp_stun", "stun", "server_address", value);
 			return 0;
 	}
 	return 0;
 }
 
 int get_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "server_port", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "server_port", value);
 	return 0;
 }
 
@@ -518,14 +518,14 @@ int set_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *in
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("icwmp_stun", "stun", "server_port", value);
+			dmuci_set_value("cwmp_stun", "stun", "server_port", value);
 			return 0;
 	}
 	return 0;
 }
 
 int get_stun_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "username", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "username", value);
 	return 0;
 }
 
@@ -534,14 +534,14 @@ int set_stun_username(char *refparam, struct dmctx *ctx, void *data, char *insta
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("icwmp_stun", "stun", "username", value);
+			dmuci_set_value("cwmp_stun", "stun", "username", value);
 			return 0;
 	}
 	return 0;
 }
 
 int get_stun_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "password", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "password", value);
 	return 0;
 }
 
@@ -550,14 +550,14 @@ int set_stun_password(char *refparam, struct dmctx *ctx, void *data, char *insta
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("icwmp_stun", "stun", "password", value);
+			dmuci_set_value("cwmp_stun", "stun", "password", value);
 			return 0;
 	}
 	return 0;
 }
 
 int get_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "max_keepalive", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "max_keepalive", value);
 	return 0;
 }
 
@@ -566,14 +566,14 @@ int set_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *d
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("icwmp_stun", "stun", "max_keepalive", value);
+			dmuci_set_value("cwmp_stun", "stun", "max_keepalive", value);
 			return 0;
 	}
 	return 0;
 }
 
 int get_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("icwmp_stun", "stun", "min_keepalive", value);
+	dmuci_get_option_value_string("cwmp_stun", "stun", "min_keepalive", value);
 	return 0;
 }
 
@@ -582,7 +582,7 @@ int set_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *d
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value("icwmp_stun", "stun", "min_keepalive", value);
+			dmuci_set_value("cwmp_stun", "stun", "min_keepalive", value);
 			return 0;
 	}
 	return 0;
@@ -593,7 +593,7 @@ int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instan
 	char *v;
 
 	if (check_file(path)) { //stun is enabled
-		dmuci_get_option_value_string("icwmp_stun", "stun", "nat_detected", &v);
+		dmuci_get_option_value_string("cwmp_stun", "stun", "nat_detected", &v);
 		*value = (*v == '1') ? "true" : "false";
 	}
 	else {
