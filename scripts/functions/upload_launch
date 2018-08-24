@@ -19,12 +19,12 @@ upload_launch() {
 	sleep 1
 	dd if=/dev/zero of=${UPLOAD_DIAGNOSTIC_FILE} bs=${size} count=1 2>/dev/null
 	if [ ${url:0:7} = http:// ]; then
-		res=$(curl --fail --connect-timeout ${CONNECTION_TIMEOUT} -T ${UPLOAD_DIAGNOSTIC_FILE} $url 2>&1)
+		res=$(curl --connect-timeout ${CONNECTION_TIMEOUT} -T ${UPLOAD_DIAGNOSTIC_FILE} $url 2>&1)
 		ba=`echo "$res" | grep "bad address"`
 		[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@uploaddiagnostic[0].DiagnosticState=Error_InitConnectionFailed; kill $PID &> /dev/null; return; }
 		stc=`echo "$res" | grep "404 Not Found"`
 		[ -n "$stc" ] && { $UCI_SET_VARSTATE cwmp.@uploaddiagnostic[0].DiagnosticState=Error_NoResponse; kill $PID &> /dev/null; return; }
-		stc=`echo "$res" |sed -n 3p|awk '{print $13}'`
+		stc=`echo "$res" |tail -n 1 |awk '{print $(NF-11)}'`
 		[ "$stc" != "100" ] && { $UCI_SET_VARSTATE cwmp.@uploaddiagnostic[0].DiagnosticState=Error_TransferFailed; kill $PID &> /dev/null; return; }
 	elif [ ${url:0:6} = ftp:// ]; then 
 		#add user and pass if they exist
