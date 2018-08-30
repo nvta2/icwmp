@@ -24,7 +24,7 @@
 /*** Layer3Forwarding. ***/
 DMOBJ tLayer3ForwardingObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
-{"Forwarding", &DMREAD, NULL, NULL, NULL, browseForwardingInst, NULL, NULL, NULL, tForwardingInstParam, NULL},
+{"Forwarding", &DMWRITE, add_layer3_forwarding, delete_layer3_forwarding, NULL, browseForwardingInst, NULL, NULL, NULL, tForwardingInstParam, NULL},
 {0}
 };
 
@@ -648,6 +648,70 @@ int set_layer3_alias(char *refparam, struct dmctx *ctx, void *data, char *instan
 	}
 	return 0;
 }
+
+// ADD //////////////////////////////
+int add_layer3_forwarding(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
+{
+	char *value;
+	char *instance;
+	struct uci_section *route_s = NULL;
+	uci_path_foreach_sections(icwmpd, "dmmap", "route_dynamic", route_s)
+	{
+		instance = update_instance(route_s, instance, "routeinstance");
+
+	}
+	uci_foreach_sections("network", "route", route_s)
+	{
+		instance = update_instance(route_s, instance, "routeinstance");
+	}
+	uci_foreach_sections("network", "route_disabled", route_s)
+	{
+		instance = update_instance(route_s, instance, "routeinstance");
+	}
+
+	dmuci_add_section("network", "route", &route_s, &value);
+	dmuci_set_value_by_section(route_s, "metric", "0");
+	dmuci_set_value_by_section(route_s, "target", "0.0.0.0");
+	dmuci_set_value_by_section(route_s, "netmask", "255.255.255.0");
+	*instancepara = update_instance(route_s, instance, "routeinstance");
+	return 0;
+}
+
+int delete_layer3_forwarding(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
+{
+	struct uci_section *s = NULL, *route_s;
+	struct uci_section *ds = NULL;
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
+	int found = 0;
+	switch (del_action) {
+		case DEL_INST:
+			dmuci_delete_by_section(routeargs->routefwdsection, NULL, NULL);
+			break;
+		case DEL_ALL:
+			route_s = (struct uci_section *)data;
+			uci_foreach_sections("network", "route", route_s)
+			{
+				if (found != 0)
+					dmuci_delete_by_section(s, NULL, NULL);
+				s = route_s;
+				found++;
+			}
+			if (s != NULL)
+				dmuci_delete_by_section(s, NULL, NULL);
+			uci_foreach_sections("network", "route_disabled", route_s)
+			{
+				if (found != 0)
+					dmuci_delete_by_section(ds, NULL, NULL);
+				ds = route_s;
+				found++;
+			}
+			if (ds != NULL)
+				dmuci_delete_by_section(ds, NULL, NULL);
+			break;
+	}
+return 0;
+}
+
 /////////////SUB ENTRIES///////////////
 struct dm_permession_s DMForwarding_perm = {"0", &get_forwording_perm};
 
@@ -667,14 +731,8 @@ int browseForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 	bool find_max = true;
 	struct routingfwdargs curr_routefwdargs = {0};
 
-	uci_foreach_sections("network", "route", s) {
-		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_STATIC);
-		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
-		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
-			goto end;
-	}
-	uci_foreach_sections("network", "route_disabled", s) {
-		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_DISABLED);
+	uci_foreach_sections("network", "route_dynamic", s) {
+		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_DYNAMIC);
 		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
 			goto end;
@@ -697,6 +755,19 @@ int browseForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 				goto end;
 		}
 		fclose(fp) ;
+	}
+
+	uci_foreach_sections("network", "route", s) {
+		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_STATIC);
+		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
+			goto end;
+	}
+	uci_foreach_sections("network", "route_disabled", s) {
+		init_args_rentry(&curr_routefwdargs, s, "1", NULL, ROUTE_DISABLED);
+		iroute =  handle_update_instance(1, dmctx, &iroute_last, forwarding_update_instance_alias, 4, s, "routeinstance", "routealias", &find_max);
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_routefwdargs, iroute) == DM_STOP)
+			goto end;
 	}
 end:
 	return 0;

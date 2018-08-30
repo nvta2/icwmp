@@ -111,6 +111,8 @@ int browselandevice_hostInst(struct dmctx *dmctx, DMNODE *parent_node, void *pre
 int browseentry_landevice_dhcpconditionalservingpool_option_instance(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browselandevice_lanhostconfigmanagement_dhcpconditionalservingpool_instance(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
+int add_landevice_instance(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_landevice_instance(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
 int delete_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 int add_landevice_dhcpstaticaddress(char *refparam, struct dmctx *ctx, void *data, char **instancepara);

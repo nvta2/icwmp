@@ -58,19 +58,19 @@
 
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
-/* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {(char *)&dmroot, &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot_098_Obj, NULL, NULL},
 {0}
 };
 
 DMOBJ tEntry181Obj[] = {
-/*OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
+/*OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {(char *)&dmroot, &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot_181_Obj, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot_098_Obj[] = {
-/* OBJ permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, notification, linker*/
+/* OBJ permission, addobj, delobj, checkobj, browseinstobj, finform, nextobj, leaf, notification, linker*/
 {"DeviceInfo", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,tDeviceInfoObj, tDeviceInfoParams, NULL},
 {"ManagementServer", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,NULL, tManagementServerParams, NULL},
 {"Time", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tTimeParams, NULL},
@@ -86,7 +86,7 @@ DMOBJ tRoot_098_Obj[] = {
 {"X_INTENO_SE_Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIntenoSeOwsdObj, XIntenoSeOwsdParams, NULL},
 {"X_INTENO_SE_Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIntenoDropbear, NULL, &DMNONE, NULL, X_INTENO_SE_DropbearParams, NULL},
 {"X_INTENO_SE_Buttons", &DMREAD, NULL, NULL, NULL, browseXIntenoButton, NULL, &DMNONE, NULL, X_INTENO_SE_ButtonParams, NULL},
-{"LANDevice", &DMREAD, NULL, NULL, NULL, browselandeviceInst, &DMFINFRM, &DMNONE,tLANDeviceObj, tLANDeviceParam, NULL},
+{"LANDevice", &DMWRITE, add_landevice_instance, delete_landevice_instance, NULL, browselandeviceInst, &DMFINFRM, &DMNONE,tLANDeviceObj, tLANDeviceParam, NULL},
 {"WANDevice", &DMREAD, NULL, NULL, NULL, browsewandeviceInst, &DMFINFRM, &DMWANConnectionDevicenotif,tWANDeviceObj, tWANDeviceParam, NULL},
 {"LANInterfaces", &DMREAD, NULL, NULL, check_laninterfaces, NULL, &DMFINFRM, &DMNONE,tLANInterfacesObj, tLANInterfacesParam, NULL},
 {"IPPingDiagnostics", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,NULL, tIPPingDiagnosticsParam, NULL},
@@ -103,7 +103,7 @@ DMOBJ tRoot_098_Obj[] = {
 };
 
 DMOBJ tRoot_181_Obj[] = {
-/* OBJ permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, notification, linker*/
+/* OBJ permission, addobj, delobj, checkobj, browseinstobj, finform, nextobj, leaf, notification, linker*/
 {"DeviceInfo", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,tDeviceInfoObj, tDeviceInfoParams, NULL},
 {"ManagementServer", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,NULL, tManagementServerParams, NULL},
 {"Time", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tTimeParams, NULL},
@@ -141,24 +141,26 @@ DMOBJ tRoot_181_Obj[] = {
 /*** UPNP ***/
 #ifdef UPNP_TR064
 DMOBJ tEntry098ObjUPNP[] = {
-/* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {(char *)&dmroot, &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot098ObjUPNP, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot098ObjUPNP[] = {
-/* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"BBF", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot098ObjUPNPBBF, NULL, NULL},
 {"UPnP", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot098ObjUPNPDMROOT, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot098ObjUPNPDMROOT[] = {
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"DM", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot098ObjUPNPDM, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot098ObjUPNPDM[] = {
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"DeviceInfo", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,upnpDeviceInfoObj, upnpDeviceInfoParams, NULL},
 {"Configuration", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,upnpConfigurationObj, NULL, NULL},
 {"Monitoring", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,upnpMonitoringObj, upnpMonitoringParams, NULL},
@@ -166,7 +168,7 @@ DMOBJ tRoot098ObjUPNPDM[] = {
 };
 
 DMOBJ tRoot098ObjUPNPBBF[] = {
-/* OBJ permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, notification, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"DeviceInfo", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,tDeviceInfoObj, tDeviceInfoParams, NULL},
 {"ManagementServer", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,NULL, tManagementServerParams, NULL},
 {"Time", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tTimeParams, NULL},
@@ -182,7 +184,7 @@ DMOBJ tRoot098ObjUPNPBBF[] = {
 {"X_INTENO_SE_Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIntenoSeOwsdObj, XIntenoSeOwsdParams, NULL},
 {"X_INTENO_SE_Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIntenoDropbear, NULL, &DMNONE, NULL, X_INTENO_SE_DropbearParams, NULL},
 {"X_INTENO_SE_Buttons", &DMREAD, NULL, NULL, NULL, browseXIntenoButton, NULL, &DMNONE, NULL, X_INTENO_SE_ButtonParams, NULL},
-{"LANDevice", &DMREAD, NULL, NULL, NULL, browselandeviceInst, &DMFINFRM, &DMNONE,tLANDeviceObj, tLANDeviceParam, NULL},
+{"LANDevice", &DMWRITE, add_landevice_instance, delete_landevice_instance, NULL, browselandeviceInst, &DMFINFRM, &DMNONE,tLANDeviceObj, tLANDeviceParam, NULL},
 {"WANDevice", &DMREAD, NULL, NULL, NULL, browsewandeviceInst, &DMFINFRM, &DMWANConnectionDevicenotif,tWANDeviceObj, tWANDeviceParam, NULL},
 {"LANInterfaces", &DMREAD, NULL, NULL, check_laninterfaces, NULL, &DMFINFRM, &DMNONE,tLANInterfacesObj, tLANInterfacesParam, NULL},
 {"IPPingDiagnostics", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,NULL, tIPPingDiagnosticsParam, NULL},
@@ -198,24 +200,26 @@ DMOBJ tRoot098ObjUPNPBBF[] = {
 };
 
 DMOBJ tEntry181ObjUPNP[] = {
-/* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {(char *)&dmroot, &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot181ObjUPNP, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot181ObjUPNP[] = {
-/* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"BBF", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot181ObjUPNPBBF, NULL, NULL},
 {"UPnP", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot181ObjUPNPDMROOT, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot181ObjUPNPDMROOT[] = {
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"DM", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot181ObjUPNPDM, NULL, NULL},
 {0}
 };
 
 DMOBJ tRoot181ObjUPNPDM[] = {
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"DeviceInfo", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,upnpDeviceInfoObj, upnpDeviceInfoParams, NULL},
 {"Configuration", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,upnpConfigurationObj, NULL, NULL},
 {"Monitoring", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,upnpMonitoringObj, upnpMonitoringParams, NULL},
@@ -223,7 +227,7 @@ DMOBJ tRoot181ObjUPNPDM[] = {
 };
 
 DMOBJ tRoot181ObjUPNPBBF[] = {
-/* OBJ permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, notification, linker*/
+/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
 {"DeviceInfo", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,tDeviceInfoObj, tDeviceInfoParams, NULL},
 {"ManagementServer", &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE,NULL, tManagementServerParams, NULL},
 {"Time", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tTimeParams, NULL},

@@ -441,6 +441,53 @@ char *dhcp_option_update_instance_alias_icwmpd(int action, char **last_inst, voi
 }
 
 /*******************ADD-DEL OBJECT*********************/
+int add_landevice_instance(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
+{
+	char *value;
+	char *instance;
+	struct uci_section *lan_sec = NULL;
+	uci_foreach_filter_func("network", "interface", NULL, &filter_lan_device_interface, lan_sec)
+	{
+		instance = update_instance(lan_sec, instance, "ldinstance");
+	}
+	dmuci_add_section("network", "interface", &lan_sec, &value);
+	dmuci_set_value_by_section(lan_sec, "is_lan", "1");
+	dmuci_set_value_by_section(lan_sec, "auto", "1");
+	dmuci_set_value_by_section(lan_sec, "enabled", "1");
+	dmuci_set_value_by_section(lan_sec, "peerdns", "1");
+	dmuci_set_value_by_section(lan_sec, "delay", "0");
+	dmuci_set_value_by_section(lan_sec, "proto", "dhcp");
+	*instancepara = update_instance(lan_sec, instance, "ldinstance");
+	return 0;
+}
+
+int delete_landevice_instance(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
+{
+	struct uci_section *lan_s = NULL, *lan_sec;
+	struct uci_section *lan_ss = NULL;
+	int inst = 0;
+	struct ldlanargs *lanargs = (struct ldlanargs *)data;
+
+	switch (del_action) {
+		case DEL_INST:
+			dmuci_delete_by_section(lanargs->ldlansection, NULL, NULL);
+			break;
+		case DEL_ALL:
+			lan_sec = (struct uci_section *)data;
+			uci_foreach_filter_func("network", "interface", NULL, &filter_lan_device_interface, lan_sec)
+			{
+				if (inst)
+					dmuci_delete_by_section(lan_s, NULL, NULL);
+				lan_s = lan_sec;
+				inst++;
+			}
+			if (lan_s != NULL)
+				dmuci_delete_by_section(lan_s, NULL, NULL);
+			break;
+	}
+	return 0;
+}
+
 int add_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 	char val[64];
