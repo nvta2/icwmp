@@ -459,7 +459,7 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *insta
  */
 
 int get_upd_cr_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	dmuci_get_option_value_string("cwmp_stun", "stun", "crudp_address", value);
+	dmuci_get_varstate_string("cwmp_stun", "stun", "crudp_address", value);
 	return 0;
 }
 
@@ -593,7 +593,7 @@ int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instan
 	char *v;
 
 	if (check_file(path)) { //stun is enabled
-		dmuci_get_option_value_string("cwmp_stun", "stun", "nat_detected", &v);
+		dmuci_get_varstate_string("cwmp_stun", "stun", "nat_detected", &v);
 		*value = (*v == '1') ? "true" : "false";
 	}
 	else {
