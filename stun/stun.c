@@ -435,8 +435,8 @@ static void handle_udp_cr(char *resp_buf)
 			return;
 		}
 		suci_init();
-		crusername = suci_get_value("easycwmp", "local", "username");
-		crpassword = suci_get_value("easycwmp", "local", "password");
+		crusername = suci_get_value("cwmp", "cpe", "userid");
+		crpassword = suci_get_value("cwmp", "cpe", "password");
 		if (*crusername && *crpassword) {
 			if (strcmp(crusername, un) != 0) {
 				stun_log(SINFO, "UDP CR username mismatch!");
