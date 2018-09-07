@@ -482,7 +482,7 @@ int get_vcf_date(char *refparam, struct dmctx *ctx, void *data, char *instance, 
 	if ((dir = opendir (DEFAULT_CONFIG_DIR)) != NULL) {
 		while ((d_file = readdir (dir)) != NULL) {
 			if(strcmp(*value, d_file->d_name) == 0) {
-				sprintf(path, "DEFAULT_CONFIG_DIR%s", d_file->d_name);
+				sprintf(path, DEFAULT_CONFIG_DIR"%s", d_file->d_name);
 				stat(path, &attr);
 				strftime(date, sizeof date, "%Y-%m-%dT%H:%M:%S.000Z", localtime(&attr.st_mtime));
 				*value = dmstrdup(date);
