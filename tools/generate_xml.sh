@@ -333,9 +333,9 @@ TREE_TXT=$CURRENT_PATH"/"$OUT_STREAM
 DM_98="tr098"
 DM_181="tr181"
 DM_PATH=${2:-"$(pwd)/../dm/dmtree/"}
-PRODUCT_CLASS=${3:-"DG301-W7P2U"}
+PRODUCT_CLASS=${3:-"DG301"}
 DEVICE_PROTOCOL=${4:-"DEVICE_PROTOCOL_DSLFTR069v1"}
-MODEL_NAME=${5:-"DG301-W7P2U"}
+MODEL_NAME=${5:-"DG301-A"}
 SOFTWARE_VERSION=${6:-"1.2.3.4B"}
 
 SCRIPTS_PATH_COMMON=${DM_PATH}/"common/"
@@ -345,7 +345,7 @@ cnt_param=0
 DATA_MODEL=$DM_98
 SCRIPTS_PATH=${DM_PATH}/${DATA_MODEL}
 DIR_LIST="$SCRIPTS_PATH_COMMON $SCRIPTS_PATH"
-XML_OUT_STREAM_098="inteno_tr098.xml"
+XML_OUT_STREAM_098="iopsys_tr098.xml"
 ROOT_PATH="InternetGatewayDevice"
 ####
 
@@ -373,7 +373,7 @@ cnt_obj=`grep -c "object," tmp.txt`
 cnt_param=`grep -c "parameter," tmp.txt`
 echo "Number of TR098 objects is $cnt_obj"
 echo "Number of TR098 parameters is $cnt_param"
-echo "End Of TR098 Generation"
+echo "End of TR098 Generation"
 
 ### GEN TR181 TREE ##################################
 cnt_obj=0
@@ -381,7 +381,7 @@ cnt_param=0
 DATA_MODEL=$DM_181
 SCRIPTS_PATH=${DM_PATH}/${DATA_MODEL}
 DIR_LIST="$SCRIPTS_PATH_COMMON $SCRIPTS_PATH"
-XML_OUT_STREAM_181="inteno_tr181.xml"
+XML_OUT_STREAM_181="iopsys_tr181.xml"
 ROOT_PATH="Device"
 ########
 
@@ -409,5 +409,5 @@ cnt_obj=`grep -c "object," tmp.txt`
 cnt_param=`grep -c "parameter," tmp.txt`
 echo "Number of TR181 objects is $cnt_obj"
 echo "Number of TR181 parameters is $cnt_param"
-echo "End Of TR181 Generation"
+echo "End of TR181 Generation"
 rm -rf tmp_.txt
