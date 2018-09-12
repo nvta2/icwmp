@@ -81,7 +81,7 @@ int add_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char **in
 	dmasprintf(instancepara, "%d", atoi(last_inst)+1);
 	dmuci_set_value_by_section(xmpp_connection, "connection_instance", *instancepara);
 	dmuci_set_value_by_section(xmpp_connection, "enable", "0");
-	dmuci_set_value_by_section(xmpp_connection, "interval", "300");
+	dmuci_set_value_by_section(xmpp_connection, "interval", "30");
 	dmuci_set_value_by_section(xmpp_connection, "attempt", "16");
 	dmuci_set_value_by_section(xmpp_connection, "serveralgorithm", "DNS-SRV");
 	dmuci_set_value_by_section(xmpp_connection_server, "id_connection", *instancepara);
