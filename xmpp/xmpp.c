@@ -141,35 +141,13 @@ int check_xmpp_authorized(char *from)
 
 static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, void * const userdata)
 {
-	time_t current_time;
-	static int request = 0;
-    static time_t restrict_start_time = 0;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	char *name_space, *text, *from, *username, *password;
 	xmpp_stanza_t *child, *mech;
-	bool valid_ns = true, auth_status = false, service_available = false, permitted = true;
+	bool valid_ns = true, auth_status = false, service_available = false;
 
 	if(xmpp_stanza_get_child_by_name(stanza1, "connectionRequest")) {
 		from = xmpp_stanza_get_attribute(stanza1, "from");
-		request++;
-		current_time = time(NULL);
-        if ((restrict_start_time==0) ||
-            ((current_time-restrict_start_time) > CONNECTION_REQUEST_RESTRICT_PERIOD))
-        {
-            restrict_start_time = current_time;
-            request  = 1;
-        }
-        else
-        {
-            request++;
-            if (request > CONNECTION_REQUEST_RESTRICT_REQUEST)
-            {
-                restrict_start_time = current_time;
-                permitted = false;
-				cwmp_xmpp_log(SINFO,"Permitted CR Request Exceeded");
-				goto xmpp_end;
-            }
-        }
 	}
 	else {
 		cwmp_xmpp_log(SDEBUG,"xmpp connection request handler does not contain an iq type");
@@ -218,20 +196,13 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 		goto xmpp_end; //send error response
 	}
 xmpp_end:
-	if (!valid_ns)
-	{
+	if (!valid_ns) {
 		cwmp_xmpp_log(SINFO,"XMPP Invalid Name space");
 		send_stanza_cr_error(conn, stanza1, userdata, XMPP_SERVICE_UNAVAILABLE);
 		return 1;
-	}
-	else if (!permitted)
-	{
-		cwmp_xmpp_log(SINFO,"XMPP Invalid Name space");
-		send_stanza_cr_error(conn, stanza1, userdata, XMPP_SERVICE_UNAVAILABLE);
-		return 1;
-	}
-	else if (!service_available) {
+	} else if (!service_available) {
 		cwmp_xmpp_log(SINFO,"XMPP Service Unavailable");
+		send_stanza_cr_error(conn, stanza1, userdata, XMPP_SERVICE_UNAVAILABLE);
 		return 1;
 	} else if (!auth_status) {
 		cwmp_xmpp_log(SINFO,"XMPP Not Authorized");
@@ -243,6 +214,32 @@ xmpp_end:
 		XMPP_CMD(7, "ubus", "-t", "3", "call", "tr069", "inform", "{\"event\" : \"connection request\"}");
 		return 1;
 	}
+	return 1;
+}
+
+int ping_keepalive_handler(xmpp_conn_t * const conn, void * const userdata)
+{
+	xmpp_stanza_t 	*ping_ka, *ping;
+	xmpp_ctx_t		*ctx = (xmpp_ctx_t*)userdata;
+	char *jid;
+
+	cwmp_xmpp_log(SDEBUG, "XMPP PING OF KEEPALIVE ");
+	asprintf(&jid, "%s@%s/%s", cur_xmpp_con.username, cur_xmpp_con.domain, cur_xmpp_con.resource);
+	ping_ka = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name(ping_ka, "iq");
+	xmpp_stanza_set_type(ping_ka, "get");
+	xmpp_stanza_set_id(ping_ka, "s2c1");
+	xmpp_stanza_set_attribute(ping_ka, "from", jid);
+	xmpp_stanza_set_attribute(ping_ka, "to", cur_xmpp_con.domain);
+
+	ping = xmpp_stanza_new(ctx);
+	xmpp_stanza_set_name(ping, "ping");
+	xmpp_stanza_set_attribute(ping, "xmlns", "urn:xmpp:ping");
+	xmpp_stanza_add_child(ping_ka, ping);
+	xmpp_stanza_release(ping);
+	xmpp_send(conn, ping_ka);
+	xmpp_stanza_release(ping_ka);
+	free(jid);
 	return 1;
 }
 
@@ -258,6 +255,7 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 		attempt = 0;
 		cwmp_xmpp_log(SINFO,"XMPP Connection Established");
 		xmpp_handler_add(conn, cr_handler, NULL, "iq", NULL, ctx);
+		xmpp_timed_handler_add(conn, ping_keepalive_handler, cur_xmpp_con.keepalive_interval * 1000, userdata);
 		pres = xmpp_stanza_new(ctx);
 		xmpp_stanza_set_name(pres, "presence");
 		xmpp_send(conn, pres);

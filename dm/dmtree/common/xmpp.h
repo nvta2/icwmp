@@ -25,21 +25,6 @@ int browsexmpp_connection_serverInst(struct dmctx *dmctx, DMNODE *parent_node, v
 int add_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
 int delete_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 
-char *get_xmppconnection_enable(char *instance);
-char *get_xmppconnection_server_enable(char *instance);
-char *get_xmpp_username(char *instance);
-char *get_xmpp_password(char *instance);
-char *get_xmpp_domain(char *instance);
-char *get_xmpp_resource(char *instance);
-char *get_xmpp_keepalive_interval(char *instance);
-char *get_xmpp_connect_attempts(char *instance);
-char *get_xmpp_connect_initial_retry_interval(char *instance);
-char *get_xmpp_connect_retry_interval_multiplier(char *instance);
-char *get_xmpp_connect_retry_max_interval(char *instance);
-char *get_xmpp_serveralgorithm(char *instance);
-char *get_xmpp_server_address(char *instance);
-char *get_xmpp_port(char *instance);
-
 int get_xmpp_connection_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_xmpp_connection_supported_server_connect_algorithms(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_connection_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
