@@ -213,9 +213,6 @@ static int uci_action_value_common(char *cmd, uci_config_action action)
     struct uci_ptr              ptr;
     char                        state_path[32];
 
-    s = strdup(cmd);
-    t = s;
-
     if (!c)
     {
         CWMP_LOG(ERROR, "Out of memory");
@@ -228,6 +225,9 @@ static int uci_action_value_common(char *cmd, uci_config_action action)
         uci_add_delta_path(c, c->savedir);
         uci_set_savedir(c, state_path);
     }
+
+    s = strdup(cmd);
+    t = s;
 
     if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
     {
