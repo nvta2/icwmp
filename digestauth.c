@@ -371,7 +371,7 @@ int http_digest_auth_check(const char *http_method, const char *url,
 		char un[MAX_USERNAME_LENGTH];
 
 		len = lookup_sub_value(un, sizeof(un), header, "username");
-		if ((0 == len) || (0 != strcmp(username, un)))
+		if (0 != strcmp(username, un))
 			return MHD_NO;
 		left -= strlen("username") + len;
 	}
