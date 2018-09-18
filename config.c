@@ -678,6 +678,14 @@ int get_global_config(struct config *conf)
             conf->cpe_userid = value;
             value = NULL;
         }
+    	else
+    	{
+               if (conf->cpe_userid!=NULL)
+                {
+                    free(conf->cpe_userid);
+                }
+                conf->cpe_userid = strdup("");
+        }
     }
     else
     {
@@ -693,6 +701,14 @@ int get_global_config(struct config *conf)
             }
             conf->cpe_passwd = value;
             value = NULL;
+        }
+    	else
+    	{
+               if (conf->cpe_passwd!=NULL)
+                {
+                    free(conf->cpe_passwd);
+                }
+                conf->cpe_passwd = strdup("");
         }
     }
     else
