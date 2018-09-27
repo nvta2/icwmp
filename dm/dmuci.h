@@ -257,6 +257,14 @@ int dmuci_delete_by_section_##UCI_PATH(struct uci_section *s, char *option, char
 	dmuci_delete_by_section(s, option, value); \
 	uci_ctx = save_uci_ctx;			\
 }\
+int dmuci_rename_section_by_section_##UCI_PATH(struct uci_section *s, char *value)\
+{\
+	struct uci_context *save_uci_ctx;	\
+	save_uci_ctx = uci_ctx;			\
+	uci_ctx = uci_ctx_##UCI_PATH;	\
+	dmuci_rename_section_by_section(s, value); \
+	uci_ctx = save_uci_ctx;			\
+}\
 struct uci_section *dmuci_walk_section_##UCI_PATH(char *package, char *stype, void *arg1, void *arg2, int cmp , int (*filter)(struct uci_section *s, void *value), struct uci_section *prev_section, int walk)\
 {\
 	struct uci_context *save_uci_ctx;	\
@@ -284,6 +292,8 @@ int dmuci_commit_package_##UCI_PATH(char *package) \
 #define DMUCI_DEL_SECTION(UCI_PATH, package, section, option, value) dmuci_del_section_##UCI_PATH(package, section, option, value)
 #define DMUCI_SET_VALUE_BY_SECTION(UCI_PATH, s, option, value) dmuci_set_value_by_section_##UCI_PATH(s, option, value)
 #define DMUCI_DELETE_BY_SECTION(UCI_PATH, s, option, value) dmuci_delete_by_section_##UCI_PATH(s, option, value)
+#define DMUCI_RENAME_SECTION_BY_SECTION(UCI_PATH, s, value) dmuci_rename_section_by_section_##UCI_PATH(s, value)
+
 #define DMUCI_WALK_SECTION(UCI_PATH, package, stype, arg1, arg2, cmp , filter, value), struct uci_section *prev_section, int walk)\) dmuci_walk_section_##UCI_PATH(package, stype, arg1, arg2, cmp , filter, value)
 
 #define DMUCI_COMMIT_PACKAGE(UCI_PATH, package) dmuci_commit_package_##UCI_PATH(package)
