@@ -86,14 +86,19 @@ static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const 
 	stext = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_text(stext, username);
 	xmpp_stanza_add_child(child4, stext);
+	xmpp_stanza_release(stext);
 	xmpp_stanza_add_child(child3, child4);
+	xmpp_stanza_release(child4);
 	child5 = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name( child5, "password");
 	stext2 = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_text(stext2, password);
 	xmpp_stanza_add_child(child5, stext2);
+	xmpp_stanza_release(stext2);
 	xmpp_stanza_add_child(child3, child5);
+	xmpp_stanza_release(child5);
 	xmpp_stanza_add_child(cr_stanza, child3);
+	xmpp_stanza_release(child3);
 	child = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(child, "error");
 	if (xmpp_error == XMPP_SERVICE_UNAVAILABLE)
@@ -106,9 +111,13 @@ static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const 
 		xmpp_stanza_set_name(child2, "not-autorized");
 	xmpp_stanza_set_attribute(child2, "xmlns", XMPP_ERROR_NS);
 	xmpp_stanza_add_child(child, child2);
+	xmpp_stanza_release(child2);
 	xmpp_stanza_add_child(cr_stanza, child);
+	xmpp_stanza_release(child);
 	xmpp_send(conn, cr_stanza);
 	xmpp_stanza_release(cr_stanza);
+	free(username);
+	free(password);
 	return 0;
 }
 
@@ -174,20 +183,20 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 			text = xmpp_stanza_get_text(mech);
 			dmuci_init();
 			username = dmuci_get_value("cwmp", "cpe", "userid");
-			dmuci_fini();
 			if(strcmp(text, username) == 0) {
+				free(text);
 				mech = xmpp_stanza_get_next(mech);
 				if (strcmp(xmpp_stanza_get_name(mech), "password") == 0) {
 					text = xmpp_stanza_get_text(mech);
-					dmuci_init();
 					password = dmuci_get_value("cwmp", "cpe", "passwd");
-					dmuci_fini();
 					if(strcmp(text, password) == 0)
 						auth_status = true;
 					else
 						auth_status = false;
 				}
 			}
+			dmuci_fini();
+			free(text);		
 		}
 	}
 	else
@@ -379,8 +388,6 @@ void xmpp_global_conf(void)
 		if(value != NULL && *value != '\0')
 		{
 			b = atoi(value);
-			free(value);
-			value = NULL;
 			cur_xmpp_conf.xmpp_loglevel = b;
 		}
 		else
@@ -395,16 +402,12 @@ void xmpp_global_conf(void)
 				cur_xmpp_conf.xmpp_enable = true;
 				cwmp_xmpp_log(SDEBUG,"XMPP connection is Enabled :%d", cur_xmpp_conf.xmpp_enable);
 			}
-			free(value);
-			value = NULL;
 		}
 
 		value = dmuci_get_value("cwmp_xmpp", "xmpp", "id");
 		if(value != NULL && *value != '\0')
 		{
 			a = atoi(value);
-			free(value);
-			value = NULL;
 		}
 		if(a==0)
 		{
@@ -426,8 +429,6 @@ void xmpp_global_conf(void)
 			}
 			cur_xmpp_conf.xmpp_allowed_jid = strdup(value);
 			cwmp_xmpp_log(SDEBUG,"XMPP connection allowed jaber id :%s", cur_xmpp_conf.xmpp_allowed_jid);
-			free(value);
-			value = NULL;
 		}
 		else
 		{
@@ -439,37 +440,15 @@ void xmpp_global_conf(void)
 
 int xmpp_con_init(void)
 {
-	char *instance, *connection_enable, *connection, *connectionserver_enable, *connectionserver;
-	char *enable_conn, *enable_srv;
+	char *instance;
+
 	dmuci_init();
 	instance = dmuci_get_value("cwmp_xmpp", "xmpp", "id");
-	asprintf(&connection, "%s", get_xmppconnection_enable(instance));
-	asprintf(&connectionserver, "%s", get_xmppconnection_server_enable(instance));
-	connection_enable = strdup(connection);
-	connectionserver_enable = strdup(connectionserver);
-	free(connection);
-	free(connectionserver);
-	cur_xmpp_con.serveralgorithm = strdup((const char *)get_xmpp_serveralgorithm(instance));
-    if( strcmp(cur_xmpp_con.serveralgorithm,"DNS-SRV") == 0)
-    {
-         if(connection_enable[0] == '\0' || connection_enable[0] == '0')
-        {
-        	 cur_xmpp_conf.xmpp_enable = false;//disable xmpp_enable
-            goto end;
-        }
-    }
-    else
-    {
-        if(connection_enable[0] == '\0' || connection_enable[0] == '0' || connectionserver_enable[0] == '\0' || connectionserver_enable[0] == '0')
-        {
-        	cur_xmpp_conf.xmpp_enable = false;//disable xmpp_enable
-            goto end;
-        }
-    }
 	cur_xmpp_con.username = strdup((const char *)get_xmpp_username(instance));
 	cur_xmpp_con.password = strdup((const char *)get_xmpp_password(instance));
 	cur_xmpp_con.domain = strdup((const char *)get_xmpp_domain(instance));
 	cur_xmpp_con.resource = strdup((const char *)get_xmpp_resource(instance));
+	cur_xmpp_con.serveralgorithm = strdup((const char *)get_xmpp_serveralgorithm(instance));
 	cur_xmpp_con.serveraddress = strdup((const char *)get_xmpp_server_address(instance));
 	cur_xmpp_con.port = atoi((const char *)get_xmpp_port(instance));
 	cur_xmpp_con.keepalive_interval = atoi((const char *)get_xmpp_keepalive_interval(instance));
@@ -496,7 +475,6 @@ int xmpp_con_init(void)
 	cwmp_xmpp_log(SDEBUG,"XMPP retry_initial_interval: %d", cur_xmpp_con.retry_initial_interval);
 	cwmp_xmpp_log(SDEBUG,"XMPP retry_interval_multiplier: %d", cur_xmpp_con.retry_interval_multiplier);
 	cwmp_xmpp_log(SDEBUG,"XMPP retry_max_interval: %d", cur_xmpp_con.retry_max_interval);
-end:
 	dmuci_fini();
 	return 0;
 }
@@ -521,8 +499,8 @@ int main(void)
 
 	if (cur_xmpp_conf.xmpp_enable && cur_xmpp_conf.xmpp_connection_id > 0)
 		xmpp_con_init();
-    else
-       cwmp_xmpp_log(SINFO,"XMPP is Disabled");
+	else
+		cwmp_xmpp_log(SINFO,"XMPP is Disabled");
 
 	if (cur_xmpp_conf.xmpp_enable)
 		xmpp_connecting();
