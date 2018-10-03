@@ -31,7 +31,7 @@
 #define DHCP_LEASE_FILE "/var/dhcp.leases"
 #define BASE64_SIZE_T_MAX ( (size_t) -1 )
 
-inline char *base64_encode(const unsigned char *src, size_t slen);
+inline char *dmbase64_encode(const char *src, int input_length);
 inline char *base64_decode(const char* src);
 inline int entry_landevice_sub_instance(struct dmctx *ctx, struct uci_section *landevice_section, char *interface, char *idev);
 inline int entry_landevice_ipinterface_instance (struct dmctx *ctx, char *idev, char *ilan);
@@ -75,6 +75,8 @@ const char base64_dec[255] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 const unsigned char base64_enc[64]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+static int base64_mod[] = {0, 2, 1};
+
 char *base64_decode(const char* src) {
   int in_len = strlen(src);
   char* dest;
@@ -82,7 +84,7 @@ char *base64_decode(const char* src) {
   if (in_len % 4) {
     return NULL;
   }
-  result = dest = malloc(in_len / 4 * 3 + 1);
+  result = dest = dmmalloc(in_len / 4 * 3 + 1);
   if (NULL == result)
     return NULL;
   while (*src) {
@@ -102,43 +104,32 @@ char *base64_decode(const char* src) {
   return result;
 }
 
-char *base64_encode(const unsigned char *src, size_t slen)
+char *dmbase64_encode(const char *src, int input_length)
 {
-    size_t i, n;
-    int C1, C2, C3;
-    unsigned char *p;
-    unsigned char *dst;
+	int i, j;
+	char *encoded_data, *dst;
+	int dst_length;
+	
+	dst_length = 4 * ((input_length + 2) / 3);
+	dst = dmcalloc(1, dst_length + 1);
+	encoded_data = dst;
+	if(encoded_data == NULL)
+		return NULL;
+	for (i = 0, j = 0; i < input_length;) {
+		uint32_t byte_a = i < input_length ? (unsigned char)src[i++] : 0;
+		uint32_t byte_b = i < input_length ? (unsigned char)src[i++] : 0;
+		uint32_t byte_c = i < input_length ? (unsigned char)src[i++] : 0;
 
-    if( slen == 0 )
-        return NULL;
-    dst = malloc(slen / 4 * 3 + 1);
-    n = slen / 3 + ( slen % 3 != 0 );
-    if( n > ( BASE64_SIZE_T_MAX - 1 ) / 4)
-        return NULL;
-    n *= 4;
-    n = (slen / 3) * 3;
-    for (i = 0, p = dst; i < n; i += 3){
-        C1 = *src++;
-        C2 = *src++;
-        C3 = *src++;
-        *p++ = base64_enc[(C1 >> 2) & 0x3F];
-        *p++ = base64_enc[(((C1 &  3) << 4) + (C2 >> 4)) & 0x3F];
-        *p++ = base64_enc[(((C2 & 15) << 2) + (C3 >> 6)) & 0x3F];
-        *p++ = base64_enc[C3 & 0x3F];
-    }
+		uint32_t triple = (byte_a << 0x10) + (byte_b << 0x08) + byte_c;
 
-    if (i < slen) {
-        C1 = *src++;
-        C2 = ( ( i + 1 ) < slen ) ? *src++ : 0;
-        *p++ = base64_enc[(C1 >> 2) & 0x3F];
-        *p++ = base64_enc[(((C1 & 3) << 4) + (C2 >> 4)) & 0x3F];
-        if(( i + 1 ) < slen)
-             *p++ = base64_enc[((C2 & 15) << 2) & 0x3F];
-        else 
-        	*p++ = '=';
-        *p++ = '=';
-    }
-    *p = 0;
+		encoded_data[j++] = base64_enc[(triple >> 3 * 6) & 0x3F];
+		encoded_data[j++] = base64_enc[(triple >> 2 * 6) & 0x3F];
+		encoded_data[j++] = base64_enc[(triple >> 1 * 6) & 0x3F];
+		encoded_data[j++] = base64_enc[(triple >> 0 * 6) & 0x3F];
+	}
+
+	for (i = 0; i < base64_mod[input_length % 3]; i++)
+		encoded_data[dst_length - 1 - i] = '=';
 	return dst;
 }
 
@@ -3387,11 +3378,11 @@ int set_dhcp_servingpool_tag(char *refparam, struct dmctx *ctx, int action, char
 int get_dhcp_servingpool_value(char *refparam, struct dmctx *ctx, char **value)
 {
 	struct dhcppooloptionargs *pooloptionargs = (struct dhcppooloptionargs *)ctx->args;
-	char *new_value;
-	size_t n_value;
-	dmuci_get_value_by_section_string(pooloptionargs->dhcppooloptionsection, "value", value);
-	n_value=strlen(*value);
-	*value = base64_encode(*value, n_value);
+	char *v;
+	char *b64;
+
+	dmuci_get_value_by_section_string(pooloptionargs->dhcppooloptionsection, "value", &v);
+	*value = dmbase64_encode((const char *)v, strlen(v));
 	return 0;
 }
 
