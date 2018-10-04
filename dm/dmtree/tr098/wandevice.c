@@ -2272,7 +2272,7 @@ int entry_wandevice_wanconnectiondevice(struct dmctx *ctx, char *dev, int i, cha
 int entry_wandevice_wanprotocolconnection(struct dmctx *ctx, char *idev, char *iwan, char *fwan)
 {
 	struct uci_section *ss = NULL;
-	char *pack, *stype, *p, *iconp_ip_last = NULL, *iconp_ppp_last = NULL;
+	char *pack, *stype, *p, *iconp_ip_last = NULL, *iconp_ppp_last = NULL, *type;
 	char *iconp = NULL, *iconp_nil = NULL;
 	int proto;
 	bool notif_permission = true;
@@ -2308,6 +2308,7 @@ int entry_wandevice_wanprotocolconnection(struct dmctx *ctx, char *idev, char *i
 
 	uci_foreach_option_cont("network", "interface", "ifname", wan_interface, ss) {
 		dmuci_get_value_by_section_string(ss, "proto", &p);
+		dmuci_get_value_by_section_string(ss, "type", &type);
 		lan_name = section_name(ss);
 		if (strstr(p, "ppp"))
 			proto = WAN_PROTO_PPP;
@@ -2321,6 +2322,8 @@ int entry_wandevice_wanprotocolconnection(struct dmctx *ctx, char *idev, char *i
 			notif_permission = false;
 		}
 		if (check_multiwan_interface(ss, fwan) != 0)
+			continue;
+		if(strcmp(type, "bridge") == 0)
 			continue;
 		init_wancprotoargs(ctx, ss);
 		if (proto == WAN_PROTO_IP) {
