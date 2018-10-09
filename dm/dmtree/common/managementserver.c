@@ -50,7 +50,7 @@ DMLEAF tManagementServerParams[] = {
 {"ConnReqXMPPConnection", &DMWRITE, DMT_STRING, get_management_server_conn_req_xmpp_connection, set_management_server_conn_req_xmpp_connection, &DMFINFRM, NULL},
 #endif
 {"SupportedConnReqMethods", &DMREAD, DMT_STRING, get_management_server_supported_conn_req_methods, NULL, NULL, NULL},
-{"UDPConnectionRequestAddress", &DMREAD, DMT_STRING, get_upd_cr_address, NULL, NULL, NULL},
+{"UDPConnectionRequestAddress", &DMREAD, DMT_STRING, get_upd_cr_address, NULL, NULL, &DMACTIVE},
 {"STUNEnable", &DMWRITE, DMT_BOOL, get_stun_enable, set_stun_enable, NULL, NULL},
 {"STUNServerAddress", &DMWRITE, DMT_STRING, get_stun_server_address, set_stun_server_address, NULL, NULL},
 {"STUNServerPort", &DMWRITE, DMT_UNINT, get_stun_server_port, set_stun_server_port, NULL, NULL},
