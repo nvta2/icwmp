@@ -59,13 +59,16 @@ int http_client_init(struct cwmp *cwmp)
 #ifdef HTTP_CURL
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_value(UCI_DHCP_ACS_URL, &acs_var_stat);
-		if (asprintf(&http_c.url, "%s",
-				acs_var_stat) == -1)
+		if(acs_var_stat){
+			if(asprintf(&http_c.url, "%s",acs_var_stat)== -1)
 				return -1;
+		} else {
+			if(asprintf(&http_c.url, "%s",cwmp->conf.acsurl) == -1)
+				return -1;
+		}
 	} else {
-		if (asprintf(&http_c.url, "%s",
-			cwmp->conf.acsurl) == -1)
-		return -1;
+		if(asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1)
+			return -1;
 	}
 #endif
 
@@ -80,7 +83,6 @@ int http_client_init(struct cwmp *cwmp)
 			 add+3) == -1)
 		return -1;
 #endif
-
 	CWMP_LOG(INFO, "ACS url: %s", http_c.url);
 
 	/* TODO debug ssl config from freecwmp*/
