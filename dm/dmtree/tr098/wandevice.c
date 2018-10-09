@@ -2323,8 +2323,6 @@ int entry_wandevice_wanprotocolconnection(struct dmctx *ctx, char *idev, char *i
 		}
 		if (check_multiwan_interface(ss, fwan) != 0)
 			continue;
-		if(strcmp(type, "bridge") == 0)
-			continue;
 		init_wancprotoargs(ctx, ss);
 		if (proto == WAN_PROTO_IP) {
 			iconp = handle_update_instance(3, ctx, &iconp_ip_last, update_instance_alias, 3, ss, "conipinstance", "conipalias");
