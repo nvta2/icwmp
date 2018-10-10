@@ -266,6 +266,38 @@ int set_x_inteno_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, int ac
 	}
 	return 0;
 }
+
+int get_x_inteno_owsd_listenobj_users(char *refparam, struct dmctx *ctx, char **value)
+{
+	struct uci_list *val;
+
+	dmuci_get_value_by_section_list(cur_owsd_listenargs.owsd_listensection, "user", &val);
+	if (val)
+		*value = dmuci_list_to_string(val, " ");
+	else
+		*value = "";
+	return 0;
+}
+
+int set_x_inteno_owsd_listenobj_users(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	char *pch, *spch;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_delete_by_section(cur_owsd_listenargs.owsd_listensection, "user", NULL);
+			value = dmstrdup(value);
+			pch = strtok_r(value, " ", &spch);
+			while (pch != NULL) {
+				dmuci_add_list_value_by_section(cur_owsd_listenargs.owsd_listensection, "user", pch);
+				pch = strtok_r(NULL, " ", &spch);
+			}
+			dmfree(value);
+			return 0;
+	}
+	return 0;
+}
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 
 int get_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, char **value)
@@ -366,6 +398,8 @@ inline int entry_xinteno_owsd_listenobj_instance(struct dmctx *ctx, char *iowsd_
 		DMPARAM("Whitelist_interface", ctx, "1", get_x_inteno_owsd_listenobj_whitelist_interface, set_x_inteno_owsd_listenobj_whitelist_interface, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMPARAM("Whitelist_dhcp", ctx, "1", get_x_inteno_owsd_listenobj_whitelist_dhcp, set_x_inteno_owsd_listenobj_whitelist_dhcp, "xsd:boolean", 0, 1, UNDEF, NULL);
 		DMPARAM("Origin", ctx, "1", get_x_inteno_owsd_listenobj_origin, set_x_inteno_owsd_listenobj_origin, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("UserSupport", ctx, "1", get_x_inteno_owsd_listenobj_users, set_x_inteno_owsd_listenobj_users, NULL, 0, 1, UNDEF, NULL);
+		
 		return 0;
 	}
 	return FAULT_9005;
