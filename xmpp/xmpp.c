@@ -309,9 +309,10 @@ void xmpp_connecting(void)
 	xmpp_ctx_t *ctx;
 	xmpp_conn_t *conn;
 	xmpp_log_t log_cwmp_xmpp;
-	char *jid, *pass;
+	char *jid;
 	static int attempt = 0;
 	int connected = 0, delay = 0;
+	long flags = 0;
 
 	xmpp_initialize();
 	xmpp_mesode_log_level = xmpp_log_get_level(cur_xmpp_conf.xmpp_loglevel);
@@ -319,6 +320,8 @@ void xmpp_connecting(void)
 	log_cwmp_xmpp.userdata = &(xmpp_mesode_log_level);
 	ctx = xmpp_ctx_new(NULL, &log_cwmp_xmpp);
 	conn = xmpp_conn_new(ctx);
+	flags |= XMPP_CONN_FLAG_TRUST_TLS;
+	xmpp_conn_set_flags(conn, flags);
 	asprintf(&jid, "%s@%s/%s", cur_xmpp_con.username, cur_xmpp_con.domain, cur_xmpp_con.resource);
 	xmpp_conn_set_jid(conn, jid);
 	xmpp_conn_set_pass(conn, cur_xmpp_con.password);
