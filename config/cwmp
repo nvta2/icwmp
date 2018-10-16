@@ -38,10 +38,11 @@ config cwmp 'cpe'
 	option session_timeout '60'
 	# datamodel: tr098 (Default)
 	# datamodel possible configs: tr098, tr181
-	option datamodel 'tr098'
+	option datamodel 'tr181'
 	option notification '0'
 
 config cwmp 'lwn'
 	option enable '1'
 	option hostname ''
 	option port ''
+
