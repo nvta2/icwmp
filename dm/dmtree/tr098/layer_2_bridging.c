@@ -46,6 +46,7 @@ struct args_layer2
 	struct uci_section *layer2section;
 	struct uci_section *layer2sectionlev2;
 	char *bridge_instance;
+	char *vlan_instance;
 	char *availableinterface_instance;
 	char *interface_type;
 	char *oface;
@@ -77,11 +78,12 @@ inline void init_args_layer2(struct dmctx *ctx, struct uci_section *s, struct uc
 	args->bridge_instance = bridge_instance;
 }
 
-inline void init_args_layer2_vlan(struct dmctx *ctx, struct uci_section *ss)
+inline void init_args_layer2_vlan(struct dmctx *ctx, struct uci_section *ss, char *v_instance)
 {
 	struct args_layer2 *args = &cur_args;
 	ctx->args = (void *)args;
 	args->layer2sectionlev2 = ss;
+	args->vlan_instance = v_instance;
 }
 
 char *layer2_get_last_section_instance(char *package, char *section, char *opt_inst)
@@ -104,13 +106,15 @@ int update_bridge_vlan_config(char *vid, char *vlan_name, char *priority ,char *
 {
 	struct uci_section *s, *ss;
 	char *add_value, *instance, *p;
-
+	char *old_vid;
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "vlan_bridge", "bridgekey", bridge_key, s)
 	{
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "name", vlan_name);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "vid", vid);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "priority", priority);
-		return 0;
+		dmuci_get_value_by_section_string(s, "vid", &old_vid);
+		if(strcmp(old_vid, vid) == 0){
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "name", vlan_name);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "priority", priority);
+			return 0;
+		}
 	}
 
 	instance = get_last_instance_lev2(DMMAP, "vlan_bridge", "vlan_instance", "bridgekey", bridge_key);
@@ -120,6 +124,7 @@ int update_bridge_vlan_config(char *vid, char *vlan_name, char *priority ,char *
 	DMUCI_SET_VALUE_BY_SECTION(icwmpd, ss, "name", vlan_name);
 	DMUCI_SET_VALUE_BY_SECTION(icwmpd, ss, "vid", vid);
 	DMUCI_SET_VALUE_BY_SECTION(icwmpd, ss, "priority", priority);
+	DMUCI_SET_VALUE_BY_SECTION(icwmpd, ss, "enable", "1");
 	return 0;
 }
 
@@ -133,11 +138,11 @@ int update_bridge_all_vlan_config_bybridge(struct dmctx *ctx)
 	for (pch = strtok_r(ifname, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
 		if (strncmp(pch, wan_baseifname, 4) == 0 || strncmp(pch, "ptm", 3) == 0 || strncmp(pch, "atm", 3) == 0) {
 			uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "ifname", pch, s) {
-				dmuci_get_value_by_section_string(s, "name", &vname);
 				dmuci_get_value_by_section_string(s, "vlan8021q", &vid);
 				dmuci_get_value_by_section_string(s, "vlan8021p", &priority);
+				dmuci_get_value_by_section_string(s, "vlan_name", &vname);
+				dmuci_set_value_by_section(s, "bridge", cur_args.bridge_instance);
 				update_bridge_vlan_config(vid, vname, priority, cur_args.bridge_instance);
-				break;
 			}
 		}
 	}
@@ -147,14 +152,15 @@ int update_bridge_all_vlan_config_bybridge(struct dmctx *ctx)
 
 void update_add_vlan_interfaces(char *bridge_key, char *vid)
 {
-	char *baseifname, *add_value;
+	char *baseifname, *add_value, *name;
 	char baseifname_dup[16];
 	char *p;
 	bool found;
 	struct uci_section *s, *vlan_interface_s, *vi_sec;
-
+	char *wan_name = section_name(cur_args.layer2section);
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "marking-bridge", "bridgekey", bridge_key, s) {
 		dmuci_get_value_by_section_string(s, "baseifname", &baseifname);
+		dmuci_get_value_by_section_string(s, "name", &name);
 		p = baseifname_dup;
 		dmstrappendstr(p, baseifname);
 		dmstrappendchr(p, '.');
@@ -167,15 +173,15 @@ void update_add_vlan_interfaces(char *bridge_key, char *vid)
 		}
 		if(found)
 			continue;
-
 		if(strncmp(baseifname, wan_baseifname, 4) == 0 ||
 			strncmp(baseifname, "ptm", 3) == 0 ||
 			strncmp(baseifname, "atm", 3) == 0) {
 			dmuci_add_section("layer2_interface_vlan", "vlan_interface", &vlan_interface_s, &add_value);
 			dmuci_set_value_by_section(vlan_interface_s, "baseifname", baseifname);
-			dmuci_set_value_by_section(vlan_interface_s, "bridge", bridge_key);
 			dmuci_set_value_by_section(vlan_interface_s, "ifname", baseifname_dup);
-			dmuci_set_value_by_section(vlan_interface_s, "name", baseifname_dup);
+			dmuci_set_value_by_section(vlan_interface_s, "wan_name", wan_name);
+			dmuci_set_value_by_section(vlan_interface_s, "vlan_name", name);
+			dmuci_set_value_by_section(vlan_interface_s, "bridge", bridge_key);
 			dmuci_set_value_by_section(vlan_interface_s, "vlan8021q", vid);
 		}
 	}
@@ -189,13 +195,15 @@ void update_add_vlan_to_bridge_interface(char *bridge_key, struct uci_section *d
 	char *p;
 	char ifname_dup[128];
 	char *ptr;
+	char *inst;
+	char *str;
 
 	dmuci_get_value_by_section_string(dmmap_s, "vid", &vid);
 	if(vid[0] == '\0')
 		return ;
-
 	uci_foreach_option_eq("network", "interface", "bridge_instance", bridge_key, interface_s)
 	{
+		dmuci_get_value_by_section_string(interface_s, "bridge_instance", &inst);
 		dmuci_get_value_by_section_string(interface_s, "ifname", &ifname);
 		ifname_dup[0] = '\0';
 		ptr = ifname_dup;
@@ -577,11 +585,19 @@ int get_bridge_vlan_name(char *refparam, struct dmctx *ctx, char **value)
 int set_bridge_vlan_name(char *refparam, struct dmctx *ctx, int action, char *value)
 {
 	struct args_layer2 *args;
+	struct uci_section *vs;
+	char *vid;
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
 			args = (struct args_layer2 *)ctx->args;
+			dmuci_get_value_by_section_string(args->layer2sectionlev2, "vid", &vid);
+			uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "vlan8021q", vid, vs)
+			{
+				dmuci_set_value_by_section(vs, "vlan_name", value);
+				break;
+			}
 			DMUCI_SET_VALUE_BY_SECTION(icwmpd, args->layer2sectionlev2, "name", value);
 			return 0;
 	}
@@ -646,7 +662,7 @@ int set_bridge_vlan_vid_sub(struct uci_section *vb, char *value)
 	dmuci_get_value_by_section_string(vb, "enable", &enable);
 	if (enable[0] == '1') {
 		dmuci_get_value_by_section_string(vb, "bridgekey", &bkey);
-		update_remove_vlan_from_bridge_interface(bkey, vb);
+		//update_remove_vlan_from_bridge_interface(bkey, vb);
 		DMUCI_SET_VALUE_BY_SECTION(icwmpd, vb, "vid", value);
 		update_add_vlan_interfaces(bkey, value);
 		update_add_vlan_to_bridge_interface(bkey, vb);
@@ -660,13 +676,13 @@ int set_bridge_vlan_vid_sub(struct uci_section *vb, char *value)
 
 int set_bridge_vlan_priority_sub(struct uci_section *vb, char *value)
 {
-	char *enable, *cval, *vname;
+	char *enable, *cval, *vid;
 	struct uci_section *vlan_s = NULL;
 	dmuci_get_value_by_section_string(vb, "priority", &cval);
-	dmuci_get_value_by_section_string(vb, "name", &vname);
+	dmuci_get_value_by_section_string(vb, "vid", &vid);
 	if (strcmp(cval, value) == 0) 
 		return 0;
-	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "name", vname, vlan_s) {
+	uci_foreach_option_eq("layer2_interface_vlan", "vlan_interface", "vlan8021q", vid, vlan_s) {
 		dmuci_set_value_by_section(vlan_s, "vlan8021p", value);
 		break;
 	}
@@ -1213,7 +1229,7 @@ inline int entry_layer2_bridge(struct dmctx *ctx)
 		bridge_instance =  handle_update_instance(1, ctx, &bridge_instance_last, update_instance_alias, 3, bridge_s, "bridge_instance", "bridge_alias");
 		update_markinginterface_list(bridge_s, bridge_instance_last);
 		init_args_layer2(ctx, bridge_s, NULL, NULL, bridge_instance_last, NULL, NULL);
-		update_bridge_all_vlan_config_bybridge(ctx);
+		//update_bridge_all_vlan_config_bybridge(ctx);
 		SUBENTRY(entry_layer2_bridge_instance, ctx, bridge_instance, bridge_instance_last);
 	}
 	return 0;
@@ -1234,13 +1250,12 @@ inline int entry_layer2_marking(struct dmctx *ctx)
 
 inline int entry_layer2_bridge_vlan(struct dmctx *ctx, char *bridge_instance, char *bridge_instance_last)
 {
-	struct uci_section *ss = NULL;
+	struct uci_section *s = NULL, *prev_s = NULL, *ss = NULL;
 	char *vlan_instance = NULL, *vlan_instance_last = NULL;
-
 	update_bridge_all_vlan_config_bybridge(ctx);
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "vlan_bridge", "bridgekey", bridge_instance_last, ss) {
 		vlan_instance =  handle_update_instance(2, ctx, &vlan_instance_last, update_instance_alias_icwmpd, 3, ss, "vlan_instance", "vlan_alias");
-		init_args_layer2_vlan(ctx, ss);
+		init_args_layer2_vlan(ctx, ss, vlan_instance);
 		SUBENTRY(entry_layer2_bridge_vlan_instance, ctx, bridge_instance, vlan_instance);
 	}
 	return 0;
