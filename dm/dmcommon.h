@@ -21,6 +21,7 @@
 #define MAX_PROC_ROUTING 256
 #define ROUTING_FILE "/proc/net/route"
 #define ARP_FILE "/proc/net/arp"
+#define DHCP_LEASES_FILE "/tmp/dhcp.leases"
 #define DMMAP "dmmap"
 #define DHCPSTATICADDRESS_DISABLED_CHADDR "00:00:00:00:00:01"
 #define DM_ASSERT(X, Y) \

@@ -42,7 +42,7 @@ DMLEAF thostParam[] = {
 {"PhysAddress", &DMREAD, DMT_STRING, get_host_phy_address, NULL, NULL, NULL},
 {CUSTOM_PREFIX"InterfaceType", &DMREAD, DMT_STRING, get_host_interfacetype, NULL, NULL, NULL},
 {"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, NULL},
-{"LeaseTimeRemaining", &DMREAD, DMT_STRING, get_host_leasetime_remaining, NULL, NULL, NULL},
+{"LeaseTimeRemaining", &DMREAD, DMT_INT, get_host_leasetime_remaining, NULL, NULL, NULL},
 {"DHCPClient", &DMREAD, DMT_STRING, get_host_dhcp_client, NULL, NULL, NULL},
 {"X_IOPSYS_InterfaceType", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, NULL},
 {"X_IOPSYS_ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, NULL},
@@ -183,8 +183,7 @@ int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, void *data, 
 	}
 	else {
 		mac = dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
-		//
-		fp = fopen(ARP_FILE, "r");
+		fp = fopen(DHCP_LEASES_FILE, "r");
 		if ( fp != NULL)
 		{
 			while (fgets(line, MAX_DHCP_LEASES, fp) != NULL )
@@ -205,6 +204,7 @@ int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, void *data, 
 				}
 			}
 			fclose(fp);
+			*value = "0";
 		}
 	}
 	return 0;
@@ -212,13 +212,13 @@ int get_host_leasetime_remaining(char *refparam, struct dmctx *ctx, void *data, 
 
 int  get_host_dhcp_client(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *iface, *linker;
-		dmastrcat(&linker, "linker_dhcp:", ((struct host_args *)data)->key);
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cDHCPv4%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
-		if (*value == NULL) {
-			*value = "";
-		}
-		dmfree(linker);
+	char *linker;
+	dmasprintf(&linker, "%s", ((struct host_args *)data)->key);
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cDHCPv4%c", dmroot, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
+	if (*value == NULL) {
+		*value = "";
+	}
+	dmfree(linker);
 	return 0;
 }
 
