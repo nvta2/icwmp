@@ -22,7 +22,7 @@
 /*** PPP. ***/
 DMOBJ tpppObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
-{"Interface", &DMREAD, NULL, NULL, NULL, browseInterfaceInst, NULL, NULL, tpppInterfaceObj, tpppInterfaceParam, get_linker_ppp_interface},
+{"Interface", &DMWRITE, add_ppp_interface, delete_ppp_interface, NULL, browseInterfaceInst, NULL, NULL, tpppInterfaceObj, tpppInterfaceParam, get_linker_ppp_interface},
 {0}
 };
 
@@ -46,20 +46,16 @@ DMLEAF tpppInterfaceParam[] = {
 
 /*** PPP.Interface.Stats. ***/
 DMLEAF tStatsParam[] = {
-{"EthernetBytesReceived", &DMREAD, DMT_UNINT, get_ppp_eth_bytes_received, NULL, NULL, NULL},
-{"EthernetBytesSent", &DMWRITE, DMT_UNINT, get_ppp_eth_bytes_sent, NULL, NULL, NULL},
-{"EthernetPacketsReceived", &DMREAD, DMT_UNINT, get_ppp_eth_pack_received, NULL, NULL, NULL},
-{"EthernetPacketsSent", &DMREAD, DMT_UNINT, get_ppp_eth_pack_sent, NULL, NULL, NULL},
+{"BytesReceived", &DMREAD, DMT_UNINT, get_ppp_eth_bytes_received, NULL, NULL, NULL},
+{"BytesSent", &DMREAD, DMT_UNINT, get_ppp_eth_bytes_sent, NULL, NULL, NULL},
+{"PacketsReceived", &DMREAD, DMT_UNINT, get_ppp_eth_pack_received, NULL, NULL, NULL},
+{"PacketsSent", &DMREAD, DMT_UNINT, get_ppp_eth_pack_sent, NULL, NULL, NULL},
 {0}
 };
-
-
-
 
 /*************************************************************
  * GET SET ALIAS
 /*************************************************************/
-
 int get_ppp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *dmmap_section;
@@ -87,7 +83,6 @@ int set_ppp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 /**************************************************************************
 * GET & SET PARAMETERS
 ***************************************************************************/
-
 int get_ppp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_interface_enable_ubus(section_name(((struct uci_section *)data)), refparam, ctx, value);
@@ -237,6 +232,7 @@ int set_ppp_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *ins
 	}
 	return 0;
 }
+
 /**************************************************************************
 * LINKER
 ***************************************************************************/
@@ -247,6 +243,64 @@ int get_linker_ppp_interface(char *refparam, struct dmctx *dmctx, void *data, ch
 		return 0;
 	}
 	*linker = "";
+	return 0;
+}
+
+/*************************************************************
+ * ADD DEL OBJ
+/*************************************************************/
+int add_ppp_interface(char *refparam, struct dmctx *ctx, void *data, char **instance)
+{
+	char name[16] = {0};
+	char *inst, *v;
+	struct uci_section *s = NULL;
+	struct uci_section *dmmap_ppp = NULL;
+
+	check_create_dmmap_package("dmmap_network");
+	inst = get_last_instance_lev2_icwmpd("network", "interface", "dmmap_network", "ppp_int_instance", "proto", "ppp");
+	sprintf(name, "ppp_%d", inst ? (atoi(inst)+1) : 1);
+	dmuci_set_value("network", name, "", "interface");
+	dmuci_set_value("network", name, "proto", "ppp");
+	dmuci_set_value("network", name, "username", name);
+	dmuci_set_value("network", name, "password", name);
+	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_ppp, &v);
+	dmuci_set_value_by_section(dmmap_ppp, "section_name", name);
+	*instance = update_instance_icwmpd(dmmap_ppp, inst, "ppp_int_instance");
+	return 0;
+}
+
+int delete_ppp_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
+{
+	int found = 0;
+	struct uci_section *ppp_s = NULL;
+	struct uci_section *ss = NULL, *dmmap_section = NULL;
+
+	switch (del_action) {
+		case DEL_INST:
+			get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct uci_section *)data)), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+			dmuci_delete_by_section(((struct uci_section *)data), NULL, NULL);
+			break;
+		case DEL_ALL:
+			uci_foreach_option_eq("network", "interface", "proto", "ppp", ppp_s) {
+				if (found != 0) {
+					get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = ppp_s;
+				found++;
+			}
+			if (ss != NULL) {
+				get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+			return 0;
+	}
 	return 0;
 }
 
@@ -273,5 +327,3 @@ int browseInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
-
-

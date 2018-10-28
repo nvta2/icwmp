@@ -36,4 +36,7 @@ int set_ppp_username(char *refparam, struct dmctx *ctx, void *data, char *instan
 int set_ppp_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 int get_linker_ppp_interface(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
+
+int add_ppp_interface(char *refparam, struct dmctx *ctx, void *data, char **instance);
+int delete_ppp_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 #endif
