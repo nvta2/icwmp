@@ -31,7 +31,7 @@ DMLEAF tTimeParams[] = {
 };
 int get_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *path = "/etc/rc.d/*sysntpd";
+	char *path = "/etc/rc.d/*ntpd";
 	
 	if (check_file(path))
 		*value = "1";
@@ -54,17 +54,17 @@ int set_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b) {
-				DMCMD("/etc/rc.common", 2, "/etc/init.d/sysntpd", "enable"); //TODO wait ubus command
+				DMCMD("/etc/rc.common", 2, "/etc/init.d/ntpd", "enable"); //TODO wait ubus command
 				pid = get_pid("ntpd");
 				if (pid < 0) {
-					DMCMD("/etc/rc.common", 2, "/etc/init.d/sysntpd", "start"); //TODO wait ubus command
+					DMCMD("/etc/rc.common", 2, "/etc/init.d/ntpd", "start"); //TODO wait ubus command
 				}
 			}
 			else {
-				DMCMD("/etc/rc.common", 2, "/etc/init.d/sysntpd", "disable"); //TODO wait ubus command
+				DMCMD("/etc/rc.common", 2, "/etc/init.d/ntpd", "disable"); //TODO wait ubus command
 				pid = get_pid("ntpd");
 				if (pid > 0) {
-					DMCMD("/etc/rc.common", 2, "/etc/init.d/sysntpd", "stop"); //TODO may be should be updated with ubus call uci
+					DMCMD("/etc/rc.common", 2, "/etc/init.d/ntpd", "stop"); //TODO may be should be updated with ubus call uci
 				}
 			}
 			return 0;
