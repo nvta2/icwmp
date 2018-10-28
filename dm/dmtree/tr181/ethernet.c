@@ -34,7 +34,7 @@ DMLEAF tEthernetParams[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_eth_port_alias, set_eth_port_alias, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL, get_eth_port_enable, set_eth_port_enable, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_eth_port_status, NULL, NULL, NULL},
-{"MaxBitRate", &DMWRITE, DMT_STRING, get_eth_port_maxbitrate, set_eth_port_maxbitrate, NULL, NULL},
+{"MaxBitRate", &DMWRITE, DMT_INT, get_eth_port_maxbitrate, set_eth_port_maxbitrate, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_eth_port_name, NULL, NULL, NULL},
 {"MACAddress", &DMREAD, DMT_STRING, get_eth_port_mac_address, NULL, NULL, NULL},
 {"DuplexMode", &DMWRITE, DMT_STRING, get_eth_port_duplexmode, set_eth_port_duplexmode, NULL, NULL},

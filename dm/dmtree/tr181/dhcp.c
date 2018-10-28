@@ -61,7 +61,7 @@ DMLEAF tDhcpServerPoolParams[] = {
 {"ReservedAddresses", &DMWRITE, DMT_STRING, get_dhcp_reserved_addresses, set_dhcp_reserved_addresses, NULL, NULL},
 {"SubnetMask", &DMWRITE, DMT_STRING,get_dhcp_subnetmask, set_dhcp_subnetmask, NULL, NULL},
 {"IPRouters", &DMWRITE, DMT_STRING, get_dhcp_iprouters, set_dhcp_iprouters, NULL, NULL},
-{"LeaseTime", &DMWRITE, DMT_STRING, get_dhcp_leasetime, set_dhcp_leasetime, NULL, NULL},
+{"LeaseTime", &DMWRITE, DMT_INT, get_dhcp_leasetime, set_dhcp_leasetime, NULL, NULL},
 {"DomainName", &DMWRITE, DMT_STRING, get_dhcp_domainname, set_dhcp_domainname, NULL, NULL},
 {"Interface", &DMWRITE, DMT_STRING, get_dhcp_interface, set_dhcp_interface_linker_parameter, NULL, NULL},
 {0}
@@ -333,10 +333,10 @@ int set_dhcp_configurable(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_dhcp_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
-	char v[3];
+	char *v;
 	uci_foreach_option_eq("dhcp", "dhcp", "interface", ((struct dhcp_args *)data)->interface, s) {
-		dmuci_get_value_by_section_string(s, "ignore", v);
-		*value = (v[0] == '1') ? "Disabled" : "Enabled";
+		dmuci_get_value_by_section_string(s, "ignore", &v);
+		*value = (*v == '1') ? "Disabled" : "Enabled";
 	}
 	return 0;
 }
@@ -366,8 +366,6 @@ int set_dhcp_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
 				return FAULT_9007;
-			if (b == 0)
-				return FAULT_9001;
 			return 0;
 		case VALUESET:
 			string_to_bool(value, &b);
@@ -1046,7 +1044,7 @@ int browseDhcpClientIPv4Inst(struct dmctx *dmctx, DMNODE *parent_node, void *pre
 	int id = 0;
 	char *idx = NULL, *idx_last = NULL;
 
-	fp = fopen("/tmp/dhcp.leases", "r");
+	fp = fopen(DHCP_LEASES_FILE, "r");
 	if (fp == NULL)
 		return 0;
 	while (fgets (buf , 256 , fp) != NULL) {

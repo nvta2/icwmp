@@ -32,8 +32,8 @@ DMLEAF X_INTENO_SE_DropbearParams[] = {
 {"dsskeyfile", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_dsskeyfile, set_x_inteno_dropbear_dsskeyfile, NULL, NULL},
 {"SSHKeepAlive", &DMWRITE, DMT_UNINT, get_x_inteno_dropbear_ssh_keepalive, set_x_inteno_dropbear_ssh_keepalive, NULL, NULL},
 {"IdleTimeout", &DMWRITE, DMT_UNINT, get_x_inteno_dropbear_idle_timeout, set_x_inteno_dropbear_idle_timeout, NULL, NULL},
-{"verbose", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_gateway_ports, set_x_inteno_dropbear_gateway_ports, NULL, NULL},
-{"BannerFile", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_interface, set_x_inteno_dropbear_interface, NULL, NULL},
+{"verbose", &DMWRITE, DMT_BOOL, get_x_inteno_dropbear_verbose, set_x_inteno_dropbear_verbose, NULL, NULL},
+{"BannerFile", &DMWRITE, DMT_STRING, get_x_inteno_dropbear_banner_file, set_x_inteno_dropbear_banner_file, NULL, NULL},
 {0}
 };
 

@@ -58,7 +58,7 @@ DMLEAF tBridgeVlanParams[] = {
 /*** Bridging.Bridge.{i}.Port.{i}. ***/
 DMOBJ tBridgePortObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
-{"Stats", &DMWRITE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tBridgePortStatParams, NULL},
+{"Stats", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tBridgePortStatParams, NULL},
 {0}
 };
 

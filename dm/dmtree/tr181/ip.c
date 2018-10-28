@@ -94,13 +94,13 @@ DMLEAF tIPInterfaceStatsParams[] = {
 DMLEAF tIpPingDiagParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification , linker*/
 {"DiagnosticsState", &DMWRITE, DMT_STRING, get_ip_ping_diagnostics_state, set_ip_ping_diagnostics_state, NULL, NULL},
-{"Interface", &DMWRITE, DMT_BOOL, get_ip_ping_interface, set_ip_ping_interface, NULL, NULL},
+{"Interface", &DMWRITE, DMT_STRING, get_ip_ping_interface, set_ip_ping_interface, NULL, NULL},
 {"Host", &DMWRITE, DMT_STRING, get_ip_ping_host, set_ip_ping_host, NULL, NULL},
 {"NumberOfRepetitions", &DMWRITE, DMT_UNINT, get_ip_ping_repetition_number, set_ip_ping_repetition_number, NULL, NULL},
 {"Timeout", &DMWRITE, DMT_UNINT, get_ip_ping_timeout, set_ip_ping_timeout, NULL, NULL},
 {"DataBlockSize", &DMWRITE, DMT_UNINT, get_ip_ping_block_size, set_ip_ping_block_size, NULL, NULL},
 {"SuccessCount", &DMREAD, DMT_UNINT, get_ip_ping_success_count, NULL, NULL},
-{"FailureCount", &DMREAD, DMT_UNINT, get_ip_ping_failure_count, set_ipv6_addressing_type, NULL, NULL},
+{"FailureCount", &DMREAD, DMT_UNINT, get_ip_ping_failure_count, NULL, NULL, NULL},
 {"AverageResponseTime", &DMREAD, DMT_UNINT, get_ip_ping_average_response_time, NULL, NULL, NULL},
 {"MinimumResponseTime", &DMREAD, DMT_UNINT, get_ip_ping_min_response_time, NULL, NULL, NULL},
 {"MaximumResponseTime", &DMREAD, DMT_UNINT, get_ip_ping_max_response_time, NULL, NULL, NULL},
@@ -493,6 +493,7 @@ int set_ipv6_addressing_type(char *refparam, struct dmctx *ctx, void *data, char
 }
 int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	struct uci_section *dmmap_section;
 	char *wifname, *wtype, *br_inst, *mg, *device, *proto;
 	struct uci_section *port;
 	json_object *res;
@@ -501,8 +502,9 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 
 	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "type", &wtype);
 	if (strcmp(wtype, "bridge") == 0) {
-		dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "bridge_instance", &br_inst);
-		uci_path_foreach_option_eq(icwmpd, "dmmap", "bridge_port", "bridge_key", br_inst, port) {
+		get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
+		dmuci_get_value_by_section_string(dmmap_section, "bridge_instance", &br_inst);
+		uci_path_foreach_option_eq(icwmpd, "dmmap_bridge_port", "bridge_port", "bridge_key", br_inst, port) {
 			dmuci_get_value_by_section_string(port, "mg_port", &mg);
 			if (strcmp(mg, "true") == 0)
 				sprintf(linker, "%s+", section_name(port));
@@ -560,7 +562,7 @@ int set_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 			{
 				strncpy(sec, linker, strlen(linker) - 1);
 				sec[strlen(linker) - 1] = '\0';
-				DMUCI_GET_OPTION_VALUE_STRING(icwmpd, "dmmap", sec, "bridge_key", &b_key);
+				DMUCI_GET_OPTION_VALUE_STRING(icwmpd, "dmmap_bridge_port", sec, "bridge_key", &b_key);
 				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "proto", &proto);
 				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ipaddr", &ipaddr);
 				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ip_int_instance", &ip_inst);

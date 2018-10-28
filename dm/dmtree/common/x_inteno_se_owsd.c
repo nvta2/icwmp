@@ -47,7 +47,7 @@ DMLEAF UbusProxyParams[] = {
 DMLEAF X_INTENO_SE_ListenObjParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
 {"Alias", &DMWRITE, DMT_STRING, get_x_inteno_owsd_listenobj_alias, set_x_inteno_owsd_listenobj_alias, NULL, NULL},
-{"Port", &DMWRITE, DMT_UNINT, get_x_inteno_owsd_listenobj_port, set_x_inteno_owsd_listenobj_alias, NULL, NULL},
+{"Port", &DMWRITE, DMT_UNINT, get_x_inteno_owsd_listenobj_port, set_x_inteno_owsd_listenobj_port, NULL, NULL},
 {"Interface", &DMWRITE, DMT_STRING, get_x_inteno_owsd_listenobj_interface, set_x_inteno_owsd_listenobj_interface, NULL, NULL},
 {"Ipv6", &DMWRITE, DMT_BOOL, get_x_inteno_owsd_listenobj_ipv6_enable, set_x_inteno_owsd_listenobj_ipv6_enable, NULL, NULL},
 {"Whitelist_interface", &DMWRITE, DMT_BOOL, get_x_inteno_owsd_listenobj_whitelist_interface, set_x_inteno_owsd_listenobj_whitelist_interface, NULL, NULL},
@@ -193,6 +193,8 @@ int set_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, voi
 				if( (strcasecmp(uci_datamodel, "tr098") == 0) || (strcasecmp(uci_datamodel, "tr-098") == 0) || (strcasecmp(uci_datamodel, "tr98") == 0) || (strcasecmp(uci_datamodel, "tr-98") == 0) ) {
 					iface = linker + sizeof("linker_interface:") - 1;
 				}
+				else
+					iface = linker;
 				dmuci_set_value_by_section(owsd_listensection, "interface", iface);
 				dmfree(linker);
 			}
