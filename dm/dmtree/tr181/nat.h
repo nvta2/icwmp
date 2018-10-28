@@ -16,10 +16,15 @@ extern DMOBJ tnatObj[];
 
 int browseInterfaceSettingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
+int add_NAT_InterfaceSetting(char *refparam, struct dmctx *ctx, void *data, char **instance);
+int delete_NAT_InterfaceSetting(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+
 int get_nat_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_nat_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_nat_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
+int set_nat_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_nat_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_nat_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif
