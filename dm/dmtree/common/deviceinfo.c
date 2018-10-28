@@ -34,8 +34,8 @@ DMOBJ tDeviceInfoObj[] = {
 };
 
 DMLEAF tMemoryStatusParams[] = {
-{"Total", &DMREAD, DMT_UNINT, get_memory_status_total, NULL, &DMFINFRM, NULL},
-{"Free", &DMREAD, DMT_UNINT, get_memory_status_free, NULL, &DMFINFRM, NULL},
+{"Total", &DMREAD, DMT_UNINT, get_memory_status_total, NULL, NULL, NULL},
+{"Free", &DMREAD, DMT_UNINT, get_memory_status_free, NULL, NULL, NULL},
 {0}
 };
 
@@ -45,18 +45,18 @@ DMOBJ tProcessEntriesObj[] = {
 };
 
 DMLEAF tProcessStatusParams[] = {
-{"CPUUsage", &DMREAD, DMT_UNINT, get_process_cpu_usage, NULL, &DMFINFRM, NULL},
-{"ProcessNumberOfEntries", &DMREAD, DMT_UNINT, get_process_number_of_entries, NULL, &DMFINFRM, NULL},
+{"CPUUsage", &DMREAD, DMT_UNINT, get_process_cpu_usage, NULL, NULL, NULL},
+{"ProcessNumberOfEntries", &DMREAD, DMT_UNINT, get_process_number_of_entries, NULL, NULL, NULL},
 {0}
 };
 
 DMLEAF tProcessEntrieParams[] = {
-{"PID", &DMREAD, DMT_UNINT, get_process_pid, NULL, &DMFINFRM, NULL},
-{"Command", &DMREAD, DMT_UNINT, get_process_command, NULL, &DMFINFRM, NULL},
-{"Size", &DMREAD, DMT_UNINT, get_process_size, NULL, &DMFINFRM, NULL},
-{"Priority", &DMREAD, DMT_UNINT, get_process_priority, NULL, &DMFINFRM, NULL},
-{"CPUTime", &DMREAD, DMT_UNINT, get_process_cpu_time, NULL, &DMFINFRM, NULL},
-{"State", &DMREAD, DMT_UNINT, get_process_state, NULL, &DMFINFRM, NULL},
+{"PID", &DMREAD, DMT_UNINT, get_process_pid, NULL, NULL, NULL},
+{"Command", &DMREAD, DMT_STRING, get_process_command, NULL, NULL, NULL},
+{"Size", &DMREAD, DMT_UNINT, get_process_size, NULL, NULL, NULL},
+{"Priority", &DMREAD, DMT_UNINT, get_process_priority, NULL, NULL, NULL},
+{"CPUTime", &DMREAD, DMT_UNINT, get_process_cpu_time, NULL, NULL, NULL},
+{"State", &DMREAD, DMT_STRING, get_process_state, NULL, NULL, NULL},
 {0}
 };
 
