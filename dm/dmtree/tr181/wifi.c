@@ -24,7 +24,7 @@
 /*** WiFi. ***/
 DMOBJ tWifiObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
-{"Radio", &DMWRITE, NULL, NULL, NULL, browseWifiRadioInst, NULL, NULL, tWifiRadioStatsObj, tWifiRadioParams, get_linker_Wifi_Radio},
+{"Radio", &DMREAD, NULL, NULL, NULL, browseWifiRadioInst, NULL, NULL, tWifiRadioStatsObj, tWifiRadioParams, get_linker_Wifi_Radio},
 {"SSID", &DMWRITE, add_wifi_ssid, delete_wifi_ssid, NULL, browseWifiSsidInst, NULL, NULL, tWifiSsidStatsObj, tWifiSsidParams, get_linker_Wifi_Ssid},
 {"AccessPoint", &DMREAD, NULL, NULL, NULL, browseWifiAccessPointInst, NULL, NULL, tAcessPointSecurityObj, tWifiAcessPointParams, NULL},
 {"NeighboringWiFiDiagnostic", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tNeighboringWiFiDiagnosticObj, tNeighboringWiFiDiagnosticParams, NULL},
@@ -49,7 +49,7 @@ DMLEAF tWifiRadioParams[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_radio_alias, set_radio_alias, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL, get_radio_enable, set_radio_enable, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_radio_status, NULL, NULL, NULL},
-{"MaxBitRate", &DMWRITE, DMT_STRING,get_radio_max_bit_rate, set_radio_max_bit_rate, NULL, NULL},
+{"MaxBitRate", &DMREAD, DMT_UNINT,get_radio_max_bit_rate, NULL, NULL, NULL},
 {"OperatingFrequencyBand", &DMREAD, DMT_STRING, get_radio_frequency, NULL, NULL, NULL},
 {"SupportedFrequencyBands", &DMREAD, DMT_STRING, get_radio_supported_frequency_bands, NULL, NULL, NULL},
 {"OperatingChannelBandwidth", &DMWRITE, DMT_STRING,  get_radio_operating_channel_bandwidth, set_radio_operating_channel_bandwidth, NULL, NULL},
@@ -363,7 +363,6 @@ static int get_wlan_bssid(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int get_radio_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	int i;
 	char *val;
 	dmuci_get_value_by_section_string(((struct wifi_radio_args *)data)->wifi_radio_sec, "disabled", &val);
 
@@ -402,23 +401,22 @@ int get_radio_status (char *refparam, struct dmctx *ctx, void *data, char *insta
 		*value = "Up";
 	return 0;
 }
+
 int get_radio_max_bit_rate (char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct wifi_radio_args *)data)->wifi_radio_sec, "hwmode", value);
-	return 0;
-}
+	json_object *res;
+	char *wlan_name, *rate;
 
-int set_radio_max_bit_rate(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	switch (action) {
-		case VALUECHECK:
-			return 0;
-		case VALUESET:
-			dmuci_set_value_by_section(((struct wifi_radio_args *)data)->wifi_radio_sec, "hwmode", value);
-			return 0;
+	*value = "";
+	wlan_name = section_name(((struct wifi_radio_args *)data)->wifi_radio_sec);
+	dmubus_call("router.wireless", "radios", UBUS_ARGS{}, 0, &res);
+	if(res) {
+		rate = dmjson_get_value(res, 2, wlan_name, "rate");
+		*value = strtok(rate, " Mbps");
 	}
 	return 0;
 }
+
 int get_radio_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *freq;
@@ -449,6 +447,8 @@ int get_radio_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, voi
 		bandwith = dmjson_get_value(res, 1, "bandwidth");
 		dmastrcat(value, bandwith, "MHz"); // MEM WILL BE FREED IN DMMEMCLEAN
 	}
+	else
+		dmastrcat(value, *value, "MHz"); // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
 
@@ -1039,9 +1039,9 @@ static int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *
 	dmuci_get_option_value_string("wireless", *value, "wmm", value);
 	string_to_bool(*value, &b);
 		if (b)
-			*value = "Enabled";
+			*value = "true";
 		else
-			*value = "Disabled";
+			*value = "false";
 
 	return 0;
 }

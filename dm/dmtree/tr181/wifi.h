@@ -152,7 +152,6 @@ int get_linker_associated_device(char *refparam, struct dmctx *dmctx, void *data
 
 static int set_radio_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_radio_max_bit_rate(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_maxassoc(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_radio_dfsenable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
