@@ -321,6 +321,9 @@ handle_action() {
 					mv /tmp/icwmp_download /tmp/vendor_configuration_file.cfg 2> /dev/null
 				fi
 				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
+			elif [ "$__arg3" = "6" ]; then                                                                                                   
+            	mv /tmp/icwmp_download /tmp/owsd-repeater-control-cert.pem 2> /dev/null
+            	icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 			else
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
 				icwmp_fault_output "" "$fault_code"
@@ -433,6 +436,7 @@ handle_action() {
 					icwmp_apply_vendor_configuration
 				fi
 			;;
+			6) icwmp_apply_ca_ssl_certificate_key ;;
 		esac
 	fi
 

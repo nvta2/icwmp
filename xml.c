@@ -2521,7 +2521,7 @@ void *thread_cwmp_rpc_cpe_download (void *v)
                         }
                         free(fault_code);
                         if((error == FAULT_CPE_NO_FAULT) &&
-                            (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3'))
+                            (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6'))
                         {
                             exit(EXIT_SUCCESS);
                         }
@@ -2714,7 +2714,7 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 				        }
 				        free(fault_code);
 				        if((error == FAULT_CPE_NO_FAULT) &&
-				            (current_download->file_type[0] == '1' || current_download->file_type[0] == '3'))
+				            (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6'))
 				        {
 				            exit(EXIT_SUCCESS);
 				        }
@@ -2783,7 +2783,7 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
                         }
                         free(fault_code);
                         if((error == FAULT_CPE_NO_FAULT) &&
-                            (current_download->file_type[0] == '1' || current_download->file_type[0] == '3'))
+                            (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6'))
                         {
                             exit(EXIT_SUCCESS);
                         }
@@ -2975,7 +2975,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
                 }
                 free(fault_code);
                 if((error == FAULT_CPE_NO_FAULT) &&
-                    (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3'))
+                    (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3' || apply_download->file_type[0] == '6'))
                 {
                     exit(EXIT_SUCCESS);
                 }
@@ -4132,7 +4132,8 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 
 	if(strcmp(file_type,"1 Firmware Upgrade Image") &&
 		strcmp(file_type,"2 Web Content") &&
-		strcmp(file_type,"3 Vendor Configuration File"))
+		strcmp(file_type,"3 Vendor Configuration File") &&
+		strcmp(file_type,"6 CWMP CA SSL Certificate File"))
 	{
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	}
@@ -4398,7 +4399,8 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		strcmp(file_type,"2 Web Content") &&
 		strcmp(file_type,"3 Vendor Configuration File") &&
 		strcmp(file_type,"4 Tone File") &&
-		strcmp(file_type,"5 Ringer File"))
+		strcmp(file_type,"5 Ringer File") &&
+		strcmp(file_type,"6 CWMP CA SSL Certificate File"))
 	{
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	}

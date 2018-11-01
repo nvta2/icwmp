@@ -177,3 +177,26 @@ icwmp_apply_vendor_configuration()
 	fi
 }
 
+icwmp_apply_ca_ssl_certificate_key()
+{
+	local fault_code="9000"
+	
+	local current_file="/tmp/owsd-repeater-control-cert.pem"
+#	if [ $# -gt 0 ]; then
+#		current_file="/tmp/$1"
+#	fi	
+	cert=`uci get owsd.ubusproxy.peer_cert`
+#	i=1
+#	test=true
+#	path=""
+#	while [[ $test ]] 
+#	do
+#		i=$((i+1))
+#		command="echo $cert | awk -F\"/\" '{print \$$i}'"
+#		dir=`eval $command`
+#		if [[ -z $dir ]]; then break; fi
+#		path=$path"/"$dir
+#		if [ ! -d $path ]; then mkdir $path; fi
+#	done
+	cp $current_file $cert
+}
