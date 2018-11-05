@@ -865,7 +865,7 @@ int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 				ss = s;
 			}
 			if (ss != NULL) {
-				get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(s), &dmmap_section);
+				get_dmmap_section_of_config_section("dmmap_dsl", "atm-device", section_name(ss), &dmmap_section);
 				if(dmmap_section != NULL)
 					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_get_value_by_section_string(ss, "device", &ifname);
