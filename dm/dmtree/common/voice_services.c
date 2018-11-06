@@ -1160,11 +1160,13 @@ int get_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, 
 
 int set_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct sip_args *sipargs = (struct sip_args *)data;
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			//TODO FUNCTION IS EMPTY IN SCRIPT
+			if (strcasecmp(value, "udp")==0) dmuci_set_value_by_section(sipargs->sip_section, "transport", "");
+			else dmuci_set_value_by_section(sipargs->sip_section, "transport", value);
 			return 0;
 	}
 	return 0;
