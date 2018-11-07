@@ -2308,7 +2308,6 @@ char *get_wan_connection_device_perm(char *refparam, struct dmctx *dmctx, void *
 
 unsigned char get_wan_protocol_connection_forced_inform(char *refparam, struct dmctx *dmctx, void *data, char *instance)
 {
-	return 1;
 	struct wanargs *wancprotoarg = (struct wanargs *)data;
 	if (strcmp(section_name(wancprotoarg->wancprotosection), default_wan) == 0)
 		return 1;
