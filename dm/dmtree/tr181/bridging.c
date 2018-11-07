@@ -1296,25 +1296,29 @@ end:
 
 int browseBridgeVlanPortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *vlan_s;
 	char *vlan = NULL, *vlan_last = NULL, *type, *is_lan= NULL;
 	struct bridging_vlan_args curr_bridging_vlan_args = {0};
 	struct bridging_args *br_args = (struct bridging_args *)prev_data;
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
 
 	dmuci_get_value_by_section_string(br_args->bridge_sec, "is_lan", &is_lan);
 	if(is_lan==NULL || strcmp(is_lan, "1")!=0){
-		uci_foreach_sections("network", "device", vlan_s) {
-			if(!vlan_s)
+		synchronize_specific_config_sections_with_dmmap("network", "device", "dmmap_network", &dup_list);
+		list_for_each_entry(p, &dup_list, list) {
+			if(!p->config_section)
 				goto end;
 			//Check if VLAN or NOT
-			dmuci_get_value_by_section_string(vlan_s, "type", &type);
+			dmuci_get_value_by_section_string(p->config_section, "type", &type);
 			if (strcmp(type, "untagged")!=0) {
-				vlan =  handle_update_instance(2, dmctx, &vlan_last, update_instance_alias, 3, vlan_s, "bridge_vlan_instance", "bridge_vlan_alias");
-				init_bridging_vlan_args(&curr_bridging_vlan_args, vlan_s, br_args->bridge_sec, vlan_last, br_args->br_key);
+				dmuci_set_value_by_section(p->dmmap_section, "bridge_key", br_args->br_key);
+				vlan =  handle_update_instance(2, dmctx, &vlan_last, update_instance_alias, 3, p->dmmap_section, "bridge_vlan_instance", "bridge_vlan_alias");
+				init_bridging_vlan_args(&curr_bridging_vlan_args, p->config_section, br_args->bridge_sec, vlan_last, br_args->br_key);
 				if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_bridging_vlan_args, vlan) == DM_STOP)
 					goto end;
 			}
 		}
+		free_dmmap_config_dup_list(&dup_list);
 	}
 end:
 	return 0;
