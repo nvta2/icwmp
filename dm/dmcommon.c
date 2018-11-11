@@ -885,7 +885,7 @@ int check_ifname_is_vlan(char *ifname)
 	struct uci_section *s;
 	char *type;
 
-	uci_foreach_option_eq("network", "device", "ifname", ifname, s) {
+	uci_foreach_option_eq("network", "device", "name", ifname, s) {
 		dmuci_get_value_by_section_string(s, "type", &type);
 		if(strcasecmp(type, "untagged") != 0)
 			return 1;
