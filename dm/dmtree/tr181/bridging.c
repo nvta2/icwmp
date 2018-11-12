@@ -65,7 +65,7 @@ DMOBJ tBridgePortObj[] = {
 DMLEAF tBridgePortParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"Alias", &DMWRITE, DMT_STRING, get_br_port_alias, set_br_port_alias, NULL, NULL},
-{"Enable", &DMREAD, DMT_BOOL, get_br_port_enable, NULL, NULL, NULL},
+{"Enable", &DMWRITE, DMT_BOOL, get_br_port_enable, set_br_port_enable, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_br_port_status, NULL, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_br_port_name, NULL, NULL, NULL},
 {"LowerLayers", &DMWRITE, DMT_STRING, get_port_lower_layer, set_port_lower_layer, NULL, NULL},
@@ -426,15 +426,58 @@ int set_br_associated_interfaces(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
-int get_br_port_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_br_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
+	char *speed, *val;
+	struct uci_section *wifi_device_s;
+
 	dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_port_sec, "ifname", value);
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", *value, String}}, 1, &res);
-	DM_ASSERT(res, *value = "Down");
-	*value = dmjson_get_value(res, 1, "up");
-	if (strcmp(*value,"true") == 0)
+	if(strncmp(*value, "wl", 2) == 0 || strncmp(*value, "ra", 2) == 0 || strncmp(*value, "apclii", 6) == 0) {
+		uci_foreach_option_eq("wireless", "wifi-iface", "ifname", *value, wifi_device_s) {
+			dmuci_get_value_by_section_string(wifi_device_s, "disabled", &val);
+			if ((val[0] == '\0') || (val[0] == '0'))
+				*value = "true";
+			else
+				*value = "false";
+			return 0;
+		}
+	}
+	dmubus_call("network.device", "status", UBUS_ARGS{{"name", *value, String}}, 1, &res);
+	DM_ASSERT(res, *value = "false");
+	speed = dmjson_get_value(res, 1, "speed");
+	if(*speed != '\0')
+		*value = "true";
+	else
+		*value = "false";
+	return 0;
+}
+
+int set_br_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	bool b;
+
+	switch (action) {
+		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
+			return 0;
+		case VALUESET:
+			return 0;
+	}
+	return 0;
+}
+
+int get_br_port_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	bool b;
+
+	get_br_port_enable(refparam, ctx, data, instance, value);
+	string_to_bool(*value, &b);
+	if (b)
 		*value = "Up";
+	else
+		*value = "Down";
 	return 0;
 }
 
@@ -454,13 +497,6 @@ int get_br_port_management(char *refparam, struct dmctx *ctx, void *data, char *
 	dmuci_get_value_by_section_string(dmmap_section, "mg_port", value);
 	return 0;
 }
-
-int get_br_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	*value = "true";
-	return 0;
-}
-
 
 /**************************************************************************
 * GET STAT

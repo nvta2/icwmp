@@ -87,6 +87,7 @@ int get_vlan_port_port_ref(char *refparam, struct dmctx *ctx, void *data, char *
 int set_br_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_br_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_br_associated_interfaces(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_br_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_br_vlan_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_br_vlan_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_br_vlan_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
