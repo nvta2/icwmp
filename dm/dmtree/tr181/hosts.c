@@ -68,7 +68,7 @@ int get_host_associateddevice(char *refparam, struct dmctx *ctx, void *data, cha
 	char *macaddr_linker=dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
 	char *accesspointInstance= NULL, *wifiAssociativeDeviecPath;
 
-	uci_foreach_sections("wireless", "wifi-iface", ss) {
+	uci_path_foreach_sections(icwmpd, "dmmap_wireless", "wifi-iface", ss) {
 		dmuci_get_value_by_section_string(ss, "accesspointinstance", &accesspointInstance);
 		if(accesspointInstance[0]!='/0')
 			dmasprintf(&wifiAssociativeDeviecPath, "Device.WiFi.AccessPoint.%s.AssociatedDevice.", accesspointInstance);
