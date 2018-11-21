@@ -662,6 +662,7 @@ int add_ipacccfg_rule(struct dmctx *ctx, char **instancepara)
 	dmuci_set_value_by_section(rule, "enabled", "1");
 	dmuci_set_value_by_section(rule, "hidden", "1");
 	dmuci_set_value_by_section(rule, "parental", "0");
+	dmuci_set_value_by_section(rule, "src", "wan");
 	*instancepara = update_instance(rule, instance, "fruleinstance");
 	return 0;
 }
