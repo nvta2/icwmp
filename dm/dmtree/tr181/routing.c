@@ -212,6 +212,9 @@ static struct uci_section *update_route_dynamic_section(struct proc_routing *pro
 		DMUCI_ADD_SECTION(icwmpd, "dmmap_route_forwarding", "route_dynamic", &s, &name);
 		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "target", proute->destination);
 		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "netmask", proute->mask);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "metric", proute->metric);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "gateway", proute->gateway);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "interface", proute->iface);
 	}
 	return s;
 }
