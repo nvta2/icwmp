@@ -25,9 +25,21 @@ char *wan_ifname = NULL;
 DMOBJ tEthernetObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, linker*/
 {"Interface", &DMREAD, NULL, NULL, NULL, browseEthIfaceInst, NULL, NULL, tEthernetStatObj, tEthernetParams, get_linker_val},
+{"VLANTermination", &DMWRITE, add_vlan_term, delete_vlan_term, NULL, browseVLANTermInst, NULL, NULL, NULL, tVLANTermParams, get_linker_vlan_term},
+
 {0}
 };
 
+DMLEAF tVLANTermParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"Enable", &DMWRITE, DMT_BOOL, get_vlan_term_enable, set_vlan_term_enable, NULL, NULL},
+{"VLANID", &DMWRITE, DMT_UNINT, get_vlan_term_vlanid, set_vlan_term_vlanid, NULL, NULL},
+{"TPID", &DMWRITE, DMT_UNINT, get_vlan_term_tpid, set_vlan_term_tpid, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING, get_vlan_term_status, NULL, NULL, NULL},
+{"Name", &DMREAD, DMT_STRING, get_vlan_term_name, NULL, NULL, NULL},
+{"LowerLayers", &DMWRITE, DMT_STRING, get_vlan_term_lowerlayers, set_vlan_term_lowerlayers, NULL, NULL},
+{0}
+};
 
 DMLEAF tEthernetParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
@@ -402,6 +414,114 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 			break;
 	}
 	free_dmmap_config_dup_list(&dup_list);
+	return 0;
+}
+
+/**************************************************************************
+* LINKER
+***************************************************************************/
+int get_linker_vlan_term(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
+	// TODO
+	return 0;
+}
+
+/**************************************************************************
+* SET & GET Enable
+***************************************************************************/
+int get_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	// TODO
+	return 0;
+}
+
+int set_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	// TODO
+	return 0;
+}
+
+/**************************************************************************
+* SET & GET VLANID
+***************************************************************************/
+int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	// TODO
+	return 0;
+}
+
+int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	// TODO
+	return 0;
+}
+
+/**************************************************************************
+* SET & GET TPID
+***************************************************************************/
+int get_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	// TODO
+	return 0;
+}
+
+int set_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	// TODO
+	return 0;
+}
+
+/**************************************************************************
+* GET Status
+***************************************************************************/
+int get_vlan_term_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	// TODO
+	return 0;
+}
+
+/**************************************************************************
+* GET Name
+***************************************************************************/
+int get_vlan_term_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	// TODO
+	return 0;
+}
+
+
+/**************************************************************************
+* SET & GET Lowerlayers
+***************************************************************************/
+int get_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	// TODO
+	return 0;
+}
+
+int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	// TODO
+	return 0;
+}
+
+int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance)
+{
+	// TODO
+	return 0;
+}
+
+int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
+{
+	// TODO
+	return 0;
+}
+
+/*************************************************************
+ * ENTRY METHOD
+/*************************************************************/
+int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
+	// TODO
 	return 0;
 }
 
