@@ -18,6 +18,7 @@
 #include "dmcommon.h"
 #include "ethernet.h"
 #include "dmjson.h"
+#include "log.h"
 
 char *wan_ifname = NULL;
 
@@ -37,6 +38,7 @@ DMLEAF tVLANTermParams[] = {
 {"TPID", &DMWRITE, DMT_UNINT, get_vlan_term_tpid, set_vlan_term_tpid, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_vlan_term_status, NULL, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_vlan_term_name, NULL, NULL, NULL},
+{"Alias", &DMWRITE, DMT_STRING, get_vlan_term_alias, set_vlan_term_alias, NULL, NULL},
 {"LowerLayers", &DMWRITE, DMT_STRING, get_vlan_term_lowerlayers, set_vlan_term_lowerlayers, NULL, NULL},
 {0}
 };
@@ -421,8 +423,13 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 * LINKER
 ***************************************************************************/
 int get_linker_vlan_term(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	// TODO
-	return 0;
+	if(((struct vlan_term_args *)data)->device_sec) {
+		dmasprintf(linker,"%s", section_name(((struct vlan_term_args *)data)->device_sec));
+		return 0;
+	} else {
+		*linker = "";
+		return 0;
+	}
 }
 
 /**************************************************************************
@@ -430,7 +437,7 @@ int get_linker_vlan_term(char *refparam, struct dmctx *dmctx, void *data, char *
 ***************************************************************************/
 int get_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	// TODO
+	*value = "true";
 	return 0;
 }
 
@@ -445,8 +452,24 @@ int set_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *in
 ***************************************************************************/
 int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	// TODO
-	return 0;
+	char *ifname;
+	char * vlan_pos;
+
+	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "name", &ifname);
+
+	// Example: name: ethx.100, vlan will be 100.
+	vlan_pos = strchr(ifname, '.');
+	if (vlan_pos != NULL) {
+		*value = dmstrdup(vlan_pos+1);
+		CWMP_LOG(INFO, "vlan:%s", vlan_pos+1);
+		return 0;
+	}
+
+	CWMP_LOG(ERROR, "invaild ifname:%s", ifname);
+
+	*value = "";
+
+	return -1;
 }
 
 int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
@@ -456,26 +479,72 @@ int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 }
 
 /**************************************************************************
+* SET & GET Alias
+***************************************************************************/
+int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "vlan_term_alias", value);
+	return 0;
+}
+
+int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "vlan_term_alias", value);
+			return 0;
+	}
+	return 0;
+}
+
+/**************************************************************************
 * SET & GET TPID
 ***************************************************************************/
 int get_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	// TODO
+	char *type;
+	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "type", &type);
+	if (strcmp(type, "8021q") == 0)
+		// 0x8100
+		*value = "33024";
+	else if (strcmp(type, "8021ad") == 0)
+		// 0x88a8
+		*value = "34984";
+	else
+		return -1;
+
 	return 0;
 }
 
 int set_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	// TODO
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			if (strcmp(value, "33024") == 0)
+				dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "type", "8021q");
+			else if (strcmp(value, "34984") == 0)
+				dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "type", "8021ad");
+			else
+				return -1;
+
+			return 0;
+	}
+
 	return 0;
 }
+
 
 /**************************************************************************
 * GET Status
 ***************************************************************************/
 int get_vlan_term_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	// TODO
+	// always use "Up"
+	*value = "Up";
 	return 0;
 }
 
@@ -484,7 +553,7 @@ int get_vlan_term_status(char *refparam, struct dmctx *ctx, void *data, char *in
 ***************************************************************************/
 int get_vlan_term_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	// TODO
+	*value = dmstrdup(section_name(((struct vlan_term_args *)data)->device_sec));
 	return 0;
 }
 
@@ -521,7 +590,26 @@ int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instan
 /*************************************************************/
 int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	// TODO
+	char *vlan_term = NULL, *vlan_term_last = NULL;
+	struct vlan_term_args curr_vlan_term_args = {0};
+	struct dmmap_dup *p;
+	LIST_HEAD(dup_list);
+
+	synchronize_specific_config_sections_with_dmmap("network", "device", "dmmap_network", &dup_list);
+	list_for_each_entry(p, &dup_list, list) {
+		char *type;
+		dmuci_get_value_by_section_string(p->config_section, "type", &type);
+
+		// skip the untagged type
+		if (strcmp(type, "untagged") == 0 )
+			continue;
+
+		curr_vlan_term_args.device_sec = p->config_section;
+		vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "vlan_term_instance", "vlan_term_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
+			break;
+	}
 	return 0;
 }
+
 

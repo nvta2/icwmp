@@ -16,6 +16,12 @@ struct eth_port_args
 	struct uci_section *eth_port_sec;
 	char *ifname;
 };
+
+struct vlan_term_args
+{
+	struct uci_section *device_sec;
+};
+
 extern DMOBJ tEthernetObj[];
 extern DMOBJ tEthernetStatObj[];
 extern DMLEAF tEthernetParams[];
@@ -57,6 +63,8 @@ int set_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *in
 int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int get_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int get_vlan_term_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
