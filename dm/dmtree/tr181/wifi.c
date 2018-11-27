@@ -773,228 +773,99 @@ int get_ssid_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
+static char *get_associative_device_statistics(struct wifi_associative_device_args *wifi_associative_device, char *key)
+{
+	json_object *res, *jobj;
+	char *macaddr, *stats = "0";
+	int entries = 0;
+
+	dmubus_call("wifix", "stas", UBUS_ARGS{{"vif", wifi_associative_device->wdev, String}}, 1, &res);
+	while (res) {
+		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stas");
+		if(jobj) {
+			macaddr = dmjson_get_value(jobj, 1, "macaddr");
+			if (!strcmp(macaddr, wifi_associative_device->macaddress)) {
+				stats = dmjson_get_value(jobj, 2, "stats", key);
+				if(*stats != '\0')
+					return stats;
+			}
+			entries++;
+		}
+		else
+			break;
+	}
+	return stats;
+}
+
 int get_access_point_associative_device_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_total_bytes");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_total_bytes");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "rx_data_bytes");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "rx_data_bytes");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_total_pkts");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_total_pkts");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "rx_data_pkts");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "rx_data_pkts");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_failures");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_failures");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_retrans_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_pkts_retries");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_pkts_retries");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_failed_retrans_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_pkts_retry_exhausted");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_pkts_retry_exhausted");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_retry_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_total_pkts_sent");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_pkts_retries");
 	return 0;
 }
 
 int get_access_point_associative_device_statistics_multiple_retry_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *associated_client_sta_obj, *associated_client_sta_opt_obj;
-	char *macaddr, *stats;
+	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr = (struct wifi_associative_device_args*)data;
 
-	*value = "0";
-	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", cur_wifi_associative_device_args_ptr->wdev, String}}, 1, &res);
-	if(res) {
-		json_object_object_foreach(res, key, associated_client_sta_obj) {
-			macaddr = dmjson_get_value(associated_client_sta_obj, 1, "macaddr");
-			if (!strcmp(macaddr, cur_wifi_associative_device_args_ptr->macaddress)) {
-				json_object_object_foreach(associated_client_sta_obj, key, associated_client_sta_opt_obj) {
-					stats = dmjson_get_value(associated_client_sta_opt_obj, 1, "tx_data_pkts_retried");
-					if(*stats != '\0') {
-						*value = stats;
-						return 0;
-					}
-				}
-			}
-		}
-	}
+	*value = get_associative_device_statistics(cur_wifi_associative_device_args_ptr, "tx_data_pkts_retried");
 	return 0;
 }
 
@@ -1075,16 +946,19 @@ static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *
 
 int get_access_point_total_associations(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	int i = 0;
-	json_object *res;
-	char *wunit, buf[8];
-	dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", ((struct wifi_ssid_args *)data)->ifname, String}}, 1, &res);
-	DM_ASSERT(res, *value = "0");
-	json_object_object_foreach(res, key, val) {
-		if (strstr(key, "sta-"))
-			i++;
+	json_object *res, *jobj;
+	int entries = 0;
+	*value = "0";
+
+	dmubus_call("wifix", "stas", UBUS_ARGS{{"vif", ((struct wifi_ssid_args *)data)->ifname, String}}, 1, &res);
+	while (res) {
+		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stas");
+		if(jobj)
+			entries++;
+		else
+			break;
 	}
-	dmasprintf(value, "%d", i); // MEM WILL BE FREED IN DMMEMCLEAN
+	dmasprintf(value, "%d", entries); // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
 
@@ -1820,9 +1694,8 @@ int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void
 {
 	json_object *res, *associated_client_obj;
 	struct uci_section *ss = NULL;
-	char *value, *ap_ifname, *ad_ifname, *is_wireless;
-	int id = 0;
-	char *idx, *idx_last = NULL;
+	char *value, *ap_ifname, *idx, *idx_last = NULL;
+	int id = 0, entries = 0;
 	char *macaddr= NULL, *active= NULL, *lastdatadownloadlinkrate= NULL, *lastdatauplinkrate= NULL, *signalstrength= NULL;
 	struct wifi_associative_device_args cur_wifi_associative_device_args = {0};
 	struct uci_section *dmmap_section;
@@ -1836,46 +1709,39 @@ int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void
 		}
 	}
 
-	dmubus_call("router.network", "clients", UBUS_ARGS{}, 0, &res);
-	if (res) {
-		json_object_object_foreach(res, key, associated_client_obj) {
-			is_wireless = dmjson_get_value(associated_client_obj, 1, "wireless");
-			if(!strcmp(is_wireless, "true")){
-				ad_ifname = dmjson_get_value(associated_client_obj, 1, "wdev");
-				if(!strcmp(ad_ifname, ap_ifname)){
-					cur_wifi_associative_device_args.wdev = ad_ifname;
-					macaddr=dmjson_get_value(associated_client_obj, 1, "macaddr");
-					if(macaddr!=NULL && strlen(macaddr)>0)
-						dmasprintf(&(cur_wifi_associative_device_args.macaddress),dmjson_get_value(associated_client_obj, 1, "macaddr"));
-					active=dmjson_get_value(associated_client_obj, 1, "connected");
-					if(active !=NULL && strlen(active)>0){
-						if(!strcmp(active, "true"))
-							cur_wifi_associative_device_args.active= 1;
-						else
-							cur_wifi_associative_device_args.active= 0;
-					}
-					lastdatadownloadlinkrate=dmjson_get_value(associated_client_obj, 1, "rx_rate");
-					if(lastdatadownloadlinkrate!=NULL && strlen(lastdatadownloadlinkrate)>0)
-						cur_wifi_associative_device_args.lastdatadownloadlinkrate= atoi(lastdatadownloadlinkrate);
-					else
-						cur_wifi_associative_device_args.lastdatadownloadlinkrate = 0;
-					lastdatauplinkrate=dmjson_get_value(associated_client_obj, 1, "tx_rate");
-					if(lastdatauplinkrate!=NULL && strlen(lastdatauplinkrate)>0)
-						cur_wifi_associative_device_args.lastdatauplinkrate= atoi(lastdatauplinkrate);
-					else
-						cur_wifi_associative_device_args.lastdatauplinkrate = 0;
-					signalstrength=dmjson_get_value(associated_client_obj, 1, "rssi");
-					if(signalstrength!=NULL && strlen(signalstrength)>0)
-						cur_wifi_associative_device_args.signalstrength= atoi(signalstrength);
-					else
-						cur_wifi_associative_device_args.signalstrength = 0;
-					idx = handle_update_instance(3, dmctx, &idx_last, update_instance_without_section, 1, ++id);
-					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&cur_wifi_associative_device_args, idx) == DM_STOP)
-						break;
-				}
-			}
+	dmubus_call("wifix", "stas", UBUS_ARGS{{"vif", ap_ifname, String}}, 1, &res);
+	while (res) {
+		associated_client_obj = dmjson_select_obj_in_array_idx(res, entries, 1, "stas");
+		if(associated_client_obj) {
+			cur_wifi_associative_device_args.wdev = ap_ifname;
+			macaddr = dmjson_get_value(associated_client_obj, 1, "macaddr");
+			if(macaddr!=NULL && strlen(macaddr)>0)
+				dmasprintf(&(cur_wifi_associative_device_args.macaddress),dmjson_get_value(associated_client_obj, 1, "macaddr"));
+			cur_wifi_associative_device_args.active = 1;
+			lastdatadownloadlinkrate = dmjson_get_value(associated_client_obj, 2, "stats", "rate_of_last_rx_pkt");
+			if(lastdatadownloadlinkrate!=NULL && strlen(lastdatadownloadlinkrate)>0)
+				cur_wifi_associative_device_args.lastdatadownloadlinkrate = atoi(lastdatadownloadlinkrate);
+			else
+				cur_wifi_associative_device_args.lastdatadownloadlinkrate = 0;
+			lastdatauplinkrate = dmjson_get_value(associated_client_obj, 2, "stats", "rate_of_last_tx_pkt");
+			if(lastdatauplinkrate!=NULL && strlen(lastdatauplinkrate)>0)
+				cur_wifi_associative_device_args.lastdatauplinkrate = atoi(lastdatauplinkrate);
+			else
+				cur_wifi_associative_device_args.lastdatauplinkrate = 0;
+			signalstrength=dmjson_get_value(associated_client_obj, 1, "rssi");
+			if(signalstrength!=NULL && strlen(signalstrength)>0)
+				cur_wifi_associative_device_args.signalstrength = atoi(signalstrength);
+			else
+				cur_wifi_associative_device_args.signalstrength = 0;
+			entries++;
+			idx = handle_update_instance(3, dmctx, &idx_last, update_instance_without_section, 1, ++id);
+			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&cur_wifi_associative_device_args, idx) == DM_STOP)
+				break;
 		}
+		else
+			break;
 	}
+	return 0;
 }
 
 int browseWifiNeighboringWiFiDiagnosticResultInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
@@ -1925,4 +1791,5 @@ int browseWifiNeighboringWiFiDiagnosticResultInst(struct dmctx *dmctx, DMNODE *p
 		}
 		entries = 0;
 	}
+	return 0;
 }
