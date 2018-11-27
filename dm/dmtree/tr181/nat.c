@@ -164,7 +164,7 @@ int get_nat_interface(char *refparam, struct dmctx *ctx, void *data, char *insta
 		return 0;
 	uci_foreach_element(v, e) {
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), e->name, &ifaceobj); // MEM WILL BE FREED IN DMMEMCLEAN
-		if (*ifaceobj == '\0')
+		if (ifaceobj == NULL)
 			continue;
 		if (*buf != '\0')
 			strcat(buf, ",");
