@@ -474,7 +474,16 @@ int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	// TODO
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET: {
+			char name[16];
+			snprintf(name, sizeof(name), "eth0.%s", value);
+			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "name", name);
+			return 0;
+		}
+	}
 	return 0;
 }
 
@@ -537,7 +546,6 @@ int set_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
-
 /**************************************************************************
 * GET Status
 ***************************************************************************/
@@ -557,7 +565,6 @@ int get_vlan_term_name(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
-
 /**************************************************************************
 * SET & GET Lowerlayers
 ***************************************************************************/
@@ -573,17 +580,61 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
-int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance)
+/*******************ADD-DEL OBJECT*********************/
+int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance_para)
 {
-	// TODO
+	char *value, *v;
+	char *instance;
+	struct uci_section *s = NULL, *dmmap_network= NULL;
+
+	check_create_dmmap_package("dmmap_network");
+	instance = get_last_instance_icwmpd("dmmap_network", "device", "vlan_term_instance");
+	dmuci_add_section("network", "device", &s, &value);
+	dmuci_set_value_by_section(s, "ifname", "eth0");
+	dmuci_set_value_by_section(s, "type", "8021q");
+
+	dmuci_add_section_icwmpd("dmmap_network", "device", &dmmap_network, &v);
+	dmuci_set_value_by_section(dmmap_network, "section_name", section_name(s));
+	*instance_para = update_instance_icwmpd(dmmap_network, instance, "vlan_term_instance");
 	return 0;
 }
 
 int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-	// TODO
+	int found = 0;
+	char *lan_name;
+	struct uci_section *s = NULL;
+	struct uci_section *ss = NULL, *dmmap_section= NULL;
+
+	switch (del_action) {
+	case DEL_INST:
+		get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct vlan_term_args *)data)->device_sec), &dmmap_section);
+		if(dmmap_section != NULL)
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
+		dmuci_delete_by_section(((struct vlan_term_args *)data)->device_sec, NULL, NULL);
+		break;
+	case DEL_ALL:
+		uci_foreach_sections("network", "device", s) {
+			if (found != 0){
+				get_dmmap_section_of_config_section("dmmap_network", "device", section_name(s), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+			ss = s;
+			found++;
+		}
+		if (ss != NULL){
+			get_dmmap_section_of_config_section("dmmap_network", "device", section_name(ss), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+			dmuci_delete_by_section(ss, NULL, NULL);
+		}
+		break;
+	}
 	return 0;
 }
+
 
 /*************************************************************
  * ENTRY METHOD
@@ -611,5 +662,4 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 	}
 	return 0;
 }
-
 
