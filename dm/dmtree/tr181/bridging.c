@@ -836,8 +836,6 @@ int delete_bridge(char *refparam, struct dmctx *ctx, void *data, char *instance,
 				dmuci_set_value_by_section(dmmap_section, "ip_int_instance", "");
 				dmuci_set_value_by_section(dmmap_section, "ipv4_instance", "");
 				uci_path_foreach_option_eq(icwmpd, "dmmap", "bridge_port", "bridge_key", bridgekey, s) {
-					if (prev_s)
-						DMUCI_DELETE_BY_SECTION(icwmpd, prev_s, NULL, NULL);
 					prev_s = s;
 				}
 				if (prev_s)
