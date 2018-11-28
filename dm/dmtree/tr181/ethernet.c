@@ -27,7 +27,6 @@ DMOBJ tEthernetObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, linker*/
 {"Interface", &DMREAD, NULL, NULL, NULL, browseEthIfaceInst, NULL, NULL, tEthernetStatObj, tEthernetParams, get_linker_val},
 {"VLANTermination", &DMWRITE, add_vlan_term, delete_vlan_term, NULL, browseVLANTermInst, NULL, NULL, NULL, tVLANTermParams, get_linker_vlan_term},
-
 {0}
 };
 
@@ -110,7 +109,6 @@ int get_eth_port_alias(char *refparam, struct dmctx *ctx, void *data, char *inst
 	{
 		dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "name", value);
 	}
-
 	return 0;
 }
 
@@ -452,35 +450,25 @@ int set_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *in
 ***************************************************************************/
 int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *ifname;
-	char * vlan_pos;
-
-	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "name", &ifname);
-
-	// Example: name: ethx.100, vlan will be 100.
-	vlan_pos = strchr(ifname, '.');
-	if (vlan_pos != NULL) {
-		*value = dmstrdup(vlan_pos+1);
-		CWMP_LOG(INFO, "vlan:%s", vlan_pos+1);
-		return 0;
-	}
-
-	CWMP_LOG(ERROR, "invaild ifname:%s", ifname);
-
-	*value = "";
-
-	return -1;
+	*value = "0";
+	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "vid", value);
+	return 0;
 }
 
 int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	char *ifname, *name;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET: {
-			char name[16];
-			snprintf(name, sizeof(name), "eth0.%s", value);
+			dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "ifname", &ifname);
+			dmasprintf(&name, "%s.%s", ifname, value);
 			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "name", name);
+			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "vid", value);
+			// You must also update the interface related to this device
+			dmfree(name);
 			return 0;
 		}
 	}
@@ -492,17 +480,24 @@ int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 ***************************************************************************/
 int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "vlan_term_alias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct vlan_term_args *)data)->device_sec), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "vlan_term_alias", value);
+
 	return 0;
 }
 
 int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct vlan_term_args *)data)->device_sec), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "vlan_term_alias", value);
+			dmuci_set_value_by_section(dmmap_section, "vlan_term_alias", value);
 			return 0;
 	}
 	return 0;
@@ -634,7 +629,6 @@ int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instan
 	}
 	return 0;
 }
-
 
 /*************************************************************
  * ENTRY METHOD
