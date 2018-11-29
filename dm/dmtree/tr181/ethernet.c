@@ -458,6 +458,8 @@ int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *ifname, *name;
+	char *vid, *curr_ifname;
+	struct uci_section *s;
 
 	switch (action) {
 		case VALUECHECK:
@@ -466,9 +468,17 @@ int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 			dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "ifname", &ifname);
 			dmasprintf(&name, "%s.%s", ifname, value);
 			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "name", name);
+
+			dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "vid", &vid);
 			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "vid", value);
-			// You must also update the interface related to this device
+			dmasprintf(&curr_ifname, "%s.%s", ifname, vid);
+
+			// Update the interface related to this device
+			uci_foreach_option_eq("network", "interface", "ifname", curr_ifname, s) {
+				dmuci_set_value_by_section(s, "ifname", name);
+			}
 			dmfree(name);
+			dmfree(curr_ifname);
 			return 0;
 		}
 	}
