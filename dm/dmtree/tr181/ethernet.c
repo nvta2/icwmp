@@ -422,7 +422,7 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 ***************************************************************************/
 int get_linker_vlan_term(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
 	if(((struct vlan_term_args *)data)->device_sec) {
-		dmasprintf(linker,"%s", section_name(((struct vlan_term_args *)data)->device_sec));
+		dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "name", linker);
 		return 0;
 	} else {
 		*linker = "";

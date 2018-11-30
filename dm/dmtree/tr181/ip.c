@@ -145,7 +145,7 @@ int get_ip_ping_diagnostics_state(char *refparam, struct dmctx *ctx, void *data,
 {
 	*value = ipping_get("DiagnosticState", "None");
 	return 0;
-}	
+}
 
 int set_ip_ping_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
@@ -165,7 +165,7 @@ int set_ip_ping_diagnostics_state(char *refparam, struct dmctx *ctx, void *data,
 				}
 				dmuci_set_varstate_value("cwmp", "@ippingdiagnostic[0]", "DiagnosticState", value);
 				cwmp_set_end_session(END_SESSION_IPPING_DIAGNOSTIC);
-			}				
+			}
 			return 0;
 	}
 	return 0;
@@ -173,7 +173,7 @@ int set_ip_ping_diagnostics_state(char *refparam, struct dmctx *ctx, void *data,
 
 int get_ip_ping_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_varstate_string("cwmp", "@ippingdiagnostic[0]", "interface", value);	
+	dmuci_get_varstate_string("cwmp", "@ippingdiagnostic[0]", "interface", value);
 	return 0;
 }
 
@@ -236,7 +236,7 @@ int set_ip_ping_repetition_number(char *refparam, struct dmctx *ctx, void *data,
 {
 	char *tmp;
 	struct uci_section *curr_section = NULL;
-	
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -255,8 +255,8 @@ int set_ip_ping_repetition_number(char *refparam, struct dmctx *ctx, void *data,
 
 int get_ip_ping_timeout(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	
-	*value = ipping_get("Timeout", "1000");	
+
+	*value = ipping_get("Timeout", "1000");
 	return 0;
 }
 
@@ -264,7 +264,7 @@ int set_ip_ping_timeout(char *refparam, struct dmctx *ctx, void *data, char *ins
 {
 	char *tmp;
 	struct uci_section *curr_section = NULL;
-	
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -284,7 +284,7 @@ int set_ip_ping_timeout(char *refparam, struct dmctx *ctx, void *data, char *ins
 int get_ip_ping_block_size(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("DataBlockSize", "64");
-	
+
 	return 0;
 }
 
@@ -311,14 +311,14 @@ int set_ip_ping_block_size(char *refparam, struct dmctx *ctx, void *data, char *
 int get_ip_ping_success_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("SuccessCount", "0");
-	
+
 	return 0;
 }
 
 int get_ip_ping_failure_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("FailureCount", "0");
-	
+
 	return 0;
 }
 
@@ -331,14 +331,14 @@ int get_ip_ping_average_response_time(char *refparam, struct dmctx *ctx, void *d
 int get_ip_ping_min_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("MinimumResponseTime", "0");
-	
+
 	return 0;
 }
 
 int get_ip_ping_max_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = ipping_get("MaximumResponseTime", "0");	
-	
+	*value = ipping_get("MaximumResponseTime", "0");
+
 	return 0;
 }
 
@@ -491,6 +491,7 @@ int set_ipv6_addressing_type(char *refparam, struct dmctx *ctx, void *data, char
 	}
 	return 0;
 }
+
 int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *dmmap_section;
@@ -536,6 +537,8 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPTM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
+	if (*value == NULL)
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cVLANTermination%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cSSID%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
@@ -1000,7 +1003,7 @@ int browseIPIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 			if (res)
 			{
 				jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv6-address");
-				ipv6addr = dmjson_get_value(jobj, 1, "address");				
+				ipv6addr = dmjson_get_value(jobj, 1, "address");
 			}
 		}
 		dmuci_get_value_by_section_string(p->config_section, "proto", &proto);
