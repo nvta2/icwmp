@@ -401,7 +401,7 @@ int add_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char **
 	check_create_dmmap_package("dmmap_dropbear");
 	instance = get_last_instance_icwmpd("dmmap_dropbear", "dropbear", "dropbearinstance");
 
-	dmuci_add_section("dropbear", "dropbear", &dropbear_sec, &value);
+	dmuci_add_section_and_rename("dropbear", "dropbear", &dropbear_sec, &value);
 	dmuci_set_value_by_section(dropbear_sec, "verbose", "0");
 	dmuci_set_value_by_section(dropbear_sec, "Port", "22");
 	dmuci_set_value_by_section(dropbear_sec, "RootLogin", "1");

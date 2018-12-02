@@ -1575,7 +1575,7 @@ int add_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char **instance
 	check_create_dmmap_package("dmmap_wireless");
 	inst = get_last_instance_icwmpd("dmmap_wireless", "wifi-iface", "ssidinstance");
 	sprintf(ssid, "Inteno_%d", inst ? (atoi(inst)+1) : 1);
-	dmuci_add_section("wireless", "wifi-iface", &s, &value);
+	dmuci_add_section_and_rename("wireless", "wifi-iface", &s, &value);
 	dmuci_set_value_by_section(s, "device", "wl0");
 	dmuci_set_value_by_section(s, "encryption", "none");
 	dmuci_set_value_by_section(s, "macfilter", "0");

@@ -45,7 +45,7 @@ static void add_default_rule(char *port, char *enable, char *owsd)
 	struct uci_section *ss;
 	char *ret;
 
-	dmuci_add_section("firewall", "rule", &ss, &ret);
+	dmuci_add_section_and_rename("firewall", "rule", &ss, &ret);
 	dmuci_set_value_by_section(ss, "name", "juci-remote-access");
 	dmuci_set_value_by_section(ss, "src", "wan");
 	dmuci_set_value_by_section(ss, "proto", "tcp");

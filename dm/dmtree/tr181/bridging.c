@@ -859,7 +859,7 @@ int add_br_vlan(char *refparam, struct dmctx *ctx, void *data, char **instance)
 	last_vid = get_last_vid();
 	dmasprintf(&name, "%s.%d", wan_baseifname, last_vid ? atoi(last_vid)+ 1 : 1001);
 	dmasprintf(&vid, "%d", last_vid ? atoi(last_vid)+ 1 : 1001);
-	dmuci_add_section("network", "device", &vlan_s, &value);
+	dmuci_add_section_and_rename("network", "device", &vlan_s, &value);
 	dmuci_rename_section_by_section(vlan_s, vlan_name);
 	dmuci_set_value_by_section(vlan_s, "priority", "0");
 	dmuci_set_value_by_section(vlan_s, "type", "8021q");

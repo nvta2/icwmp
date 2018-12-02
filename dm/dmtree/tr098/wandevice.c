@@ -261,7 +261,7 @@ inline int add_wvlan(char *baseifname, char *ifname, char *vid, char *prioprity,
 		dmuci_set_value_by_section(ss, "priority", prioprity);
 		return 0;
 	}
-	dmuci_add_section("network", "device", &vlan_interface_s, &add_value);
+	dmuci_add_section_and_rename("network", "device", &vlan_interface_s, &add_value);
 	dmuci_set_value_by_section(ss, "type", "8021q");
 	dmuci_set_value_by_section(ss, "ifname", baseifname);
 	dmuci_set_value_by_section(ss, "name", ifname);
@@ -1668,7 +1668,7 @@ int set_wan_ip_link_connection_igmp_enabled(char *refparam, struct dmctx *ctx, v
 				dmuci_get_value_by_section_string(zone, "name", &zname);
 			}
 			if(rule == NULL) {
-				dmuci_add_section("firewall", "rule", &rule, &val);
+				dmuci_add_section_and_rename("firewall", "rule", &rule, &val);
 				dmuci_set_value_by_section(rule, "src", zname);
 				dmuci_set_value_by_section(rule, "proto", "igmp");
 			}

@@ -519,7 +519,7 @@ int add_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void *d
 
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_icwmpd("dmmap_dhcp", "vendorclass", "poulinstance");
-	dmuci_add_section("dhcp", "vendorclass", &s, &value);
+	dmuci_add_section_and_rename("dhcp", "vendorclass", &s, &value);
 	dmuci_set_value_by_section(s, "dhcp_option", "");
 	*instancepara = update_instance(s, instance, "poulinstance");
 
@@ -610,7 +610,7 @@ int add_landevice_dhcpstaticaddress(char *refparam, struct dmctx *ctx, void *dat
 	
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_lev2_icwmpd("dhcp", "host", "dmmap_dhcp", "ldhcpinstance", "dhcp", lan_name);
-	dmuci_add_section("dhcp", "host", &s, &value);
+	dmuci_add_section_and_rename("dhcp", "host", &s, &value);
 	dmuci_set_value_by_section(s, "dhcp", lan_name);
 	dmuci_add_section_icwmpd("dmmap_dhcp", "host", &dmmap_dhcpstcaddress, &v);
 	dmuci_set_value_by_section(dmmap_dhcpstcaddress, "section_name", section_name(s));
@@ -681,7 +681,7 @@ int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *dat
 
 	instance = get_last_instance_lev2_icwmpd("wireless", "wifi-iface", "dmmap_wireless", "lwlaninstance", "network", lan_name);
 	sprintf(ssid, "Inteno_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
-	dmuci_add_section("wireless", "wifi-iface", &s, &value);
+	dmuci_add_section_and_rename("wireless", "wifi-iface", &s, &value);
 	get_wifi_device_name(&wifi_dev_name);
 	dmuci_set_value_by_section(s, "device", wifi_dev_name);
 	dmuci_set_value_by_section(s, "encryption", "none");
@@ -1122,7 +1122,7 @@ int set_lan_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *dat
 				if (n_ip < n_min && n_ip > n_max)
 					continue;
 				else {
-					dmuci_add_section("dhcp", "host", &dhcp_section, &val);
+					dmuci_add_section_and_rename("dhcp", "host", &dhcp_section, &val);
 					dmuci_set_value_by_section(dhcp_section, "dhcp", lan_name);
 					dmuci_set_value_by_section(dhcp_section, "ip", pch);
 				}

@@ -48,7 +48,7 @@ int add_NAT_InterfaceSetting(char *refparam, struct dmctx *ctx, void *data, char
 	check_create_dmmap_package("dmmap_firewall");
 	inst = get_last_instance_icwmpd("dmmap_firewall", "zone", "natinstance");
 	sprintf(name, "NAT_%d", inst ? (atoi(inst)+1) : 1);
-	dmuci_add_section("firewall", "zone", &s, &value);
+	dmuci_add_section_and_rename("firewall", "zone", &s, &value);
 	dmuci_set_value_by_section(s, "input", "REJECT");
 	dmuci_set_value_by_section(s, "output", "ACCEPT");
 	dmuci_set_value_by_section(s, "forward", "REJECT");

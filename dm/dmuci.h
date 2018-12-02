@@ -147,6 +147,7 @@ char *dmuci_set_value(char *package, char *section, char *option, char *value);
 int dmuci_add_list_value(char *package, char *section, char *option, char *value);
 int dmuci_del_list_value(char *package, char *section, char *option, char *value);
 int dmuci_add_section(char *package, char *stype, struct uci_section **s, char **value);
+int dmuci_add_section_and_rename(char *package, char *stype, struct uci_section **s, char **value);
 int dmuci_delete(char *package, char *section, char *option, char *value);
 int dmuci_lookup_ptr_by_section(struct uci_context *ctx, struct uci_ptr *ptr, struct uci_section *s, char *option, char *value);
 int dmuci_get_value_by_section_string(struct uci_section *s, char *option, char **value);

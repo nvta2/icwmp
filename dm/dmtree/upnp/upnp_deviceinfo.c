@@ -223,7 +223,7 @@ int upnp_deviceinfo_networkinterface_createinstance(char *refparam, struct dmctx
 	dmstrappendstr(p, ib);
 	dmstrappendend(p);
 	sprintf(ib, "%d", iface_instance ? atoi(iface_instance)+1 : 1);
-	dmuci_add_section("network", "interface", &iface_sec, &value);
+	dmuci_add_section_and_rename("network", "interface", &iface_sec, &value);
 	dmuci_set_value("network", ip_name, "", "interface");
 	dmuci_set_value("network", ip_name, "proto", "dhcp");
 	*instance = update_instance(iface_sec, iface_instance, "upnp_iface_int_instance");

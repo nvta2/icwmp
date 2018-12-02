@@ -134,7 +134,7 @@ int add_dhcp_server(char *refparam, struct dmctx *ctx, void *data, char **instan
 	
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_icwmpd("dmmap_dhcp", "dhcp", "dhcp_instance");
-	dmuci_add_section("dhcp", "dhcp", &s, &value);
+	dmuci_add_section_and_rename("dhcp", "dhcp", &s, &value);
 	dmuci_set_value_by_section(s, "start", "100");
 	dmuci_set_value_by_section(s, "leasetime", "12h");
 	dmuci_set_value_by_section(s, "limit", "150");
@@ -189,7 +189,7 @@ int add_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, char *
 	
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_lev2_icwmpd("dhcp", "host", "dmmap_dhcp", "ldhcpinstance", "dhcp", ((struct dhcp_args *)data)->interface);
-	dmuci_add_section("dhcp", "host", &s, &value);
+	dmuci_add_section_and_rename("dhcp", "host", &s, &value);
 	dmuci_set_value_by_section(s, "dhcp", ((struct dhcp_args *)data)->interface);
 
 
@@ -607,7 +607,7 @@ int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *data, c
 				if (n_ip < n_min && n_ip > n_max)
 					continue;
 				else {
-					dmuci_add_section("dhcp", "host", &dhcp_section, &val);
+					dmuci_add_section_and_rename("dhcp", "host", &dhcp_section, &val);
 					dmuci_set_value_by_section(dhcp_section, "dhcp", ((struct dhcp_args *)data)->interface);
 					dmuci_set_value_by_section(dhcp_section, "ip", pch);
 				}

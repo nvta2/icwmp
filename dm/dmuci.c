@@ -502,6 +502,14 @@ int dmuci_add_section(char *package, char *stype, struct uci_section **s, char *
 	return 0;
 }
 
+int dmuci_add_section_and_rename(char *package, char *stype, struct uci_section **s, char **value)
+{
+	int r;
+	r = dmuci_add_section(package, stype, s, value);
+	dmuci_rename_section_by_section(*s, *value);
+	return r;
+}
+
 int dmuci_add_state_section(char *package, char *stype, struct uci_section **s, char **value)
 {
 	struct uci_ptr ptr = {0};

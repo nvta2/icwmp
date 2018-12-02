@@ -76,8 +76,8 @@ int add_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char **in
 	char *value1, *value2, *last_inst;
 
 	last_inst = get_last_instance("cwmp_xmpp", "xmpp_connection", "connection_instance");
-	dmuci_add_section("cwmp_xmpp", "xmpp_connection", &xmpp_connection, &value1);
-	dmuci_add_section("cwmp_xmpp", "xmpp_connection_server", &xmpp_connection_server, &value2);
+	dmuci_add_section_and_rename("cwmp_xmpp", "xmpp_connection", &xmpp_connection, &value1);
+	dmuci_add_section_and_rename("cwmp_xmpp", "xmpp_connection_server", &xmpp_connection_server, &value2);
 	dmasprintf(instancepara, "%d", atoi(last_inst)+1);
 	dmuci_set_value_by_section(xmpp_connection, "connection_instance", *instancepara);
 	dmuci_set_value_by_section(xmpp_connection, "enable", "0");

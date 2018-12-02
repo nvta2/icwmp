@@ -630,7 +630,7 @@ int add_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char **inst
 	
 	check_create_dmmap_package("dmmap_firewall");
 	instance = get_last_instance_icwmpd("dmmap_firewall", "rule", "fruleinstance");
-	dmuci_add_section("firewall", "rule", &rule, &value);
+	dmuci_add_section_and_rename("firewall", "rule", &rule, &value);
 	dmuci_set_value_by_section(rule, "type", "generic");
 	dmuci_set_value_by_section(rule, "name", "new_rule");
 	dmuci_set_value_by_section(rule, "proto", "all");
@@ -692,7 +692,7 @@ int add_ipacccfg_port_forwarding(char *refparam, struct dmctx *ctx, void *data, 
 	
 	check_create_dmmap_package("dmmap_firewall");
 	instance = get_last_instance_icwmpd("dmmap_firewall", "redirect", "forwardinstance");
-	dmuci_add_section("firewall", "redirect", &redirect, &value);
+	dmuci_add_section_and_rename("firewall", "redirect", &redirect, &value);
 	dmuci_set_value_by_section(redirect, "enabled", "0");
 	dmuci_set_value_by_section(redirect, "target", "DNAT");
 	dmuci_set_value_by_section(redirect, "proto", "tcp udp");

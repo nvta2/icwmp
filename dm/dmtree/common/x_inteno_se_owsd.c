@@ -524,7 +524,7 @@ int add_owsd_listen(char *refparam, struct dmctx *ctx, void *data, char **instan
 	check_create_dmmap_package("dmmap_owsd");
 	instance = get_last_instance_icwmpd("dmmap_owsd", "owsd-listen", "olisteninstance");
 
-	dmuci_add_section("owsd", "owsd-listen", &listen_sec, &value);
+	dmuci_add_section_and_rename("owsd", "owsd-listen", &listen_sec, &value);
 	dmuci_set_value_by_section(listen_sec, "ipv6", "on");
 	dmuci_set_value_by_section(listen_sec, "whitelist_interface_as_origin", "1");
 	dmuci_add_list_value_by_section(listen_sec, "origin", "*");
