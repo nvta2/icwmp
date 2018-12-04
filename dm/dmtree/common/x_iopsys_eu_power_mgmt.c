@@ -15,9 +15,9 @@
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmcommon.h"
-#include "x_inteno_se_power_mgmt.h"
+#include "x_iopsys_eu_power_mgmt.h"
 
-/*** DMROOT.X_INTENO_SE_PowerManagement. ***/
+/*** DMROOT.X_IOPSYS_EU_PowerManagement. ***/
 DMLEAF tSe_PowerManagementParam[] = {
 {"EthernetAutoPowerDownEnable", &DMWRITE, DMT_BOOL, get_pwr_mgmt_value_ethapd, set_power_mgmt_param_ethapd, NULL, NULL},
 {"EnergyEfficientEthernetEnable", &DMWRITE, DMT_BOOL, get_pwr_mgmt_value_eee, set_power_mgmt_param_eee, NULL, NULL},

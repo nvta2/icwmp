@@ -16,10 +16,10 @@
 #include "dmubus.h"
 #include "dmcwmp.h"
 #include "dmcommon.h"
-#include "x_inteno_se_wifi.h"
+#include "x_iopsys_eu_wifi.h"
 #include "dmjson.h"
 
-/*** X_INTENO_SE_Wifi. ***/
+/*** X_IOPSYS_EU_Wifi. ***/
 DMLEAF tsewifiParam[] = {
 {"Bandsteering_Enable", &DMWRITE, DMT_BOOL, get_bandsteering_enable, set_bandsteering_enable, NULL, NULL},
 {"Bandsteering_Rssi_Threshold", &DMWRITE, DMT_BOOL, get_bandsteering_rssi_threshold, set_bandsteering_rssi_threshold, NULL, NULL},
@@ -34,7 +34,7 @@ DMOBJ tsewifiObj[] = {
 {0}
 };
 
-/*** X_INTENO_SE_Wifi.Radio.{i}. ***/
+/*** X_IOPSYS_EU_Wifi.Radio.{i}. ***/
 DMLEAF tsewifiradioParam[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_radio_alias, set_radio_alias, NULL, NULL},
 {"Frequency", &DMREAD, DMT_STRING, get_wifi_frequency, NULL, NULL, NULL},

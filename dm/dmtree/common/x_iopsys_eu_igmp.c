@@ -16,7 +16,7 @@
 #include "dmubus.h"
 #include "dmcwmp.h"
 #include "dmcommon.h"
-#include "x_inteno_se_igmp.h"
+#include "x_iopsys_eu_igmp.h"
 
 
 int get_igmp_dscp_mark(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)

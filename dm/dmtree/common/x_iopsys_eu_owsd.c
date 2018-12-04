@@ -18,49 +18,49 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "dmentry.h"
-#include "x_inteno_se_owsd.h"
+#include "x_iopsys_eu_owsd.h"
 
-/*** DMROOT.X_INTENO_SE_Owsd. ***/
-DMLEAF XIntenoSeOwsdParams[] = {
+/*** DMROOT.X_IOPSYS_EU_Owsd. ***/
+DMLEAF XIopsysEuOwsdParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
-{"Socket", &DMWRITE, DMT_STRING, get_x_inteno_owsd_global_sock, set_x_inteno_owsd_global_sock, NULL, NULL},
-{"Redirect", &DMWRITE, DMT_STRING, get_x_inteno_owsd_global_redirect, set_x_inteno_owsd_global_redirect, NULL, NULL},
+{"Socket", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_global_sock, set_x_iopsys_eu_owsd_global_sock, NULL, NULL},
+{"Redirect", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_global_redirect, set_x_iopsys_eu_owsd_global_redirect, NULL, NULL},
 {0}
 };
 
-DMOBJ XIntenoSeOwsdObj[] = {
+DMOBJ XIopsysEuOwsdObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf*/
 {CUSTOM_PREFIX"UbusProxy", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, UbusProxyParams, NULL},
-{CUSTOM_PREFIX"ListenObj", &DMWRITE, add_owsd_listen, delete_owsd_listen_instance, NULL, browseXIntenoOwsdListenObj, NULL, NULL, NULL, X_INTENO_SE_ListenObjParams, NULL},
+{CUSTOM_PREFIX"ListenObj", &DMWRITE, add_owsd_listen, delete_owsd_listen_instance, NULL, browseXIopsysEuOwsdListenObj, NULL, NULL, NULL, X_IOPSYS_EU_ListenObjParams, NULL},
 {0}
 };
 
 DMLEAF UbusProxyParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
-{"Enable", &DMWRITE, DMT_BOOL, get_x_inteno_owsd_ubus_proxy_enable, set_x_inteno_owsd_ubus_proxy_enable, NULL, NULL},
-{"UbusProxyCert", &DMWRITE, DMT_STRING, get_x_inteno_owsd_ubus_proxy_cert, set_x_inteno_owsd_ubus_proxy_cert, NULL, NULL},
-{"UbusProxyKey", &DMWRITE, DMT_STRING, get_x_inteno_owsd_ubus_proxy_key, set_x_inteno_owsd_ubus_proxy_key, NULL, NULL},
-{"UbusProxyCa", &DMWRITE, DMT_STRING, get_x_inteno_owsd_ubus_proxy_ca, set_x_inteno_owsd_ubus_proxy_ca, NULL, NULL},
+{"Enable", &DMWRITE, DMT_BOOL, get_x_iopsys_eu_owsd_ubus_proxy_enable, set_x_iopsys_eu_owsd_ubus_proxy_enable, NULL, NULL},
+{"UbusProxyCert", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_proxy_cert, set_x_iopsys_eu_owsd_ubus_proxy_cert, NULL, NULL},
+{"UbusProxyKey", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_proxy_key, set_x_iopsys_eu_owsd_ubus_proxy_key, NULL, NULL},
+{"UbusProxyCa", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_proxy_ca, set_x_iopsys_eu_owsd_ubus_proxy_ca, NULL, NULL},
 {0}
 };
 
-DMLEAF X_INTENO_SE_ListenObjParams[] = {
+DMLEAF X_IOPSYS_EU_ListenObjParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, NOTIFICATION, linker*/
-{"Alias", &DMWRITE, DMT_STRING, get_x_inteno_owsd_listenobj_alias, set_x_inteno_owsd_listenobj_alias, NULL, NULL},
-{"Port", &DMWRITE, DMT_UNINT, get_x_inteno_owsd_listenobj_port, set_x_inteno_owsd_listenobj_port, NULL, NULL},
-{"Interface", &DMWRITE, DMT_STRING, get_x_inteno_owsd_listenobj_interface, set_x_inteno_owsd_listenobj_interface, NULL, NULL},
-{"Ipv6", &DMWRITE, DMT_BOOL, get_x_inteno_owsd_listenobj_ipv6_enable, set_x_inteno_owsd_listenobj_ipv6_enable, NULL, NULL},
-{"Whitelist_interface", &DMWRITE, DMT_BOOL, get_x_inteno_owsd_listenobj_whitelist_interface, set_x_inteno_owsd_listenobj_whitelist_interface, NULL, NULL},
-{"Whitelist_dhcp", &DMWRITE, DMT_BOOL, get_x_inteno_owsd_listenobj_whitelist_dhcp, set_x_inteno_owsd_listenobj_whitelist_dhcp, NULL, NULL},
-{"Origin", &DMWRITE, DMT_STRING, get_x_inteno_owsd_listenobj_origin, set_x_inteno_owsd_listenobj_origin, NULL, NULL},
-{"UbusCert", &DMWRITE, DMT_STRING, get_x_inteno_owsd_ubus_cert, set_x_inteno_owsd_ubus_cert, NULL, NULL},
-{"UbusKey", &DMWRITE, DMT_STRING, get_x_inteno_owsd_ubus_key, set_x_inteno_owsd_ubus_key, NULL, NULL},
-{"UbusCa", &DMWRITE, DMT_STRING, get_x_inteno_owsd_ubus_ca, set_x_inteno_owsd_ubus_ca, NULL, NULL},
+{"Alias", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_listenobj_alias, set_x_iopsys_eu_owsd_listenobj_alias, NULL, NULL},
+{"Port", &DMWRITE, DMT_UNINT, get_x_iopsys_eu_owsd_listenobj_port, set_x_iopsys_eu_owsd_listenobj_port, NULL, NULL},
+{"Interface", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_listenobj_interface, set_x_iopsys_eu_owsd_listenobj_interface, NULL, NULL},
+{"Ipv6", &DMWRITE, DMT_BOOL, get_x_iopsys_eu_owsd_listenobj_ipv6_enable, set_x_iopsys_eu_owsd_listenobj_ipv6_enable, NULL, NULL},
+{"Whitelist_interface", &DMWRITE, DMT_BOOL, get_x_iopsys_eu_owsd_listenobj_whitelist_interface, set_x_iopsys_eu_owsd_listenobj_whitelist_interface, NULL, NULL},
+{"Whitelist_dhcp", &DMWRITE, DMT_BOOL, get_x_iopsys_eu_owsd_listenobj_whitelist_dhcp, set_x_iopsys_eu_owsd_listenobj_whitelist_dhcp, NULL, NULL},
+{"Origin", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_listenobj_origin, set_x_iopsys_eu_owsd_listenobj_origin, NULL, NULL},
+{"UbusCert", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_cert, set_x_iopsys_eu_owsd_ubus_cert, NULL, NULL},
+{"UbusKey", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_key, set_x_iopsys_eu_owsd_ubus_key, NULL, NULL},
+{"UbusCa", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_ca, set_x_iopsys_eu_owsd_ubus_ca, NULL, NULL},
 {0}
 };
 
 
-int browseXIntenoOwsdListenObj(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+int browseXIopsysEuOwsdListenObj(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iowsd_listen = NULL, *iowsd_listen_last = NULL;
 	struct uci_section *s = NULL;
@@ -80,13 +80,13 @@ int browseXIntenoOwsdListenObj(struct dmctx *dmctx, DMNODE *parent_node, void *p
 /************************************************************************************* 
 **** function related to owsd_origin ****
 **************************************************************************************/
-int get_x_inteno_owsd_global_sock(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_global_sock(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("owsd", "global", "sock", value);
 	return 0;
 }
 
-int set_x_inteno_owsd_global_sock(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_global_sock(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -98,13 +98,13 @@ int set_x_inteno_owsd_global_sock(char *refparam, struct dmctx *ctx, void *data,
 	return 0;
 }
 
-int get_x_inteno_owsd_global_redirect(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_global_redirect(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("owsd", "global", "redirect", value);
 	return 0;
 }
 
-int set_x_inteno_owsd_global_redirect(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_global_redirect(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
 		case VALUECHECK:
@@ -120,7 +120,7 @@ int set_x_inteno_owsd_global_redirect(char *refparam, struct dmctx *ctx, void *d
 **** function related to owsd_listenobj ****
 **************************************************************************************/
 
-int get_x_inteno_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	dmuci_get_value_by_section_string(owsd_listensection, "port", value);
@@ -130,7 +130,7 @@ int get_x_inteno_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 
@@ -144,7 +144,7 @@ int set_x_inteno_owsd_listenobj_port(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
-int get_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *iface, *linker;
 	char *uci_datamodel = NULL;
@@ -176,7 +176,7 @@ int get_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int check;
 	char *linker, *iface;
@@ -203,7 +203,7 @@ int set_x_inteno_owsd_listenobj_interface(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
-int get_x_inteno_owsd_listenobj_ipv6_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_ipv6_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 
@@ -216,7 +216,7 @@ int get_x_inteno_owsd_listenobj_ipv6_enable(char *refparam, struct dmctx *ctx, v
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_ipv6_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_ipv6_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
@@ -237,7 +237,7 @@ int set_x_inteno_owsd_listenobj_ipv6_enable(char *refparam, struct dmctx *ctx, v
 	return 0;
 }
 
-int get_x_inteno_owsd_listenobj_whitelist_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_whitelist_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	dmuci_get_value_by_section_string(owsd_listensection, "whitelist_interface_as_origin", value);
@@ -247,7 +247,7 @@ int get_x_inteno_owsd_listenobj_whitelist_interface(char *refparam, struct dmctx
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_whitelist_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_whitelist_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
@@ -268,7 +268,7 @@ int set_x_inteno_owsd_listenobj_whitelist_interface(char *refparam, struct dmctx
 	return 0;
 }
 
-int get_x_inteno_owsd_listenobj_whitelist_dhcp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_whitelist_dhcp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	dmuci_get_value_by_section_string(owsd_listensection, "whitelist_dhcp_domains", value);
@@ -278,7 +278,7 @@ int get_x_inteno_owsd_listenobj_whitelist_dhcp(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_whitelist_dhcp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_whitelist_dhcp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
@@ -299,7 +299,7 @@ int set_x_inteno_owsd_listenobj_whitelist_dhcp(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
-int get_x_inteno_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_list *val;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
@@ -312,7 +312,7 @@ int get_x_inteno_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *pch, *spch;
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
@@ -334,7 +334,7 @@ int set_x_inteno_owsd_listenobj_origin(char *refparam, struct dmctx *ctx, void *
 }
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 
-int get_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	struct uci_section *dmmap_section;
@@ -344,7 +344,7 @@ int get_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
-int set_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	struct uci_section *dmmap_section;
@@ -360,12 +360,12 @@ int set_x_inteno_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
-int get_x_inteno_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("owsd","ubusproxy","enable", value);
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -376,12 +376,12 @@ int set_x_inteno_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
-int get_x_inteno_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("owsd","ubusproxy","peer_cert", value);
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -391,12 +391,12 @@ int set_x_inteno_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *d
 	}
 }
 
-int get_x_inteno_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("owsd","ubusproxy","peer_key", value);
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	char *net_cur_mode= NULL;
 
 	switch (action) {
@@ -409,12 +409,12 @@ int set_x_inteno_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
-int get_x_inteno_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("owsd","ubusproxy","peer_ca", value);
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	char *net_cur_mode= NULL;
 
 	switch (action) {
@@ -427,7 +427,7 @@ int set_x_inteno_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *dat
 	return 0;
 }
 
-int get_x_inteno_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 	dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
@@ -438,7 +438,7 @@ int get_x_inteno_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 
@@ -456,7 +456,7 @@ int set_x_inteno_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-int get_x_inteno_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 
@@ -467,7 +467,7 @@ int get_x_inteno_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 
@@ -485,7 +485,7 @@ int set_x_inteno_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
-int get_x_inteno_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 
@@ -496,7 +496,7 @@ int get_x_inteno_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
-int set_x_inteno_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 

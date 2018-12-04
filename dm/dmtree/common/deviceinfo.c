@@ -79,7 +79,7 @@ DMLEAF tDeviceInfoParams[] = {
 {0}
 };
 
-/*** DeviceInfo.X_INTENO_SE_CATV. ***/
+/*** DeviceInfo.X_IOPSYS_EU_CATV. ***/
 DMLEAF tCatTvParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"Enabled", &DMWRITE, DMT_STRING, get_catv_enabled, set_device_catvenabled, NULL, NULL},

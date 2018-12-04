@@ -17,17 +17,17 @@
 #include "times.h"
 #include "upnp.h"
 #include "voice_services.h"
-#include "x_inteno_se_ice.h"
-#include "x_inteno_se_igmp.h"
-#include "x_inteno_se_ipacccfg.h"
-#include "x_inteno_se_logincfg.h"
-#include "x_inteno_se_power_mgmt.h"
-#include "x_inteno_syslog.h"
+#include "x_iopsys_eu_ice.h"
+#include "x_iopsys_eu_igmp.h"
+#include "x_iopsys_eu_ipacccfg.h"
+#include "x_iopsys_eu_logincfg.h"
+#include "x_iopsys_eu_power_mgmt.h"
+#include "x_iopsys_eu_syslog.h"
 #include "softwaremodules.h"
 #include "xmpp.h"
-#include "x_inteno_se_owsd.h"
-#include "x_inteno_se_dropbear.h"
-#include "x_inteno_se_buttons.h"
+#include "x_iopsys_eu_owsd.h"
+#include "x_iopsys_eu_dropbear.h"
+#include "x_iopsys_eu_buttons.h"
 #ifdef UPNP_TR064
 #include "upnp_deviceinfo.h"
 #include "upnp_configuration.h"
@@ -50,7 +50,7 @@
 #include "ippingdiagnostics.h"
 #include "lan_interfaces.h"
 #include "layer_3_forwarding.h"
-#include "x_inteno_se_wifi.h"
+#include "x_iopsys_eu_wifi.h"
 #include "layer_2_bridging.h"
 #include "downloaddiagnostic.h"
 #include "uploaddiagnostic.h"
@@ -83,9 +83,9 @@ DMOBJ tRoot_098_Obj[] = {
 {CUSTOM_PREFIX"PowerManagement", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_PowerManagementParam, NULL},
 {CUSTOM_PREFIX"SyslogCfg", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_SyslogCfgParam, NULL},
 {"SoftwareModules", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,tSoftwareModulesObj, NULL, NULL},
-{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIntenoSeOwsdObj, XIntenoSeOwsdParams, NULL},
-{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIntenoDropbear, NULL, &DMNONE, NULL, X_INTENO_SE_DropbearParams, NULL},
-{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIntenoButton, NULL, &DMNONE, NULL, X_INTENO_SE_ButtonParams, NULL},
+{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIopsysEuOwsdObj, XIopsysEuOwsdParams, NULL},
+{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIopsysEuDropbear, NULL, &DMNONE, NULL, X_IOPSYS_EU_DropbearParams, NULL},
+{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIopsysEuButton, NULL, &DMNONE, NULL, X_IOPSYS_EU_ButtonParams, NULL},
 {"LANDevice", &DMREAD, NULL, NULL, NULL, browselandeviceInst, &DMFINFRM, &DMNONE,tLANDeviceObj, tLANDeviceParam, NULL},
 {"WANDevice", &DMREAD, NULL, NULL, NULL, browsewandeviceInst, &DMFINFRM, &DMWANConnectionDevicenotif,tWANDeviceObj, tWANDeviceParam, NULL},
 {"LANInterfaces", &DMREAD, NULL, NULL, check_laninterfaces, NULL, &DMFINFRM, &DMNONE,tLANInterfacesObj, tLANInterfacesParam, NULL},
@@ -116,9 +116,9 @@ DMOBJ tRoot_181_Obj[] = {
 {CUSTOM_PREFIX"PowerManagement", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_PowerManagementParam, NULL},
 {CUSTOM_PREFIX"SyslogCfg", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_SyslogCfgParam, NULL},
 {"SoftwareModules", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,tSoftwareModulesObj, NULL, NULL},
-{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIntenoSeOwsdObj, XIntenoSeOwsdParams, NULL},
-{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIntenoDropbear, NULL, &DMNONE, NULL, X_INTENO_SE_DropbearParams, NULL},
-{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIntenoButton, NULL, &DMNONE, NULL, X_INTENO_SE_ButtonParams, NULL},
+{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIopsysEuOwsdObj, XIopsysEuOwsdParams, NULL},
+{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIopsysEuDropbear, NULL, &DMNONE, NULL, X_IOPSYS_EU_DropbearParams, NULL},
+{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIopsysEuButton, NULL, &DMNONE, NULL, X_IOPSYS_EU_ButtonParams, NULL},
 {"Bridging",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tBridgingObj, NULL, NULL},
 {"WiFi",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tWifiObj, tWifiParams, NULL},
 {"IP",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tIPObj, NULL, NULL},
@@ -179,9 +179,9 @@ DMOBJ tRoot098ObjUPNPBBF[] = {
 {CUSTOM_PREFIX"PowerManagement", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_PowerManagementParam, NULL},
 {CUSTOM_PREFIX"SyslogCfg", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_SyslogCfgParam, NULL},
 {"SoftwareModules", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,tSoftwareModulesObj, NULL, NULL},
-{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIntenoSeOwsdObj, XIntenoSeOwsdParams, NULL},
-{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIntenoDropbear, NULL, &DMNONE, NULL, X_INTENO_SE_DropbearParams, NULL},
-{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIntenoButton, NULL, &DMNONE, NULL, X_INTENO_SE_ButtonParams, NULL},
+{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIopsysEuOwsdObj, XIopsysEuOwsdParams, NULL},
+{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIopsysEuDropbear, NULL, &DMNONE, NULL, X_IOPSYS_EU_DropbearParams, NULL},
+{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIopsysEuButton, NULL, &DMNONE, NULL, X_IOPSYS_EU_ButtonParams, NULL},
 {"LANDevice", &DMREAD, NULL, NULL, NULL, browselandeviceInst, &DMFINFRM, &DMNONE,tLANDeviceObj, tLANDeviceParam, NULL},
 {"WANDevice", &DMREAD, NULL, NULL, NULL, browsewandeviceInst, &DMFINFRM, &DMWANConnectionDevicenotif,tWANDeviceObj, tWANDeviceParam, NULL},
 {"LANInterfaces", &DMREAD, NULL, NULL, check_laninterfaces, NULL, &DMFINFRM, &DMNONE,tLANInterfacesObj, tLANInterfacesParam, NULL},
@@ -236,9 +236,9 @@ DMOBJ tRoot181ObjUPNPBBF[] = {
 {CUSTOM_PREFIX"PowerManagement", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_PowerManagementParam, NULL},
 {CUSTOM_PREFIX"SyslogCfg", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,NULL, tSe_SyslogCfgParam, NULL},
 {"SoftwareModules", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,tSoftwareModulesObj, NULL, NULL},
-{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIntenoSeOwsdObj, XIntenoSeOwsdParams, NULL},
-{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIntenoDropbear, NULL, &DMNONE, NULL, X_INTENO_SE_DropbearParams, NULL},
-{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIntenoButton, NULL, &DMNONE, NULL, X_INTENO_SE_ButtonParams, NULL},
+{CUSTOM_PREFIX"Owsd", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE,XIopsysEuOwsdObj, XIopsysEuOwsdParams, NULL},
+{CUSTOM_PREFIX"Dropbear", &DMWRITE, add_dropbear_instance, delete_dropbear_instance, NULL, browseXIopsysEuDropbear, NULL, &DMNONE, NULL, X_IOPSYS_EU_DropbearParams, NULL},
+{CUSTOM_PREFIX"Buttons", &DMREAD, NULL, NULL, NULL, browseXIopsysEuButton, NULL, &DMNONE, NULL, X_IOPSYS_EU_ButtonParams, NULL},
 {"Bridging",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tBridgingObj, NULL, NULL},
 {"WiFi",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tWifiObj, NULL, NULL},
 {"IP",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tIPObj, NULL, NULL},
@@ -267,23 +267,23 @@ UPNP_SUPPORTED_DM tUPNPSupportedDM_098[] = {
 {"/BBF/Time/", DMROOT_URI_098, DMROOT_URL_098, "Time from "DMROOT_DESC_098, ""},
 {"/BBF/UPnP/", DMROOT_URI_098, DMROOT_URL_098, "UPnP from "DMROOT_DESC_098, ""},
 {"/BBF/VoiceService/", "urn:broadband-forum-org:wt-104-2-0-0", "https://www.broadband-forum.org/cwmp/tr-104-2-0-0.html", "TR-104 Voice:2 Service Object definition", ""},
-{"/BBF/X_INTENO_SE_ICE/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
-{"/BBF/X_INTENO_SE_IGMP/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
-{"/BBF/X_INTENO_SE_IpAccCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for IGMP", ""},
-{"/BBF/X_INTENO_SE_LoginCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for LoginCfg", ""},
-{"/BBF/X_INTENO_SE_PowerManagement/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for PowerManagement", ""},
-{"/BBF/X_INTENO_SE_SyslogCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for SyslogCfg", ""},
+{"/BBF/"CUSTOM_PREFIX"ICE/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
+{"/BBF/"CUSTOM_PREFIX"IGMP/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
+{"/BBF/"CUSTOM_PREFIX"IpAccCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for IGMP", ""},
+{"/BBF/"CUSTOM_PREFIX"LoginCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for LoginCfg", ""},
+{"/BBF/"CUSTOM_PREFIX"PowerManagement/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for PowerManagement", ""},
+{"/BBF/"CUSTOM_PREFIX"SyslogCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for SyslogCfg", ""},
 {"/BBF/SoftwareModules/", DMROOT_URI_098, DMROOT_URL_098, "SoftwareModules from "DMROOT_DESC_098, ""},
-{"/BBF/X_INTENO_SE_Owsd/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Owsd", ""},
-{"/BBF/X_INTENO_SE_Dropbear/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Dropbear", ""},
-{"/BBF/X_INTENO_SE_Buttons/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Buttons", ""},
+{"/BBF/"CUSTOM_PREFIX"Owsd/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Owsd", ""},
+{"/BBF/"CUSTOM_PREFIX"Dropbear/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Dropbear", ""},
+{"/BBF/"CUSTOM_PREFIX"Buttons/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Buttons", ""},
 {"/BBF/LANDevice/", DMROOT_URI_098, DMROOT_URL_098, "LANDevice from "DMROOT_DESC_098, ""},
 {"/BBF/WANDevice/", DMROOT_URI_098, DMROOT_URL_098, "WANDevice from "DMROOT_DESC_098, ""},
 {"/BBF/LANInterfaces/", DMROOT_URI_098, DMROOT_URL_098, "LANInterfaces from "DMROOT_DESC_098, ""},
 {"/BBF/IPPingDiagnostics/", DMROOT_URI_098, DMROOT_URL_098, "IPPingDiagnostics from "DMROOT_DESC_098, ""},
 {"/BBF/Layer3Forwarding/", DMROOT_URI_098, DMROOT_URL_098, "Layer3Forwarding from "DMROOT_DESC_098, ""},
 {"/BBF/Layer2Bridging/", DMROOT_URI_098, DMROOT_URL_098, "Layer2Bridging from "DMROOT_DESC_098, ""},
-{"/BBF/X_INTENO_SE_Wifi/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for WiFi", ""},
+{"/BBF/"CUSTOM_PREFIX"Wifi/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for WiFi", ""},
 {"/BBF/DownloadDiagnostics/", DMROOT_URI_098, DMROOT_URL_098, "DownloadDiagnostics from "DMROOT_DESC_098, ""},
 {"/BBF/UploadDiagnostics/", DMROOT_URI_098, DMROOT_URL_098, "UploadDiagnostics from "DMROOT_DESC_098, ""},
 #ifdef XMPP_ENABLE
@@ -301,16 +301,16 @@ UPNP_SUPPORTED_DM tUPNPSupportedDM_181[] = {
 {"/BBF/Time/", DMROOT_URI_181, DMROOT_URL_181, "Time from "DMROOT_DESC_181, ""},
 {"/BBF/UPnP/", DMROOT_URI_181, DMROOT_URL_181, "UPnP from "DMROOT_DESC_181, ""},
 {"/BBF/VoiceService/", "urn:broadband-forum-org:wt-104-2-0-0", "https://www.broadband-forum.org/cwmp/tr-104-2-0-0.html", "TR-104 Voice:2 Service Object definition", ""},
-{"/BBF/X_INTENO_SE_ICE/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
-{"/BBF/X_INTENO_SE_IGMP/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
-{"/BBF/X_INTENO_SE_IpAccCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for IGMP", ""},
-{"/BBF/X_INTENO_SE_LoginCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for LoginCfg", ""},
-{"/BBF/X_INTENO_SE_PowerManagement/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for PowerManagement", ""},
-{"/BBF/X_INTENO_SE_SyslogCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for SyslogCfg", ""},
+{"/BBF/"CUSTOM_PREFIX"ICE/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
+{"/BBF/"CUSTOM_PREFIX"IGMP/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for ICE", ""},
+{"/BBF/"CUSTOM_PREFIX"IpAccCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for IGMP", ""},
+{"/BBF/"CUSTOM_PREFIX"LoginCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for LoginCfg", ""},
+{"/BBF/"CUSTOM_PREFIX"PowerManagement/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for PowerManagement", ""},
+{"/BBF/"CUSTOM_PREFIX"SyslogCfg/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for SyslogCfg", ""},
 {"/BBF/SoftwareModules/", DMROOT_URI_181, DMROOT_URL_181, "SoftwareModules from "DMROOT_DESC_181, ""},
-{"/BBF/X_INTENO_SE_Owsd/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Owsd", ""},
-{"/BBF/X_INTENO_SE_Dropbear/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Dropbear", ""},
-{"/BBF/X_INTENO_SE_Buttons/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Buttons", ""},
+{"/BBF/"CUSTOM_PREFIX"Owsd/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Owsd", ""},
+{"/BBF/"CUSTOM_PREFIX"Dropbear/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Dropbear", ""},
+{"/BBF/"CUSTOM_PREFIX"Buttons/", "urn:intenogroup-com:na", "https://www.intenogroup.com/", "Inteno extension for Buttons", ""},
 {"/BBF/Bridging/", DMROOT_URI_181, DMROOT_URL_181, "Bridging from "DMROOT_DESC_181, ""},
 {"/BBF/WiFi/", DMROOT_URI_181, DMROOT_URL_181, "WiFi from "DMROOT_DESC_181, ""},
 {"/BBF/IP/", DMROOT_URI_181, DMROOT_URL_181, "IP from "DMROOT_DESC_181, ""},

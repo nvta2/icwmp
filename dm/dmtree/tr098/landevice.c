@@ -111,7 +111,7 @@ DMLEAF tDHCPConditionalServingPoolParam[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_dhcp_conditional_servingpool_alias, set_dhcp_conditional_servingpool_alias, NULL, &DMNONE},
 {"Enable", &DMWRITE, DMT_BOOL, get_dhcp_conditional_servingpool_enable, set_dhcp_conditionalservingpool_enable, NULL, &DMNONE},
 {"VendorClassID", &DMWRITE, DMT_STRING, get_dhcp_conditional_servingpool_vendorclassid, set_dhcp_conditional_servingpool_vendorclassid, NULL, &DMNONE},
-{"X_INTENO_COM_Networkid", &DMWRITE, DMT_STRING, get_dhcp_conditional_servingpool_network_id, set_dhcp_conditional_servingpool_network_id, NULL, &DMNONE},
+{CUSTOM_PREFIX"Networkid", &DMWRITE, DMT_STRING, get_dhcp_conditional_servingpool_network_id, set_dhcp_conditional_servingpool_network_id, NULL, &DMNONE},
 {0}
 };
 
@@ -200,12 +200,12 @@ DMLEAF tWlanConfigurationParam[] = {
 {"TotalPacketsReceived", &DMREAD, DMT_UNINT, get_wlan_devstatus_statistics_rx_packets, NULL, NULL, NULL},
 {"SSIDAdvertisementEnabled", &DMWRITE, DMT_BOOL, get_wlan_ssid_advertisement_enable, set_wlan_ssid_advertisement_enable, NULL, NULL},
 {"WMMEnable", &DMWRITE, DMT_BOOL, get_wmm_enabled, set_wmm_enabled, NULL, NULL},
-{CUSTOM_PREFIX"ChannelMode", &DMWRITE, DMT_STRING, get_x_inteno_se_channelmode, set_x_inteno_se_channelmode, NULL, NULL},
-{CUSTOM_PREFIX"SupportedStandards", &DMREAD, DMT_STRING, get_x_inteno_se_supported_standard, NULL, NULL, NULL},
-{CUSTOM_PREFIX"OperatingChannelBandwidth", &DMWRITE, DMT_STRING, get_x_inteno_se_operating_channel_bandwidth, set_x_inteno_se_operating_channel_bandwidth, NULL, NULL},
-{CUSTOM_PREFIX"MaxSSID", &DMWRITE, DMT_STRING, get_x_inteno_se_maxssid, set_x_inteno_se_maxssid, NULL, NULL},
-{CUSTOM_PREFIX"ScanTimer", &DMWRITE, DMT_STRING, get_x_inteno_se_scantimer, set_x_inteno_se_scantimer, NULL, NULL},
-{CUSTOM_PREFIX"Frequency", &DMWRITE, DMT_STRING, get_x_inteno_se_frequency, set_x_inteno_se_frequency, NULL, NULL},
+{CUSTOM_PREFIX"ChannelMode", &DMWRITE, DMT_STRING, get_x_iopsys_eu_channelmode, set_x_iopsys_eu_channelmode, NULL, NULL},
+{CUSTOM_PREFIX"SupportedStandards", &DMREAD, DMT_STRING, get_x_iopsys_eu_supported_standard, NULL, NULL, NULL},
+{CUSTOM_PREFIX"OperatingChannelBandwidth", &DMWRITE, DMT_STRING, get_x_iopsys_eu_operating_channel_bandwidth, set_x_iopsys_eu_operating_channel_bandwidth, NULL, NULL},
+{CUSTOM_PREFIX"MaxSSID", &DMWRITE, DMT_STRING, get_x_iopsys_eu_maxssid, set_x_iopsys_eu_maxssid, NULL, NULL},
+{CUSTOM_PREFIX"ScanTimer", &DMWRITE, DMT_STRING, get_x_iopsys_eu_scantimer, set_x_iopsys_eu_scantimer, NULL, NULL},
+{CUSTOM_PREFIX"Frequency", &DMWRITE, DMT_STRING, get_x_iopsys_eu_frequency, set_x_iopsys_eu_frequency, NULL, NULL},
 {0}
 };
 
@@ -680,7 +680,7 @@ int add_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *dat
 	check_create_dmmap_package("dmmap_wireless");
 
 	instance = get_last_instance_lev2_icwmpd("wireless", "wifi-iface", "dmmap_wireless", "lwlaninstance", "network", lan_name);
-	sprintf(ssid, "Inteno_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
+	sprintf(ssid, "Iopsys_%s_%d", lan_name, instance ? (atoi(instance)+1) : 1);
 	dmuci_add_section_and_rename("wireless", "wifi-iface", &s, &value);
 	get_wifi_device_name(&wifi_dev_name);
 	dmuci_set_value_by_section(s, "device", wifi_dev_name);
@@ -2184,7 +2184,7 @@ int set_wlan_beacon_type(char *refparam, struct dmctx *ctx, void *data, char *in
 				if (strcmp(encryption, "wep-shared") != 0 && strcmp(encryption, "wep-open") != 0) {
 					reset_wlan(wlanargs->lwlansection);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", "1");
-					wepkey64("Inteno", strk64);
+					wepkey64("Iopsys", strk64);
 					int i = 0;
 					while (i < 4) {
 						dmasprintf(&option, "key%d", i + 1);
@@ -2348,7 +2348,7 @@ int set_wlan_wep_key_index(char *refparam, struct dmctx *ctx, void *data, char *
 			{
 				reset_wlan(wlanargs->lwlansection);
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", "wep-open");
-				wepkey64("Inteno", strk64);
+				wepkey64("Iopsys", strk64);
 				int i = 0;
 				while (i < 4) {
 					dmasprintf(&option, "key%d", i + 1);
@@ -2374,7 +2374,7 @@ int set_wlan_key_passphrase(char *refparam, struct dmctx *ctx, void *data, char 
 		case VALUESET:
 			dmuci_get_value_by_section_string(wlanargs->lwlansection, "encryption", &encryption);
 			if (strcmp(encryption, "wep-shared") == 0 || strcmp(encryption, "wep-open") == 0) {
-				wepkey64("Inteno", strk64);
+				wepkey64("Iopsys", strk64);
 				int i = 0;
 				while (i < 4) {
 					dmasprintf(&option, "key%d", i + 1);
@@ -2427,7 +2427,7 @@ int set_wlan_basic_encryption_modes(char *refparam, struct dmctx *ctx, void *dat
 					reset_wlan(wlanargs->lwlansection);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", "1");
 					int i = 0;
-					wepkey64("Inteno", strk64);
+					wepkey64("Iopsys", strk64);
 					while (i < 4) {
 						dmasprintf(&option, "key%d", i + 1);
 						dmuci_set_value_by_section(wlanargs->lwlansection, option, strk64[i]);
@@ -2473,7 +2473,7 @@ int set_wlan_basic_authentication_mode(char *refparam, struct dmctx *ctx, void *
 					reset_wlan(wlanargs->lwlansection);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", "1");
 					int i = 0;
-					wepkey64("Inteno", strk64);
+					wepkey64("Iopsys", strk64);
 					while (i < 4) {
 						dmasprintf(&option, "key%d", i + 1);
 						dmuci_set_value_by_section(wlanargs->lwlansection, option, strk64[i]);
@@ -2941,7 +2941,7 @@ int set_wlan_wps_enable(char *refparam, struct dmctx *ctx, void *data, char *ins
 	return 0;
 }
 
-int get_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_channelmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	dmuci_get_value_by_section_string(wlanargs->device_section, "channel", value);
@@ -2952,7 +2952,7 @@ int get_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-int set_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_channelmode(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *channel;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -2975,7 +2975,7 @@ int set_x_inteno_se_channelmode(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-int get_x_inteno_se_supported_standard(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_supported_standard(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *freq;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -2989,7 +2989,7 @@ int get_x_inteno_se_supported_standard(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
-int get_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *bandwith;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -3004,7 +3004,7 @@ int get_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ct
 	return 0;
 }
 
-int set_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_operating_channel_bandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *pch, *spch, *dup;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -3022,7 +3022,7 @@ int set_x_inteno_se_operating_channel_bandwidth(char *refparam, struct dmctx *ct
 	return 0;
 }
 
-int get_x_inteno_se_maxssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_maxssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	
@@ -3030,7 +3030,7 @@ int get_x_inteno_se_maxssid(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
-int set_x_inteno_se_maxssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_maxssid(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	
@@ -3059,7 +3059,7 @@ int set_wlan_wep_key(char *refparam, struct dmctx *ctx, void *data, char *instan
 			if (strcmp(encryption, "wep-shared") != 0 && strcmp(encryption, "wep-open") != 0) {
 				reset_wlan(wepargs->lwlansection);
 				dmuci_set_value_by_section(wepargs->lwlansection, "encryption", "wep-open");
-				wepkey64("Inteno", strk64);
+				wepkey64("Iopsys", strk64);
 				int i = 0;
 				while (i < 4) {
 					dmasprintf(&option, "key%d", i + 1);
@@ -3169,7 +3169,7 @@ int set_wlan_preshared_key_passphrase(char *refparam, struct dmctx *ctx, void *d
 		case VALUESET:
 			dmuci_get_value_by_section_string(pskargs->lwlansection, "encryption", &encryption);
 			if (strcmp(encryption, "wep-shared") == 0 || strcmp(encryption, "wep-open") == 0) {
-				wepkey64("Inteno", strk64);
+				wepkey64("Iopsys", strk64);
 				int i = 0;
 				while (i < 4) {
 					dmasprintf(&option, "key%d", i + 1);
@@ -3205,7 +3205,7 @@ int get_wlan_psk_assoc_MACAddress(char *refparam, struct dmctx *ctx, void *data,
 	return 0;
 }
 
-int get_x_inteno_se_scantimer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_scantimer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	*value = "0";
@@ -3213,7 +3213,7 @@ int get_x_inteno_se_scantimer(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
-int set_x_inteno_se_scantimer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_scantimer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 
@@ -3242,7 +3242,7 @@ static int get_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
-int get_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *freq;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
@@ -3253,7 +3253,7 @@ int get_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
-int set_x_inteno_se_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *freq = NULL;
 	json_object *res = NULL;

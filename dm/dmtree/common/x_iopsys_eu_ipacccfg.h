@@ -29,12 +29,12 @@ int get_port_forwarding_internal_ipaddress(char *refparam, struct dmctx *ctx, vo
 int get_port_forwarding_external_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_port_forwarding_source_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_port_forwarding_src_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_x_iopsys_eu_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_ipversion(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_x_iopsys_eu_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_acc_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
@@ -52,12 +52,12 @@ int set_port_forwarding_internal_ipaddress(char *refparam, struct dmctx *ctx, vo
 int set_port_forwarding_external_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_port_forwarding_source_ipaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_port_forwarding_src_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_x_iopsys_eu_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_ipversion(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_x_iopsys_eu_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_acc_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_bcm_com_ip_acc_list_cfgobj_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 

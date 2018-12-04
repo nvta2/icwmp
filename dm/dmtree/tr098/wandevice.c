@@ -61,7 +61,7 @@ DMOBJ tWANConnectionObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
 //dynamic
 {"Stats", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWANConnectionStatsParam, NULL},
-{"X_INTENO_COM_VLAN", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWANConnection_VLANParam, NULL},
+{CUSTOM_PREFIX"VLAN", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWANConnection_VLANParam, NULL},
 {0}
 };
 
@@ -104,8 +104,8 @@ DMLEAF tWANConnectionStatsParam[] = {
 {0}
 };
 
-/*** WANDevice.{i}.WANConnectionDevice.{i}.WANIPConnection.{i}.X_INTENO_COM_VLAN. ***/
-/*** WANDevice.{i}.WANConnectionDevice.{i}.WANPPPConnection.{i}.X_INTENO_COM_VLAN. ***/
+/*** WANDevice.{i}.WANConnectionDevice.{i}.WANIPConnection.{i}.X_IOPSYS_EU_VLAN. ***/
+/*** WANDevice.{i}.WANConnectionDevice.{i}.WANPPPConnection.{i}.X_IOPSYS_EU_VLAN. ***/
 DMLEAF tWANConnection_VLANParam[] = {
 {"VLANID", &DMWRITE, DMT_UNINT, get_wan_ip_link_connection_vid, set_wan_ip_link_connection_vid, NULL, NULL},
 {"VLANPriority", &DMWRITE, DMT_UNINT, get_wan_ip_link_connection_vpriority, set_wan_ip_link_connection_vpriority, NULL, NULL},

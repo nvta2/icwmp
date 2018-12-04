@@ -70,7 +70,7 @@ DMLEAF tlayer2_bridgeParam[] = {
 {"BridgeKey", &DMREAD, DMT_UNINT, get_bridge_key, NULL, NULL, NULL},
 {"BridgeName", &DMWRITE, DMT_STRING, get_bridge_name, set_bridge_name, NULL, NULL},
 {"VLANID", &DMWRITE, DMT_UNINT, get_bridge_vlanid, set_bridge_vlanid, NULL, NULL},
-{"X_INTENO_COM_AssociatedInterfaces", &DMWRITE, DMT_STRING, get_associated_interfaces, set_associated_interfaces, NULL, NULL},
+{CUSTOM_PREFIX"AssociatedInterfaces", &DMWRITE, DMT_STRING, get_associated_interfaces, set_associated_interfaces, NULL, NULL},
 {0}
 };
 

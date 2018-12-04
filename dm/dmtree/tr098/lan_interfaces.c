@@ -35,7 +35,7 @@ DMLEAF tLANInterfacesParam[] = {
 /*** LANInterfaces.LANEthernetInterfaceConfig. ***/
 DMLEAF tlaninterface_lanParam[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_lan_eth_int_alias, set_lan_eth_int_alias, NULL, NULL},
-{"X_INTENO_COM_EthName", &DMREAD, DMT_STRING, get_eth_name, NULL, NULL, NULL},
+{CUSTOM_PREFIX"EthName", &DMREAD, DMT_STRING, get_eth_name, NULL, NULL, NULL},
 {0}
 };
 

@@ -1079,7 +1079,7 @@ int set_access_point_security_modes(char *refparam, struct dmctx *ctx, void *dat
 				else if (strcmp(value, "WEP-64") == 0 || strcmp(value, "WEP-128") == 0) {
 					reset_wlan(((struct wifi_acp_args *)data)->wifi_acp_sec);
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "encryption", "wep-open");
-					wepkey64("Inteno", strk64);
+					wepkey64("Iopsys", strk64);
 					int i = 0;
 					while (i < 4) {
 						dmasprintf(&option, "key%d", i + 1);
@@ -1574,7 +1574,7 @@ int add_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char **instance
 
 	check_create_dmmap_package("dmmap_wireless");
 	inst = get_last_instance_icwmpd("dmmap_wireless", "wifi-iface", "ssidinstance");
-	sprintf(ssid, "Inteno_%d", inst ? (atoi(inst)+1) : 1);
+	sprintf(ssid, "Iopsys_%d", inst ? (atoi(inst)+1) : 1);
 	dmuci_add_section_and_rename("wireless", "wifi-iface", &s, &value);
 	dmuci_set_value_by_section(s, "device", "wl0");
 	dmuci_set_value_by_section(s, "encryption", "none");

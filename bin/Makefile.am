@@ -19,15 +19,15 @@ libdatamodel_la_SOURCES =	\
 	../dm/dmtree/common/times.c						\
 	../dm/dmtree/common/upnp.c						\
 	../dm/dmtree/common/voice_services.c 			\
-	../dm/dmtree/common/x_inteno_se_ice.c 			\
-	../dm/dmtree/common/x_inteno_se_igmp.c 			\
-	../dm/dmtree/common/x_inteno_se_ipacccfg.c		\
-	../dm/dmtree/common/x_inteno_se_logincfg.c		\
-	../dm/dmtree/common/x_inteno_se_power_mgmt.c	\
-	../dm/dmtree/common/x_inteno_syslog.c			\
-	../dm/dmtree/common/x_inteno_se_dropbear.c		\
-	../dm/dmtree/common/x_inteno_se_owsd.c			\
-	../dm/dmtree/common/x_inteno_se_buttons.c		\
+	../dm/dmtree/common/x_iopsys_eu_ice.c 			\
+	../dm/dmtree/common/x_iopsys_eu_igmp.c 			\
+	../dm/dmtree/common/x_iopsys_eu_ipacccfg.c		\
+	../dm/dmtree/common/x_iopsys_eu_logincfg.c		\
+	../dm/dmtree/common/x_iopsys_eu_power_mgmt.c	\
+	../dm/dmtree/common/x_iopsys_eu_syslog.c			\
+	../dm/dmtree/common/x_iopsys_eu_dropbear.c		\
+	../dm/dmtree/common/x_iopsys_eu_owsd.c			\
+	../dm/dmtree/common/x_iopsys_eu_buttons.c		\
 	../dm/dmtree/common/root.c
 
 if XMPP_ENABLE
@@ -40,7 +40,7 @@ libdatamodel_la_SOURCES += 							\
 	../dm/dmtree/tr098/landevice.c					\
 	../dm/dmtree/tr098/layer_2_bridging.c			\
 	../dm/dmtree/tr098/wandevice.c					\
-	../dm/dmtree/tr098/x_inteno_se_wifi.c			\
+	../dm/dmtree/tr098/x_iopsys_eu_wifi.c			\
 	../dm/dmtree/tr098/ippingdiagnostics.c			\
 	../dm/dmtree/tr098/downloaddiagnostic.c			\
 	../dm/dmtree/tr098/uploaddiagnostic.c			\

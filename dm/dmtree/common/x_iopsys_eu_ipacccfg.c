@@ -17,9 +17,9 @@
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
-#include "x_inteno_se_ipacccfg.h"
+#include "x_iopsys_eu_ipacccfg.h"
 
-/*** DMROOT.X_INTENO_SE_IpAccCfg. ***/
+/*** DMROOT.X_IOPSYS_EU_IpAccCfg. ***/
 DMOBJ tSe_IpAccObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
 {CUSTOM_PREFIX"IpAccListCfgObj", &DMWRITE, add_ipacccfg_rule, delete_ipacccfg_rule, NULL, browseAccListInst, NULL, NULL, NULL, tSe_IpAccCfgParam, NULL},
@@ -46,12 +46,12 @@ DMLEAF tSe_PortForwardingParam[] = {
 };
 
 DMLEAF tSe_IpAccCfgParam[] = {
-{"Alias", &DMWRITE, DMT_STRING, get_x_inteno_cfgobj_address_alias, set_x_inteno_cfgobj_address_alias, NULL, NULL},
+{"Alias", &DMWRITE, DMT_STRING, get_x_iopsys_eu_cfgobj_address_alias, set_x_iopsys_eu_cfgobj_address_alias, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL, get_x_bcm_com_ip_acc_list_cfgobj_enable, set_x_bcm_com_ip_acc_list_cfgobj_enable, NULL, NULL},
 {"IPVersion", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_ipversion, set_x_bcm_com_ip_acc_list_cfgobj_ipversion, NULL, NULL},
 {"Protocol", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_protocol, set_x_bcm_com_ip_acc_list_cfgobj_protocol, NULL, NULL},
 {"FilterName", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_name, set_x_bcm_com_ip_acc_list_cfgobj_name, NULL, NULL},
-{"AccAddressAndNetMask", &DMWRITE, DMT_STRING, get_x_inteno_cfgobj_address_netmask, set_x_inteno_cfgobj_address_netmask, NULL, NULL},
+{"AccAddressAndNetMask", &DMWRITE, DMT_STRING, get_x_iopsys_eu_cfgobj_address_netmask, set_x_iopsys_eu_cfgobj_address_netmask, NULL, NULL},
 {"AccPort", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_acc_port, set_x_bcm_com_ip_acc_list_cfgobj_acc_port, NULL, NULL},
 {"Target", &DMWRITE, DMT_STRING, get_x_bcm_com_ip_acc_list_cfgobj_target, set_x_bcm_com_ip_acc_list_cfgobj_target, NULL, NULL},
 {0}
@@ -165,7 +165,7 @@ int set_x_bcm_com_ip_acc_list_cfgobj_name(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
-int get_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_list *val;
 	struct uci_element *e = NULL;
@@ -185,7 +185,7 @@ int get_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
-int set_x_inteno_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_cfgobj_address_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *pch, *spch, *val;
 	struct uci_section *ipaccsection = (struct uci_section *)data;
@@ -742,7 +742,7 @@ int delete_ipacccfg_port_forwarding(char *refparam, struct dmctx *ctx, void *dat
 }
 
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
-int get_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_x_iopsys_eu_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *ipaccsection = (struct uci_section *)data;
 	struct uci_section *dmmap_section;
@@ -752,7 +752,7 @@ int get_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
-int set_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_x_iopsys_eu_cfgobj_address_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *ipaccsection = (struct uci_section *)data;
 	struct uci_section *dmmap_section;

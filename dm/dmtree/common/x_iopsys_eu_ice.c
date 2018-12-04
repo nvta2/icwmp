@@ -16,9 +16,9 @@
 #include "dmubus.h"
 #include "dmcwmp.h"
 #include "dmcommon.h"
-#include "x_inteno_se_ice.h"
+#include "x_iopsys_eu_ice.h"
 
-/*** DMROOT.X_INTENO_SE_ICE. ***/
+/*** DMROOT.X_IOPSYS_EU_ICE. ***/
 DMLEAF tSe_IceParam[] = {
 {"Enable", &DMWRITE, DMT_BOOL, get_ice_cloud_enable, set_ice_cloud_enable, NULL, NULL},
 {"Server", &DMWRITE, DMT_STRING, get_ice_cloud_server, set_ice_cloud_server, NULL, NULL},

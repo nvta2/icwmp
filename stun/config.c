@@ -1,7 +1,7 @@
 /*
  * config.c -- contains functions that allows reading and loading of uci config parameters of stun
  *
- *  Copyright (C) 2018 Inteno Broadband Technology AB. All rights reserved.
+ *  Copyright (C) 2018 iopsys Software Solutions AB. All rights reserved.
  *
  *  Author: Omar Kallel <omar.kallel@pivasoftware.com>
  *

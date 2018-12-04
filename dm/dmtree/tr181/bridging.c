@@ -40,7 +40,7 @@ DMLEAF tDridgingBridgeParams[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_br_alias, set_br_alias, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL, get_br_enable, set_br_enable, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_br_status, NULL, NULL, NULL},
-{"X_INTENO_COM_AssociatedInterfaces", &DMWRITE, DMT_STRING, get_br_associated_interfaces, set_br_associated_interfaces, NULL, NULL},
+{CUSTOM_PREFIX"AssociatedInterfaces", &DMWRITE, DMT_STRING, get_br_associated_interfaces, set_br_associated_interfaces, NULL, NULL},
 {0}
 };
 
