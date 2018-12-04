@@ -520,7 +520,7 @@ int get_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *inst
 {
 	char *type;
 	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "type", &type);
-	if (strcmp(type, "8021q") == 0)
+	if (strcmp(type, "8021q") == 0 || strcmp(type, "untagged") == 0)
 		// 0x8100
 		*value = "33024";
 	else if (strcmp(type, "8021ad") == 0)
@@ -652,13 +652,6 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 
 	synchronize_specific_config_sections_with_dmmap("network", "device", "dmmap_network", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		char *type;
-		dmuci_get_value_by_section_string(p->config_section, "type", &type);
-
-		// skip the untagged type
-		if (strcmp(type, "untagged") == 0 )
-			continue;
-
 		curr_vlan_term_args.device_sec = p->config_section;
 		vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "vlan_term_instance", "vlan_term_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
