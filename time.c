@@ -9,7 +9,7 @@
 
 #include <time.h>
 
-char local_time[26] = {0};
+char local_time[32] = {0};
 
 char * mix_get_time_of(time_t t_time)
 {

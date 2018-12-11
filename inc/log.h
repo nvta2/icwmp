@@ -24,7 +24,13 @@ enum log_severity_enum {
 	DEBUG
 };
 
+enum log_xmlmsg_enum {
+	XML_MSG_IN,
+	XML_MSG_OUT
+};
+
 void puts_log(int severity, const char *fmt, ...);
+void puts_log_xmlmsg(int severity, char *msg, int msgtype);
 int log_set_log_file_name (char *value);
 int log_set_file_max_size(char *value);
 int log_set_on_console(char *value);
@@ -37,9 +43,11 @@ int log_set_severity_idx (char *value);
 #ifdef WITH_CWMP_DEBUG
 # ifndef CWMP_LOG
 #  define CWMP_LOG(SEV,MESSAGE,args...) puts_log(SEV,MESSAGE,##args);
+#  define CWMP_LOG_XML_MSG puts_log_xmlmsg
 # endif
 #else
 # define CWMP_LOG(SEV,MESSAGE,args...)
+# define CWMP_LOG_XML_MSG(X, Y, Z)
 #endif
 
 #ifdef WITH_DEV_DEBUG

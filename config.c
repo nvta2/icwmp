@@ -1181,7 +1181,7 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
         {
         	char *piderr = "PID file creation failed: Quit the daemon!";
         	fprintf(stderr, "%s\n", piderr);
-        	CWMP_LOG(ERROR, piderr);
+        	CWMP_LOG(ERROR, "%s",piderr);
         	exit(EXIT_FAILURE);
         }
         else exit(EXIT_SUCCESS);
