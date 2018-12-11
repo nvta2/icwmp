@@ -209,7 +209,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 
 		unsigned char *zmsg_out;
 		msg_out = mxmlSaveAllocString(session->tree_out, whitespace_cb);
-		CWMP_LOG(DEBUG,"Message OUT \n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",msg_out);
+		CWMP_LOG_XML_MSG(DEBUG,msg_out,XML_MSG_OUT);
 		if (cwmp->conf.compression != COMP_NONE) {
 		    if (zlib_compress(msg_out, &zmsg_out, &msg_out_len, cwmp->conf.compression)) {
 		        return -1;
@@ -226,7 +226,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 			goto error;
 		}
 		if (msg_in) {
-			CWMP_LOG(DEBUG,"Message IN \n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",msg_in);
+			CWMP_LOG_XML_MSG(DEBUG,msg_in,XML_MSG_IN);
 			if (s = strstr(msg_in, "<FaultCode>"))
 				sscanf(s, "<FaultCode>%d</FaultCode>",&f);
 			if (f) {
@@ -878,7 +878,7 @@ error:
 
 int cwmp_rpc_acs_destroy_data_inform(struct session *session, struct rpc *rpc)
 {
-	event_remove_all_event_container(session,RPC_SEND);
+	//event_remove_all_event_container(session,RPC_SEND);
 	return 0;
 }
 

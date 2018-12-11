@@ -189,9 +189,9 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         CWMP_LOG (INFO,"Start session");
         error = cwmp_schedule_rpc (cwmp,session);
         CWMP_LOG (INFO,"End session");
-        run_session_end_func(session);
         if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )
         {
+            run_session_end_func(session);
             error = cwmp_move_session_to_session_queue (cwmp, session);
             CWMP_LOG(INFO,"Retry session, retry count = %d, retry in %ds",cwmp->retry_count_session,cwmp_get_retry_interval(cwmp));
             retry = true;
@@ -202,6 +202,8 @@ void cwmp_schedule_session (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_send));
             continue;
         }
+        event_remove_all_event_container(session,RPC_SEND);
+        run_session_end_func(session);
         cwmp_session_destructor (cwmp, session);
         cwmp->session_send          = NULL;
         cwmp->retry_count_session   = 0;
@@ -621,7 +623,7 @@ int main(int argc, char **argv)
     {
         return error;
     }
-    CWMP_LOG(INFO,"STARTING ICWMP");
+    CWMP_LOG(INFO,"STARTING ICWMP with PID :%d", getpid());
     cwmp->start_time = time(NULL);
 
     if (error = cwmp_init_backup_session(cwmp, NULL, ALL))

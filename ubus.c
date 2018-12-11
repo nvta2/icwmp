@@ -128,7 +128,7 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		if(rc) {
 			char *piderr = "PID file unlock failed!";
 			fprintf(stderr, "%s\n", piderr);
-			CWMP_LOG(ERROR, piderr);
+			CWMP_LOG(ERROR, "%s", piderr);
 		}
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "cwmpd daemon stopped") == -1)
