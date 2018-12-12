@@ -27,6 +27,7 @@ extern DMOBJ tEthernetStatObj[];
 extern DMLEAF tEthernetParams[];
 extern DMLEAF tEthernetStatParams[];
 extern DMLEAF tVLANTermParams[];
+extern DMLEAF tLinkParams[];
 
 int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
@@ -74,5 +75,20 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance);
 int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+
+int get_linker_link(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
+int get_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int get_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int get_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int get_link_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_link_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int add_link(char *refparam, struct dmctx *ctx, void *data, char **instance);
+int delete_link(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 #endif

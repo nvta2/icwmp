@@ -27,6 +27,7 @@ DMOBJ tEthernetObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, nextobj, leaf, linker*/
 {"Interface", &DMREAD, NULL, NULL, NULL, browseEthIfaceInst, NULL, NULL, tEthernetStatObj, tEthernetParams, get_linker_val},
 {"VLANTermination", &DMWRITE, add_vlan_term, delete_vlan_term, NULL, browseVLANTermInst, NULL, NULL, NULL, tVLANTermParams, get_linker_vlan_term},
+{"Link", &DMWRITE, add_link, delete_link, NULL, browseLinkInst, NULL, NULL, NULL, tLinkParams, get_linker_link},
 {0}
 };
 
@@ -74,6 +75,16 @@ DMLEAF tEthernetStatParams[] = {
 {0}
 };
 
+DMLEAF tLinkParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"Enable", &DMWRITE, DMT_BOOL, get_link_enable, set_link_enable, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING, get_link_status, NULL, NULL, NULL},
+{"Name", &DMREAD, DMT_STRING, get_link_name, NULL, NULL, NULL},
+{"Alias", &DMWRITE, DMT_STRING, get_link_alias, set_link_alias, NULL, NULL},
+{"MACAddress", &DMWRITE, DMT_STRING, get_link_macaddress, set_link_macaddress, NULL, NULL},
+{"LowerLayers", &DMWRITE, DMT_STRING, get_link_lowerlayers, set_link_lowerlayers, NULL, NULL},
+{0}
+};
 
 /**************************************************************************
 * LINKER
@@ -657,6 +668,74 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
 			break;
 	}
+	return 0;
+}
+
+int get_linker_link(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker)
+{
+	return 0;
+}
+int get_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	return 0;
+}
+int set_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	return 0;
+}
+
+int get_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	return 0;
+}
+
+int set_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	return 0;
+}
+
+int get_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	return 0;
+}
+
+int set_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	return 0;
+}
+
+int get_link_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	return 0;
+}
+
+int get_link_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	return 0;
+}
+
+int get_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	return 0;
+}
+
+int set_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	return 0;
+}
+
+int add_link(char *refparam, struct dmctx *ctx, void *data, char **instance)
+{
+	return 0;
+}
+
+int delete_link(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
+{
+	return 0;
+}
+
+int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
 	return 0;
 }
 
