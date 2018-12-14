@@ -174,8 +174,8 @@ start_service() {
 		[ -f /usr/sbin/asterisk ] && echo "Waiting for Voice to be started ..." && ubus -t 5 wait_for asterisk
 
 		config_load cwmp
-		wait_for_option43 20
 		set_wan_interface
+		wait_for_option43 20
 		get_acs_url
 
 		procd_open_instance
