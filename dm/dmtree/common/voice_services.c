@@ -491,8 +491,6 @@ int delete_associated_line_instances(char *sip_id, char* profile_key)
 
 	uci_foreach_option_eq("voice_client", "brcm_line", "sip_account", sip_id, s) {
 		dmuci_set_value_by_section(s, "sip_account", "-");
-		dmuci_set_value_by_section(s, "lineinstance", "");
-		dmuci_set_value_by_section(s, "linealias", "");
 	}
 	uci_path_foreach_option_eq_safe(icwmpd, "dmmap_voice_client", "brcm_line", "voice_profile_key", profile_key, stmp, s) {
 		dmuci_delete_by_section(s, NULL, NULL);
@@ -508,10 +506,10 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 	struct uci_section *dmmap_section;
 	char *v= NULL;
 	
-	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
-	dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &v);
 	switch (del_action) {
 		case DEL_INST:
+			get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sipargs->sip_section), &dmmap_section);
+			dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &v);
 			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 			delete_associated_line_instances(section_name(sipargs->sip_section), v);
 			dmuci_delete_by_section(sipargs->sip_section, NULL, NULL);
@@ -519,6 +517,8 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 		case DEL_ALL:
 			uci_foreach_sections("voice_client", "sip_service_provider", s) {
 				if (found != 0) {
+					get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(ss), &dmmap_section);
+					dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &v);
 					if(dmmap_section != NULL)
 						dmuci_delete_by_section(dmmap_section, NULL, NULL);
 					delete_associated_line_instances(section_name(ss), v);
@@ -528,6 +528,8 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 				found++;
 			}
 			if (ss != NULL) {
+				get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(ss), &dmmap_section);
+				dmuci_get_value_by_section_string(dmmap_section, "profileinstance", &v);
 				if(dmmap_section != NULL)
 					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				delete_associated_line_instances(section_name(ss), v);
