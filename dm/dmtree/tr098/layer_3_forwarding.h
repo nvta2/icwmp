@@ -18,6 +18,9 @@ extern DMLEAF tLayer3ForwardingParam[];
 int browseForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 char *get_forwording_perm(char *refparam, struct dmctx *dmctx, void *data, char *instance);
 
+int add_forwarding(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_forwarding(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+
 int get_layer3_def_conn_serv(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_layer3_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_layer3_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);

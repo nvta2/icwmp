@@ -41,7 +41,7 @@ DMOBJ tLANDeviceObj[] = {
 {"LANHostConfigManagement", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tLanhost_Config_ManagementObj, tLanhost_Config_ManagementParam, NULL},
 {"Hosts", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tlandevice_hostObj, tlandevice_hostsParam, NULL},
 {"LANEthernetInterfaceConfig", &DMREAD, NULL, NULL, NULL, browselanethernetinterfaceconfigInst, NULL, NULL, tlanethernetinterfaceconfigObj, tlanethernetinterfaceconfigParam, NULL},
-{"WLANConfiguration", &DMWRITE, add_landevice_wlanconfiguration, delete_landevice_wlanconfiguration, NULL, browseWlanConfigurationInst, NULL, NULL, tWlanConfigurationObj, tWlanConfigurationParam, NULL},
+{"WLANConfiguration", &DMREAD, NULL, NULL, NULL, browseWlanConfigurationInst, NULL, NULL, tWlanConfigurationObj, tWlanConfigurationParam, NULL},
 {0}
 };
 
