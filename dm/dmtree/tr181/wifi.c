@@ -1538,15 +1538,21 @@ int get_ssid_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int set_ssid_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	char *linker;
+	char *linker, *newvalue= NULL;
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			adm_entry_get_linker_value(ctx, value, &linker);
+			if (value[strlen(value)-1]!='.') {
+				dmasprintf(&newvalue, "%s.", value);
+				adm_entry_get_linker_value(ctx, newvalue, &linker);
+			} else
+				adm_entry_get_linker_value(ctx, value, &linker);
 			if (linker) {
 				dmuci_set_value_by_section(((struct wifi_ssid_args *)data)->wifi_ssid_sec, "device", linker);
 				dmfree(linker);
+			} else {
+				return FAULT_9005;
 			}
 			return 0;
 	}

@@ -555,16 +555,21 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 
 int set_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	char *linker, *pch, *spch, *dup, *b_key, *proto, *ipaddr, *ip_inst, *ipv4_inst, *p, *type;
+	char *linker= NULL, *pch, *spch, *dup, *b_key, *proto, *ipaddr, *ip_inst, *ipv4_inst, *p, *type;
+	char *newvalue= NULL;
 	char sec[16];
-	char pat[32] = "";
 	struct uci_section *s;
+	char pat[32] = "";
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			adm_entry_get_linker_value(ctx, value, &linker);
+			if (value[strlen(value)-1]!='.') {
+				dmasprintf(&newvalue, "%s.", value);
+				adm_entry_get_linker_value(ctx, newvalue, &linker);
+			} else
+				adm_entry_get_linker_value(ctx, value, &linker);
 			sprintf(pat, "%cPort%c1%c", dm_delim, dm_delim, dm_delim);
 			if (linker && strstr(value, pat))
 			{
@@ -585,10 +590,10 @@ int set_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 						dmuci_delete_by_section(((struct ip_args *)data)->ip_sec, NULL, NULL);
 				}
 				return 0;
-			}
+			} else return FAULT_9005;
+
 			if (linker)
 				dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ifname", linker);
-
 			return 0;
 	}
 	return 0;

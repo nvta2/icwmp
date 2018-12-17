@@ -1088,21 +1088,33 @@ int get_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 int set_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *linker, *iface, *ifname, *p, *br_key, *br_pt_inst = "", *mg_port = "false", *br_port_ifname, *vid = NULL;
+	char *newvalue= NULL;
 	char new_ifname[256];
 	char tmp[16];
 	char pr_linker[32];
 	struct uci_section *s;
+	struct uci_section *dmmap_section= NULL;
+
 	switch (action) {
 		case VALUECHECK:
-			dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_port_sec, "mg_port", &mg_port);
-			adm_entry_get_linker_value(ctx, value, &linker);
-			if (strcmp(mg_port, "false") && linker && check_ifname_exist_in_br_ifname_list(linker))
+			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(((struct bridging_port_args *)data)->bridge_port_sec), &dmmap_section);
+			dmuci_get_value_by_section_string(dmmap_section, "mg_port", &mg_port);
+			if (value[strlen(value)-1]!='.') {
+				dmasprintf(&newvalue, "%s.", value);
+				adm_entry_get_linker_value(ctx, newvalue, &linker);
+			} else
+				adm_entry_get_linker_value(ctx, value, &linker);
+			if (strcmp(mg_port, "false")!=0 && linker && !check_ifname_exist_in_br_ifname_list(linker))
 				return FAULT_9001;
 			return 0;
 		case VALUESET:
-			adm_entry_get_linker_value(ctx, value, &linker);
+			if (value[strlen(value)-1]!='.') {
+				dmasprintf(&newvalue, "%s.", value);
+				adm_entry_get_linker_value(ctx, newvalue, &linker);
+			} else
+				adm_entry_get_linker_value(ctx, value, &linker);
 			 //check ifname(linker) doesn't exit in bridges
-			if (linker && !check_ifname_exist_in_br_ifname_list(linker)) {
+			if (linker && check_ifname_exist_in_br_ifname_list(linker)) {
 				//save param of current port and copy it to new port
 				dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_port_sec, "bridge_key", &br_key);
 				dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_port_sec, "bridge_port_instance", &br_pt_inst);
@@ -1145,6 +1157,8 @@ int set_port_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *in
 				update_port_parameters(linker, br_key, br_pt_inst, mg_port);
 				if(((struct bridging_port_args *)data)->ifname[0] == '\0')
 					DMUCI_DELETE_BY_SECTION(icwmpd,((struct bridging_port_args *)data)->bridge_port_sec, NULL, NULL);// delete dmmap section after remove br_port_instance to adequate config
+			} else {
+				return FAULT_9005;
 			}
 			return 0;
 	}

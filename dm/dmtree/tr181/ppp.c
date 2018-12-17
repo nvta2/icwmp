@@ -222,12 +222,18 @@ int get_ppp_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *ins
 int set_ppp_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char *linker;
+	char *newvalue= NULL;
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			adm_entry_get_linker_value(ctx, value, &linker);
-			dmuci_set_value_by_section(((struct uci_section *)data), "ifname", linker);
+			if (value[strlen(value)-1]!='.') {
+				dmasprintf(&newvalue, "%s.", value);
+				adm_entry_get_linker_value(ctx, newvalue, &linker);
+			} else
+				adm_entry_get_linker_value(ctx, value, &linker);
+			if(linker) dmuci_set_value_by_section(((struct uci_section *)data), "ifname", linker);
+			else return FAULT_9005;
 			return 0;
 	}
 	return 0;
