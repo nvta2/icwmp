@@ -9,13 +9,13 @@
  *
  */
 
+#include "log.h"
 #include <pthread.h>
 #include <signal.h>
 #include <sys/types.h>
 #include "cwmp.h"
 #include "backupSession.h"
 #include "xml.h"
-#include "log.h"
 #include "external.h"	
 #include "dmentry.h"
 #include "dmcommon.h"
@@ -32,7 +32,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <time.h>
-
+#include "cwmpmem.h"
 
 int read_next;
 struct download_diag download_stats = {0};
@@ -626,7 +626,7 @@ int get_default_gateway_device( char **gw )
 			{
 				if(strcmp(c , "00000000") == 0)
 				{
-					asprintf(gw, "%s", p);
+					ctx_asprintf(&cwmp_main, gw, "%s", p);
 					fclose(f);
 					return 0;
 				}
@@ -666,6 +666,7 @@ int cwmp_start_diagnostic(int diagnostic_type)
 	)
 	{
 		CWMP_LOG(ERROR,"Invalid URL %s", url);
+		ctx_free(url);
 		return -1;
 	}
 	if ( interface == NULL || interface[0] == '\0' )
@@ -674,6 +675,7 @@ int cwmp_start_diagnostic(int diagnostic_type)
 		if (error == -1)
 		{
 			CWMP_LOG(ERROR,"Interface value: Empty");
+			ctx_free(interface);
 			return -1;
 		}
 	}
@@ -693,7 +695,7 @@ int cwmp_start_diagnostic(int diagnostic_type)
 		}
 		else if (status && strncmp(status, "Error_", strlen("Error_")) == 0)
 			cwmp_root_cause_event_ipdiagnostic();
-		free(status);
+		ctx_free(status);
 	}
 	else
 	{
@@ -711,11 +713,11 @@ int cwmp_start_diagnostic(int diagnostic_type)
 		}
 		else if (status && strncmp(status, "Error_", strlen("Error_")) == 0)
 			cwmp_root_cause_event_ipdiagnostic();
-		free(status);
-		free(size);
+		ctx_free(status);
+		ctx_free(size);
 	}
-	free(url);
-	free(interface);
+	ctx_free(url);
+	ctx_free(interface);
 	return 0;
 }
 

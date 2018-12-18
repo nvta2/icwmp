@@ -11,6 +11,7 @@
  *
  */
 
+#include "log.h"
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -20,6 +21,8 @@
 #include <ctype.h>
 #include "dmuci.h"
 #include "dmmem.h"
+#include "cwmpmem.h"
+#include "cwmp.h"
 
 struct uci_context *uci_ctx;
 struct uci_context *uci_varstate_ctx;
@@ -107,9 +110,9 @@ void add_list_package_change(struct list_head *clist, char *package)
 		if (strcmp(pc->package, package) == 0)
 			return;
 	}
-	pc = calloc(1, sizeof(struct package_change));//TODO !!!!! Do not use dmcalloc here
+	pc = ctx_calloc(&cwmp_main, 1, sizeof(struct package_change));//TODO !!!!! Do not use dmcalloc here
 	list_add_tail(&pc->list, clist);
-	pc->package = strdup(package); //TODO !!!!! Do not use dmstrdup here
+	pc->package = ctx_strdup(&cwmp_main, package); //TODO !!!!! Do not use dmstrdup here
 }
 
 void free_all_list_package_change(struct list_head *clist)
@@ -118,8 +121,8 @@ void free_all_list_package_change(struct list_head *clist)
 	while (clist->next != clist) {
 		pc = list_entry(clist->next, struct package_change, list);
 		list_del(&pc->list);
-		free(pc->package);//TODO !!!!! Do not use dmfree here
-		free(pc);//TODO !!!!! Do not use dmfree here
+		ctx_free(pc->package);//TODO !!!!! Do not use dmfree here
+		ctx_free(pc);//TODO !!!!! Do not use dmfree here
 	}
 }
 ///////////////////////////

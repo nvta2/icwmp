@@ -26,10 +26,12 @@
 #include "dmcwmp.h"
 #include "dmentry.h"
 #include "deviceinfo.h"
+#include "cwmpmem.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
 pthread_mutex_t mutex_value_change = PTHREAD_MUTEX_INITIALIZER;
+struct ctx_param_valuechange ctx_param_vc = {0};
 
 const struct EVENT_CONST_STRUCT EVENT_CONST [] = {
         [EVENT_IDX_0BOOTSTRAP]                      = {"0 BOOTSTRAP",                       EVENT_TYPE_SINGLE,  EVENT_RETRY_AFTER_TRANSMIT_FAIL|EVENT_RETRY_AFTER_REBOOT},
@@ -104,7 +106,7 @@ struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_c
             break;
         }
     }
-    event_container = calloc (1,sizeof(struct event_container));
+    event_container = ctx_calloc (session, 1,sizeof(struct event_container));
     if (event_container==NULL)
     {
         return NULL;
@@ -112,7 +114,7 @@ struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_c
     INIT_LIST_HEAD (&(event_container->head_dm_parameter));
     list_add (&(event_container->list), ilist->prev);
     event_container->code = event_code;
-    event_container->command_key = command_key?strdup(command_key):strdup("");
+    event_container->command_key = command_key?ctx_strdup(session, command_key):ctx_strdup(session, "");
     if((id<0) || (id>=MAX_INT_ID) )
     {
         id=0;
@@ -122,38 +124,80 @@ struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_c
     return event_container;
 }
 
-void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type)
+void add_dm_parameter_tolist(void *ctx_mem, struct list_head *head, char *param_name, char *param_data, char *param_type)
 {
 	struct dm_parameter *dm_parameter;
 	struct list_head *ilist;
 	int cmp;
-	list_for_each (ilist, head) {
-		dm_parameter = list_entry(ilist, struct dm_parameter, list);
-		cmp = strcmp(dm_parameter->name, param_name);
-		if (cmp == 0) {
-			if (param_data && strcmp(dm_parameter->data, param_data) != 0)
-			{
-				free(dm_parameter->data);
-				dm_parameter->data = strdup(param_data);
+	if(ctx_mem == &cwmp_main){
+		struct cwmp *cwmp = (struct cwmp *)ctx_mem;
+		list_for_each (ilist, head) {
+			dm_parameter = list_entry(ilist, struct dm_parameter, list);
+			cmp = strcmp(dm_parameter->name, param_name);
+			if (cmp == 0) {
+				if (param_data && strcmp(dm_parameter->data, param_data) != 0)
+				{
+					ctx_free(dm_parameter->data);
+					dm_parameter->data = ctx_strdup(cwmp, param_data);
+				}
+				return;
+			} else if (cmp > 0) {
+				break;
 			}
-			return;
-		} else if (cmp > 0) {
-			break;
 		}
+		dm_parameter = ctx_calloc(cwmp, 1, sizeof(struct dm_parameter));
+		if (param_name) dm_parameter->name = ctx_strdup(cwmp, param_name);
+		if (param_data) dm_parameter->data = ctx_strdup(cwmp, param_data);
 	}
-	dm_parameter = calloc(1, sizeof(struct dm_parameter));
+	else if (ctx_mem == &ctx_param_vc) {
+		list_for_each (ilist, head) {
+			dm_parameter = list_entry(ilist, struct dm_parameter, list);
+			cmp = strcmp(dm_parameter->name, param_name);
+			if (cmp == 0) {
+				if (param_data && strcmp(dm_parameter->data, param_data) != 0)
+				{
+					ctx_free(dm_parameter->data);
+					dm_parameter->data = ctx_strdup(&ctx_param_vc, param_data);
+				}
+				return;
+			} else if (cmp > 0) {
+				break;
+			}
+		}
+		dm_parameter = ctx_calloc(&ctx_param_vc, 1, sizeof(struct dm_parameter));
+		if (param_name) dm_parameter->name = ctx_strdup(&ctx_param_vc, param_name);
+		if (param_data) dm_parameter->data = ctx_strdup(&ctx_param_vc, param_data);
+	}
+	else {
+		struct session *session = (struct session *)ctx_mem;
+		list_for_each (ilist, head) {
+			dm_parameter = list_entry(ilist, struct dm_parameter, list);
+			cmp = strcmp(dm_parameter->name, param_name);
+			if (cmp == 0) {
+				if (param_data && strcmp(dm_parameter->data, param_data) != 0)
+				{
+					ctx_free(dm_parameter->data);
+					dm_parameter->data = ctx_strdup(session, param_data);
+				}
+				return;
+			} else if (cmp > 0) {
+				break;
+			}
+		}
+		dm_parameter = ctx_calloc(session, 1, sizeof(struct dm_parameter));
+		if (param_name) dm_parameter->name = ctx_strdup(session, param_name);
+		if (param_data) dm_parameter->data = ctx_strdup(session, param_data);
+	}
 	_list_add(&dm_parameter->list, ilist->prev, ilist);
-	if (param_name) dm_parameter->name = strdup(param_name);
-	if (param_data) dm_parameter->data = strdup(param_data);
 	if (param_type) dm_parameter->type = param_type ? param_type : "xsd:string";
 }
 
 void delete_dm_parameter_fromlist(struct dm_parameter *dm_parameter)
 {
 	list_del(&dm_parameter->list);
-	free(dm_parameter->name);
-	free(dm_parameter->data);
-	free(dm_parameter);
+	ctx_free(dm_parameter->name);
+	ctx_free(dm_parameter->data);
+	ctx_free(dm_parameter);
 }
 
 void free_dm_parameter_all_fromlist(struct list_head *list)
@@ -168,12 +212,12 @@ void free_dm_parameter_all_fromlist(struct list_head *list)
 inline void add_list_value_change(char *param_name, char *param_data, char *param_type)
 {
 	pthread_mutex_lock(&(mutex_value_change));
-	add_dm_parameter_tolist(&list_value_change, param_name, param_data, param_type);
+	add_dm_parameter_tolist((void *)&ctx_param_vc, &list_value_change, param_name, param_data, param_type);
 	pthread_mutex_unlock(&(mutex_value_change));
 }
 inline void add_lw_list_value_change(char *param_name, char *param_data, char *param_type)
 {
-	add_dm_parameter_tolist(&list_lw_value_change, param_name, param_data, param_type);
+	add_dm_parameter_tolist((void *)&cwmp_main, &list_lw_value_change, param_name, param_data, param_type);
 	
 }
 
@@ -186,9 +230,9 @@ void udplw_server_param(struct addrinfo **res)
 	conf = &(cwmp->conf);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
-	asprintf(&port, "%d", conf->lw_notification_port);
+	ctx_asprintf(cwmp, &port, "%d", conf->lw_notification_port);
 	getaddrinfo(conf->lw_notification_hostname,port,&hints,res);
-	//FREE(port);
+	CTXFREE(port);
 }
 
 static void message_compute_signature(char *msg_out, char *signature)
@@ -205,13 +249,13 @@ static void message_compute_signature(char *msg_out, char *signature)
 		sprintf(&(signature[i * 2]), "%02X", result[i]);
 	}
 	signature[i * 2 ] = '\0';
-	FREE(result);
+	CTXFREE(result);
 }
 
 char *calculate_lwnotification_cnonce()
 {
 	int i;
-	char *cnonce = malloc( 33 * sizeof(char));
+	char *cnonce = ctx_malloc(&cwmp_main, 33 * sizeof(char));
 	srand((unsigned int) time(NULL));
 	for (i = 0; i < 4; i++) {
 		sprintf(&(cnonce[i * 8]), "%08x", rand());
@@ -236,8 +280,8 @@ void del_list_lw_notify(struct dm_parameter *dm_parameter)
 {
 	
 	list_del(&dm_parameter->list);
-	free(dm_parameter->name);
-	free(dm_parameter);
+	ctx_free(dm_parameter->name);
+	ctx_free(dm_parameter);
 }
 
 void free_all_list_lw_notify()
@@ -261,7 +305,7 @@ void cwmp_lwnotification()
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
 	message_compute_signature(msg_out, signature);
-	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %d\n %s: %s\n\n%s",
+	ctx_asprintf(cwmp, &msg, "%s \n %s: %s \n %s: %s \n %s: %d\n %s: %s\n\n%s",
 			"POST /HTTPS/1.1",
 			"HOST",	conf->lw_notification_hostname,
 			"Content-Type", "test/xml; charset=utf-8",
@@ -272,8 +316,8 @@ void cwmp_lwnotification()
 	send_udp_message(servaddr, msg);
 	free_all_list_lw_notify(); 
 	//freeaddrinfo(servaddr); //To check
-	FREE(msg);
-	FREE(msg_out);
+	CTXFREE(msg);
+	CTXFREE(msg_out);
 }
 
 void cwmp_add_notification(void)
@@ -403,10 +447,10 @@ int event_remove_all_event_container(struct session *session, int rem_from)
         if (event_container->code == EVENT_IDX_1BOOT && rem_from == RPC_SEND) {
         	remove("/etc/icwmpd/.icwmpd_boot");
         }
-        free (event_container->command_key);
+        ctx_free (event_container->command_key);
         free_dm_parameter_all_fromlist(&(event_container->head_dm_parameter));
         list_del(&(event_container->list));
-        free (event_container);
+        ctx_free (event_container);
     }
     bkp_session_save();
     return CWMP_OK;
@@ -422,10 +466,10 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 	{
 		event_container = list_entry(ilist, struct event_container, list);
 		if (EVENT_CONST[event_container->code].RETRY == 0) {
-			free (event_container->command_key);
+			ctx_free (event_container->command_key);
 			free_dm_parameter_all_fromlist(&(event_container->head_dm_parameter));
 			list_del(&(event_container->list));
-			free (event_container);
+			ctx_free (event_container);
 		}
 		if (EVENT_CONST[event_container->code].CODE[0] == '6')
 		{
@@ -458,7 +502,7 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
             event_remove_all_event_container (session,RPC_QUEUE);
         }
         event_container = cwmp_add_event_container (cwmp, EVENT_IDX_0BOOTSTRAP, "");
-        FREE(acsurl);
+        CTXFREE(acsurl);
         if (event_container == NULL)
         {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
@@ -472,7 +516,7 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
         cwmp_scheduledUpload_remove_all();
         pthread_mutex_unlock (&(cwmp->mutex_session_queue));
     } else {
-        FREE(acsurl);
+        CTXFREE(acsurl);
     }
 
     if (cmp)
@@ -484,7 +528,7 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-        add_dm_parameter_tolist(&(event_container->head_dm_parameter),
+        add_dm_parameter_tolist((void *)session, &(event_container->head_dm_parameter),
         		DMROOT"ManagementServer.URL", NULL, NULL);
         cwmp_save_event_container (cwmp,event_container);
         save_acs_bkp_config(cwmp);
@@ -743,14 +787,14 @@ void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *
 	}
 }
 
-
+//TO Check
 void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 {
 	char *bip = NULL;
 	struct event_container *event_container;
 	int error;
-	char *ip_version = (version == IPv6) ? strdup("ipv6") : strdup("ip");
-	char *ip_value = (version == IPv6) ? strdup(cwmp->conf.ipv6) : strdup(cwmp->conf.ip);
+	char *ip_version = (version == IPv6) ? ctx_strdup(cwmp, "ipv6") : ctx_strdup(cwmp, "ip");
+	char *ip_value = (version == IPv6) ? ctx_strdup(cwmp,cwmp->conf.ipv6) : ctx_strdup(cwmp, cwmp->conf.ip);
 
 	error = (version == IPv6) ? cwmp_load_saved_session(cwmp, &bip, CR_IPv6): cwmp_load_saved_session(cwmp, &bip, CR_IP);
 
@@ -758,8 +802,8 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 	{
 		bkp_session_simple_insert_in_parent("connection_request", ip_version, ip_value);
 		bkp_session_save();
-		FREE(ip_version);
-		FREE(ip_value);
+		CTXFREE(ip_version);
+		CTXFREE(ip_value);
 		return;
 	}
 	if (strcmp(bip, ip_value)!=0)
@@ -768,10 +812,10 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 		event_container = cwmp_add_event_container (cwmp, EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL)
 		{
-			FREE(bip);
+			CTXFREE(bip);
 			pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-			FREE(ip_version);
-			FREE(ip_value);
+			CTXFREE(ip_version);
+			CTXFREE(ip_value);
 			return;
 		}
 		cwmp_save_event_container (cwmp,event_container);
@@ -780,9 +824,9 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 		pthread_mutex_unlock (&(cwmp->mutex_session_queue));
 		pthread_cond_signal(&(cwmp->threshold_session_send));
 	}
-	FREE(bip);
-	FREE(ip_version);
-	FREE(ip_value);
+	CTXFREE(bip);
+	CTXFREE(ip_version);
+	CTXFREE(ip_value);
 }
 
 void connection_request_port_value_change(struct cwmp *cwmp, int port)
@@ -807,14 +851,14 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port)
 		event_container = cwmp_add_event_container (cwmp, EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL)
 		{
-			FREE(bport);
+			CTXFREE(bport);
 			return;
 		}
 		cwmp_save_event_container (cwmp,event_container);
 		bkp_session_simple_insert_in_parent("connection_request", "port", bufport);
 		bkp_session_save();
 	}
-	FREE(bport);
+	CTXFREE(bport);
 }
 
 int cwmp_root_cause_events (struct cwmp *cwmp)

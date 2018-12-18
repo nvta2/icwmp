@@ -21,6 +21,8 @@
 #include "log.h"
 #include "wepkey.h"
 #include "dmentry.h"
+#include "cwmpmem.h"
+#include "dmmem.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
@@ -59,6 +61,33 @@ cwmp_handle_notify(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+//--------------------------------
+static int
+cwmp_handle_memory(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	bool send_signal = false;
+	CWMP_LOG(INFO, "Display ubus memory status");
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "status", 1);
+	ubus_send_reply(ctx, req, b.head);
+	blob_buf_free(&b);
+	fprintf(stderr, "\nDM MEM HEAD \n");
+	dmprintmem();
+	fprintf(stderr, "\nCWMP MEM HEAD \n");
+	smprintmem(&(cwmp_main.head_mem));
+	fprintf(stderr, "\nctx_param_vc MEM HEAD \n");
+	smprintmem(&(ctx_param_vc.head_mem));
+	return 0;
+}
+
+
+
+//--------------------------------
+
+
 
 enum command {
 	COMMAND_NAME,
@@ -91,7 +120,7 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
 		cwmp_set_end_session(END_SESSION_RELOAD);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "freecwmpd config will reload at the end of the session") == -1)
+		if (ctx_asprintf(&cwmp_main, &info, "freecwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
@@ -106,20 +135,20 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 			cwmp_apply_acs_changes();
 			pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 			blobmsg_add_u32(&b, "status", 0);
-			if (asprintf(&info, "freecwmp config reloaded") == -1)
+			if (ctx_asprintf(&cwmp_main, &info, "freecwmp config reloaded") == -1)
 				return -1;
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
 		cwmp_set_end_session(END_SESSION_REBOOT);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "freecwmp will reboot at the end of the session") == -1)
+		if (ctx_asprintf(&cwmp_main, &info, "freecwmp will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "freecwmp will execute the scheduled action commands at the end of the session") == -1)
+		if (ctx_asprintf(&cwmp_main, &info, "freecwmp will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("exit", cmd)) {
 		pthread_t exit_thread;
@@ -133,10 +162,10 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 			CWMP_LOG(ERROR, piderr);
 		}
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "cwmpd daemon stopped") == -1)
+		if (ctx_asprintf(&cwmp_main, &info, "cwmpd daemon stopped") == -1)
 			return -1;
 		blobmsg_add_string(&b, "info", info);
-		free(info);
+		ctx_free(info);
 
 		ubus_send_reply(ctx, req, b.head);
 
@@ -153,12 +182,12 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 
 	} else {
 		blobmsg_add_u32(&b, "status", -1);
-		if (asprintf(&info, "%s command is not supported", cmd) == -1)
+		if (ctx_asprintf(&cwmp_main, &info, "%s command is not supported", cmd) == -1)
 			return -1;
 	}
 
 	blobmsg_add_string(&b, "info", info);
-	free(info);
+	ctx_free(info);
 
 	ubus_send_reply(ctx, req, b.head);
 
@@ -304,10 +333,11 @@ cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 static const struct ubus_method freecwmp_methods[] = {
-	UBUS_METHOD("notify", cwmp_handle_notify, notify_policy),
+	UBUS_METHOD_NOARG("notify", cwmp_handle_notify),
 	UBUS_METHOD("command", cwmp_handle_command, command_policy),
 	UBUS_METHOD("status", cwmp_handle_status, status_policy),
 	UBUS_METHOD("inform", cwmp_handle_inform, inform_policy),
+	UBUS_METHOD_NOARG("memory", cwmp_handle_memory),
 };
 
 static struct ubus_object_type main_object_type =

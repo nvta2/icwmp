@@ -31,6 +31,7 @@
 #include "cwmp.h"
 #include "xml.h"
 #include "log.h"
+#include "cwmpmem.h"
 
 #include <stdarg.h>
 static int pid;
@@ -43,8 +44,8 @@ char *external_MethodVersion = NULL;
 
 void external_downloadFaultResp (char *fault_code)
 {
-	FREE(external_MethodFault);
-	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
+	CTXFREE(external_MethodFault);
+	external_MethodFault = fault_code ? ctx_strdup(&cwmp_main, fault_code) : NULL;
 }
 
 void external_fetch_downloadFaultResp (char **fault)
@@ -55,8 +56,8 @@ void external_fetch_downloadFaultResp (char **fault)
 
 void external_uploadFaultResp (char *fault_code)
 {
-	FREE(external_MethodFault);
-	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
+	CTXFREE(external_MethodFault);
+	external_MethodFault = fault_code ? ctx_strdup(&cwmp_main, fault_code) : NULL;
 }
 
 void external_fetch_uploadFaultResp (char **fault)
@@ -67,8 +68,8 @@ void external_fetch_uploadFaultResp (char **fault)
 
 void external_uninstallFaultResp (char *fault_code)
 {
-	FREE(external_MethodFault);
-	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
+	CTXFREE(external_MethodFault);
+	external_MethodFault = fault_code ? ctx_strdup(&cwmp_main, fault_code) : NULL;
 }
 
 void external_fetch_uninstallFaultResp (char **fault)
@@ -79,12 +80,12 @@ void external_fetch_uninstallFaultResp (char **fault)
 
 void external_du_change_stateFaultResp (char *fault_code, char *version, char *name)
 {
-	FREE(external_MethodFault);
-	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
-	FREE(external_MethodVersion);
-	external_MethodVersion = version ? strdup(version) : NULL;
-	FREE(external_MethodName);
-	external_MethodName = name ? strdup(name) : NULL;	
+	CTXFREE(external_MethodFault);
+	external_MethodFault = fault_code ? ctx_strdup(&cwmp_main, fault_code) : NULL;
+	CTXFREE(external_MethodVersion);
+	external_MethodVersion = version ? ctx_strdup(&cwmp_main, version) : NULL;
+	CTXFREE(external_MethodName);
+	external_MethodName = name ? ctx_strdup(&cwmp_main, name) : NULL;	
 }
 
 void external_fetch_du_change_stateFaultResp (char **fault, char **version, char **name)
@@ -110,20 +111,20 @@ static void external_read_pipe_input(int (*external_handler)(char *msg))
     	if (read(pfds_in[0], buf, sizeof(buf))<=0) break;
         if (buf[0]!='\n') {
 			if (value)
-				asprintf(&c,"%s%c",value,buf[0]);
+				ctx_asprintf(&cwmp_main, &c,"%s%c",value,buf[0]);
 			else
-				asprintf(&c,"%c",buf[0]);
+				ctx_asprintf(&cwmp_main, &c,"%c",buf[0]);
 
-			FREE(value);
+			CTXFREE(value);
 			value = c;
         } else {
         	if (!value) continue;
         	if (strcmp(value, "icwmp>")==0) {
-        	    FREE(value);
+        	    CTXFREE(value);
         	    break;
         	}
         	if(external_handler) external_handler(value);
-            FREE(value);
+            CTXFREE(value);
         }
     }
 }
@@ -133,11 +134,11 @@ static void external_write_pipe_output(const char *msg)
     char *value = NULL;
     int i=0, len;
 
-    asprintf(&value, "%s\n", msg);
+    ctx_asprintf(&cwmp_main, &value, "%s\n", msg);
     if (write(pfds_out[1], value, strlen(value)) == -1) {
     	CWMP_LOG(ERROR,"Error occured when trying to write to the pipe");
 	}
-    free(value);
+    ctx_free(value);
 }
 
 static void json_obj_out_add(json_object *json_obj_out, char *name, char *val)
@@ -266,13 +267,13 @@ int external_download(char *url, char *size, char *type, char *user, char *pass,
 	if (strncmp(url,DOWNLOAD_PROTOCOL_HTTPS,strlen(DOWNLOAD_PROTOCOL_HTTPS)) == 0)
 	{
 		if(conf->https_ssl_capath)
-			cert_path = strdup(conf->https_ssl_capath);
+			cert_path = ctx_strdup(cwmp, conf->https_ssl_capath);
 		else
 			cert_path = NULL;
 	}
 	if(cert_path)
 		CWMP_LOG(DEBUG,"https certif path %s", cert_path);
-	if (c) asprintf(&id, "%ld", c);
+	if (c) ctx_asprintf(cwmp, &id, "%ld", c);
 	/* send data to the script */
 	json_obj_out = json_object_new_object();
 
@@ -289,9 +290,9 @@ int external_download(char *url, char *size, char *type, char *user, char *pass,
 	json_object_put(json_obj_out);
 
 	if(cert_path)
-		free(cert_path);
+		ctx_free(cert_path);
 	if(id)
-		free(id);
+		ctx_free(id);
 	return 0;
 }
 
@@ -362,7 +363,7 @@ int external_apply(char *action, char *arg, time_t c)
 	json_object *json_obj_out;
 	char *id = NULL;
 
-	if (c) asprintf(&id, "%ld", c);
+	if (c) ctx_asprintf(&cwmp_main, &id, "%ld", c);
 
 	/* send data to the script */
 	json_obj_out = json_object_new_object();

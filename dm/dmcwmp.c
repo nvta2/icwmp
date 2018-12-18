@@ -7,6 +7,7 @@
  *    Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
+#include "log.h"
 #include <uci.h>
 #include "cwmp.h"
 #include "dmuci.h"
@@ -52,6 +53,7 @@
 #include "x_inteno_se_buttons.h"
 #include "deviceconfig.h"
 #include "userinterface.h"
+#include "cwmpmem.h"
 
 static char *get_parameter_notification (struct dmctx *ctx, char *param);
 static int remove_parameter_notification(char *param);
@@ -354,7 +356,6 @@ char *dhcp_option_update_instance_alias_icwmpd(int action, char **last_inst, voi
 	bool *find_max = (bool *) argv[3];
 
 	dmuci_get_value_by_section_string(s, inst_opt, &instance);
-	TRACE("instance :%s", instance);
 	if (instance[0] == '\0') {
 		if (*find_max) {
 			int m = get_dhcp_option_last_inst(s, inst_opt);
@@ -541,31 +542,37 @@ int update_param_instance_alias(struct dmctx *ctx, char *param, char **new_param
 void add_list_enabled_notify(char *param, char *notification, char *value)
 {
 	struct dm_enabled_notify *dm_enabled_notify;
-
-	dm_enabled_notify = calloc(1, sizeof(struct param_fault)); // Should be calloc and not dmcalloc
+ 
+	dm_enabled_notify = ctx_calloc(&cwmp_main, 1, sizeof(struct dm_enabled_notify));
+ // Should be ctx_calloc and not dmcalloc
 	list_add_tail(&dm_enabled_notify->list, &list_enabled_notify);
-	dm_enabled_notify->name = strdup(param); // Should be strdup and not dmstrdup
-	dm_enabled_notify->value = value ? strdup(value) : strdup(""); // Should be strdup and not dmstrdup
-	dm_enabled_notify->notification = strdup(notification); // Should be strdup and not dmstrdup
+	dm_enabled_notify->name = ctx_strdup(&cwmp_main, param);
+ // Should be ctx_strdup and not dmstrdup
+	dm_enabled_notify->value = value ? ctx_strdup(&cwmp_main, value) : ctx_strdup(&cwmp_main, ""); // Should be ctx_strdup and not dmstrdup
+	dm_enabled_notify->notification = ctx_strdup(&cwmp_main, notification);
+ // Should be ctx_strdup and not dmstrdup
 }
 
 void add_list_enabled_lwnotify(char *param, char *notification, char *value)
 {
 	struct dm_enabled_notify *dm_enabled_notify;
 
-	dm_enabled_notify = calloc(1, sizeof(struct param_fault)); // Should be calloc and not dmcalloc
+	dm_enabled_notify = ctx_calloc(&cwmp_main, 1, sizeof(struct param_fault));
+ // Should be ctx_calloc and not dmcalloc
 	list_add_tail(&dm_enabled_notify->list, &list_enabled_lw_notify);
-	dm_enabled_notify->name = strdup(param); // Should be strdup and not dmstrdup
-	dm_enabled_notify->value = value ? strdup(value) : strdup(""); // Should be strdup and not dmstrdup
-	dm_enabled_notify->notification = strdup(notification); // Should be strdup and not dmstrdup
+	dm_enabled_notify->name = ctx_strdup(&cwmp_main, param);
+ // Should be ctx_strdup and not dmstrdup
+	dm_enabled_notify->value = value ? ctx_strdup(&cwmp_main, value) : ctx_strdup(&cwmp_main, ""); // Should be ctx_strdup and not dmstrdup
+	dm_enabled_notify->notification = ctx_strdup(&cwmp_main, notification);
+ // Should be ctx_strdup and not dmstrdup
 }
 void del_list_enabled_notify(struct dm_enabled_notify *dm_enabled_notify)
 {
 	list_del(&dm_enabled_notify->list); // Should be free and not dmfree
-	free(dm_enabled_notify->name);
-	free(dm_enabled_notify->value);
-	free(dm_enabled_notify->notification);
-	free(dm_enabled_notify);
+	ctx_free(dm_enabled_notify->name);
+	ctx_free(dm_enabled_notify->value);
+	ctx_free(dm_enabled_notify->notification);
+	ctx_free(dm_enabled_notify);
 }
 
 void free_all_list_enabled_notify()
@@ -588,8 +595,8 @@ void free_all_list_enabled_lwnotify()
 
 void dm_update_enabled_notify(struct dm_enabled_notify *p, char *new_value)
 {
-	free(p->value); // Should be free and not dmfree
-	p->value = strdup(new_value);
+	ctx_free(p->value); // Should be free and not dmfree
+	p->value = ctx_strdup(&cwmp_main, new_value);
 }
 
 void dm_update_enabled_notify_byname(char *name, char *new_value)
@@ -1238,21 +1245,17 @@ static int set_value_check_param(DMPARAM_API_ARGS)
 		dmfree(full_param);
 		return FAULT_9005;
 	} 
-
 	ctx->stop = true;
-
 	if (ctx->setaction == VALUECHECK) {
 		if (permission[0] != '1' || set_cmd == NULL) {
 			dmfree(full_param);
 			return FAULT_9008;
 		}
-
 		int fault = (set_cmd)(full_param, ctx, VALUECHECK, ctx->in_value);
 		if (fault) {
 			dmfree(full_param);
 			return fault;
 		}
-
 		add_set_list_tmp(ctx, ctx->in_param, ctx->in_value);
 	}
 	else if (ctx->setaction == VALUESET) {
@@ -1260,7 +1263,6 @@ static int set_value_check_param(DMPARAM_API_ARGS)
 		//(get_cmd)(full_param, ctx, &v);
 		dm_update_enabled_notify_byname(full_param, ctx->in_value);
 	}
-
 	dmfree(full_param);
 	return 0;
 }
@@ -1356,7 +1358,6 @@ static int enabled_notify_check_param(DMPARAM_API_ARGS)
 	char *full_param;
 	char *value = NULL;
 	char *notification;
-
 	dmastrcat(&full_param, ctx->current_obj, lastname);
 	if (forced_notify == UNDEF) {
 		notification = get_parameter_notification(ctx, full_param);
@@ -1369,8 +1370,9 @@ static int enabled_notify_check_param(DMPARAM_API_ARGS)
 	}
 
 	(get_cmd)(full_param, ctx, &value);
-	if (notification[0] == '1' || notification[0] == '2' || notification[0] == '4' || notification[0] == '6') 
-	add_list_enabled_notify(full_param, notification, value);
+	if (notification[0] == '1' || notification[0] == '2' || notification[0] == '4' || notification[0] == '6') {
+		add_list_enabled_notify(full_param, notification, value);
+	}
 	if (notification[0] >= '3') {
 		add_list_enabled_lwnotify(full_param, notification, value);
 	}

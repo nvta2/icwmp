@@ -9,7 +9,6 @@
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,12 +20,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <uci.h>
+#include "log.h"
 #include "external.h"
 #include "cwmp.h"
-#include "log.h"
 #include "xml.h"
 #include <libubox/uloop.h>
 #include <libubox/usock.h>
+#include "cwmpmem.h"
 
 #ifdef HTTP_CURL
 #include <curl/curl.h>
@@ -52,30 +52,41 @@ static CURL *curl;
 
 int http_client_init(struct cwmp *cwmp)
 {
-	char *dhcp_dis;
-	char *acs_var_stat;
+	char *dhcp_dis = NULL;
+	char *acs_var_stat = NULL;
 	unsigned char buf[sizeof(struct in6_addr)];
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
 #ifdef HTTP_CURL
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_value(UCI_DHCP_ACS_URL, &acs_var_stat);
 		if(acs_var_stat){
-			if(asprintf(&http_c.url, "%s",acs_var_stat)== -1)
+			if(ctx_asprintf(cwmp, &http_c.url, "%s",acs_var_stat)== -1) {
+				CTXFREE(acs_var_stat);
+				CTXFREE(dhcp_dis);
 				return -1;
+			}
 		} else {
-			if(asprintf(&http_c.url, "%s",cwmp->conf.acsurl) == -1)
+			if(ctx_asprintf(cwmp, &http_c.url, "%s",cwmp->conf.acsurl) == -1) {
+				CTXFREE(acs_var_stat);
+				CTXFREE(dhcp_dis);
 				return -1;
+			}
 		}
+		CTXFREE(acs_var_stat);
 	} else {
-		if(asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1)
+		if(ctx_asprintf(cwmp, &http_c.url, "%s", cwmp->conf.acsurl) == -1)
+		if(ctx_asprintf(cwmp, &http_c.url, "%s", cwmp->conf.acsurl) == -1){
+			CTXFREE(dhcp_dis);
 			return -1;
+		}
 	}
 #endif
+	CTXFREE(dhcp_dis);
 
 #ifdef HTTP_ZSTREAM
 	char *add = strstr(cwmp->conf.acsurl,"://");
 	if(!add) return -1;
-	if (asprintf(&http_c.url, "%.*s://%s:%s@%s",
+	if (ctx_asprintf(cwmp, &http_c.url, "%.*s://%s:%s@%s",
 			 add-cwmp->conf.acsurl,
 			 cwmp->conf.acsurl,
 			 cwmp->conf.acs_userid,
@@ -112,23 +123,23 @@ int http_client_init(struct cwmp *cwmp)
 		return -1;
 #endif /* HTTP_ZSTREAM */
 
-if (cwmp->conf.ipv6_enable) {
-	char *ip = NULL;
-	curl_easy_setopt(curl, CURLOPT_URL, http_c.url);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, HTTP_TIMEOUT);
-	curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
-	curl_easy_perform(curl);
-	int tmp = inet_pton(AF_INET, ip, buf);
-	ip_version = (tmp == 1) ? 4 : 6;
-}
+	if (cwmp->conf.ipv6_enable) {
+		char *ip = NULL;
+		curl_easy_setopt(curl, CURLOPT_URL, http_c.url);
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, HTTP_TIMEOUT);
+		curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+		curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
+		curl_easy_perform(curl);
+		int tmp = inet_pton(AF_INET, ip, buf);
+		ip_version = (tmp == 1) ? 4 : 6;
+	}
 	return 0;
 }
 
 void
 http_client_exit(void)
 {
-	FREE(http_c.url);
+	CTXFREE(http_c.url);
 
 #ifdef HTTP_CURL
 	if (http_c.header_list) {
@@ -155,28 +166,25 @@ static size_t
 http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in)
 {
 	char *c;
-
-	if (asprintf(&c, "%s%.*s", *msg_in, size * rxed, (char *)buffer) == -1) {
-		FREE(*msg_in);
+	if (ctx_asprintf(&cwmp_main, &c, "%s%.*s", *msg_in, size * rxed, (char *)buffer) == -1) {
+		CTXFREE(*msg_in);
 		return -1;
 	}
-
-	free(*msg_in);
+	ctx_free(*msg_in);
 	*msg_in = c;
-
 	return size * rxed;
 }
 #endif /* HTTP_CURL */
 
 int
-http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_in)
+http_send_message(struct cwmp *cwmp, struct session *session, char *msg_out, int msg_out_len,char **msg_in)
 {
 	 unsigned char buf[sizeof(struct in6_addr)];
 	 int tmp = 0;
 #ifdef HTTP_CURL
 	CURLcode res;
 	long http_code = 0;
-	static char *ip_acs = NULL;
+	static char ip_acs[128] = {0};
 	char *ip = NULL;
 	char errbuf[CURL_ERROR_SIZE];
 	http_c.header_list = NULL;
@@ -224,6 +232,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_get_response);
+	
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, msg_in);
 
 # ifdef DEVEL
@@ -241,10 +250,8 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);		
 	}
 	curl_easy_setopt(curl, CURLOPT_INTERFACE, cwmp->conf.interface);
-	*msg_in = (char *) calloc (1, sizeof(char));
-
+	*msg_in = ctx_calloc (session, 1, sizeof(char)); //Shouldn't be ctx_calloc, it will be treated by libcurl
 	res = curl_easy_perform(curl);
-
 	if(res != CURLE_OK) {
 		size_t len = strlen(errbuf);
 		if(len) {
@@ -254,34 +261,31 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 			CWMP_LOG(ERROR,"libcurl: (%d) %s", res, curl_easy_strerror(res));
 		}
 	}
-
 	if (!strlen(*msg_in))
-		FREE(*msg_in);
-
+		CTXFREE(*msg_in);
     curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
     if (ip && ip[0] != '\0') {
-        if (!ip_acs || strcmp(ip_acs, ip) != 0) {
-            FREE(ip_acs);
-            ip_acs = strdup(ip);
+        if (ip_acs[0] == '\0' || strcmp(ip_acs, ip) != 0) {
+            strcpy(ip_acs, ip);
             if (cwmp->conf.ipv6_enable) {
 				tmp = inet_pton(AF_INET, ip, buf);
-		        if (tmp == 1)
+		        if (tmp == 1){
 		        	tmp = 0;
-		        else
+		        }
+		        else{
 		        	tmp = inet_pton(AF_INET6, ip, buf);
+		        }
             }
             external_init();
             external_simple("allow_cr_ip", ip_acs, tmp);
             external_exit();
         }
     }
-
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 	if(http_code == 204)
 	{
 		CWMP_LOG (INFO,"Receive HTTP 204 No Content");
 	}
-
 	if(http_code == 415)
 	{
 		cwmp->conf.compression = COMP_NONE;
@@ -291,13 +295,11 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 		goto error;
 
 	/* TODO add check for 301, 302 and 307 HTTP Redirect*/
-
 	curl_easy_reset(curl);
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;
 	}
-
 	if (res) goto error;
 
 #endif /* HTTP_CURL */
@@ -311,16 +313,15 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 		if (http_client_init(cwmp)) return -1;
 	}
 
-
 	if (msg_out) {
 		zstream_write(http_c.stream, msg_out, strlen(msg_out));
 	} else {
 		zstream_write(http_c.stream, NULL , 0);
 	}
 
-	*msg_in = (char *) calloc (1, sizeof(char));
+	*msg_in = ctx_calloc (session, 1, sizeof(char));
 	while ((rxed = zstream_read(http_c.stream, buffer, sizeof(buffer))) > 0) {
-		*msg_in = (char *) realloc(*msg_in, (strlen(*msg_in) + rxed + 1) * sizeof(char));
+		*msg_in = (char *) ctx_realloc(session, *msg_in, (strlen(*msg_in) + rxed + 1) * sizeof(char));
 		if (!(*msg_in)) return -1;
 		bzero(*msg_in + strlen(*msg_in), rxed + 1);
 		memcpy(*msg_in + strlen(*msg_in), buffer, rxed);
@@ -328,19 +329,16 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 
 	/* we got no response, that is ok and defined in documentation */
 	if (!strlen(*msg_in)) {
-		FREE(*msg_in);
+		CTXFREE(*msg_in);
 	}
 
 	if (rxed < 0)
 		goto error;
-
 #endif /* HTTP_ZSTREAM */
-
-
 	return 0;
 
 error:
-	FREE(*msg_in);
+	CTXFREE(*msg_in);
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;

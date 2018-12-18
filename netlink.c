@@ -32,6 +32,7 @@
 #include "cwmp.h"
 #include "http.h"
 #include "log.h"
+#include "cwmpmem.h"
 
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
 static void netlink_new_msg_v6(struct uloop_fd *ufd, unsigned events);
@@ -73,12 +74,12 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 
 		inet_ntop(AF_INET, &(addr), if_addr, INET_ADDRSTRLEN);
 
-		if (cwmp_main.conf.ip) FREE(cwmp_main.conf.ip);
-		cwmp_main.conf.ip = strdup(if_addr);
-		if (asprintf(&c,"cwmp.cpe.ip=%s",cwmp_main.conf.ip) != -1)
+		if (cwmp_main.conf.ip) CTXFREE(cwmp_main.conf.ip);
+		cwmp_main.conf.ip = ctx_strdup(&cwmp_main, if_addr);
+		if (ctx_asprintf(&cwmp_main, &c,"cwmp.cpe.ip=%s",cwmp_main.conf.ip) != -1)
 		{
 			uci_set_state_value(c);
-			free(c);
+			ctx_free(c);
 		}
 			connection_request_ip_value_change(&cwmp_main, IPv4);
 		break;
@@ -96,12 +97,12 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 				rth = RTA_NEXT(rth, rtl);
 				continue;
 			}
-			if (cwmp_main.conf.ipv6) FREE(cwmp_main.conf.ipv6);
-			cwmp_main.conf.ipv6 = strdup(pradd_v6);
-			if (asprintf(&c,"cwmp.cpe.ipv6=%s",cwmp_main.conf.ipv6) != -1)
+			if (cwmp_main.conf.ipv6) CTXFREE(cwmp_main.conf.ipv6);
+			cwmp_main.conf.ipv6 = ctx_strdup(&cwmp_main, pradd_v6);
+			if (ctx_asprintf(&cwmp_main, &c,"cwmp.cpe.ipv6=%s",cwmp_main.conf.ipv6) != -1)
 			{
 				uci_set_state_value(c);
-				free(c);
+				ctx_free(c);
 			}
 			connection_request_ip_value_change(&cwmp_main, IPv6);
 			break;

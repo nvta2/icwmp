@@ -27,6 +27,7 @@
 #include "deviceinfo.h"
 #include "dmcwmp.h"
 #include "softwaremodules.h"
+#include "cwmpmem.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
@@ -139,45 +140,46 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 
 	do
 	{
-		FREE(ns.soap_env);
-		FREE(ns.soap_enc);
-		FREE(ns.xsd);
-		FREE(ns.xsi);
-		FREE(ns.cwmp);
+		CTXFREE(ns.soap_env);
+		CTXFREE(ns.soap_enc);
+		CTXFREE(ns.xsd);
+		CTXFREE(ns.xsi);
+		CTXFREE(ns.cwmp);
 
 		c = (char *) mxmlElementGetAttrName(b, soap_env_url);
 		if (c && *(c + 5) == ':') {
-			ns.soap_env = strdup((c + 6));
+			ns.soap_env = ctx_strdup(&cwmp_main, (c + 6));
 		} else {
 			continue;
 		}
 
 		c = (char *) mxmlElementGetAttrName(b, soap_enc_url);
 		if (c && *(c + 5) == ':') {
-			ns.soap_enc = strdup((c + 6));
+			ns.soap_enc = ctx_strdup(&cwmp_main, (c + 6));
 		} else {
 			continue;
 		}
 
 		c = (char *) mxmlElementGetAttrName(b, xsd_url);
 		if (c && *(c + 5) == ':') {
-			ns.xsd = strdup((c + 6));
+			ns.xsd = ctx_strdup(&cwmp_main, (c + 6));
 		} else {
 			continue;
 		}
 
 		c = (char *) mxmlElementGetAttrName(b, xsi_url);
 		if (c && *(c + 5) == ':') {
-			ns.xsi = strdup((c + 6));
+			ns.xsi = ctx_strdup(&cwmp_main, (c + 6));
 		} else {
 			continue;
 		}
 
 		for (i = 0; cwmp_urls[i] != NULL; i++) {
 			cwmp_urn = cwmp_urls[i];
+			//CHECK CTX
 			c = (char *) mxmlElementGetAttrName(b, cwmp_urn);
 			if (c && *(c + 5) == ':') {
-				ns.cwmp = strdup((c + 6));
+				ns.cwmp = ctx_strdup(&cwmp_main, (c + 6));
 				break;
 			}
 		}
@@ -192,11 +194,11 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 
 void xml_exit(void)
 {
-	FREE(ns.soap_env);
-	FREE(ns.soap_enc);
-	FREE(ns.xsd);
-	FREE(ns.xsi);
-	FREE(ns.cwmp);
+	CTXFREE(ns.soap_env);
+	CTXFREE(ns.soap_enc);
+	CTXFREE(ns.xsd);
+	CTXFREE(ns.xsi);
+	CTXFREE(ns.cwmp);
 }
 
 int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc)
@@ -208,13 +210,13 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 	if (session->tree_out) {
 
 		unsigned char *zmsg_out;
-		msg_out = mxmlSaveAllocString(session->tree_out, whitespace_cb);
+		msg_out = ctx_mxmlSaveAllocString(session, session->tree_out, whitespace_cb);
 		CWMP_LOG(DEBUG,"Message OUT \n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",msg_out);
 		if (cwmp->conf.compression != COMP_NONE) {
-		    if (zlib_compress(msg_out, &zmsg_out, &msg_out_len, cwmp->conf.compression)) {
+		    if (zlib_compress(msg_out, &zmsg_out, &msg_out_len, cwmp->conf.compression, session)) {
 		        return -1;
 		    }
-            FREE(msg_out);
+            CTXFREE(msg_out);
             msg_out = (char *) zmsg_out;
 		} else {
 		    msg_out_len = strlen(msg_out);
@@ -222,7 +224,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 	}
 	while (1) {
 		f = 0;
-		if (http_send_message(cwmp, msg_out, msg_out_len,&msg_in)) {
+		if (http_send_message(cwmp, session, msg_out, msg_out_len,&msg_in)) {
 			goto error;
 		}
 		if (msg_in) {
@@ -233,7 +235,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 				if (f == 8005) {
 					r++;
 					if (r<5) {
-						FREE(msg_in);
+						CTXFREE(msg_in);
 						continue;
 					}
 					goto error;
@@ -258,20 +260,20 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 
 	/* get NoMoreRequests or HolRequest*/
 	session->hold_request = false;
-	if (asprintf(&c, "%s:%s", ns.cwmp, "NoMoreRequests") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "NoMoreRequests") == -1)
 		goto error;
 	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 	if (b) {
 		b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 		if (b && b->type == MXML_TEXT  && b->value.text.string)
 			session->hold_request = atoi(b->value.text.string);
 	} else {
-		if (asprintf(&c, "%s:%s", ns.cwmp, "HoldRequests") == -1)
+		if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "HoldRequests") == -1)
 			goto error;
 
 		b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-		FREE(c);
+		CTXFREE(c);
 		if (b) {
 			b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 			if (b && b->type == MXML_TEXT && b->value.text.string)
@@ -280,13 +282,13 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 	}
 
 end:
-	FREE(msg_out);
-	FREE(msg_in);
+	CTXFREE(msg_out);
+	CTXFREE(msg_in);
 	return 0;
 
 error:
-	FREE(msg_out);
-	FREE(msg_in);
+	CTXFREE(msg_out);
+	CTXFREE(msg_in);
 	return -1;
 }
 
@@ -318,14 +320,14 @@ int xml_set_cwmp_id(struct session *session)
     mxml_node_t *b;
 
     /* define cwmp id */
-    if (asprintf(&c, "%u", ++(cwmp_main.cwmp_id)) == -1)
+    if (ctx_asprintf(session, &c, "%u", ++(cwmp_main.cwmp_id)) == -1)
         return -1;
 
     b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
     if (!b) return -1;
 
     b = mxmlNewText(b, 0, c);
-    FREE(c);
+    CTXFREE(c);
     if (!b) return -1;
 
     return 0;
@@ -337,24 +339,24 @@ int xml_set_cwmp_id_rpc_cpe(struct session *session)
 	mxml_node_t	*b;
 
 	/* handle cwmp:ID */
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ID") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "ID") == -1)
 		return -1;
 
 	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 
 	if (b) {
 	    /* ACS send ID parameter */
 		b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 		if (!b || b->type != MXML_TEXT || !b->value.text.string) return 0;
-		c = strdup(b->value.text.string);
+		c = ctx_strdup(session, b->value.text.string);
 
 		b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 		if (!b) return -1;
 
 		b = mxmlNewText(b, 0, c);
-		FREE(c);
+		CTXFREE(c);
 		if (!b) return -1;
 	} else {
 	    /* ACS does not send ID parameter */
@@ -376,14 +378,14 @@ int xml_handle_message(struct session *session)
 
 	/* get method */
 
-	if (asprintf(&c, "%s:%s", ns.soap_env, "Body") == -1) {
+	if (ctx_asprintf(session, &c, "%s:%s", ns.soap_env, "Body") == -1) {
 		CWMP_LOG (INFO,"Internal error");
 		session->fault_code = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
 
 	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 	if(!b) {
 		CWMP_LOG (INFO,"Invalid received message");
@@ -506,11 +508,11 @@ static int xml_prepare_events_inform(struct session *session, mxml_node_t *tree)
 		n++;
 	}
 	if (n) {
-		if (asprintf(&c, "cwmp:EventStruct[%u]", n) == -1)
+		if (ctx_asprintf(session, &c, "cwmp:EventStruct[%u]", n) == -1)
 			return -1;
 		mxmlElementSetAttr(b1, "xsi:type", "soap_enc:Array");
 		mxmlElementSetAttr(b1, "soap_enc:arrayType", c);
-		free(c);
+		ctx_free(c);
 	}
 	return 0;
 
@@ -616,10 +618,10 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	b = mxmlFindElement(tree, tree, "TS", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	if (asprintf(&c, "%ld", time(NULL)) == -1)
+	if (ctx_asprintf(cwmp, &c, "%ld", time(NULL)) == -1)
 		goto error;
 	b = mxmlNewText(b, 0,c);
-	free(c);
+	ctx_free(c);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "UN", NULL, NULL, MXML_DESCEND);
@@ -633,7 +635,7 @@ int xml_prepare_lwnotification_message(char **msg_out)
 
 	c = calculate_lwnotification_cnonce();
 	b = mxmlNewText(b, 0,c);
-	free(c);
+	ctx_free(c);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "OUI", NULL, NULL, MXML_DESCEND);
@@ -788,13 +790,13 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
     	del_list_parameter(dm_parameter);
     }
 
-    if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
+    if (ctx_asprintf(session, &c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;
 
     mxmlElementSetAttr(parameter_list, "xsi:type", "soap_enc:Array");
     mxmlElementSetAttr(parameter_list, "soap_enc:arrayType", c);
 
-	free(c);
+	ctx_free(c);
 	session->tree_out = tree;
 
 	dm_ctx_clean(&dmctx);
@@ -999,12 +1001,12 @@ int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session, struct 
 		p = (struct transfer_complete *)rpc->extra_data;
 		bkp_session_delete_transfer_complete (p);
 		bkp_session_save();
-		FREE(p->command_key);
-		FREE(p->start_time);
-		FREE(p->complete_time);
-		FREE(p->old_software_version);
+		CTXFREE(p->command_key);
+		CTXFREE(p->start_time);
+		CTXFREE(p->complete_time);
+		CTXFREE(p->old_software_version);
 	}
-	FREE(rpc->extra_data);
+	CTXFREE(rpc->extra_data);
 	return 0;
 }
 
@@ -1046,26 +1048,26 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!t) goto error;
 		b = mxmlNewElement(t, "UUID");
 		if (!b) goto error;
-		c = q->uuid ? strdup(q->uuid) : strdup("");
+		c = q->uuid ? ctx_strdup(session, q->uuid) : ctx_strdup(session, "");
 		b = mxmlNewText(b, 0, c);
-		FREE(c);
+		CTXFREE(c);
 		if (!b) goto error;
 		b = mxmlNewElement(t, "DeploymentUnitRef");
 		if (!b) goto error;
-		c = q->du_ref ? strdup(q->du_ref) : strdup("");
+		c = q->du_ref ? ctx_strdup(session, q->du_ref) : ctx_strdup(session, "");
 		b = mxmlNewText(b, 0, c);
-		FREE(c);
+		CTXFREE(c);
 		if (!b) goto error;
 		b = mxmlNewElement(t, "Version");
 		if (!b) goto error;
-		c = q->version ? strdup(q->version) : strdup("");
+		c = q->version ? ctx_strdup(session, q->version) : ctx_strdup(session, "");
 		b = mxmlNewText(b, 0, c);
-		FREE(c);
+		CTXFREE(c);
 		b = mxmlNewElement(t, "CurrentState");
 		if (!b) goto error;
-		c = q->current_state ? strdup(q->current_state) : strdup("");
+		c = q->current_state ? ctx_strdup(session, q->current_state) : ctx_strdup(session, "");
 		b = mxmlNewText(b, 0, c);
-		FREE(c);		
+		CTXFREE(c);		
 		if (!b) goto error;
 		b = mxmlNewElement(t, "FaultStruct");
 		if (!b) goto error;
@@ -1100,7 +1102,7 @@ int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session, 
 		p = (struct du_state_change_complete *)rpc->extra_data;
 		bkp_session_delete_du_state_change_complete (p);
 		bkp_session_save();
-		FREE(p->command_key);
+		CTXFREE(p->command_key);
 	}
 	return 0;
 }
@@ -1191,11 +1193,11 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 			    NULL, NULL, MXML_DESCEND);
 	if (!b) goto fault;
 
-	if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", counter) == -1)
+	if (ctx_asprintf(session, &c, "cwmp:ParameterValueStruct[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
-	FREE(c);
+	CTXFREE(c);
 #endif
 
 	dm_ctx_clean(&dmctx);
@@ -1299,11 +1301,11 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 				NULL, NULL, MXML_DESCEND);
 	if (!b) goto fault;
 
-	if (asprintf(&c, "cwmp:ParameterInfoStruct[%d]", counter) == -1)
+	if (ctx_asprintf(session, &c, "cwmp:ParameterInfoStruct[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
-	FREE(c);
+	CTXFREE(c);
 #endif
 
 	dm_ctx_clean(&dmctx);
@@ -1408,11 +1410,11 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 				NULL, NULL, MXML_DESCEND);
 	if (!b) goto fault;
 
-	if (asprintf(&c, "cwmp:ParameterAttributeStruct[%d]", counter) == -1)
+	if (ctx_asprintf(session, &c, "cwmp:ParameterAttributeStruct[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
-	FREE(c);
+	CTXFREE(c);
 #endif
 
 	dm_ctx_clean(&dmctx);
@@ -1478,7 +1480,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 				goto fault;
 			}
-			FREE(parameter_value);
+			CTXFREE(parameter_value);
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -1492,13 +1494,13 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Value")) {
 			int whitespace;
-			parameter_value = strdup((char *)mxmlGetText(b, &whitespace));
+			parameter_value = ctx_strdup(&cwmp_main, (char *)mxmlGetText(b, &whitespace));
 			n = b->parent;
 			while (b = mxmlWalkNext(b, n, MXML_DESCEND)) {
 				v = (char *)mxmlGetText(b, &whitespace);
 				if (!whitespace) break;
-				asprintf(&c, "%s %s", parameter_value, v);
-				FREE(parameter_value);
+				ctx_asprintf(&cwmp_main, &c, "%s %s", parameter_value, v);
+				CTXFREE(parameter_value);
 				parameter_value = c;
 			}
 			b = n->last_child;
@@ -1507,7 +1509,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Value") &&
 			!b->child) {
-			parameter_value = strdup("");
+			parameter_value = ctx_strdup(&cwmp_main, "");
 		}
 		if (parameter_name && parameter_value) {
 			int e = dm_entry_param_method(&dmctx, CMD_SET_VALUE, parameter_name, parameter_value, NULL);
@@ -1515,7 +1517,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 			}
 			parameter_name = NULL;
-			FREE(parameter_value);
+			CTXFREE(parameter_value);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -1583,11 +1585,11 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
     dm_ctx_init(&dmctx);
 
 	/* handle cwmp:SetParameterAttributes */
-	if (asprintf(&c, "%s:%s", ns.cwmp, "SetParameterAttributes") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "SetParameterAttributes") == -1)
 		goto fault;
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 	if (!n) goto fault;
 	b = n;
@@ -1862,11 +1864,11 @@ int cwmp_handle_rpc_cpe_get_rpc_methods(struct session *session, struct rpc *rpc
 	if (!b) goto fault;
 
 	mxmlElementSetAttr(b, "xsi:type", "soap_enc:Array");
-	if (asprintf(&c, "xsd:string[%d]", counter) == -1)
+	if (ctx_asprintf(session, &c, "xsd:string[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
-	FREE(c);
+	CTXFREE(c);
 #endif
 
 	return 0;
@@ -2089,9 +2091,11 @@ void *thread_cwmp_rpc_cpe_scheduleInform (void *v)
                     if (schedule_inform->commandKey!=NULL)
                     {
                         bkp_session_delete_schedule_inform(schedule_inform->scheduled_time,schedule_inform->commandKey);
-                        free (schedule_inform->commandKey);
+                        //CHECK CTX
+                        ctx_free (schedule_inform->commandKey);
                     }
-                    free(schedule_inform);
+                    //CHECK CTX
+                    ctx_free(schedule_inform);
                     pthread_mutex_unlock (&mutex_schedule_inform);
                     continue;
                 }
@@ -2114,9 +2118,9 @@ void *thread_cwmp_rpc_cpe_scheduleInform (void *v)
                 if (schedule_inform->commandKey != NULL)
                 {
                     bkp_session_delete_schedule_inform(schedule_inform->scheduled_time,schedule_inform->commandKey);
-                    free (schedule_inform->commandKey);
+                    ctx_free (schedule_inform->commandKey);
                 }
-                free(schedule_inform);
+                ctx_free( schedule_inform);
                 count_schedule_inform_queue--;
                 pthread_mutex_unlock (&mutex_schedule_inform);
                 add_event_same_time = true;
@@ -2153,9 +2157,9 @@ int cwmp_scheduleInform_remove_all()
 		if (schedule_inform->commandKey!=NULL)
 		{
 			bkp_session_delete_schedule_inform(schedule_inform->scheduled_time,schedule_inform->commandKey);
-			free (schedule_inform->commandKey);
+			ctx_free (schedule_inform->commandKey);
 		}
-		free(schedule_inform);
+		ctx_free(schedule_inform);
     }
 	bkp_session_save();
 	pthread_mutex_unlock (&mutex_schedule_inform);
@@ -2229,13 +2233,13 @@ int cwmp_handle_rpc_cpe_schedule_inform(struct session *session, struct rpc *rpc
 
 
     CWMP_LOG(INFO,"Schedule inform event will start in %us",delay_seconds);
-    schedule_inform = calloc (1,sizeof(struct schedule_inform));
+    schedule_inform = ctx_calloc(&cwmp_main,  1,sizeof(struct schedule_inform));
     if (schedule_inform==NULL)
     {
         pthread_mutex_unlock (&mutex_schedule_inform);
         goto fault;
     }
-    schedule_inform->commandKey     = strdup(command_key);
+    schedule_inform->commandKey     = ctx_strdup(&cwmp_main, command_key);
     schedule_inform->scheduled_time = scheduled_time;
     list_add (&(schedule_inform->list), ilist->prev);
     bkp_session_insert_schedule_inform(schedule_inform->scheduled_time,schedule_inform->commandKey);
@@ -2291,22 +2295,22 @@ int cwmp_launch_download(struct download *pdownload, struct transfer_complete **
 				}
 			}
     	}
-    	free(fault_code);
+    	ctx_free(fault_code);
     }
     /*else {
     	error = FAULT_CPE_INTERNAL_ERROR;
     }*/
 
-	p = calloc (1,sizeof(struct transfer_complete));
+	p = ctx_calloc(&cwmp_main,  1,sizeof(struct transfer_complete));
 	if(p == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		return error;
 	}
 
-	p->command_key			= pdownload->command_key?strdup(pdownload->command_key):strdup("");
-	p->start_time 			= strdup(download_startTime);
-	p->complete_time		= strdup(mix_get_time());
+	p->command_key			= pdownload->command_key?ctx_strdup(&cwmp_main, pdownload->command_key):ctx_strdup(&cwmp_main, "");
+	p->start_time 			= ctx_strdup(&cwmp_main, download_startTime);
+	p->complete_time		= ctx_strdup(&cwmp_main, mix_get_time());
 	if(error != FAULT_CPE_NO_FAULT)
 	{
 		p->fault_code 		= error;
@@ -2349,22 +2353,22 @@ int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct tr
 				}
 			}
     	}
-    	free(fault_code);
+    	ctx_free(fault_code);
     }
     /*else {
     	error = FAULT_CPE_INTERNAL_ERROR;
     }*/
 
-	p = calloc (1,sizeof(struct transfer_complete));
+	p = ctx_calloc(&cwmp_main,  1,sizeof(struct transfer_complete));
 	if(p == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		return error;
 	}
 
-	p->command_key			= strdup(pdownload->command_key);
-	p->start_time 			= strdup(download_startTime);
-	p->complete_time		= strdup(mix_get_time());
+	p->command_key			= ctx_strdup(&cwmp_main, pdownload->command_key);
+	p->start_time 			= ctx_strdup(&cwmp_main, download_startTime);
+	p->complete_time		= ctx_strdup(&cwmp_main, mix_get_time());
 	p->type					= TYPE_SCHEDULE_DOWNLOAD;
 	if(error != FAULT_CPE_NO_FAULT)
 	{
@@ -2411,18 +2415,18 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 				}
 			}
 		}
-		free(fault_code);
+		ctx_free(fault_code);
 	}
-	p = calloc (1,sizeof(struct transfer_complete));
+	p = ctx_calloc(&cwmp_main, 1,sizeof(struct transfer_complete));
 	if(p == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		return error;
 	}
 
-	p->command_key			= pupload->command_key?strdup(pupload->command_key):strdup("");;
-	p->start_time 			= strdup(upload_startTime);
-	p->complete_time		= strdup(mix_get_time());
+	p->command_key			= pupload->command_key?ctx_strdup(&cwmp_main, pupload->command_key):ctx_strdup(&cwmp_main, "");;
+	p->start_time 			= ctx_strdup(&cwmp_main, upload_startTime);
+	p->complete_time		= ctx_strdup(&cwmp_main, mix_get_time());
 	if(error != FAULT_CPE_NO_FAULT)
 	{
 		p->fault_code 		= error;
@@ -2458,14 +2462,14 @@ void *thread_cwmp_rpc_cpe_download (void *v)
             {
                 pthread_mutex_lock (&mutex_download);
                 bkp_session_delete_download(pdownload);
-                ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+                ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));
                 if(ptransfer_complete != NULL)
                 {
                     error = FAULT_CPE_DOWNLOAD_FAILURE;
 
-                    ptransfer_complete->command_key		= strdup(pdownload->command_key);
-                    ptransfer_complete->start_time 		= strdup(mix_get_time());
-                    ptransfer_complete->complete_time	= strdup(ptransfer_complete->start_time);
+                    ptransfer_complete->command_key		= ctx_strdup(cwmp, pdownload->command_key);
+                    ptransfer_complete->start_time 		= ctx_strdup(cwmp, mix_get_time());
+                    ptransfer_complete->complete_time	= ctx_strdup(cwmp, ptransfer_complete->start_time);
                     ptransfer_complete->fault_code		= error;
 
                     ptransfer_complete->type = TYPE_DOWNLOAD;
@@ -2515,7 +2519,7 @@ void *thread_cwmp_rpc_cpe_download (void *v)
                                 }
                             }
                         }
-                        free(fault_code);
+                        ctx_free(fault_code);
                         if((error == FAULT_CPE_NO_FAULT) &&
                             (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3'))
                         {
@@ -2588,13 +2592,13 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 					{
 						pthread_mutex_lock (&mutex_schedule_download);
 				        bkp_session_delete_schedule_download(p);
-				        ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+				        ptransfer_complete = ctx_calloc(cwmp,  1,sizeof(struct transfer_complete));
 				        if(ptransfer_complete != NULL)
 				        {
 				            error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key		= strdup(p->command_key);
-				            ptransfer_complete->start_time 		= strdup(mix_get_time());
-				            ptransfer_complete->complete_time	= strdup(ptransfer_complete->start_time);
+							ptransfer_complete->command_key		= ctx_strdup(cwmp, p->command_key);
+				            ptransfer_complete->start_time 		= ctx_strdup(cwmp, mix_get_time());
+				            ptransfer_complete->complete_time	= ctx_strdup(cwmp, ptransfer_complete->start_time);
 				            ptransfer_complete->fault_code		= error;
 				            ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 				            bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -2631,13 +2635,13 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 					{
 						pthread_mutex_lock (&mutex_schedule_download);
 				        bkp_session_delete_schedule_download(p);
-				        ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+				        ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));
 				        if(ptransfer_complete != NULL)
 				        {
 				            error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key		= strdup(p->command_key);
-				            ptransfer_complete->start_time 		= strdup(mix_get_time());
-				            ptransfer_complete->complete_time	= strdup(ptransfer_complete->start_time);
+							ptransfer_complete->command_key		= ctx_strdup(cwmp, p->command_key);
+				            ptransfer_complete->start_time 		= ctx_strdup(cwmp, mix_get_time());
+				            ptransfer_complete->complete_time	= ctx_strdup(cwmp, ptransfer_complete->start_time);
 				            ptransfer_complete->fault_code		= error;
 				            ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 				            bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -2668,7 +2672,7 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 			{
 			pthread_mutex_lock (&mutex_schedule_download);
 			external_init();
-            ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+            ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));
 			ptransfer_complete->type					= TYPE_SCHEDULE_DOWNLOAD;
             error = cwmp_launch_schedule_download(current_download, &ptransfer_complete);
 			if(error != FAULT_CPE_NO_FAULT)
@@ -2708,7 +2712,7 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 				                }
 				            }
 				        }
-				        free(fault_code);
+				        ctx_free(fault_code);
 				        if((error == FAULT_CPE_NO_FAULT) &&
 				            (current_download->file_type[0] == '1' || current_download->file_type[0] == '3'))
 				        {
@@ -2777,7 +2781,7 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
                                 }
                             }
                         }
-                        free(fault_code);
+                        ctx_free(fault_code);
                         if((error == FAULT_CPE_NO_FAULT) &&
                             (current_download->file_type[0] == '1' || current_download->file_type[0] == '3'))
                         {
@@ -2860,13 +2864,13 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 					{
 						pthread_mutex_lock (&mutex_apply_schedule_download);
 				        bkp_session_delete_apply_schedule_download(p);
-				        ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+				        ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));
 				        if(ptransfer_complete != NULL)
 				        {
 				            error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key		= strdup(p->command_key);
-				            ptransfer_complete->start_time 		= strdup(mix_get_time());
-				            ptransfer_complete->complete_time	= strdup(ptransfer_complete->start_time);
+							ptransfer_complete->command_key		= ctx_strdup(cwmp, p->command_key);
+				            ptransfer_complete->start_time 		= ctx_strdup(cwmp, mix_get_time());
+				            ptransfer_complete->complete_time	= ctx_strdup(cwmp, ptransfer_complete->start_time);
 				            ptransfer_complete->fault_code		= error;
 				            ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 				            bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -2903,13 +2907,13 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 					{
 						pthread_mutex_lock (&mutex_apply_schedule_download);
 				        bkp_session_delete_apply_schedule_download(p);
-				        ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+				        ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));
 				        if(ptransfer_complete != NULL)
 				        {
 				            error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key		= strdup(p->command_key);
-				            ptransfer_complete->start_time 		= strdup(mix_get_time());
-				            ptransfer_complete->complete_time	= strdup(ptransfer_complete->start_time);
+							ptransfer_complete->command_key		= ctx_strdup(cwmp, p->command_key);
+				            ptransfer_complete->start_time 		= ctx_strdup(cwmp, mix_get_time());
+				            ptransfer_complete->complete_time	= ctx_strdup(cwmp, ptransfer_complete->start_time);
 				            ptransfer_complete->fault_code		= error;
 				            ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 				            bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -2942,13 +2946,13 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 			external_init();
 			bkp_session_delete_apply_schedule_download(apply_download);
 			bkp_session_save();
-			ptransfer_complete = calloc (1,sizeof(struct transfer_complete));	
+			ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));	
 			if (apply_download->file_type[0] == '1') {
             	ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
             }
-			ptransfer_complete->command_key		= strdup(apply_download->command_key);
-			ptransfer_complete->start_time 		= strdup(apply_download->start_time);
-		    ptransfer_complete->complete_time	= strdup(mix_get_time());
+			ptransfer_complete->command_key		= ctx_strdup(cwmp, apply_download->command_key);
+			ptransfer_complete->start_time 		= ctx_strdup(cwmp, apply_download->start_time);
+		    ptransfer_complete->complete_time	= ctx_strdup(cwmp, mix_get_time());
 			ptransfer_complete->fault_code		= error;
 			ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
             bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -2969,7 +2973,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
                         }
                     }
                 }
-                free(fault_code);
+                ctx_free(fault_code);
                 if((error == FAULT_CPE_NO_FAULT) &&
                     (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3'))
                 {
@@ -3053,21 +3057,21 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
             if((timeout >= 0)&&(timeout > time_of_grace))
             {
                 pthread_mutex_lock (&mutex_change_du_state);
-				pdu_state_change_complete = calloc (1,sizeof(struct du_state_change_complete));
+				pdu_state_change_complete = ctx_calloc(cwmp, 1,sizeof(struct du_state_change_complete));
 				if (pdu_state_change_complete != NULL)
 				{
 					error = FAULT_CPE_DOWNLOAD_FAILURE; //TO UPDATE
 					INIT_LIST_HEAD(&(pdu_state_change_complete->list_opresult));
-					pdu_state_change_complete->command_key = strdup(pchange_du_state->command_key);
+					pdu_state_change_complete->command_key = ctx_strdup(cwmp, pchange_du_state->command_key);
 					pdu_state_change_complete->timeout = pchange_du_state->timeout;
 					list_for_each_entry_safe(p, q, &pchange_du_state->list_operation, list) {
-						res = calloc(1, sizeof(struct opresult));
+						res = ctx_calloc(cwmp, 1, sizeof(struct opresult));
 						list_add_tail(&(res->list), &(pdu_state_change_complete->list_opresult));					
-						res->uuid = strdup(p->uuid);
-						res->version = strdup(p->version);
-						res->current_state = strdup("Failed");
-						res->start_time = strdup(mix_get_time());
-						res->complete_time = strdup(res->start_time);
+						res->uuid = ctx_strdup(cwmp, p->uuid);
+						res->version = ctx_strdup(cwmp, p->version);
+						res->current_state = ctx_strdup(cwmp, "Failed");
+						res->start_time = ctx_strdup(cwmp, mix_get_time());
+						res->complete_time = ctx_strdup(cwmp, res->start_time);
 						res->fault		= error;					
 					}				
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
@@ -3081,15 +3085,15 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
             if((timeout >= 0)&&(timeout <= time_of_grace))
             {
                 pthread_mutex_lock (&(cwmp->mutex_session_send));
-				pdu_state_change_complete = calloc (1,sizeof(struct du_state_change_complete));
+				pdu_state_change_complete = ctx_calloc(cwmp, 1,sizeof(struct du_state_change_complete));
 				if (pdu_state_change_complete != NULL)
 				{
 					error = FAULT_CPE_DOWNLOAD_FAILURE; //TO UPDATE
 					INIT_LIST_HEAD(&(pdu_state_change_complete->list_opresult));
-					pdu_state_change_complete->command_key = strdup(pchange_du_state->command_key);
+					pdu_state_change_complete->command_key = ctx_strdup(cwmp, pchange_du_state->command_key);
 					pdu_state_change_complete->timeout = pchange_du_state->timeout;
 					list_for_each_entry_safe(p, q, &pchange_du_state->list_operation, list) {
-						res = calloc(1, sizeof(struct opresult)); //IF RES IS NULL
+						res = ctx_calloc(cwmp, 1, sizeof(struct opresult)); //IF RES IS NULL
 						list_add_tail(&(res->list), &(pdu_state_change_complete->list_opresult));					
 						external_init();						
 						switch (p->type)
@@ -3098,13 +3102,13 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 								error = cwmp_launch_change_du_state_download(p,&res);
 								if(error != FAULT_CPE_NO_FAULT)
 				                {
-									res->uuid = strdup(p->uuid);
-									res->du_ref = strdup("");
-									res->version = strdup("");
-									res->current_state = strdup("Failed");
+									res->uuid = ctx_strdup(cwmp, p->uuid);
+									res->du_ref = ctx_strdup(cwmp, "");
+									res->version = ctx_strdup(cwmp, "");
+									res->current_state = ctx_strdup(cwmp, "Failed");
 									res->resolved = 0;									
 									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = ctx_strdup(cwmp, operation_endTime);
 									res->fault = error;
 									break;
 								}
@@ -3125,36 +3129,36 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 										}
 									}
 								}
-								free(fault_code);
+								ctx_free(fault_code);
 								if( error == FAULT_CPE_NO_FAULT)
 								{
 									dm_ctx_init(&dmctx);
-									du_instance = strdup(add_softwaremodules_deploymentunit(p->uuid, p->url, p->username, p->password, package_name, package_version));
+									du_instance = ctx_strdup(cwmp, add_softwaremodules_deploymentunit(p->uuid, p->url, p->username, p->password, package_name, package_version));
 									dmuci_commit();
 									dm_ctx_clean(&dmctx);
 									sprintf(du_ref,DMROOT"SoftwareModules.%s.", du_instance);
-									res->uuid = strdup(p->uuid);
-									res->du_ref = strdup(du_ref);
-									res->current_state = strdup("Installed");
+									res->uuid = ctx_strdup(cwmp, p->uuid);
+									res->du_ref = ctx_strdup(cwmp, du_ref);
+									res->current_state = ctx_strdup(cwmp, "Installed");
 									res->resolved = 1;
-									res->version = strdup(package_version);
+									res->version = ctx_strdup(cwmp, package_version);
 									operation_endTime = mix_get_time();
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = ctx_strdup(cwmp, operation_endTime);
 									res->fault = error;									
 								}
 								else
 								{									
-									res->uuid = strdup(p->uuid);
-									res->current_state = strdup("Failed");
+									res->uuid = ctx_strdup(cwmp, p->uuid);
+									res->current_state = ctx_strdup(cwmp, "Failed");
 									res->resolved = 0;									
 									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = ctx_strdup(cwmp, operation_endTime);
 									res->fault = error;								
 								}
 								break;
 							case DU_UNINSTALL:
 								dm_ctx_init(&dmctx);
-								cur_name = strdup(get_softwaremodules_name(p->uuid));
+								cur_name = ctx_strdup(cwmp, get_softwaremodules_name(p->uuid));
 								if (!cur_name || cur_name[0] == '\0') {
 									error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
 									res->fault = error;
@@ -3165,7 +3169,7 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 									error = cwmp_launch_uninstall_du_state(cur_name, &res);																
 								}
 								else {
-									cur_version = strdup(get_softwaremodules_version(p->uuid));
+									cur_version = ctx_strdup(cwmp, get_softwaremodules_version(p->uuid));
 									if(strcmp(cur_version, p->version) == 0)
 										error = cwmp_launch_uninstall_du_state(cur_name, &res);
 									else {
@@ -3179,29 +3183,29 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 									dm_ctx_init(&dmctx);
 									du_instance = get_softwaremodules_instance(p->uuid);
 									sprintf(du_ref,DMROOT"SoftwareModules.%s.", du_instance);
-									res->uuid = strdup(p->uuid);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->version = strdup(p->version);
-									res->current_state = strdup("Uninstalled");
+									res->uuid = ctx_strdup(cwmp, p->uuid);
+									res->du_ref = ctx_strdup(cwmp, du_ref);
+									CTXFREE(du_instance);
+									res->version = ctx_strdup(cwmp, p->version);
+									res->current_state = ctx_strdup(cwmp, "Uninstalled");
 									res->resolved = 1;
 									operation_endTime = mix_get_time();
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = ctx_strdup(cwmp, operation_endTime);
 									res->fault = error;
 									dm_ctx_clean(&dmctx);								
 								}
 								else
 								{
-									res->uuid = strdup(p->uuid);
+									res->uuid = ctx_strdup(cwmp, p->uuid);
 									du_instance = get_softwaremodules_instance(p->uuid);
 									sprintf(du_ref,DMROOT"SoftwareModules.%s.", du_instance);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->version = strdup(p->version);
-									res->current_state = strdup("Installed");
+									res->du_ref = ctx_strdup(cwmp, du_ref);
+									CTXFREE(du_instance);
+									res->version = ctx_strdup(cwmp, p->version);
+									res->current_state = ctx_strdup(cwmp, "Installed");
 									res->resolved = 1;
 									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = ctx_strdup(cwmp, operation_endTime);
 									res->fault = error;
 									dm_ctx_clean(&dmctx);							
 								}
@@ -3215,7 +3219,7 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 										dm_ctx_clean(&dmctx);
 										break;
 									}
-									cur_instance = strdup(get_softwaremodules_instance(p->uuid));
+									cur_instance = ctx_strdup(cwmp, get_softwaremodules_instance(p->uuid));
 									dmuci_commit();
 									dm_ctx_clean(&dmctx);					 										
 								}
@@ -3228,56 +3232,56 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 										dm_ctx_clean(&dmctx);
 										break;
 									}
-									cur_instance = strdup(get_softwaremodules_instance(p->uuid));
+									cur_instance = ctx_strdup(cwmp, get_softwaremodules_instance(p->uuid));
 									
 								}
 								else if ((p->url)[0] == '\0' && (p->uuid)[0] != '\0') {
 									dm_ctx_init(&dmctx);
-									cur_url = strdup(get_softwaremodules_url(p->uuid));
+									cur_url = ctx_strdup(cwmp, get_softwaremodules_url(p->uuid));
 									if (cur_url == NULL || cur_url[0] == '\0')
 									{
 										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
 										dm_ctx_clean(&dmctx);
 										break;
 									}
-									cur_user = strdup(get_softwaremodules_username(p->uuid));
-									cur_pass = strdup(get_softwaremodules_pass(p->uuid));
+									cur_user = ctx_strdup(cwmp, get_softwaremodules_username(p->uuid));
+									cur_pass = ctx_strdup(cwmp, get_softwaremodules_pass(p->uuid));
 									dm_ctx_clean(&dmctx);
 								}								
 								error = cwmp_launch_update_du_state_download((cur_url && cur_url[0]!='\0' )?cur_url:p->url, p->username, p->password, &res);
 								if(error != FAULT_CPE_NO_FAULT)
 				                {
 									if (p->uuid == NULL || (p->uuid)[0] == '\0') {
-										res->uuid = strdup(cur_uuid);
-										FREE(cur_uuid);
+										res->uuid = ctx_strdup(cwmp, cur_uuid);
+										CTXFREE(cur_uuid);
 									}
 									else
-										res->uuid = strdup(p->uuid);
+										res->uuid = ctx_strdup(cwmp, p->uuid);
 									sprintf(du_ref,DMROOT"SoftwareModules.%s.", du_instance);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->current_state = strdup("Installed");
-									res->complete_time = strdup("0001-01-01T00:00:00+00:00");//TO CHECK
+									res->du_ref = ctx_strdup(cwmp, du_ref);
+									CTXFREE(du_instance);
+									res->current_state = ctx_strdup(cwmp, "Installed");
+									res->complete_time = ctx_strdup(cwmp, "0001-01-01T00:00:00+00:00");//TO CHECK
 									res->fault = error;
-									// FREE(cur_user); FREE(cur_pass); 
+									// CTXFREE(cur_user); CTXFREE(cur_pass); 
 									break;
 								}						
 								if(error != FAULT_CPE_NO_FAULT)
 				                {
 									if (p->uuid == NULL || (p->uuid)[0] == '\0') {
-										res->uuid = strdup(cur_uuid);
-										FREE(cur_uuid);
+										res->uuid = ctx_strdup(cwmp, cur_uuid);
+										CTXFREE(cur_uuid);
 									}
 									else
-										res->uuid = strdup(p->uuid);
+										res->uuid = ctx_strdup(cwmp, p->uuid);
 									sprintf(du_ref,DMROOT"SoftwareModules.%s.", du_instance);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->current_state = strdup("Failed");
+									res->du_ref = ctx_strdup(cwmp, du_ref);
+									CTXFREE(du_instance);
+									res->current_state = ctx_strdup(cwmp, "Failed");
 									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = ctx_strdup(cwmp, operation_endTime);
 									res->fault = error;
-									// FREE(cur_user); FREE(cur_pass); 
+									// CTXFREE(cur_user); CTXFREE(cur_pass); 
 									break;
 									break;
 								}
@@ -3298,20 +3302,20 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 										}
 									}
 								}
-								free(fault_code);
+								ctx_free(fault_code);
 								sprintf(du_ref,DMROOT"SoftwareModules.%s.", du_instance);
 								if (p->uuid == NULL || (p->uuid)[0] == '\0') {
-									res->uuid = strdup(cur_url);
-									FREE(cur_url);
+									res->uuid = ctx_strdup(cwmp, cur_url);
+									CTXFREE(cur_url);
 								}
 								else
-									res->uuid = strdup(p->uuid);
-								res->du_ref = strdup(du_ref);
-								FREE(du_instance);
-								res->current_state = strdup("Installed");
+									res->uuid = ctx_strdup(cwmp, p->uuid);
+								res->du_ref = ctx_strdup(cwmp, du_ref);
+								CTXFREE(du_instance);
+								res->current_state = ctx_strdup(cwmp, "Installed");
 								res->resolved = 1; //TO CHECK
 								operation_endTime = mix_get_time();
-								res->complete_time = strdup(operation_endTime);
+								res->complete_time = ctx_strdup(cwmp, operation_endTime);
 								res->fault = error;
 								break;
 						}												
@@ -3369,9 +3373,9 @@ int cwmp_launch_uninstall_du_state(char *package_name, struct opresult **pchange
 				}
 			}
 		}
-		free(fault_code);
+		ctx_free(fault_code);
 	}
-	(*pchange_du_state_complete)->start_time = strdup(uninstall_startTime);
+	(*pchange_du_state_complete)->start_time = ctx_strdup(&cwmp_main, uninstall_startTime);
 	return error;
 }
 
@@ -3400,9 +3404,9 @@ int cwmp_launch_update_du_state_download(char *url, char *user, char *pass, stru
 				}
 			}
 		}
-		free(fault_code);
+		ctx_free( fault_code);
 	}
-	(*pchange_du_state_complete)->start_time = strdup(update_startTime);
+	(*pchange_du_state_complete)->start_time = ctx_strdup(&cwmp_main, update_startTime);
 	return error;
 }
 
@@ -3434,15 +3438,15 @@ int cwmp_launch_change_du_state_download(struct operations *poperations, struct 
 				}
 			}
 		}
-		free(fault_code);
+		ctx_free( fault_code);
 	}
-	p->start_time = strdup(download_startTime);
+	p->start_time = ctx_strdup(&cwmp_main, download_startTime);
 	if(error != FAULT_CPE_NO_FAULT)
 	{
 		p->fault 		= error;
 	}
 
-	(*pchange_du_state_complete)->start_time = strdup(download_startTime);
+	(*pchange_du_state_complete)->start_time = ctx_strdup(&cwmp_main, download_startTime);
 
     return error;
 }
@@ -3472,14 +3476,14 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
             {
                 pthread_mutex_lock (&mutex_upload);
                 bkp_session_delete_upload(pupload);
-                ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
+                ptransfer_complete = ctx_calloc(cwmp, 1,sizeof(struct transfer_complete));
                 if(ptransfer_complete != NULL)
                 {
                     error = FAULT_CPE_DOWNLOAD_FAILURE;
 
-                    ptransfer_complete->command_key		= strdup(pupload->command_key);
-                    ptransfer_complete->start_time 		= strdup(mix_get_time());
-                    ptransfer_complete->complete_time	= strdup(ptransfer_complete->start_time);
+                    ptransfer_complete->command_key		= ctx_strdup(cwmp, pupload->command_key);
+                    ptransfer_complete->start_time 		= ctx_strdup(cwmp, mix_get_time());
+                    ptransfer_complete->complete_time	= ctx_strdup(cwmp, ptransfer_complete->start_time);
                     ptransfer_complete->fault_code		= error;
                     ptransfer_complete->type			= TYPE_UPLOAD;
                     bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -3525,7 +3529,7 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
                                 }
                             }
                         }
-                        free(fault_code);
+                        ctx_free( fault_code);
                         if((error == FAULT_CPE_NO_FAULT) &&
                             (pupload->file_type[0] == '1' || pupload->file_type[0] == '3')) //IBH TO ADD
                         {
@@ -3568,25 +3572,25 @@ int cwmp_free_download_request(struct download *download)
 	{
 		if(download->command_key != NULL)
 		{
-			free(download->command_key);
+			ctx_free( download->command_key);
 		}
 		if(download->file_type != NULL)
 		{
-			free(download->file_type);
+			ctx_free( download->file_type);
 		}
 		if(download->url != NULL)
 		{
-			free(download->url);
+			ctx_free( download->url);
 		}
 		if(download->username != NULL)
 		{
-			free(download->username);
+			ctx_free( download->username);
 		}
 		if(download->password != NULL)
 		{
-			free(download->password);
+			ctx_free( download->password);
 		}
-		free(download);
+		ctx_free( download);
 	}
 	return CWMP_OK;
 }
@@ -3598,40 +3602,40 @@ int cwmp_free_schedule_download_request(struct schedule_download *schedule_downl
 	{		
 		if(schedule_download->command_key != NULL)
 		{
-			free(schedule_download->command_key);
+			ctx_free( schedule_download->command_key);
 		}
 		if(schedule_download->file_type != NULL)
 		{
-			free(schedule_download->file_type);
+			ctx_free( schedule_download->file_type);
 		}
 		
 		if(schedule_download->url != NULL)
 		{
-			free(schedule_download->url);
+			ctx_free( schedule_download->url);
 		}
 		
 		if(schedule_download->username != NULL)
 		{
-			free(schedule_download->username);
+			ctx_free( schedule_download->username);
 		}
 		
 		if(schedule_download->password != NULL)
 		{
-			free(schedule_download->password);
+			ctx_free( schedule_download->password);
 		}
 		for (i = 0; i<=1; i++)
 		{
 			if(schedule_download->timewindowstruct[i].windowmode != NULL)
 			{
-				free(schedule_download->timewindowstruct[i].windowmode);				
+				ctx_free( schedule_download->timewindowstruct[i].windowmode);				
 			}
 			if(schedule_download->timewindowstruct[i].usermessage != NULL)
 			{
 				
-				free(schedule_download->timewindowstruct[i].usermessage);				
+				ctx_free( schedule_download->timewindowstruct[i].usermessage);				
 			}
 		}
-		free(schedule_download);
+		ctx_free( schedule_download);
 		
 	}
 	return CWMP_OK;
@@ -3644,18 +3648,18 @@ int cwmp_free_apply_schedule_download_request(struct apply_schedule_download *ap
 	{		
 		if(apply_schedule_download->command_key != NULL)
 		{
-			free(apply_schedule_download->command_key);
+			ctx_free( apply_schedule_download->command_key);
 		}
 		if(apply_schedule_download->file_type != NULL)
 		{
-			free(apply_schedule_download->file_type);
+			ctx_free( apply_schedule_download->file_type);
 		}
 		if(apply_schedule_download->start_time != NULL)
 		{
-			free(apply_schedule_download->start_time);
+			ctx_free( apply_schedule_download->start_time);
 		}
 		
-		free(apply_schedule_download);
+		ctx_free( apply_schedule_download);
 		
 	}
 	return CWMP_OK;
@@ -3669,38 +3673,38 @@ int cwmp_free_change_du_state_request(struct change_du_state *change_du_state)
 	{
 		if(change_du_state->command_key != NULL)
 		{
-			free(change_du_state->command_key);
+			ctx_free( change_du_state->command_key);
 		}
 		list_for_each_safe(ilist, q, &(change_du_state->list_operation)) {
 			operation = list_entry(ilist, struct operations, list);	
 			if(operation->url != NULL)
 			{
-				free(operation->url);
+				ctx_free( operation->url);
 			}
 			if(operation->uuid != NULL)
 			{
-				free(operation->uuid);
+				ctx_free( operation->uuid);
 			}
 			if(operation->username != NULL)
 			{
-				free(operation->username);
+				ctx_free( operation->username);
 			}
 			if(operation->password != NULL)
 			{
-				free(operation->password);
+				ctx_free( operation->password);
 			}
 			if(operation->version != NULL)
 			{
-				free(operation->version);
+				ctx_free( operation->version);
 			}
 			if(operation->executionenvref != NULL)
 			{
-				free(operation->executionenvref);
+				ctx_free( operation->executionenvref);
 			}
 			list_del(&(operation->list));
-        	free (operation);
+        	ctx_free (operation);
 		}
-		free(change_du_state);
+		ctx_free( change_du_state);
 	}
 	return CWMP_OK;
 }
@@ -3711,29 +3715,29 @@ int cwmp_free_upload_request(struct upload *upload)
 	{
 		if(upload->command_key != NULL)
 		{
-			FREE(upload->command_key);
+			CTXFREE(upload->command_key);
 		}
 		if(upload->file_type != NULL)
 		{
-			FREE(upload->file_type);
+			CTXFREE(upload->file_type);
 		}
 		if(upload->url != NULL)
 		{
-			FREE(upload->url);
+			CTXFREE(upload->url);
 		}
 		if(upload->username != NULL)
 		{
-			FREE(upload->username);
+			CTXFREE(upload->username);
 		}
 		if(upload->password != NULL)
 		{
-			FREE(upload->password);
+			CTXFREE(upload->password);
 		}
 		if(upload->f_instance != NULL)
 		{
-			FREE(upload->f_instance);
+			CTXFREE(upload->f_instance);
 		}
-		FREE(upload);
+		CTXFREE(upload);
 	}
 	return CWMP_OK;
 }
@@ -3824,7 +3828,7 @@ int cwmp_add_apply_schedule_download(struct schedule_download *schedule_download
 	struct list_head    		*ilist;
 
 	
-	apply_schedule_download = calloc (1,sizeof(struct apply_schedule_download));
+	apply_schedule_download = ctx_calloc(&cwmp_main, 1,sizeof(struct apply_schedule_download));
 	if (apply_schedule_download == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -3833,9 +3837,9 @@ int cwmp_add_apply_schedule_download(struct schedule_download *schedule_download
 	if(error == FAULT_CPE_NO_FAULT)
 	{
 		pthread_mutex_lock (&mutex_apply_schedule_download);
-		apply_schedule_download->command_key = strdup(schedule_download->command_key);
-		apply_schedule_download->file_type = strdup(schedule_download->file_type);
-		apply_schedule_download->start_time = strdup(start_time);
+		apply_schedule_download->command_key = ctx_strdup(&cwmp_main, schedule_download->command_key);
+		apply_schedule_download->file_type = ctx_strdup(&cwmp_main, schedule_download->file_type);
+		apply_schedule_download->start_time = ctx_strdup(&cwmp_main, start_time);
 		for (i = 0; i < 2; i++)
 		{	
 			apply_schedule_download->timeintervals[i].windowstart = schedule_download->timewindowstruct[i].windowstart;
@@ -3877,19 +3881,19 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 	struct installop *p;
 	struct uninstallop *q;
 	struct updateop *r;
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ChangeDUState") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "ChangeDUState") == -1)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 	if (!n) return -1;
 	b = n;
 
-	change_du_state = calloc (1,sizeof(struct change_du_state));
+	change_du_state = ctx_calloc(&cwmp_main, 1,sizeof(struct change_du_state));
 	if (change_du_state == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -3903,22 +3907,22 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			change_du_state->command_key = strdup(b->value.text.string);
+			change_du_state->command_key = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			0 == strcmp(b->parent->value.element.name, "Operations")) {
 			if (!strcmp(b->value.element.name, "InstallOpStruct")) {
-				elem = (operations*)calloc(1, sizeof(operations));
+				elem = ctx_calloc(&cwmp_main, 1, sizeof(operations));
 				elem->type = DU_INSTALL;
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));
 			}
 			if (!strcmp(b->value.element.name, "UninstallOpStruct")) {
-				elem = (operations*)calloc(1,sizeof(operations));
+				elem = ctx_calloc(&cwmp_main, 1,sizeof(operations));
 				elem->type = DU_UNINSTALL ;
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));									
 			}
 			if (!strcmp(b->value.element.name, "UpdateOpStruct")) {
-				elem = (operations*)calloc(1,sizeof(operations));
+				elem = ctx_calloc(&cwmp_main, 1,sizeof(operations));
 				elem->type = DU_UPDATE;
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));		
 				
@@ -3934,31 +3938,31 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "URL")) {
-							elem->url = strdup(tmp1->value.text.string);
+							elem->url = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}						
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "UUID")) {
-							elem->uuid = strdup(tmp1->value.text.string);
+							elem->uuid = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "Username")) {
-							elem->username = strdup(tmp1->value.text.string);
+							elem->username = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "Password")) {
-							elem->password = strdup(tmp1->value.text.string);
+							elem->password = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "ExecutionEnvRef")) {
-							elem->executionenvref = strdup(tmp1->value.text.string);
+							elem->executionenvref = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);
 								
@@ -3972,31 +3976,31 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "UUID")) {
-							elem->uuid = strdup(tmp1->value.text.string);
+							elem->uuid = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "Version")) {
-							elem->version = strdup(tmp1->value.text.string);
+							elem->version = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "URL")) {
-							elem->url = strdup(tmp1->value.text.string);
+							elem->url = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "Username")) {
-							elem->username = strdup(tmp1->value.text.string);
+							elem->username = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "Password")) {
-							elem->password = strdup(tmp1->value.text.string);
+							elem->password = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);			
 					}								
@@ -4009,19 +4013,19 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "UUID")) {
-							elem->uuid = strdup(tmp1->value.text.string);
+							elem->uuid = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "Version")) {
-							elem->version = strdup(tmp1->value.text.string);
+							elem->version = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						if (tmp1 && tmp1->type == MXML_TEXT &&
 						tmp1->value.text.string &&
 						tmp1->parent->type == MXML_ELEMENT &&
 						!strcmp(tmp1->parent->value.element.name, "ExecutionEnvRef")) {
-							elem->executionenvref = strdup(tmp1->value.text.string);
+							elem->executionenvref = ctx_strdup(&cwmp_main, tmp1->value.text.string);
 						}
 						tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);			
 					}
@@ -4073,19 +4077,19 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	time_t 						download_delay = 0;
 	bool                		cond_signal = false;
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "Download") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "Download") == -1)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 	if (!n) return -1;
 	b = n;
 
-	download = calloc (1,sizeof(struct download));
+	download = ctx_calloc(&cwmp_main, 1,sizeof(struct download));
 	if (download == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -4097,7 +4101,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			download->command_key = strdup(b->value.text.string);
+			download->command_key = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -4105,37 +4109,37 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			if(download->file_type == NULL)
 			{
-				download->file_type = strdup(b->value.text.string);
-				file_type = strdup(b->value.text.string);
+				download->file_type = ctx_strdup(&cwmp_main, b->value.text.string);
+				file_type = ctx_strdup(session, b->value.text.string);
 			}
 			else
 			{
 				tmp = file_type;
-				if (asprintf(&file_type,"%s %s",tmp, b->value.text.string) == -1)
+				if (ctx_asprintf(session, &file_type,"%s %s",tmp, b->value.text.string) == -1)
 				{
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
-				FREE(tmp);
+				CTXFREE(tmp);
 			}
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			download->url = strdup(b->value.text.string);
+			download->url = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			download->username = strdup(b->value.text.string);
+			download->username = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			download->password = strdup(b->value.text.string);
+			download->password = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -4177,7 +4181,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 		error = FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL;
 	}
 
-	FREE(file_type);
+	CTXFREE(file_type);
 	if(error != FAULT_CPE_NO_FAULT)
 		goto fault;
 
@@ -4270,20 +4274,20 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 	bool                		cond_signal = false;
 	
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ScheduleDownload") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "ScheduleDownload") == -1)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 	if (!n) return -1;
 	b = n;
 
 
-	schedule_download = calloc (1,sizeof(struct schedule_download));
+	schedule_download = ctx_calloc(&cwmp_main, 1,sizeof(struct schedule_download));
 	if (schedule_download == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -4296,7 +4300,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			schedule_download->command_key = strdup(b->value.text.string);			
+			schedule_download->command_key = ctx_strdup(&cwmp_main, b->value.text.string);			
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -4304,37 +4308,37 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			if(schedule_download->file_type == NULL)
 			{
-				schedule_download->file_type = strdup(b->value.text.string);
-				file_type = strdup(b->value.text.string);				
+				schedule_download->file_type = ctx_strdup(&cwmp_main, b->value.text.string);
+				file_type = ctx_strdup(session, b->value.text.string);				
 			}
 			else
 			{
 				tmp = file_type;
-				if (asprintf(&file_type,"%s %s",tmp, b->value.text.string) == -1)
+				if (ctx_asprintf(session, &file_type,"%s %s",tmp, b->value.text.string) == -1)
 				{
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
-				FREE(tmp);
+				CTXFREE(tmp);
 			}
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			schedule_download->url = strdup(b->value.text.string);
+			schedule_download->url = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			schedule_download->username = strdup(b->value.text.string);
+			schedule_download->username = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			schedule_download->password = strdup(b->value.text.string);
+			schedule_download->password = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -4369,32 +4373,32 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 					
 					if(schedule_download->timewindowstruct[i].windowmode == NULL)
 					{
-						schedule_download->timewindowstruct[i].windowmode = strdup(t->value.text.string);
+						schedule_download->timewindowstruct[i].windowmode = ctx_strdup(&cwmp_main, t->value.text.string);
 						if (i == 0)
-							windowmode0 = strdup(t->value.text.string);
+							windowmode0 = ctx_strdup(&cwmp_main, t->value.text.string);
 						else
-							windowmode1 = strdup(t->value.text.string);
+							windowmode1 = ctx_strdup(&cwmp_main, t->value.text.string);
 					}
 					else if (i == 0)
 					{
 						
 						tmp = windowmode0;
-						if (asprintf(&windowmode0,"%s %s",tmp, t->value.text.string) == -1)
+						if (ctx_asprintf(session, &windowmode0,"%s %s",tmp, t->value.text.string) == -1)
 						{
 							error = FAULT_CPE_INTERNAL_ERROR;
 							goto fault;
 						}
-						FREE(tmp);
+						CTXFREE(tmp);
 					}
 					else if (i == 1)
 					{
 						tmp = windowmode1;
-						if (asprintf(&windowmode1,"%s %s",tmp, t->value.text.string) == -1)
+						if (ctx_asprintf(session, &windowmode1,"%s %s",tmp, t->value.text.string) == -1)
 						{
 							error = FAULT_CPE_INTERNAL_ERROR;
 							goto fault;
 						}
-						FREE(tmp);
+						CTXFREE(tmp);
 					}
 				}
 				
@@ -4402,7 +4406,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 					t->value.text.string &&
 					t->parent->type == MXML_ELEMENT &&
 					!strcmp(t->parent->value.element.name, "UserMessage")) {
-					schedule_download->timewindowstruct[i].usermessage = strdup(t->value.text.string);
+					schedule_download->timewindowstruct[i].usermessage = ctx_strdup(&cwmp_main, t->value.text.string);
 				}	
 				if (t && t->type == MXML_TEXT &&
 					t->value.text.string &&
@@ -4463,7 +4467,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		}
 	}
 
-	FREE(file_type);
+	CTXFREE(file_type);
 	if(error != FAULT_CPE_NO_FAULT)
 		goto fault;
 
@@ -4526,31 +4530,31 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	time_t 						upload_delay = 0;
 	bool                		cond_signal = false;
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "Upload") == -1)
+	if (ctx_asprintf(session, &c, "%s:%s", ns.cwmp, "Upload") == -1)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	CTXFREE(c);
 
 	if (!n) return -1;
 	b = n;
 
-	upload = calloc (1,sizeof(struct upload));
+	upload = ctx_calloc(&cwmp_main, 1,sizeof(struct upload));
 	if (upload == NULL)
 	{
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
-	upload->f_instance = strdup("");
+	upload->f_instance = ctx_strdup(&cwmp_main, "");
 	while (b != NULL) {
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			upload->command_key = strdup(b->value.text.string);
+			upload->command_key = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -4558,40 +4562,40 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			if(upload->file_type == NULL)
 			{
-				upload->file_type = strdup(b->value.text.string);
-				file_type = strdup(b->value.text.string);
+				upload->file_type = ctx_strdup(&cwmp_main, b->value.text.string);
+				file_type = ctx_strdup(session, b->value.text.string);
 			}
 			else
 			{
 				tmp = file_type;
-				if (asprintf(&file_type,"%s %s",tmp, b->value.text.string) == -1)
+				if (ctx_asprintf(session, &file_type,"%s %s",tmp, b->value.text.string) == -1)
 				{
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
 				if (isdigit(b->value.text.string[0])) {
-					upload->f_instance = strdup(b->value.text.string);
+					upload->f_instance = ctx_strdup(&cwmp_main, b->value.text.string);
 				}
-				FREE(tmp);
+				CTXFREE(tmp);
 			}
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			upload->url = strdup(b->value.text.string);
+			upload->url = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			upload->username = strdup(b->value.text.string);
+			upload->username = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			upload->password = strdup(b->value.text.string);
+			upload->password = ctx_strdup(&cwmp_main, b->value.text.string);
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -4626,7 +4630,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 		error = FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL;
 	}
 
-	FREE(file_type);
+	CTXFREE(file_type);
 	if(error != FAULT_CPE_NO_FAULT)
 		goto fault;
 

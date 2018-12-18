@@ -1328,7 +1328,6 @@ int get_wan_device_mng_interface_ip(char *refparam, struct dmctx *ctx, char **va
 {
 	char *intf;
 	struct wancprotoargs *wandcprotoargs = (struct wancprotoargs *) (ctx->args);
-	
 	intf = section_name(wandcprotoargs->wancprotosection);
 	network_get_ipaddr(value, intf);
 	return 0;

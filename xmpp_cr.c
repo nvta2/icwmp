@@ -17,6 +17,7 @@
 #include "http.h"
 #include "xmpp_cr.h"
 #include <unistd.h>
+#include "cwmpmem.h"
 
 
 int ping_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
@@ -72,11 +73,11 @@ static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const 
 		return 0; 
 	}
 	stanza = xmpp_stanza_clone(stanza1);
-	to = strdup(xmpp_stanza_get_attribute(stanza1, "to"));
+	to = ctx_strdup(&cwmp_main, xmpp_stanza_get_attribute(stanza1, "to"));
 	error = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_attribute(reply, "to", xmpp_stanza_get_attribute(stanza1, "from"));
 	xmpp_stanza_set_attribute(reply, "from", to);
-	free(to);
+	ctx_free(to);
 	xmpp_stanza_set_name(error, "error");
 	if (xmpp_error == XMPP_SERVICE_UNAVAILABLE)
 		xmpp_stanza_set_attribute(error, "code", "503");
@@ -103,17 +104,17 @@ int check_xmpp_authorized(char *from)
 		return 1;
 	else
 	{
-		str = strdup(cwmp->conf.xmpp_allowed_jid);
+		str = ctx_strdup(cwmp, cwmp->conf.xmpp_allowed_jid);
 		pch = strtok_r(str, ",", &spch);
 		int len = strlen(pch);
 		while (pch != NULL) {
 			if(strncmp(pch, from, len) == 0 && (from[len] == '\0' || from[len] == '/') ){
-				free(str);			
+				ctx_free(str);			
 				return 1;
 			}
 			pch = strtok_r(NULL, ",", &spch);			
 		}
-		free(str);
+		ctx_free(str);
 		return 0;		
 	}
 }
@@ -230,11 +231,11 @@ int ping_send_handler(xmpp_conn_t * const conn, void * const userdata)
 	xmpp_stanza_set_name(reply, "iq");
 	xmpp_stanza_set_type(reply, "get");
 	xmpp_stanza_set_id(reply, "cs1");
-	asprintf(&jid, "%s@%s/%s", cwmp->xmpp_param.username, cwmp->xmpp_param.domain, cwmp->xmpp_param.ressource);
+	ctx_asprintf(cwmp, &jid, "%s@%s/%s", cwmp->xmpp_param.username, cwmp->xmpp_param.domain, cwmp->xmpp_param.ressource);
 	xmpp_stanza_set_attribute(reply, "from", jid);
 	xmpp_stanza_set_attribute(reply, "to", cwmp->xmpp_param.domain);
 	xmpp_send(conn, reply);
-	free(jid);	
+	ctx_free(jid);	
 	return 1;
 }
 
@@ -307,10 +308,10 @@ void cwmp_xmpp_connect_client()
 	log = xmpp_get_default_logger(XMPP_LEVEL_ERROR);	
 	cwmp->xmpp_ctx = xmpp_ctx_new(NULL, log);
 	cwmp->xmpp_conn = xmpp_conn_new(cwmp->xmpp_ctx);
-	asprintf(&jid, "%s@%s/%s", cwmp->xmpp_param.username, cwmp->xmpp_param.domain, cwmp->xmpp_param.ressource);
+	ctx_asprintf(cwmp, &jid, "%s@%s/%s", cwmp->xmpp_param.username, cwmp->xmpp_param.domain, cwmp->xmpp_param.ressource);
 	xmpp_conn_set_jid(cwmp->xmpp_conn, jid);
 	xmpp_conn_set_pass(cwmp->xmpp_conn, cwmp->xmpp_param.password);
-	free(jid);	
+	ctx_free(jid);	
 	/* initiate connection */
 	connected = xmpp_connect_client(cwmp->xmpp_conn, NULL, 0, conn_handler, cwmp->xmpp_ctx);
 	if (connected == -1 )

@@ -13,6 +13,8 @@
  */
 #ifndef __DMCWMP_H__
 #define __DMCWMP_H__
+
+#include "log.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -279,10 +281,10 @@ static inline void trace_empty_func()
 #if TRACE_TYPE == 2
 #define TRACE(MESSAGE,args...) do { \
 	const char *A[] = {MESSAGE}; \
-	printf("TRACE: %s %s %d    ",__FUNCTION__,__FILE__,__LINE__); \
+	fprintf(stderr, "TRACE: %s %s %d \n",__FUNCTION__,__FILE__,__LINE__); \
 	if(sizeof(A) > 0) \
-		printf(*A,##args); \
-	printf("\n"); fflush(stdout); \
+		fprintf(stderr, *A,##args); \
+	fprintf(stderr, "\n"); fflush(stderr); \
 } while(0)
 #elif TRACE_TYPE == 1
 #define TRACE(MESSAGE, ...) printf(MESSAGE, ## __VA_ARGS__)

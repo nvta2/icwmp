@@ -274,6 +274,7 @@ typedef struct cwmp {
     struct deviceid		deviceid;
 	struct xmpp_param	xmpp_param;
     struct list_head	head_session_queue;
+    struct list_head    head_mem;
     pthread_mutex_t		mutex_session_queue;
     struct session		*session_send;
     bool				cwmp_cr_event;
@@ -302,6 +303,7 @@ typedef struct session {
     struct list_head	head_event_container;
     struct list_head	head_rpc_cpe;
     struct list_head	head_rpc_acs;
+    struct list_head    head_mem;
     mxml_node_t			*tree_in;
     mxml_node_t			*tree_out;
     mxml_node_t			*body_in;
@@ -311,6 +313,12 @@ typedef struct session {
     int					fault_code;
     int					error;
 } session;
+
+typedef struct ctx_param_valuechange {
+    struct list_head head_mem;
+}ctx_param_valuechange;
+
+extern struct ctx_param_valuechange ctx_param_vc;
 
 typedef struct rpc {
     struct list_head	list;
@@ -343,7 +351,7 @@ int cwmp_schedule_rpc (struct cwmp *cwmp, struct session *session);
 int run_session_end_func (struct session *session);
 int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *session);
 int cwmp_session_destructor (struct cwmp *cwmp, struct session *session);
-int dm_add_end_session(void(*function)(int a, void *d), int action, void *data);
+int dm_add_end_session(struct session *session, void(*function)(int a, void *d), int action, void *data);
 int apply_end_session();
 struct rpc *cwmp_add_session_rpc_cpe (struct session *session, int type);
 struct session *cwmp_add_queue_session (struct cwmp *cwmp);
@@ -361,10 +369,10 @@ char * mix_get_time_of(time_t t_time);
 void *thread_exit_program (void *v);
 void connection_request_ip_value_change(struct cwmp *cwmp, int version);
 void connection_request_port_value_change(struct cwmp *cwmp, int port);
-void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type);
+void add_dm_parameter_tolist(void *ctx_mem, struct list_head *head, char *param_name, char *param_data, char *param_type);
 void cwmp_set_end_session (unsigned int end_session_flag);
 void *thread_handle_notify(void *v);
-int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type);
+int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type, struct session *session);
 int cwmp_get_int_event_code(char *code);
 int cwmp_apply_acs_changes ();
 int cwmp_init(int argc, char** argv,struct cwmp *cwmp);

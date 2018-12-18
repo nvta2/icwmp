@@ -10,11 +10,12 @@
  *
  */
 
+#include "log.h"
 #include <stdbool.h>
 #include "cwmp.h"
 #include "backupSession.h"
 #include "xml.h"
-#include "log.h"
+#include "cwmpmem.h"
 
 static mxml_node_t		*bkp_tree = NULL;
 pthread_mutex_t         mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;
@@ -770,7 +771,7 @@ char *load_child_value(mxml_node_t *tree, char *sub_name)
 			{
 				if(b->value.text.string != NULL)
 				{
-					value = strdup(b->value.text.string);
+					value = ctx_strdup(&cwmp_main, b->value.text.string);
 				}
 			}
 		}
@@ -818,7 +819,7 @@ void load_queue_event(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						command_key = strdup(c->value.text.string);
+						command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 				if(idx != -1)
@@ -832,7 +833,7 @@ void load_queue_event(mxml_node_t *tree,struct cwmp *cwmp)
 						}
 					}
 				}
-				FREE(command_key);
+				CTXFREE(command_key);
 			}
 			else if(strcmp(b->value.element.name, "parameter") == 0)
 			{
@@ -843,7 +844,8 @@ void load_queue_event(mxml_node_t *tree,struct cwmp *cwmp)
 					{
 						if(event_container_save != NULL)
 						{
-							add_dm_parameter_tolist(&(event_container_save->head_dm_parameter),
+							struct session *session = list_entry(cwmp->head_event_container,struct session, head_event_container);
+							add_dm_parameter_tolist((void *)session, &(event_container_save->head_dm_parameter),
 									c->value.text.string, NULL, NULL);
 						}
 					}
@@ -873,7 +875,7 @@ void load_schedule_inform(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						command_key = strdup(c->value.text.string);
+						command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -899,7 +901,7 @@ void load_schedule_inform(mxml_node_t *tree,struct cwmp *cwmp)
 			break;
 		}
 	}
-	schedule_inform = calloc (1,sizeof(struct schedule_inform));
+	schedule_inform = ctx_calloc(cwmp, 1,sizeof(struct schedule_inform));
 	if (schedule_inform != NULL)
 	{
 		schedule_inform->commandKey     = command_key;
@@ -915,7 +917,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
     struct list_head	*ilist = NULL;
     struct download		*idownload_request = NULL;
 
-	download_request = calloc(1,sizeof(struct download));
+	download_request = ctx_calloc(cwmp, 1,sizeof(struct download));
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
@@ -928,7 +930,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->url = strdup(c->value.text.string);
+						download_request->url = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -939,7 +941,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->command_key = strdup(c->value.text.string);
+						download_request->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -950,7 +952,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->file_type = strdup(c->value.text.string);
+						download_request->file_type = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -961,7 +963,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->username = strdup(c->value.text.string);
+						download_request->username = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -972,7 +974,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->password = strdup(c->value.text.string);
+						download_request->password = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1021,7 +1023,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
     struct list_head	*ilist = NULL;
     struct schedule_download		*idownload_request = NULL;
 
-	download_request = calloc(1,sizeof(struct schedule_download));
+	download_request = ctx_calloc(cwmp, 1,sizeof(struct schedule_download));
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
@@ -1034,7 +1036,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->url = strdup(c->value.text.string);
+						download_request->url = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1045,7 +1047,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->command_key = strdup(c->value.text.string);
+						download_request->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1056,7 +1058,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->file_type = strdup(c->value.text.string);
+						download_request->file_type = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1067,7 +1069,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->username = strdup(c->value.text.string);
+						download_request->username = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1078,7 +1080,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->password = strdup(c->value.text.string);
+						download_request->password = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1122,7 +1124,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->timewindowstruct[0].windowmode = strdup(c->value.text.string);
+						download_request->timewindowstruct[0].windowmode = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1133,7 +1135,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->timewindowstruct[0].usermessage = strdup(c->value.text.string);
+						download_request->timewindowstruct[0].usermessage = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1177,7 +1179,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->timewindowstruct[1].windowmode = strdup(c->value.text.string);
+						download_request->timewindowstruct[1].windowmode = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1188,7 +1190,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->timewindowstruct[1].usermessage = strdup(c->value.text.string);
+						download_request->timewindowstruct[1].usermessage = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1227,7 +1229,7 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
     struct list_head	*ilist = NULL;
     struct apply_schedule_download		*idownload_request = NULL;
 
-	download_request = calloc(1,sizeof(struct apply_schedule_download));
+	download_request = ctx_calloc(cwmp, 1,sizeof(struct apply_schedule_download));
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
@@ -1240,7 +1242,7 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->command_key = strdup(c->value.text.string);
+						download_request->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1251,7 +1253,7 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->file_type = strdup(c->value.text.string);
+						download_request->file_type = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1262,7 +1264,7 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						download_request->start_time = strdup(c->value.text.string);
+						download_request->start_time = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}			
@@ -1353,7 +1355,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
     struct list_head	*ilist = NULL;
     struct upload		*iupload_request = NULL;
 
-	upload_request = calloc(1,sizeof(struct upload));
+	upload_request = ctx_calloc(cwmp, 1,sizeof(struct upload));
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
@@ -1366,7 +1368,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						upload_request->url = strdup(c->value.text.string);
+						upload_request->url = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1377,7 +1379,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						upload_request->command_key = strdup(c->value.text.string);
+						upload_request->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1388,7 +1390,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						upload_request->file_type = strdup(c->value.text.string);
+						upload_request->file_type = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1399,7 +1401,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						upload_request->username = strdup(c->value.text.string);
+						upload_request->username = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1410,7 +1412,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						upload_request->password = strdup(c->value.text.string);
+						upload_request->password = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}			
@@ -1449,7 +1451,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
     struct change_du_state		*ichange_du_state_request = NULL;
 	struct operations		*elem;
 
-	change_du_state_request = calloc(1,sizeof(struct change_du_state));
+	change_du_state_request = ctx_calloc(cwmp, 1,sizeof(struct change_du_state));
 	INIT_LIST_HEAD(&(change_du_state_request->list_operation));
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
@@ -1462,7 +1464,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						change_du_state_request->command_key = strdup(c->value.text.string);
+						change_du_state_request->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1479,7 +1481,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 			}
 			else if (strcmp(b->value.element.name, "upgrade") == 0)
 			{
-				elem = (operations*)calloc(1, sizeof(operations));
+				elem = ctx_calloc(cwmp, 1, sizeof(operations));
 				elem->type = DU_UPDATE;
 				list_add_tail(&(elem->list), &(change_du_state_request->list_operation));
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
@@ -1493,7 +1495,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1506,7 +1508,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->version = strdup(d->value.text.string);
+									elem->version = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1519,7 +1521,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->url = strdup(d->value.text.string);
+									elem->url = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1532,7 +1534,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->username = strdup(d->value.text.string);
+									elem->username = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1545,7 +1547,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->password = strdup(d->value.text.string);
+									elem->password = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1555,7 +1557,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 			}
 			else if (strcmp(b->value.element.name, "install") == 0)
 			{
-				elem = (operations*)calloc(1, sizeof(operations));
+				elem = ctx_calloc(cwmp, 1, sizeof(operations));
 				elem->type = DU_INSTALL;
 				list_add_tail(&(elem->list), &(change_du_state_request->list_operation));
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
@@ -1568,7 +1570,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1581,7 +1583,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->executionenvref = strdup(d->value.text.string);
+									elem->executionenvref = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1594,7 +1596,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->url = strdup(d->value.text.string);
+									elem->url = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1607,7 +1609,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->username = strdup(d->value.text.string);
+									elem->username = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1620,7 +1622,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->password = strdup(d->value.text.string);
+									elem->password = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1630,7 +1632,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 			}
 			else if (strcmp(b->value.element.name, "uninstall") == 0)
 			{
-				elem = (operations*)calloc(1, sizeof(operations));
+				elem = ctx_calloc(cwmp, 1, sizeof(operations));
 				elem->type = DU_UNINSTALL;
 				list_add_tail(&(elem->list), &(change_du_state_request->list_operation));
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
@@ -1643,7 +1645,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1656,7 +1658,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->executionenvref = strdup(d->value.text.string);
+									elem->executionenvref = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1669,7 +1671,7 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->version = strdup(d->value.text.string);
+									elem->version = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1691,7 +1693,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
     struct change_du_state		*idu_state_change_complete_request = NULL;
 	struct opresult		*elem;
 
-	du_state_change_complete_request = calloc(1,sizeof(struct du_state_change_complete));
+	du_state_change_complete_request = ctx_calloc(cwmp, 1,sizeof(struct du_state_change_complete));
 	INIT_LIST_HEAD(&(du_state_change_complete_request->list_opresult));
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
@@ -1704,7 +1706,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						du_state_change_complete_request->command_key = strdup(c->value.text.string);
+						du_state_change_complete_request->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1721,7 +1723,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 			}
 			else if (strcmp(b->value.element.name, "opresult") == 0)
 			{
-				elem = (opresult*)calloc(1, sizeof(opresult));
+				elem = ctx_calloc(cwmp, 1, sizeof(opresult));
 				list_add_tail(&(elem->list), &(du_state_change_complete_request->list_opresult));
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
 				while(c) {
@@ -1733,7 +1735,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1746,7 +1748,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->version = strdup(d->value.text.string);
+									elem->version = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1759,7 +1761,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->du_ref = strdup(d->value.text.string);
+									elem->du_ref = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1772,7 +1774,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->current_state = strdup(d->value.text.string);
+									elem->current_state = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1798,7 +1800,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->start_time = strdup(d->value.text.string);
+									elem->start_time = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1811,7 +1813,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->complete_time = strdup(d->value.text.string);
+									elem->complete_time = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1837,7 +1839,7 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 							{
 								if(d->value.text.string != NULL)
 								{
-									elem->execution_unit_ref = strdup(d->value.text.string);
+									elem->execution_unit_ref = ctx_strdup(cwmp, d->value.text.string);
 								}
 							}
 						}
@@ -1856,9 +1858,7 @@ void load_transfer_complete(mxml_node_t	*tree,struct cwmp *cwmp)
 	struct transfer_complete 		*ptransfer_complete;
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
-
-	ptransfer_complete = calloc (1,sizeof(struct transfer_complete));
-
+	ptransfer_complete = ctx_calloc (cwmp, 1,sizeof(struct transfer_complete));
 	while (b) {
 		if (b && b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name,"command_key") == 0)
@@ -1868,7 +1868,7 @@ void load_transfer_complete(mxml_node_t	*tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						ptransfer_complete->command_key = strdup(c->value.text.string);
+						ptransfer_complete->command_key = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1879,7 +1879,7 @@ void load_transfer_complete(mxml_node_t	*tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						ptransfer_complete->start_time = strdup(c->value.text.string);
+						ptransfer_complete->start_time = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1890,7 +1890,7 @@ void load_transfer_complete(mxml_node_t	*tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						ptransfer_complete->complete_time = strdup(c->value.text.string);
+						ptransfer_complete->complete_time = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}
@@ -1901,7 +1901,7 @@ void load_transfer_complete(mxml_node_t	*tree,struct cwmp *cwmp)
 				{
 					if(c->value.text.string != NULL)
 					{
-						ptransfer_complete->old_software_version = strdup(c->value.text.string);
+						ptransfer_complete->old_software_version = ctx_strdup(cwmp, c->value.text.string);
 					}
 				}
 			}

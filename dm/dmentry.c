@@ -10,13 +10,12 @@
  *	  Author Feten Besbes <feten.besbes@pivasoftware.com>
  *
  */
-
+#include "log.h"
 #include "dmcwmp.h"
 #include "dmubus.h"
 #include "dmuci.h"
 #include "dmentry.h"
 #include "cwmp.h"
-#include "log.h"
 #include "wepkey.h"
 
 LIST_HEAD(head_package_change);
@@ -248,15 +247,12 @@ int dm_entry_apply(struct dmctx *ctx, int cmd, char *arg1, char *arg2)
 int dm_entry_load_enabled_notify()
 {
 	struct dmctx dmctx = {0};
-
 	dm_ctx_init(&dmctx);
 	dmctx.in_param = "";
 	dmctx.tree = true;
-
 	free_all_list_enabled_lwnotify();
 	free_all_list_enabled_notify();
 	dm_entry_enabled_notify(&dmctx);
-
 	dm_ctx_clean(&dmctx);
 	return 0;
 }

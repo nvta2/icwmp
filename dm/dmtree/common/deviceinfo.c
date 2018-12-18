@@ -254,7 +254,6 @@ int set_device_provisioningcode(char *refparam, struct dmctx *ctx, int action, c
 int get_base_mac_addr(char *refparam, struct dmctx *ctx, char **value)
 {	
 	json_object *res;
-	
 	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
 	DM_ASSERT(res, *value = "");
 	*value = dm_ubus_get_value(res, 2, "system", "basemac");
@@ -557,7 +556,6 @@ inline int entry_method_device_info_vcf(struct dmctx *ctx)
 	struct uci_section *s = NULL, *del_sec = NULL;
 	DIR *dir;
 	struct dirent *d_file;
-
 	if ((dir = opendir (DEFAULT_CONFIG_DIR)) != NULL) {
 		while ((d_file = readdir (dir)) != NULL) {
 			if(d_file->d_name[0] == '.')
@@ -580,8 +578,9 @@ inline int entry_method_device_info_vcf(struct dmctx *ctx)
 		vcf = handle_update_instance(1, ctx, &vcf_last, update_instance_alias_icwmpd, 3, s, "vcf_instance", "vcf_alias");
 		SUBENTRY(entry_method_device_info_vcf_instance, ctx, vcf);
 	}
-	if(del_sec)
+	if(del_sec){
 		DMUCI_DELETE_BY_SECTION(icwmpd, del_sec, NULL, NULL);
+	}
 	return 0;
 }
 

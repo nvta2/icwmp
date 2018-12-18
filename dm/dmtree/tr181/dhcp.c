@@ -18,6 +18,7 @@
 #include "dmcwmp.h"
 #include "dmcommon.h"
 #include "dhcp.h"
+#include "cwmpmem.h"
 
 #include "dmjson.h"
 #define DELIMITOR ","
@@ -1020,7 +1021,7 @@ int entry_dhcp_client_ipv4address(struct dmctx *ctx, char* num1,char* num2){
 		macaddr=dmjson_get_value(passed_args, 1, "macaddr");
 		if(!strcmp(mac, macaddr)){
 			current_dhcp_client_ipv4address_args.ip= dmjson_get_value(passed_args, 1, "ipddr");
-			current_dhcp_client_ipv4address_args.mac= strdup(macaddr);
+			current_dhcp_client_ipv4address_args.mac= dmstrdup(macaddr);
 			current_dhcp_client_ipv4address_args.leasetime= leasetime;
 			ctx->args=(void*)&current_dhcp_client_ipv4address_args;
 			idx = handle_update_instance(2, ctx, &idx_last, update_instance_without_section, 1, ++id);

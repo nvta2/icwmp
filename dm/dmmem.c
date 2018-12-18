@@ -22,6 +22,19 @@ size_t size
 	return (void *)m->mem;
 }
 
+void dmprintmem()
+{
+	struct dmmem *dmm;
+#ifdef WITH_MEMTRACK
+	fprintf(stderr,"\n===========================================================================================\n");
+	list_for_each_entry(dmm, &memhead, list) {
+		fprintf(stderr, "Allocated Memory ====> (%p) <==== in {%s, %s(), line %d}\n", dmm->mem, dmm->file, dmm->func, dmm->line);
+	}
+	fprintf(stderr,"\n===========================================================================================\n");
+	fflush(stderr);
+#endif /*WITH_MEMTRACK*/
+}
+
 inline void *__dmcalloc
 (
 #ifdef WITH_MEMTRACK
@@ -80,7 +93,7 @@ void dmcleanmem()
 	while (memhead.next != &memhead) {
 		dmm = list_entry(memhead.next, struct dmmem, list);
 #ifdef WITH_MEMTRACK
-		fprintf(stderr, "Allocated memory in {%s, %s(), line %d} is not freed\n", dmm->file, dmm->func, dmm->line);
+		//fprintf(stderr, "Clean memory ====> (%p) <==== in {%s, %s(), line %d}\n", dmm->mem, dmm->file, dmm->func, dmm->line);
 #endif /*WITH_MEMTRACK*/
 		list_del(&dmm->list);
 		free(dmm);

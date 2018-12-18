@@ -30,17 +30,19 @@
 #include <strophe.h>
 #endif
 #include <unistd.h>
+#include "cwmpmem.h" 
  
 struct cwmp         	cwmp_main = {0};
 
 int ip_version = 4;
 LIST_HEAD(list_execute_end_session);
 
-int dm_add_end_session(void(*function)(int a, void *d), int action, void *data)
+int dm_add_end_session(struct session *session, void(*function)(int a, void *d), int action, void *data)
 {
 	struct execute_end_session 			*execute_end_session;
-
-	execute_end_session = calloc (1,sizeof(struct execute_end_session));
+    if (session == NULL)
+        return 0;
+	execute_end_session = ctx_calloc(session, 1,sizeof(struct execute_end_session));
 	if (execute_end_session == NULL)
 	{
 		return -1;
@@ -59,9 +61,9 @@ int cwmp_free_dm_end_session(struct execute_end_session *execute_end_session)
 	{
 		if(execute_end_session->data != NULL)
 		{
-			FREE(execute_end_session->data);
+			CTXFREE(execute_end_session->data);
 		}
-		FREE(execute_end_session);
+		CTXFREE(execute_end_session);
 	}
 }
 
@@ -101,7 +103,7 @@ struct rpc *cwmp_add_session_rpc_acs (struct session *session, int type)
 {
     struct rpc     *rpc_acs;
 
-    rpc_acs = calloc (1,sizeof(struct rpc));
+    rpc_acs = ctx_calloc (session, 1,sizeof(struct rpc));
     if (rpc_acs==NULL)
     {
         return NULL;
@@ -115,7 +117,7 @@ struct rpc *cwmp_add_session_rpc_cpe (struct session *session, int type)
 {
     struct rpc     *rpc_cpe;
 
-    rpc_cpe = calloc (1,sizeof(struct rpc));
+    rpc_cpe = ctx_calloc (session, 1,sizeof(struct rpc));
     if (rpc_cpe==NULL)
     {
         return NULL;
@@ -129,7 +131,7 @@ struct rpc *cwmp_add_session_rpc_acs_head (struct session *session, int type)
 {
     struct rpc     *rpc_acs;
 
-    rpc_acs = calloc (1,sizeof(struct rpc));
+    rpc_acs = ctx_calloc (session, 1,sizeof(struct rpc));
     if (rpc_acs==NULL)
     {
         return NULL;
@@ -142,7 +144,7 @@ struct rpc *cwmp_add_session_rpc_acs_head (struct session *session, int type)
 int cwmp_session_rpc_destructor (struct rpc *rpc)
 {
     list_del(&(rpc->list));
-    free (rpc);
+    ctx_free (rpc);
     return CWMP_OK;
 }
 
@@ -173,6 +175,7 @@ static void cwmp_prepare_value_change (struct cwmp *cwmp, struct session *sessio
 	if (!event_container) goto end;
 	pthread_mutex_lock(&(mutex_value_change));
 	list_splice_init(&(list_value_change), &(event_container->head_dm_parameter));
+    list_splice_init(&(ctx_param_vc.head_mem), &(session->head_mem));
 	pthread_mutex_unlock(&(mutex_value_change));
 	cwmp_save_event_container (cwmp,event_container);
 
@@ -466,6 +469,7 @@ int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *sessi
         list_del(&(rpc_acs->list));
         list_add_tail (&(rpc_acs->list), &(session_queue->head_rpc_acs));
     }
+    list_splice_tail_init(&(session->head_mem), &(session_queue->head_mem));
     cwmp_session_destructor (cwmp, session);
     pthread_mutex_unlock (&(cwmp->mutex_session_queue));
     return CWMP_OK;
@@ -498,7 +502,8 @@ int cwmp_session_destructor (struct cwmp *cwmp, struct session *session)
     {
         list_del (&(session->list));
     }
-    free (session);
+    ctx_cleanmem(session);
+    ctx_free (session);
 
     return CWMP_OK;
 }
@@ -510,7 +515,7 @@ struct session *cwmp_add_queue_session (struct cwmp *cwmp)
     struct session     *session;
     struct rpc		   *rpc_acs;
 
-    session = calloc (1,sizeof(struct session));
+    session = ctx_calloc (cwmp, 1,sizeof(struct session));
     if (session==NULL)
     {
         return NULL;
@@ -519,9 +524,10 @@ struct session *cwmp_add_queue_session (struct cwmp *cwmp)
     INIT_LIST_HEAD (&(session->head_event_container));
     INIT_LIST_HEAD (&(session->head_rpc_acs));
     INIT_LIST_HEAD (&(session->head_rpc_cpe));
+    INIT_LIST_HEAD (&(session->head_mem));
     if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL)
     {
-    	free (session);
+    	ctx_free (session);
         return NULL;
     }
 

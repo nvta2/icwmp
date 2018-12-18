@@ -10,7 +10,7 @@
  *
  */
 
-
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,9 +23,9 @@
 #include "cwmp.h"
 #include "backupSession.h"
 #include "xml.h"
-#include "log.h"
 #include "dmentry.h"
 #include "deviceinfo.h"
+#include "cwmpmem.h"
 
 typedef enum uci_config_action {
     CMD_SET,
@@ -68,19 +68,19 @@ int uci_get_list_value(char *cmd, struct list_head *list)
         return size;
     }
 
-    s = strdup(cmd);
+    s = ctx_strdup(&cwmp_main, cmd);
     t = s;
     if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
     {
         CWMP_LOG(ERROR, "Invalid uci command path: %s",cmd);
-        free(t);
+        ctx_free(t);
         uci_free_context(c);
         return size;
     }
 
     if(ptr.o == NULL)
     {
-        free(t);
+        ctx_free(t);
         uci_free_context(c);
         return size;
     }
@@ -91,26 +91,26 @@ int uci_get_list_value(char *cmd, struct list_head *list)
         {
             if((e != NULL)&&(e->name))
             {
-                uci_list_elem = calloc(1,sizeof(struct config_uci_list));
+                uci_list_elem = ctx_calloc(&cwmp_main, 1,sizeof(struct config_uci_list));
                 if(uci_list_elem == NULL)
                 {
-                    free(t);
+                    ctx_free(t);
                     uci_free_context(c);
                     return CWMP_GEN_ERR;
                 }
-                uci_list_elem->value = strdup(e->name);
+                uci_list_elem->value = ctx_strdup(&cwmp_main, e->name);
                 list_add_tail (&(uci_list_elem->list), list);
                 size++;
             }
             else
             {
-                free(t);
+                ctx_free(t);
                 uci_free_context(c);
                 return size;
             }
         }
     }
-    free(t);
+    ctx_free(t);
     uci_free_context(c);
     return size;
 }
@@ -134,16 +134,16 @@ int uci_get_value_common(char *cmd,char **value,bool state)
         uci_add_delta_path(c, c->savedir);
         uci_set_savedir(c, state_path);
     }
-    s = strdup(cmd);
+    s = ctx_strdup(&cwmp_main, cmd);
     t = s;
     if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
     {
         CWMP_LOG(ERROR, "Error occurred in uci %s get %s",state?"state":"config",cmd);
-        free(t);
+        ctx_free(t);
         uci_free_context(c);
         return CWMP_GEN_ERR;
     }
-    free(t);
+    ctx_free(t);
     if(ptr.flags & UCI_LOOKUP_COMPLETE)
     {
         if (ptr.o==NULL || ptr.o->v.string==NULL)
@@ -152,7 +152,7 @@ int uci_get_value_common(char *cmd,char **value,bool state)
             uci_free_context(c);
             return CWMP_OK;
         }
-        *value = strdup(ptr.o->v.string);
+        *value = ctx_strdup(&cwmp_main, ptr.o->v.string);
     }
     uci_free_context(c);
     return CWMP_OK;
@@ -180,7 +180,7 @@ static int uci_action_value_common(char *cmd, uci_config_action action)
     struct uci_ptr              ptr;
     char                        state_path[32];
 
-    s = strdup(cmd);
+    s = ctx_strdup(&cwmp_main, cmd);
     t = s;
 
     if (!c)
@@ -198,7 +198,7 @@ static int uci_action_value_common(char *cmd, uci_config_action action)
 
     if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
     {
-        free(t);
+        ctx_free(t);
         uci_free_context(c);
         return CWMP_GEN_ERR;
     }
@@ -223,7 +223,7 @@ static int uci_action_value_common(char *cmd, uci_config_action action)
     {
         CWMP_LOG(ERROR, "UCI %s %s not succeed %s",action==CMD_SET_STATE?"state":"config",action==CMD_DEL?"delete":"set",cmd);
     }
-    free(t);
+    ctx_free(t);
     uci_free_context(c);
     return CWMP_OK;
 }
@@ -290,7 +290,7 @@ static int cwmp_do_package_cmd(struct uci_context *c)
     {
         cwmp_package_commit(c,*p);
     }
-    FREE(configs);
+    CTXFREE(configs);
     return CWMP_OK;
 }
 
@@ -340,7 +340,7 @@ int uci_revert_value ()
         }
         uci_revert(ctx, &ptr);
     }
-    FREE(configs);
+    CTXFREE(configs);
     uci_free_context(ctx);
 
     return CWMP_OK;
@@ -350,7 +350,7 @@ int check_global_config (struct config *conf)
 {
     if (conf->acsurl==NULL)
     {
-        conf->acsurl = strdup(DEFAULT_ACSURL);
+        conf->acsurl = ctx_strdup(&cwmp_main, DEFAULT_ACSURL);
     }
     return CWMP_OK;
 }
@@ -400,7 +400,7 @@ int get_amd_version_config()
 			 if ( a >= 1 ) {
 				 cwmp->conf.amd_version = a;
 			 }
-			 free(value);
+			 ctx_free(value);
 			 value = NULL;
 		 }
 		 cwmp->conf.supported_amd_version = cwmp->conf.amd_version;
@@ -427,7 +427,7 @@ int get_session_timeout_config()
 			 if ( a >= 1 ) {
 				 cwmp->conf.session_timeout = a;
 			 }
-			 free(value);
+			 ctx_free(value);
 			 value = NULL;
 		 }
 	 }
@@ -453,7 +453,7 @@ int get_instance_mode_config()
 	            } else {
 	            	cwmp->conf.instance_mode = INSTANCE_MODE_ALIAS;
 	            }
-	            free(value);
+	            ctx_free(value);
 	            value = NULL;
 	        }
 	    }
@@ -473,7 +473,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             log_set_log_file_name (value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -483,7 +483,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             log_set_file_max_size(value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -493,7 +493,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             log_set_on_console(value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -503,7 +503,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             log_set_on_file(value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -514,7 +514,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->dhcp_url_path!=NULL)
             {
-                free(conf->dhcp_url_path);
+                ctx_free(conf->dhcp_url_path);
             }
             conf->dhcp_url_path = value;
             value = NULL;
@@ -535,7 +535,7 @@ int get_global_config(struct config *conf)
     {
 		if (conf->acsurl!=NULL)
 		{
-			free(conf->acsurl);
+			ctx_free(conf->acsurl);
 		}
 		conf->acsurl = value3;
 		value3 = NULL;
@@ -544,24 +544,24 @@ int get_global_config(struct config *conf)
     {
 		if (conf->acsurl!=NULL)
 		{
-			free(conf->acsurl);
+			ctx_free(conf->acsurl);
 		}
 		conf->acsurl = value2;
 		value2 = NULL;
     }
     if (value!=NULL)
     {
-    	free(value);
+    	ctx_free(value);
     	value = NULL;
     }
     if (value2!=NULL)
 	{
-		free(value2);
+		ctx_free(value2);
 		value2 = NULL;
 	}
     if (value3!=NULL)
 	{
-		free(value3);
+		ctx_free(value3);
 		value3 = NULL;
 	}
 
@@ -571,7 +571,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->acs_userid!=NULL)
             {
-                free(conf->acs_userid);
+                ctx_free(conf->acs_userid);
             }
             conf->acs_userid = value;
             value = NULL;
@@ -587,7 +587,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->acs_passwd!=NULL)
             {
-                free(conf->acs_passwd);
+                ctx_free(conf->acs_passwd);
             }
             conf->acs_passwd = value;
             value = NULL;
@@ -613,7 +613,7 @@ int get_global_config(struct config *conf)
             } else {
                 conf->compression = COMP_NONE;
             }
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -630,7 +630,7 @@ int get_global_config(struct config *conf)
             if ( a <= 65535 || a >=1) {
                 conf->retry_min_wait_interval = a;
             }
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -647,7 +647,7 @@ int get_global_config(struct config *conf)
             if ( a <= 65535 || a >=1000) {
                 conf->retry_interval_multiplier = a;
             }
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -661,7 +661,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->acs_ssl_capath != NULL)
             {
-                free(conf->acs_ssl_capath);
+                ctx_free(conf->acs_ssl_capath);
             }
             conf->acs_ssl_capath = value;
             value = NULL;
@@ -669,7 +669,7 @@ int get_global_config(struct config *conf)
     }
     else
     {
-        FREE(conf->acs_ssl_capath);
+        CTXFREE(conf->acs_ssl_capath);
     }
     if((error = uci_get_value(UCI_HTTPS_SSL_CAPATH,&value)) == CWMP_OK)
     {
@@ -677,7 +677,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->https_ssl_capath != NULL)
             {
-                free(conf->https_ssl_capath);
+                ctx_free(conf->https_ssl_capath);
             }
             conf->https_ssl_capath = value;
             value = NULL;
@@ -685,7 +685,7 @@ int get_global_config(struct config *conf)
     }
     else
     {
-        FREE(conf->https_ssl_capath);
+        CTXFREE(conf->https_ssl_capath);
     }
     if((error = uci_get_value(HTTP_DISABLE_100CONTINUE,&value)) == CWMP_OK)
 	{
@@ -724,7 +724,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->acs_ssl_version != NULL)
             {
-                free(conf->acs_ssl_version);
+                ctx_free(conf->acs_ssl_version);
             }
             conf->acs_ssl_version = value;
             value = NULL;
@@ -732,7 +732,7 @@ int get_global_config(struct config *conf)
     }
     else
     {
-        FREE(conf->acs_ssl_version);
+        CTXFREE(conf->acs_ssl_version);
     }
     if((error = uci_get_value(UCI_CPE_INTERFACE_PATH,&value)) == CWMP_OK)
     {
@@ -740,7 +740,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->interface!=NULL)
             {
-                free(conf->interface);
+                ctx_free(conf->interface);
             }
             conf->interface = value;
             value = NULL;
@@ -756,7 +756,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->cpe_userid!=NULL)
             {
-                free(conf->cpe_userid);
+                ctx_free(conf->cpe_userid);
             }
             conf->cpe_userid = value;
             value = NULL;
@@ -772,7 +772,7 @@ int get_global_config(struct config *conf)
         {
             if (conf->cpe_passwd!=NULL)
             {
-                free(conf->cpe_passwd);
+                ctx_free(conf->cpe_passwd);
             }
             conf->cpe_passwd = value;
             value = NULL;
@@ -789,7 +789,7 @@ int get_global_config(struct config *conf)
 		{
 			if (conf->ubus_socket!=NULL)
 			{
-				free(conf->ubus_socket);
+				ctx_free(conf->ubus_socket);
 			}
 			conf->ubus_socket = value;
 			value = NULL;
@@ -805,7 +805,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             log_set_severity_idx (value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -820,7 +820,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             a = atoi(value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
         if(a==0)
@@ -844,7 +844,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             a = atol(value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
         conf->time = a;
@@ -860,7 +860,7 @@ int get_global_config(struct config *conf)
         if(value != NULL)
         {
             a = atoi(value);
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
         if(a>=PERIOD_INFORM_MIN)
@@ -890,7 +890,7 @@ int get_global_config(struct config *conf)
 			{
 				conf->periodic_enable = false;
 			}
-			free(value);
+			ctx_free(value);
 			value = NULL;
 		}
 		else
@@ -931,7 +931,7 @@ int get_global_config(struct config *conf)
 		    if(value != NULL)
 		    {
 		        a = atoi(value);
-		        free(value);
+		        ctx_free(value);
 		        value = NULL;
 		    }
 		    if(a==0)
@@ -955,7 +955,7 @@ int get_global_config(struct config *conf)
 		    {
 		        if (conf->xmpp_allowed_jid != NULL)
 		        {
-		            free(conf->xmpp_allowed_jid);
+		            ctx_free(conf->xmpp_allowed_jid);
 		        }
 		        conf->xmpp_allowed_jid = value;
 		        value = NULL;
@@ -970,11 +970,12 @@ int get_global_config(struct config *conf)
 	return CWMP_OK;
 }
 
-int get_lwn_config(struct config *conf)
+int get_lwn_config(struct cwmp *cwmp)
 {
     int error;
     int a = 0;    
     char *value = NULL;
+    struct config *conf = &(cwmp->conf);
     if((error = uci_get_value(LW_NOTIFICATION_ENABLE,&value)) == CWMP_OK)
     {
 	    if(value != NULL)
@@ -988,7 +989,7 @@ int get_lwn_config(struct config *conf)
             {
                 conf->lw_notification_enable = false;
             }
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
     }
@@ -996,13 +997,13 @@ int get_lwn_config(struct config *conf)
     {
         if(value != NULL)
         {
-            conf->lw_notification_hostname = strdup(value);
-            free(value);
+            conf->lw_notification_hostname = ctx_strdup(cwmp, value);
+            ctx_free(value);
             value = NULL;
         }
         else
         {
-            conf->lw_notification_hostname = strdup(conf->acsurl);
+            conf->lw_notification_hostname = ctx_strdup(cwmp, conf->acsurl);
         }
                 
     }
@@ -1012,7 +1013,7 @@ int get_lwn_config(struct config *conf)
         {
             a = atoi(value);
             conf->lw_notification_port = a;
-            free(value);
+            ctx_free(value);
             value = NULL;
         }
         else
@@ -1060,8 +1061,9 @@ int global_env_init (int argc, char** argv, struct env *env)
     return CWMP_OK;
 }
 
-int global_conf_init (struct config *conf)
+int global_conf_init (struct cwmp *cwmp)
 {
+    struct config *conf = &(cwmp->conf);
     int error;
 
     if (error = get_global_config(conf))
@@ -1072,7 +1074,7 @@ int global_conf_init (struct config *conf)
     {
         return error;
     }
-    get_lwn_config(conf);
+    get_lwn_config(cwmp);
     return CWMP_OK;
 }
 
@@ -1089,11 +1091,11 @@ int save_acs_bkp_config(struct cwmp *cwmp)
 int cwmp_get_deviceid(struct cwmp *cwmp) {
 	struct dmctx dmctx = {0};
 	dm_ctx_init(&dmctx);
-	cwmp->deviceid.manufacturer = strdup(get_deviceid_manufacturer()); //TODO free
-	cwmp->deviceid.serialnumber = strdup(get_deviceid_serialnumber());
-	cwmp->deviceid.productclass = strdup(get_deviceid_productclass());
-	cwmp->deviceid.oui = strdup(get_deviceid_manufactureroui());
-	cwmp->deviceid.softwareversion = strdup(get_softwareversion());
+	cwmp->deviceid.manufacturer = ctx_strdup(cwmp, get_deviceid_manufacturer()); //TODO free
+	cwmp->deviceid.serialnumber = ctx_strdup(cwmp, get_deviceid_serialnumber());
+	cwmp->deviceid.productclass = ctx_strdup(cwmp, get_deviceid_productclass());
+	cwmp->deviceid.oui = ctx_strdup(cwmp, get_deviceid_manufactureroui());
+	cwmp->deviceid.softwareversion = ctx_strdup(cwmp, get_softwareversion());
 	dm_ctx_clean(&dmctx);
 	return CWMP_OK;
 }
@@ -1111,24 +1113,23 @@ int cwmp_get_xmpp_param(struct cwmp *cwmp) {
 	if (conf->xmpp_enable && conf->xmpp_connection_id > 0)
     {
 		char *enable;
-		asprintf(&instance, "%d", conf->xmpp_connection_id);
+		ctx_asprintf(cwmp, &instance, "%d", conf->xmpp_connection_id);
 		dm_ctx_init(&dmctx);
 		char *tmp;
-		asprintf(&tmp, "%s", get_xmpp_server_enable(instance));
-		//tmp = ;
-		enable = strdup(tmp);
+		ctx_asprintf(cwmp, &tmp, "%s", get_xmpp_server_enable(instance));
+		enable = ctx_strdup(cwmp, tmp);
 		if(enable[0] == '\0' || enable[0] == '0')
 		{
 			conf->xmpp_enable = false;//disable xmpp_enable
 			goto end;
 		}
-		asprintf(&(cwmp->xmpp_param.local_jid), "%s-%s-%s", cwmp->deviceid.oui, cwmp->deviceid.productclass, cwmp->deviceid.serialnumber);
-		//xmpp->allowed_jid = strdup((const char *)get_xmpp_allowed_jid());
-		//xmpp->username = strdup(cwmp->xmpp_param.local_jid);
-		xmpp->username = strdup((const char *)get_xmpp_username(instance));
-		xmpp->password = strdup((const char *)get_xmpp_password(instance));
-		cwmp->xmpp_param.domain = strdup((const char *)get_xmpp_domain(instance));
-		cwmp->xmpp_param.ressource = strdup((const char *)get_xmpp_resource(instance));	
+		ctx_asprintf(cwmp, &(cwmp->xmpp_param.local_jid), "%s-%s-%s", cwmp->deviceid.oui, cwmp->deviceid.productclass, cwmp->deviceid.serialnumber);
+		//xmpp->allowed_jid = ctx_strdup(cwmp, (const char *)get_xmpp_allowed_jid());
+		//xmpp->username = ctx_strdup(cwmp, cwmp->xmpp_param.local_jid);
+		xmpp->username = ctx_strdup(cwmp, (const char *)get_xmpp_username(instance));
+		xmpp->password = ctx_strdup(cwmp, (const char *)get_xmpp_password(instance));
+		cwmp->xmpp_param.domain = ctx_strdup(cwmp, (const char *)get_xmpp_domain(instance));
+		cwmp->xmpp_param.ressource = ctx_strdup(cwmp, (const char *)get_xmpp_resource(instance));	
 		cwmp->xmpp_param.keepalive_interval = atoi((const char *)get_xmpp_keepalive_interval(instance));
 		cwmp->xmpp_param.connect_attempt = atoi((const char *)get_xmpp_connect_attempts(instance));
 		if(cwmp->xmpp_param.connect_attempt)
@@ -1159,6 +1160,9 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
 	struct config   *conf;
     conf = &(cwmp->conf);
     memset(&env,0,sizeof(struct env));
+    INIT_LIST_HEAD(&(cwmp->head_session_queue));
+    INIT_LIST_HEAD(&(cwmp->head_mem));
+    INIT_LIST_HEAD(&(ctx_param_vc.head_mem));
     if(error = global_env_init (argc, argv, &env))
     {
         return error;
@@ -1183,8 +1187,7 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
     pthread_mutex_init(&cwmp->mutex_session_send, NULL);
     pthread_mutex_init(&cwmp->mutex_handle_notify, NULL);
     memcpy(&(cwmp->env),&env,sizeof(struct env));
-    INIT_LIST_HEAD(&(cwmp->head_session_queue));
-    if(error = global_conf_init(&(cwmp->conf)))
+    if(error = global_conf_init(cwmp))
     {
         return error;
     }
@@ -1205,7 +1208,7 @@ int cwmp_config_reload(struct cwmp *cwmp)
     conf = &(cwmp->conf);
     memset(&cwmp->env,0,sizeof(struct env));
     memset(&cwmp->conf,0,sizeof(struct config));
-    if(error = global_conf_init(&(cwmp->conf)))
+    if(error = global_conf_init(cwmp))
     {
         return error;
     }

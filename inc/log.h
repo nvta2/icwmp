@@ -59,7 +59,6 @@ int log_set_severity_idx (char *value);
 	sleep(1); \
 }
 #endif
-
 #ifndef TRACE
 #define TRACE_TYPE 0
 static inline void trace_empty_func()
@@ -68,9 +67,10 @@ static inline void trace_empty_func()
 #if TRACE_TYPE == 2
 #define TRACE(MESSAGE,args...) do { \
 	const char *A[] = {MESSAGE}; \
-	printf("TRACE: %s %s %d\n",__FUNCTION__,__FILE__,__LINE__); fflush(stdout);\
+	fprintf(stderr, "TRACE: %s %s %d\n",__FUNCTION__,__FILE__,__LINE__); fflush(stderr);\
 	if(sizeof(A) > 0) \
-		printf(*A,##args); \
+		fprintf(stderr, *A,##args); \
+	fprintf(stderr, "\n"); fflush(stderr); \
 } while(0)
 #elif TRACE_TYPE == 1
 #define TRACE(MESSAGE, ...) printf(MESSAGE, ## __VA_ARGS__)

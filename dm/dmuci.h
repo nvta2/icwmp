@@ -176,7 +176,7 @@ int dmuci_init_##UCI_PATH(void)		\
 	}											\
 	uci_add_delta_path(uci_ctx_##UCI_PATH, uci_ctx_##UCI_PATH->savedir);	\
 	uci_set_savedir(uci_ctx_##UCI_PATH, uci_savedir_##UCI_PATH);					\
-	uci_set_confdir(uci_ctx_##UCI_PATH, strdup(uci_confdir_##UCI_PATH));					\
+	uci_set_confdir(uci_ctx_##UCI_PATH, uci_confdir_##UCI_PATH);					\
 	return 0;	\
 }\
 int dmuci_exit_##UCI_PATH(void)		\

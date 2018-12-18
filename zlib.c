@@ -14,6 +14,7 @@
 #include <string.h>
 #include "log.h"
 #include "cwmp.h"
+#include "cwmpmem.h"
 
 /* CHUNK is the size of the memory chunk used by the zlib routines. */
 
@@ -49,7 +50,7 @@ static int strm_init (z_stream * strm, int type)
 }
 
 /* Example text to print out. */
-int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type)
+int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type, struct session *session)
 {
 #if 0 /*test*/
     static int testi = 1;
@@ -79,12 +80,12 @@ int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type)
         have = CHUNK - strm.avail_out;
         int ozlen = *zlen;
         *zlen += have;
-        rzmsg = realloc(*zmsg, *zlen * sizeof(unsigned char));
+        rzmsg = ctx_realloc(session, *zmsg, *zlen * sizeof(unsigned char));
         if (rzmsg!=NULL) {
             *zmsg = rzmsg;
         }
         else {
-            free(*zmsg);
+            ctx_free(*zmsg);
             CWMP_LOG(ERROR, "Error (re)allocating memory");
             return -1;
         }

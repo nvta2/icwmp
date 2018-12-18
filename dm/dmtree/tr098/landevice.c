@@ -25,6 +25,7 @@
 #include "wepkey.h"
 #include "dmubus.h"
 #include "dmjson.h"
+#include "cwmpmem.h"
 #define DELIMITOR ","
 #define TAILLE 10
 #define MAX_PROC_ARP 256
@@ -272,8 +273,9 @@ void update_dhcp_conf_start(int i, void *data)
 		dmuci_commit();
 		dm_ctx_clean(&dmctx);
 end:
-		FREE(dhcp_param->state_sec);
-		FREE(dhcp_param->interface);
+	CTXFREE(dhcp_param->state_sec);
+	CTXFREE(dhcp_param->interface);
+
 		return;
 }
 
@@ -326,8 +328,9 @@ void update_dhcp_conf_end(int i, void *data)
 		dmuci_commit();
 		dm_ctx_clean(&dmctx);
 end:
-		FREE(dhcp_param->state_sec);
-		FREE(dhcp_param->interface);
+	CTXFREE(dhcp_param->state_sec);
+	CTXFREE(dhcp_param->interface);
+
 		return;
 }
 
@@ -787,6 +790,22 @@ int get_lan_dhcp_interval_address_end(char *refparam, struct dmctx *ctx, char **
 	return ret;
 }
 
+int dm_update_dhcp_end_session(char *lan_name, char *secname, void(*function)(int a, void *d))
+{
+	struct dhcp_param *dhcp_param;
+    struct session *session;
+
+    session = cwmp_main.session_send;
+    if (session == NULL)
+    	return 0;
+
+	dhcp_param = ctx_calloc(session, 1, sizeof(struct dhcp_param));
+	dhcp_param->interface = ctx_strdup(session, lan_name);
+	dhcp_param->state_sec = ctx_strdup(session, secname);
+	dm_add_end_session(session, function, 0, (void*)(dhcp_param));
+	return 0;
+}
+
 int set_lan_dhcp_address_start(char *refparam, struct dmctx *ctx, int action, char *value)
 {
 	json_object *res;
@@ -816,10 +835,7 @@ int set_lan_dhcp_address_start(char *refparam, struct dmctx *ctx, int action, ch
 			dmuci_set_varstate_value("cwmp", s_name, "start", value);
 			dmuci_set_varstate_value("cwmp", s_name, "dhcp_sec", dhcp_name);
 			dmfree(s_name);
-			dhcp_param_1 = calloc(1, sizeof(struct dhcp_param));
-			dhcp_param_1->interface = strdup(lan_name);
-			dhcp_param_1->state_sec = strdup((curr_section)->e.name);
-			dm_add_end_session(&update_dhcp_conf_start, 0, (void*)(dhcp_param_1));
+			dm_update_dhcp_end_session(lan_name, (curr_section)->e.name, &update_dhcp_conf_start);
 			return 0;
 	}
 	return 0;
@@ -857,10 +873,7 @@ int set_lan_dhcp_address_end(char *refparam, struct dmctx *ctx, int action, char
 			dmuci_set_varstate_value("cwmp", s_name, "limit", value);
 			dmuci_set_varstate_value("cwmp", s_name, "dhcp_sec", dhcp_name);
 			dmfree(s_name);
-			dhcp_param = calloc(1, sizeof(struct dhcp_param));
-			dhcp_param->interface = strdup(lan_name);
-			dhcp_param->state_sec = strdup((curr_section)->e.name);
-			dm_add_end_session(&update_dhcp_conf_end, 0, (void*)(dhcp_param));
+			dm_update_dhcp_end_session(lan_name, (curr_section)->e.name, &update_dhcp_conf_end);
 			return 0;
 	}
 	return 0;
