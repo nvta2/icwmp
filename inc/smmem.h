@@ -20,7 +20,7 @@ static inline void sm_empty_func()
 }
 
 #define CWMP_WITH_MEMLEACKSEC 1
-//#define CWMP_WITH_MEMTRACK 1
+#define CWMP_WITH_MEMTRACK 1
 
 #ifndef CWMP_WITH_MEMLEACKSEC
 #undef CWMP_WITH_MEMTRACK

@@ -12,7 +12,7 @@ static inline void dm_empty_func()
 }
 
 #define WITH_MEMLEACKSEC 1
-//#define WITH_MEMTRACK 1
+#define WITH_MEMTRACK 1
 
 #ifndef WITH_MEMLEACKSEC
 #undef WITH_MEMTRACK
