@@ -9,6 +9,11 @@
  *
  */
 
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <linux/if.h>
+#include <netdb.h>
+
 #include <uci.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -432,8 +437,8 @@ int browseEthIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 * LINKER
 ***************************************************************************/
 int get_linker_vlan_term(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if(((struct vlan_term_args *)data)->device_sec) {
-		dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "name", linker);
+	if(((struct dm_args *)data)->section) {
+		dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", linker);
 		return 0;
 	} else {
 		*linker = "";
@@ -462,7 +467,7 @@ int set_vlan_term_enable(char *refparam, struct dmctx *ctx, void *data, char *in
 int get_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0";
-	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "vid", value);
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "vid", value);
 	return 0;
 }
 
@@ -476,12 +481,12 @@ int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 		case VALUECHECK:
 			return 0;
 		case VALUESET: {
-			dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "ifname", &ifname);
+			dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "ifname", &ifname);
 			dmasprintf(&name, "%s.%s", ifname, value);
-			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "name", name);
+			dmuci_set_value_by_section(((struct dm_args *)data)->section, "name", name);
 
-			dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "vid", &vid);
-			dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "vid", value);
+			dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "vid", &vid);
+			dmuci_set_value_by_section(((struct dm_args *)data)->section, "vid", value);
 			dmasprintf(&curr_ifname, "%s.%s", ifname, vid);
 
 			// Update the interface related to this device
@@ -503,7 +508,7 @@ int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 {
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct vlan_term_args *)data)->device_sec), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
 	dmuci_get_value_by_section_string(dmmap_section, "vlan_term_alias", value);
 
 	return 0;
@@ -513,7 +518,7 @@ int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 {
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct vlan_term_args *)data)->device_sec), &dmmap_section);
+	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -530,7 +535,7 @@ int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 int get_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *type;
-	dmuci_get_value_by_section_string(((struct vlan_term_args *)data)->device_sec, "type", &type);
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "type", &type);
 	if (strcmp(type, "8021q") == 0 || strcmp(type, "untagged") == 0)
 		// 0x8100
 		*value = "33024";
@@ -550,9 +555,9 @@ int set_vlan_term_tpid(char *refparam, struct dmctx *ctx, void *data, char *inst
 			return 0;
 		case VALUESET:
 			if (strcmp(value, "33024") == 0)
-				dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "type", "8021q");
+				dmuci_set_value_by_section(((struct dm_args *)data)->section, "type", "8021q");
 			else if (strcmp(value, "34984") == 0)
-				dmuci_set_value_by_section(((struct vlan_term_args *)data)->device_sec, "type", "8021ad");
+				dmuci_set_value_by_section(((struct dm_args *)data)->section, "type", "8021ad");
 			else
 				return -1;
 
@@ -577,7 +582,7 @@ int get_vlan_term_status(char *refparam, struct dmctx *ctx, void *data, char *in
 ***************************************************************************/
 int get_vlan_term_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = dmstrdup(section_name(((struct vlan_term_args *)data)->device_sec));
+	*value = dmstrdup(section_name(((struct dm_args *)data)->section));
 	return 0;
 }
 
@@ -624,10 +629,10 @@ int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instan
 
 	switch (del_action) {
 	case DEL_INST:
-		get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct vlan_term_args *)data)->device_sec), &dmmap_section);
+		get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
 		if(dmmap_section != NULL)
 			dmuci_delete_by_section(dmmap_section, NULL, NULL);
-		dmuci_delete_by_section(((struct vlan_term_args *)data)->device_sec, NULL, NULL);
+		dmuci_delete_by_section(((struct dm_args *)data)->section, NULL, NULL);
 		break;
 	case DEL_ALL:
 		uci_foreach_sections("network", "device", s) {
@@ -657,13 +662,13 @@ int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instan
 int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *vlan_term = NULL, *vlan_term_last = NULL;
-	struct vlan_term_args curr_vlan_term_args = {0};
+	struct dm_args curr_vlan_term_args = {0};
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
 
 	synchronize_specific_config_sections_with_dmmap("network", "device", "dmmap_network", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		curr_vlan_term_args.device_sec = p->config_section;
+		curr_vlan_term_args.section = p->config_section;
 		vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "vlan_term_instance", "vlan_term_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
 			break;
@@ -673,6 +678,7 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 
 int get_linker_link(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker)
 {
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", linker);
 	return 0;
 }
 int get_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
@@ -696,6 +702,8 @@ int set_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance
 
 int get_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", value);
+	CWMP_LOG(ERROR, "get_link_macaddress - %s", *value);
 	return 0;
 }
 
@@ -726,16 +734,95 @@ int set_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int add_link(char *refparam, struct dmctx *ctx, void *data, char **instance)
 {
-	return 0;
+	return -1;
 }
 
 int delete_link(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
+	return -1;
+}
+
+static int is_mac_exist(char *macaddr)
+{
+	struct uci_section *s = NULL;
+	uci_path_foreach_sections(icwmpd, "dmmap_network", "link", s) {
+		char *mac;
+		dmuci_get_value_by_section_string(s, "mac", &mac);
+		if (strcmp(mac, macaddr) == 0)
+			return 1;
+	}
+
 	return 0;
+}
+
+static void create_link(char *ifname)
+{
+	int i;
+	char *v;
+	struct ifreq s;
+	int fd;
+	struct uci_section *dmmap_network= NULL;
+	char macaddr[18];
+
+	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (fd < 0) {
+		CWMP_LOG(ERROR, "socket failed %s", ifname);
+		return;
+	}
+
+	memset(&s, 0, sizeof(s));
+	strcpy(s.ifr_name, ifname);
+	if (0 != ioctl(fd, SIOCGIFHWADDR, &s)) {
+		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
+		close(fd);
+		return;
+	}
+
+	close(fd);
+
+	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
+	snprintf(macaddr, sizeof(macaddr), "%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2], p[3], p[4], p[5]);
+
+	/* Interfaces might share the same mac address */
+	if (is_mac_exist(macaddr))
+		return;
+
+	dmuci_add_section_icwmpd("dmmap_network", "link", &dmmap_network, &v);
+	dmuci_set_value_by_section(dmmap_network, "mac", macaddr);
 }
 
 int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
+	struct dm_args args = {0};
+	struct uci_section *s = NULL;
+	char *id_last = NULL, *id = NULL;
+
+	check_create_dmmap_package("dmmap_network");
+
+	uci_foreach_sections("network", "interface", s) {
+		char *type, *ifname;
+		dmuci_get_value_by_section_string(s, "type", &type);
+		if (strcmp(type, "alias") == 0 || strcmp(section_name(s), "loopback") == 0)
+			continue;
+
+		if (strcmp(type, "bridge") == 0)
+			dmasprintf(&ifname, "br-%s", section_name(s));
+		else
+			dmuci_get_value_by_section_string(s, "ifname", &ifname);
+
+		if (*ifname != '\0' && *ifname != '@')
+			create_link(ifname);
+	}
+
+	uci_path_foreach_sections(icwmpd, "dmmap_network", "link", s) {
+		args.section = s;
+		id = handle_update_instance(1, dmctx, &id_last, update_instance_alias_icwmpd, 3, s, "link_instance", "link_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&args, id) == DM_STOP) {
+			break;
+		}
+	}
+
 	return 0;
 }
+
 

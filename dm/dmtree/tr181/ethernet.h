@@ -17,11 +17,6 @@ struct eth_port_args
 	char *ifname;
 };
 
-struct vlan_term_args
-{
-	struct uci_section *device_sec;
-};
-
 extern DMOBJ tEthernetObj[];
 extern DMOBJ tEthernetStatObj[];
 extern DMLEAF tEthernetParams[];

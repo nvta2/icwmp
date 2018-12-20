@@ -118,6 +118,11 @@ struct dmmap_sect {
 	char *section_name;
 	char *instance;
 };
+struct dm_args
+{
+	struct uci_section *section;
+	char *name;
+};
 
 void compress_spaces(char *str);
 char *cut_fx(char *str, char *delimiter, int occurence);
