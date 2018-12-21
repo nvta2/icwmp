@@ -8,11 +8,11 @@
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
  *
  */
-
+#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <linux/if.h>
-#include <netdb.h>
+#include <net/if.h>
+#include <net/if_arp.h>
 
 #include <uci.h>
 #include <stdio.h>
@@ -23,6 +23,7 @@
 #include "dmcommon.h"
 #include "ethernet.h"
 #include "dmjson.h"
+#include "dmentry.h"
 #include "log.h"
 
 char *wan_ifname = NULL;
@@ -586,20 +587,107 @@ int get_vlan_term_name(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+static char *get_macaddr(char *ifname)
+{
+	struct ifreq s;
+	int fd;
+	char macaddr[18];
+
+	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (fd < 0) {
+		CWMP_LOG(ERROR, "socket failed %s", ifname);
+		return NULL;
+	}
+
+	memset(&s, 0, sizeof(s));
+	strcpy(s.ifr_name, ifname);
+	if (0 != ioctl(fd, SIOCGIFHWADDR, &s)) {
+		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
+		close(fd);
+		return NULL;
+	}
+
+	close(fd);
+
+	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
+	snprintf(macaddr, sizeof(macaddr), "%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2], p[3], p[4], p[5]);
+
+	return dmstrdup(macaddr);
+}
+
+static int set_macaddr(char *ifname, char *macaddr)
+{
+	struct ifreq s;
+	int fd;
+
+	CWMP_LOG(ERROR, "set_macaddr %s, %s", ifname, macaddr)
+
+	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (fd < 0) {
+		CWMP_LOG(ERROR, "socket failed %s", ifname);
+		return -1;
+	}
+
+	memset(&s, 0, sizeof(s));
+	strcpy(s.ifr_name, ifname);
+	s.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
+	sscanf(macaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &p[0], &p[1], &p[2], &p[3], &p[4], &p[5]);
+	if (0 != ioctl(fd, SIOCSIFHWADDR, &s)) {
+		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
+		close(fd);
+		return -1;
+	}
+
+	close(fd);
+	return 0;
+}
+
 /**************************************************************************
 * SET & GET Lowerlayers
 ***************************************************************************/
 int get_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	// TODO
+	char *ifname;
+	char *macaddr;
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &ifname);
+
+	macaddr = get_macaddr(ifname);
+	if (macaddr == NULL)
+		return 0;
+
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), macaddr, value);
 	return 0;
 }
 
 int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	// TODO
+	char *linker= NULL;
+	char *newvalue= NULL;
+	char *ifname;
+
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			if (value[strlen(value)-1]!='.') {
+				dmasprintf(&newvalue, "%s.", value);
+				adm_entry_get_linker_value(ctx, newvalue, &linker);
+			} else
+				adm_entry_get_linker_value(ctx, value, &linker);
+
+			if (linker == NULL) {
+				CWMP_LOG(ERROR, "failed to get linker of %s", value)
+				return -1;
+			}
+
+			dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &ifname);
+			/* linker value of Ethernet.Link is the mac address*/
+			return set_macaddr(ifname, linker);
+	}
 	return 0;
 }
+
 
 /*******************ADD-DEL OBJECT*********************/
 int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance_para)
@@ -683,42 +771,77 @@ int get_linker_link(char *refparam, struct dmctx *dmctx, void *data, char *insta
 }
 int get_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	*value = "true";
 	return 0;
 }
 int set_link_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	// Not support.
 	return 0;
 }
 
 int get_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "link_alias", value);
 	return 0;
 }
 
 int set_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	dmuci_set_value_by_section(((struct dm_args *)data)->section, "link_alias", value);
 	return 0;
 }
 
 int get_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", value);
-	CWMP_LOG(ERROR, "get_link_macaddress - %s", *value);
 	return 0;
 }
 
 int set_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *s = NULL;
+	char * curr_mac;
+
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", &curr_mac);
+	if (strcmp(curr_mac, value) == 0)
+		return 0;
+
+	/* Apply the new mac address for all the relevant interfaces */
+	uci_foreach_sections("network", "interface", s) {
+		char *type, *ifname;
+		char *mac;
+		dmuci_get_value_by_section_string(s, "type", &type);
+		if (strcmp(type, "alias") == 0 || strcmp(section_name(s), "loopback") == 0)
+			continue;
+
+		if (strcmp(type, "bridge") == 0)
+			dmasprintf(&ifname, "br-%s", section_name(s));
+		else
+			dmuci_get_value_by_section_string(s, "ifname", &ifname);
+
+		if (*ifname == '\0' || *ifname == '@')
+			continue;
+
+		mac = get_macaddr(ifname);
+		if (mac != NULL && strcasecmp(mac, curr_mac) == 0) {
+			set_macaddr(ifname, value);
+		}
+	}
+
+	dmuci_set_value_by_section(((struct dm_args *)data)->section, "mac", value);
 	return 0;
 }
 
 int get_link_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	*value = "Up";
 	return 0;
 }
 
 int get_link_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	*value = dmstrdup(section_name(((struct dm_args *)data)->section));
 	return 0;
 }
 
@@ -759,29 +882,15 @@ static void create_link(char *ifname)
 {
 	int i;
 	char *v;
-	struct ifreq s;
-	int fd;
+	char *macaddr;
+
 	struct uci_section *dmmap_network= NULL;
-	char macaddr[18];
 
-	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-	if (fd < 0) {
-		CWMP_LOG(ERROR, "socket failed %s", ifname);
+	macaddr = get_macaddr(ifname);
+	if (macaddr == NULL) {
+		CWMP_LOG(ERROR, "failed to get mac for ifname %s", ifname);
 		return;
 	}
-
-	memset(&s, 0, sizeof(s));
-	strcpy(s.ifr_name, ifname);
-	if (0 != ioctl(fd, SIOCGIFHWADDR, &s)) {
-		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
-		close(fd);
-		return;
-	}
-
-	close(fd);
-
-	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
-	snprintf(macaddr, sizeof(macaddr), "%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2], p[3], p[4], p[5]);
 
 	/* Interfaces might share the same mac address */
 	if (is_mac_exist(macaddr))
