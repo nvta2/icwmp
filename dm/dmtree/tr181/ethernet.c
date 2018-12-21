@@ -745,6 +745,10 @@ int set_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *ins
 	if (strcmp(curr_mac, value) == 0)
 		return 0;
 
+	dmuci_set_value_by_section(((struct dm_args *)data)->section, "mac", value);
+	if (*curr_mac == '\0' || *value == '\0')
+		return 0;
+
 	/* Apply the new mac address for all the relevant interfaces */
 	uci_foreach_sections("network", "interface", s) {
 		char *type, *ifname;
@@ -767,7 +771,6 @@ int set_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *ins
 		}
 	}
 
-	dmuci_set_value_by_section(((struct dm_args *)data)->section, "mac", value);
 	return 0;
 }
 
@@ -846,15 +849,39 @@ int set_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
-int add_link(char *refparam, struct dmctx *ctx, void *data, char **instance)
+int add_link(char *refparam, struct dmctx *ctx, void *data, char **instance_para)
 {
-	return -1;
+	char *value, *v;
+	char *instance;
+	struct uci_section *dmmap_network= NULL;
+
+	check_create_dmmap_package("dmmap_network");
+	instance = get_last_instance_icwmpd("dmmap_network", "link", "link_instance");
+
+	dmuci_add_section_icwmpd("dmmap_network", "link", &dmmap_network, &v);
+	*instance_para = update_instance_icwmpd(dmmap_network, instance, "link_instance");
+
+	return 0;
 }
 
 int delete_link(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-	return -1;
+	int found = 0;
+	char *lan_name;
+	struct uci_section *s = NULL;
+
+	switch (del_action) {
+	case DEL_INST:
+		dmuci_delete_by_section(((struct dm_args *)data)->section, NULL, NULL);
+		break;
+	case DEL_ALL:
+		DMUCI_DEL_SECTION(icwmpd, "dmmap_network", "link", NULL, NULL);
+		break;
+	}
+
+	return 0;
 }
+
 
 static int is_mac_exist(char *macaddr)
 {

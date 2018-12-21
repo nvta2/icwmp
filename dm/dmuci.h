@@ -304,7 +304,7 @@ int dmuci_commit_package_##UCI_PATH(char *package) \
 #define DMUCI_ADD_LIST_VALUE(UCI_PATH, package, section, option, value) dmuci_add_list_value_##UCI_PATH(package, section, option, value)
 #define DMUCI_DEL_LIST_VALUE(UCI_PATH, package, section, option, value) dmuci_del_list_value_##UCI_PATH(package, section, option, value)
 #define DMUCI_ADD_SECTION(UCI_PATH, package, stype, s, value) dmuci_add_section_##UCI_PATH(package, stype, s, value)
-#define DMUCI_DEL_SECTION(UCI_PATH, package, section, option, value) dmuci_del_section_##UCI_PATH(package, section, option, value)
+#define DMUCI_DEL_SECTION(UCI_PATH, package, section, option, value) dmuci_delete_##UCI_PATH(package, section, option, value)
 #define DMUCI_SET_VALUE_BY_SECTION(UCI_PATH, s, option, value) dmuci_set_value_by_section_##UCI_PATH(s, option, value)
 #define DMUCI_DELETE_BY_SECTION(UCI_PATH, s, option, value) dmuci_delete_by_section_##UCI_PATH(s, option, value)
 #define DMUCI_WALK_SECTION(UCI_PATH, package, stype, arg1, arg2, cmp , filter, value), struct uci_section *prev_section, int walk)\) dmuci_walk_section_##UCI_PATH(package, stype, arg1, arg2, cmp , filter, value)
