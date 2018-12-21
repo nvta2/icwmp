@@ -634,6 +634,7 @@ void *thread_exit_program (void *v)
 {
 	CWMP_LOG(INFO,"EXIT ICWMP");
 	pthread_mutex_lock(&mutex_backup_session);
+    cwmp_exit();
 	exit(EXIT_SUCCESS);
 }
 
@@ -650,6 +651,21 @@ void *thread_xmpp_client_listen (void *v)
     return NULL;
 }
 #endif
+
+int cwmp_exit() {
+    struct cwmp                     *cwmp = &cwmp_main;
+    struct session *session;
+    list_for_each_entry(session, &(cwmp_main.head_session_queue), list)
+    {
+        ctx_cleanmem(session);
+    }
+    ctx_cleanmem(&cwmp_main);
+    ctx_cleanmem(&ctx_param_vc);
+    bkp_tree_clean();
+    ubus_exit();
+    uloop_done();
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -773,5 +789,6 @@ int main(int argc, char **argv)
 	cwmp_xmpp_exit();
 #endif
     CWMP_LOG(INFO,"EXIT ICWMP");
+    cwmp_exit();
     return CWMP_OK;
 }

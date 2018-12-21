@@ -360,6 +360,7 @@ int dmuci_commit(void)
 	{
 		DMUCI_COMMIT_PACKAGE(icwmpd, "dmmap");
 	}
+	free(configs);
 	return 0;
 }
 
