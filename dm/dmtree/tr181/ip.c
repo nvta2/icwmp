@@ -19,6 +19,7 @@
 #include "ip.h"
 #include "diagnostic.h"
 #include "dmjson.h"
+#include "log.h"
 
 struct dm_forced_inform_s IPv4INFRM = {0, get_ipv4_finform};
 struct dm_forced_inform_s IPv6INFRM = {0, get_ipv6_finform};
@@ -503,6 +504,16 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 
 	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "type", &wtype);
 	if (strcmp(wtype, "bridge") == 0) {
+		char *ifname, *mac;
+		dmasprintf(&ifname, "br-%s", section_name(((struct ip_args *)data)->ip_sec));
+		mac = get_macaddr(ifname);
+		CWMP_LOG(ERROR, "get_ip_int_lower_layer, mac:%s", mac)
+		if (mac != NULL) {
+			/* Expect the Ethernet.Link to be the lowerlayer*/
+			adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), mac, value);
+			CWMP_LOG(ERROR, "get_ip_int_lower_layer, lowerlay:%s", *value)
+			return 0;
+		}
 		get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
 		dmuci_get_value_by_section_string(dmmap_section, "bridge_instance", &br_inst);
 		uci_path_foreach_option_eq(icwmpd, "dmmap_bridge_port", "bridge_port", "bridge_key", br_inst, port) {
@@ -535,19 +546,19 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 	adm_entry_get_linker_param(ctx, dm_print_path("%s%cATM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPTM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-	
+
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cVLANTermination%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-	
+
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-	
+
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cSSID%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-	
+
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPPP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-	
+
 	if (*value == NULL)
 		*value = "";
 	return 0;

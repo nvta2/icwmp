@@ -23,11 +23,18 @@
 #include <sys/wait.h>
 #include <uci.h>
 #include <ctype.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "dmjson.h"
+#include "log.h"
 
 char *array_notifcation_char[__MAX_notification] = {
 	[notification_none] = "0",
@@ -270,7 +277,7 @@ int set_interface_enable_ubus(char *iface, char *refparam, struct dmctx *ctx, in
 {
 	bool b;
 	char *ubus_object;
-	
+
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -286,7 +293,7 @@ int set_interface_enable_ubus(char *iface, char *refparam, struct dmctx *ctx, in
 				dmubus_call_set(ubus_object, "down", UBUS_ARGS{}, 0);
 			dmfree(ubus_object);
 			return 0;
-	}	
+	}
 	return 0;
 }
 
@@ -644,7 +651,7 @@ void update_section_option_list(char *config, char *section, char *option, char 
 			dmuci_delete_by_section(prev_s, NULL, NULL);
 		}
 		if (add_sec) {
-			dmuci_add_section_and_rename(config, section, &s, &add_value);
+			dmuci_add_section(config, section, &s, &add_value);
 			dmuci_set_value_by_section(s, option, val);
 			dmuci_set_value_by_section(s, option_2, val_2);
 		}
@@ -711,7 +718,7 @@ void update_section_list(char *config, char *section, char *option, int number, 
 			}
 		}
 		while (i < number) {
-			dmuci_add_section_and_rename(config, section, &s, &add_value);
+			dmuci_add_section(config, section, &s, &add_value);
 			if (option)dmuci_set_value_by_section(s, option, filter);
 			if (option1)dmuci_set_value_by_section(s, option1, val1);
 			if (option2)dmuci_set_value_by_section(s, option2, val2);
@@ -787,7 +794,7 @@ int wan_remove_dev_interface(struct uci_section *interface_setion, char *dev)
 	return 0;
 }
 
-int filter_lan_device_interface(struct uci_section *s)
+int filter_lan_device_interface(struct uci_section *s, void *v)
 {
 	char *ifname = NULL;
 	char *phy_itf = NULL, *phy_itf_local;
@@ -1052,7 +1059,7 @@ void synchronize_specific_config_sections_with_dmmap(char *package, char *sectio
 	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
 		dmuci_get_value_by_section_string(s, "section_name", &v);
 		if(get_origin_section_from_config(package, section_type, v) == NULL){
-			dmuci_delete_by_section_unnamed_icwmpd(s, NULL, NULL);
+			dmuci_delete_by_section(s, NULL, NULL);
 		}
 	}
 }
@@ -1422,4 +1429,60 @@ char **strsplit(const char* str, const char* delim, size_t* numtokens) {
     *numtokens = tokens_used;
     free(s);
     return tokens;
+}
+
+char *get_macaddr(char *ifname)
+{
+	struct ifreq s;
+	int fd;
+	char macaddr[18];
+
+	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (fd < 0) {
+		CWMP_LOG(ERROR, "socket failed %s", ifname);
+		return NULL;
+	}
+
+	memset(&s, 0, sizeof(s));
+	strcpy(s.ifr_name, ifname);
+	if (0 != ioctl(fd, SIOCGIFHWADDR, &s)) {
+		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
+		close(fd);
+		return NULL;
+	}
+
+	close(fd);
+
+	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
+	snprintf(macaddr, sizeof(macaddr), "%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2], p[3], p[4], p[5]);
+
+	return dmstrdup(macaddr);
+}
+
+int set_macaddr(char *ifname, char *macaddr)
+{
+	struct ifreq s;
+	int fd;
+
+	CWMP_LOG(ERROR, "set_macaddr %s, %s", ifname, macaddr)
+
+	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (fd < 0) {
+		CWMP_LOG(ERROR, "socket failed %s", ifname);
+		return -1;
+	}
+
+	memset(&s, 0, sizeof(s));
+	strcpy(s.ifr_name, ifname);
+	s.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
+	sscanf(macaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &p[0], &p[1], &p[2], &p[3], &p[4], &p[5]);
+	if (0 != ioctl(fd, SIOCSIFHWADDR, &s)) {
+		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
+		close(fd);
+		return -1;
+	}
+
+	close(fd);
+	return 0;
 }
