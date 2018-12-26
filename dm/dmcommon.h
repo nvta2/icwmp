@@ -113,6 +113,12 @@ struct dmmap_dup
 	void* additional_attribute;
 };
 
+struct dmmap_sect {
+	struct list_head list;
+	char *section_name;
+	char *instance;
+};
+
 void compress_spaces(char *str);
 char *cut_fx(char *str, char *delimiter, int occurence);
 pid_t get_pid(char *pname);
@@ -162,5 +168,8 @@ bool synchronize_multi_config_sections_with_dmmap_eq_diff(char *package, char *s
 void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section);
 void get_config_section_of_dmmap_section(char* package, char* section_type, char *section_name, struct uci_section **config_section);
 void check_create_dmmap_package(char *dmmap_package);
+int is_section_unnamed(char *section_name);
+void delete_sections_save_next_sections(char* dmmap_package, char *section_type, char *instancename, char *section_name, int instance, struct list_head *dup_list);
+void update_dmmap_sections(struct list_head *dup_list, char *instancename, char* dmmap_package, char *section_type);
 
 #endif

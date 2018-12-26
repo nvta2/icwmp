@@ -662,10 +662,22 @@ char *dmuci_set_value_by_section(struct uci_section *s, char *option, char *valu
 }
 
 /**** UCI DELETE by section pointer *****/
+
 int dmuci_delete_by_section(struct uci_section *s, char *option, char *value)
 {
 	struct uci_ptr up = {0};
 	uci_ctx->flags |= UCI_FLAG_EXPORT_NAME;
+
+	dmuci_lookup_ptr_by_section(uci_ctx, &up, s, option, value);
+
+	if (uci_delete(uci_ctx, &up) != UCI_OK)
+		return -1;
+
+	return 0;
+}
+int dmuci_delete_by_section_unnamed(struct uci_section *s, char *option, char *value)
+{
+	struct uci_ptr up = {0};
 
 	dmuci_lookup_ptr_by_section(uci_ctx, &up, s, option, value);
 

@@ -1051,7 +1051,7 @@ void synchronize_specific_config_sections_with_dmmap(char *package, char *sectio
 	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
 		dmuci_get_value_by_section_string(s, "section_name", &v);
 		if(get_origin_section_from_config(package, section_type, v) == NULL){
-			dmuci_delete_by_section(s, NULL, NULL);
+			dmuci_delete_by_section_unnamed_icwmpd(s, NULL, NULL);
 		}
 	}
 }
@@ -1274,5 +1274,75 @@ void check_create_dmmap_package(char *dmmap_package){
 		 **/
 		fp = fopen(dmmap_file_path, "w"); // new empty file
 		fclose(fp);
+	}
+}
+
+
+int is_section_unnamed(char *section_name){
+        int i;
+
+        if(strlen(section_name)!=9)
+                return 0;
+        if(strstr(section_name, "cfg") != section_name)
+                return 0;
+        for(i=3; i<9; i++){
+                if(!isxdigit(section_name[i]))
+                        return 0;
+        }
+        return 1;
+}
+
+
+void add_dmmap_list_section(struct list_head *dup_list, char* section_name, char* instance)
+{
+	struct dmmap_sect *dmsect;
+
+	dmsect = dmcalloc(1, sizeof(struct dmmap_sect));
+	list_add_tail(&dmsect->list, dup_list);
+	dmasprintf(&dmsect->section_name, "%s", section_name);
+	dmasprintf(&dmsect->instance, "%s", instance);
+}
+
+void delete_sections_save_next_sections(char* dmmap_package, char *section_type, char *instancename, char *section_name, int instance, struct list_head *dup_list) {
+	struct uci_section *s, *stmp;
+	char *v=NULL, *lsectname= NULL, *tmp= NULL;
+	int inst;
+
+	asprintf(&lsectname, "%s", section_name);
+
+	uci_path_foreach_sections(icwmpd, dmmap_package, section_type, s) {
+		dmuci_get_value_by_section_string(s, instancename, &v);
+		inst= atoi(v);
+		if(inst>instance){
+			dmuci_get_value_by_section_string(s, "section_name", &tmp);
+			add_dmmap_list_section(dup_list, lsectname, v);
+			free(lsectname);
+			lsectname= NULL;
+			asprintf(&lsectname, "%s", tmp);
+			free(tmp);
+			tmp= NULL;
+		}
+	}
+
+	if(lsectname != NULL) free(lsectname);
+
+
+	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
+		dmuci_get_value_by_section_string(s, instancename, &v);
+		inst= atoi(v);
+		if(inst>=instance)
+			dmuci_delete_by_section_unnamed_icwmpd(s, NULL, NULL);
+	}
+}
+
+void update_dmmap_sections(struct list_head *dup_list, char *instancename, char* dmmap_package, char *section_type){
+	struct uci_section *dm_sect;
+	char *v;
+	struct dmmap_sect *p;
+
+	list_for_each_entry(p, dup_list, list) {
+		dmuci_add_section_icwmpd(dmmap_package, section_type, &dm_sect, &v);
+		dmuci_set_value_by_section(dm_sect, "section_name", p->section_name);
+		dmuci_set_value_by_section(dm_sect, instancename, p->instance);
 	}
 }
