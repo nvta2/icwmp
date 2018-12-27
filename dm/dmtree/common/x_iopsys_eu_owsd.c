@@ -553,7 +553,7 @@ int delete_owsd_listen_instance(char *refparam, struct dmctx *ctx, void *data, c
 				dmuci_delete_by_section_unnamed(owsd_listensection, NULL, NULL);
 			} else {
 				get_dmmap_section_of_config_section("dmmap_owsd", "owsd-listen", section_name(owsd_listensection), &dmmap_section);
-				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(owsd_listensection, NULL, NULL);
 			}
 			break;
