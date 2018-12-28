@@ -943,7 +943,7 @@ int delete_br_port(char *refparam, struct dmctx *ctx, void *data, char *instance
 		get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(((struct bridging_port_args *)data)->bridge_port_sec), &dmmap_section);
 		if(dmmap_section==NULL || dmmap_section==0){
 			dmmap_section= ((struct bridging_port_args *)data)->bridge_port_sec;
-			DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_section, NULL, NULL);
+			dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
 		}
 		else{
 			dmuci_get_value_by_section_string(((struct bridging_port_args *)data)->bridge_sec, "ifname", &ifname);
@@ -952,7 +952,7 @@ int delete_br_port(char *refparam, struct dmctx *ctx, void *data, char *instance
 				dmuci_set_value_by_section(((struct bridging_port_args *)data)->bridge_sec, "ifname", new_ifname);
 			}
 			get_dmmap_section_of_config_section("dmmap_bridge_port", "bridge_port", section_name(((struct bridging_port_args *)data)->bridge_port_sec), &dmmap_section);
-			DMUCI_DELETE_BY_SECTION(icwmpd, dmmap_section, NULL, NULL);
+			dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
 		}
 		break;
 	case DEL_ALL:

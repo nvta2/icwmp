@@ -134,7 +134,7 @@ int add_dhcp_server(char *refparam, struct dmctx *ctx, void *data, char **instan
 	
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_icwmpd("dmmap_dhcp", "dhcp", "dhcp_instance");
-	dmuci_add_section_and_rename("dhcp", "dhcp", &s, &value);
+	dmuci_add_section("dhcp", "dhcp", &s, &value);
 	dmuci_set_value_by_section(s, "start", "100");
 	dmuci_set_value_by_section(s, "leasetime", "12h");
 	dmuci_set_value_by_section(s, "limit", "150");
@@ -154,10 +154,18 @@ int delete_dhcp_server(char *refparam, struct dmctx *ctx, void *data, char *inst
 
 	switch (del_action) {
 	case DEL_INST:
-		get_dmmap_section_of_config_section("dmmap_dhcp", "dhcp", section_name(((struct dhcp_args *)data)->dhcp_sec), &dmmap_section);
-		if(dmmap_section != NULL)
-			dmuci_delete_by_section(dmmap_section, NULL, NULL);
-		dmuci_delete_by_section(((struct dhcp_args *)data)->dhcp_sec, NULL, NULL);
+		if(is_section_unnamed(section_name(((struct dhcp_args *)data)->dhcp_sec))){
+			LIST_HEAD(dup_list);
+			delete_sections_save_next_sections("dmmap_dhcp", "dhcp", "dhcp_instance", section_name(((struct dhcp_args *)data)->dhcp_sec), atoi(instance), &dup_list);
+			update_dmmap_sections(&dup_list, "dhcp_instance", "dmmap_dhcp", "dhcp");
+			dmuci_delete_by_section_unnamed(((struct dhcp_args *)data)->dhcp_sec, NULL, NULL);
+		} else {
+			get_dmmap_section_of_config_section("dmmap_dhcp", "dhcp", section_name(((struct dhcp_args *)data)->dhcp_sec), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
+			dmuci_delete_by_section(((struct dhcp_args *)data)->dhcp_sec, NULL, NULL);
+		}
+
 		break;
 	case DEL_ALL:
 		uci_foreach_sections("dhcp", "dhcp", s) {
@@ -189,7 +197,7 @@ int add_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, char *
 	
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_lev2_icwmpd("dhcp", "host", "dmmap_dhcp", "ldhcpinstance", "dhcp", ((struct dhcp_args *)data)->interface);
-	dmuci_add_section_and_rename("dhcp", "host", &s, &value);
+	dmuci_add_section("dhcp", "host", &s, &value);
 	dmuci_set_value_by_section(s, "dhcp", ((struct dhcp_args *)data)->interface);
 
 
@@ -209,9 +217,17 @@ int delete_dhcp_staticaddress(char *refparam, struct dmctx *ctx, void *data, cha
 	
 	switch (del_action) {
 		case DEL_INST:
-			get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(dhcpargs->dhcpsection), &dmmap_section);
-			dmuci_delete_by_section(dmmap_section, NULL, NULL);
-			dmuci_delete_by_section(dhcpargs->dhcpsection, NULL, NULL);
+			if(is_section_unnamed(section_name(dhcpargs->dhcpsection))){
+				LIST_HEAD(dup_list);
+				delete_sections_save_next_sections("dmmap_dhcp", "host", "ldhcpinstance", section_name(dhcpargs->dhcpsection), atoi(instance), &dup_list);
+				update_dmmap_sections(&dup_list, "ldhcpinstance", "dmmap_dhcp", "host");
+				dmuci_delete_by_section_unnamed(dhcpargs->dhcpsection, NULL, NULL);
+			} else {
+				get_dmmap_section_of_config_section("dmmap_dhcp", "host", section_name(dhcpargs->dhcpsection), &dmmap_section);
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(dhcpargs->dhcpsection, NULL, NULL);
+			}
+
 			break;
 		case DEL_ALL:
 			uci_foreach_option_eq("dhcp", "host", "dhcp", ((struct dhcp_args *)data)->interface, s) {
@@ -976,7 +992,7 @@ int browseDhcpInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 	list_for_each_entry(p, &dup_list, list) {
 		dmuci_get_value_by_section_string(p->config_section, "interface", &interface);
 		init_dhcp_args(&curr_dhcp_args, p->config_section, interface);
-		idhcp = handle_update_instance(1, dmctx, &idhcp_last, update_instance_alias, 3, p->dmmap_section, "dhcp_instance", "dhcp_alias");
+		idhcp = handle_update_instance(1, dmctx, &idhcp_last, update_instance_alias_icwmpd, 3, p->dmmap_section, "dhcp_instance", "dhcp_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dhcp_args, idhcp) == DM_STOP)
 			break;
 	}
@@ -994,7 +1010,7 @@ int browseDhcpStaticInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 
 	synchronize_specific_config_sections_with_dmmap_cont("dhcp", "host", "dmmap_dhcp", "dhcp", ((struct dhcp_args *)prev_data)->interface, &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		idhcp = handle_update_instance(2, dmctx, &idhcp_last, update_instance_alias, 3, p->dmmap_section, "ldhcpinstance", "ldhcpalias");
+		idhcp = handle_update_instance(2, dmctx, &idhcp_last, update_instance_alias_icwmpd, 3, p->dmmap_section, "ldhcpinstance", "ldhcpalias");
 		init_args_dhcp_host(&curr_dhcp_staticargs, p->config_section);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dhcp_staticargs, idhcp) == DM_STOP)
 			break;

@@ -2361,7 +2361,7 @@ int browseProfileInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	wait_voice_service_up();
 	synchronize_specific_config_sections_with_dmmap("voice_client", "sip_service_provider", "dmmap_voice_client", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		profile_num = handle_update_instance(2, dmctx, &profile_num_last, update_instance_alias, 3, p->dmmap_section, "profileinstance", "profilealias");
+		profile_num = handle_update_instance(2, dmctx, &profile_num_last, update_instance_alias_icwmpd, 3, p->dmmap_section, "profileinstance", "profilealias");
 		init_sip_args(&curr_sip_args, p->config_section, profile_num_last);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_sip_args, profile_num) == DM_STOP)
 			break;
@@ -2389,7 +2389,7 @@ int browseLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 		if ( line_id >= maxLine )
 			continue;
 		set_voice_profile_key_of_line(p->dmmap_section, prev_instance);
-		line_num = handle_update_instance(3, dmctx, &last_inst, update_instance_alias, 3, p->dmmap_section, "lineinstance", "linealias");
+		line_num = handle_update_instance(3, dmctx, &last_inst, update_instance_alias_icwmpd, 3, p->dmmap_section, "lineinstance", "linealias");
 		init_brcm_args(&curr_brcm_args, p->config_section, sipargs->sip_section, sipargs->profile_num); //check difference between sipargs->profile_num and profile_num
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_brcm_args, line_num) == DM_STOP)
 			break;

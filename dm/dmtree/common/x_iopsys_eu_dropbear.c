@@ -431,7 +431,7 @@ int delete_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char
 				dmuci_delete_by_section_unnamed((struct uci_section *)data, NULL, NULL);
 			} else {
 				get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name((struct uci_section *)data), &dmmap_section);
-				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section((struct uci_section *)data, NULL, NULL);
 			}
 			break;
