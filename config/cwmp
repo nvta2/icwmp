@@ -39,7 +39,7 @@ config cwmp 'cpe'
 	# datamodel: tr098 (Default)
 	# datamodel possible configs: tr098, tr181
 	option datamodel 'tr181'
-	option notification '0'
+	option notification '1'
 
 config cwmp 'lwn'
 	option enable '1'
