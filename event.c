@@ -327,7 +327,7 @@ void cwmp_add_notification(void)
 	int i = 0;
 	FILE *fp;
 	char buf[512];
-	char *parameter, *notification, *value, *jval;
+	char *parameter, *notification = NULL, *value = NULL, *jval;
 	struct event_container   *event_container;
 	struct cwmp   *cwmp = &cwmp_main;
 	struct dm_enabled_notify *p;
@@ -357,11 +357,11 @@ void cwmp_add_notification(void)
 			buf[len-1] = '\0';
 		dmjson_parse_init(buf);
 		dmjson_get_var("parameter", &jval);
-		parameter = dmstrdup(jval);
+		parameter = strdup(jval);
 		dmjson_get_var("value", &jval);
-		value = dmstrdup(jval);
+		value = strdup(jval);
 		dmjson_get_var("notification", &jval);
-		notification = dmstrdup(jval);
+		notification = strdup(jval);
 		dmjson_parse_fini();
 		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
@@ -377,6 +377,9 @@ void cwmp_add_notification(void)
 					isactive = true;
 			}
 		}
+		FREE(value);
+		FREE(notification);
+		FREE(parameter);
 	}
 	fclose(fp);
 

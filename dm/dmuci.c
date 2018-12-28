@@ -364,6 +364,8 @@ int dmuci_commit(void)
 			DMUCI_COMMIT_PACKAGE(icwmpd, *p);
 		}
 	}
+	free(configs);
+	free(icwmpd_configs);
 	return 0;
 }
 
@@ -662,7 +664,6 @@ char *dmuci_set_value_by_section(struct uci_section *s, char *option, char *valu
 }
 
 /**** UCI DELETE by section pointer *****/
-
 int dmuci_delete_by_section(struct uci_section *s, char *option, char *value)
 {
 	struct uci_ptr up = {0};

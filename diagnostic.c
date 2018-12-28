@@ -667,6 +667,7 @@ int cwmp_start_diagnostic(int diagnostic_type)
 	)
 	{
 		CWMP_LOG(ERROR,"Invalid URL %s", url);
+		free(url);
 		return -1;
 	}
 	if ( interface == NULL || interface[0] == '\0' )
@@ -675,6 +676,7 @@ int cwmp_start_diagnostic(int diagnostic_type)
 		if (error == -1)
 		{
 			CWMP_LOG(ERROR,"Interface value: Empty");
+			free(interface);
 			return -1;
 		}
 	}

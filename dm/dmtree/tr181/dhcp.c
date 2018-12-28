@@ -1069,7 +1069,7 @@ int browseDhcpClientIPv4Inst(struct dmctx *dmctx, DMNODE *parent_node, void *pre
 		macaddr=dmjson_get_value(passed_args, 1, "macaddr");
 		if(!strcmp(mac, macaddr)){
 			current_dhcp_client_ipv4address_args.ip= dmjson_get_value(passed_args, 1, "ipddr");
-			current_dhcp_client_ipv4address_args.mac= strdup(macaddr);
+			current_dhcp_client_ipv4address_args.mac= dmstrdup(macaddr);
 			current_dhcp_client_ipv4address_args.leasetime= leasetime;
 
 			idx = handle_update_instance(2, dmctx, &idx_last, update_instance_without_section, 1, ++id);

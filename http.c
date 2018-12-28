@@ -53,21 +53,27 @@ static CURL *curl;
 
 int http_client_init(struct cwmp *cwmp)
 {
-	char *dhcp_dis;
-	char *acs_var_stat;
+	char *dhcp_dis = NULL;
+	char *acs_var_stat = NULL;
 	unsigned char buf[sizeof(struct in6_addr)];
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
 #ifdef HTTP_CURL
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
-		if (asprintf(&http_c.url, "%s",
-				acs_var_stat) == -1)
-				return -1;
+		if (asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
+			free(acs_var_stat);
+			free(dhcp_dis);
+			return -1;
+		}
 	} else {
-		if (asprintf(&http_c.url, "%s",
-			cwmp->conf.acsurl) == -1)
-		return -1;
+		if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
+			free(acs_var_stat);
+			free(dhcp_dis);
+			return -1;
+		}
 	}
+	free(acs_var_stat);
+	free(dhcp_dis);
 #endif
 
 #ifdef HTTP_ZSTREAM
@@ -87,6 +93,7 @@ int http_client_init(struct cwmp *cwmp)
 	/* TODO debug ssl config from freecwmp*/
 
 #ifdef HTTP_CURL
+	curl_global_init(0);
 	curl = curl_easy_init();
 	if (!curl) return -1;
 
@@ -175,7 +182,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 #ifdef HTTP_CURL
 	CURLcode res;
 	long http_code = 0;
-	static char *ip_acs = NULL;
+	static char ip_acs[128] = {0};
 	char *ip = NULL;
 	char errbuf[CURL_ERROR_SIZE];
 	http_c.header_list = NULL;
@@ -259,9 +266,8 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 
 	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
 	if (ip && ip[0] != '\0') {
-		if (!ip_acs || strcmp(ip_acs, ip) != 0) {
-			FREE(ip_acs);
-			ip_acs = strdup(ip);
+		if (ip_acs[0] == '\0' || strcmp(ip_acs, ip) != 0) {
+			strcpy(ip_acs, ip);
 			if (cwmp->conf.ipv6_enable) {
 				tmp = inet_pton(AF_INET, ip, buf);
 				if (tmp == 1)

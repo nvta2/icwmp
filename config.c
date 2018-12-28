@@ -530,9 +530,9 @@ int get_global_config(struct config *conf)
             } else {
                 conf->compression = COMP_NONE;
             }
-            free(value);
-            value = NULL;
         }
+        free(value);
+        value = NULL;
     }
     else
     {
@@ -547,9 +547,10 @@ int get_global_config(struct config *conf)
             if ( a <= 65535 || a >=1) {
                 conf->retry_min_wait_interval = a;
             }
-            free(value);
-            value = NULL;
         }
+        free(value);
+        value = NULL;
+ 
     }
     else
     {
@@ -564,9 +565,9 @@ int get_global_config(struct config *conf)
             if ( a <= 65535 || a >=1000) {
                 conf->retry_interval_multiplier = a;
             }
-            free(value);
-            value = NULL;
         }
+        free(value);
+        value = NULL;
     }
     else
     {
@@ -610,6 +611,7 @@ int get_global_config(struct config *conf)
 		{
 			if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
 				conf->http_disable_100continue = true;
+            free(value);
 			value = NULL;
 		}
 	}
@@ -620,7 +622,8 @@ int get_global_config(struct config *conf)
             if ((strcasecmp(value,"true")==0) || (strcmp(value,"1")==0))
             {
                 conf->insecure_enable = true;
-            }			
+            }
+            free(value);	
             value = NULL;
         }
     }
@@ -632,6 +635,7 @@ int get_global_config(struct config *conf)
 			{
 				conf->ipv6_enable = true;
 			}
+            free(value);
 			value = NULL;
 		}
 	}

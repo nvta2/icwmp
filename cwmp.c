@@ -594,6 +594,7 @@ void *thread_exit_program (void *v)
 {
 	CWMP_LOG(INFO,"EXIT ICWMP");
 	pthread_mutex_lock(&mutex_backup_session);
+    	cwmp_exit();
 	exit(EXIT_SUCCESS);
 }
 
@@ -603,9 +604,32 @@ void signal_handler(int signal_num)
     _exit(EXIT_SUCCESS);
 }
 
+int cwmp_exit() {
+    struct cwmp *cwmp = &cwmp_main;
+
+    FREE(cwmp->deviceid.manufacturer);
+    FREE(cwmp->deviceid.serialnumber);
+    FREE(cwmp->deviceid.productclass);
+    FREE(cwmp->deviceid.oui);
+    FREE(cwmp->deviceid.softwareversion);
+    FREE(cwmp->conf.lw_notification_hostname);
+    FREE(cwmp->conf.ip);
+    FREE(cwmp->conf.ipv6);
+    FREE(cwmp->conf.acsurl);
+    FREE(cwmp->conf.acs_userid);
+    FREE(cwmp->conf.acs_passwd);
+    FREE(cwmp->conf.interface);
+    FREE(cwmp->conf.cpe_userid);
+    FREE(cwmp->conf.cpe_passwd);
+    FREE(cwmp->conf.ubus_socket);
+    bkp_tree_clean();
+    ubus_exit();
+    uloop_done();
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
-
     struct cwmp                     *cwmp = &cwmp_main;
     int                             error;
     pthread_t                       periodic_event_thread;
@@ -648,13 +672,11 @@ int main(int argc, char **argv)
     {
         CWMP_LOG(ERROR,"Error when creating the http connection request server thread!");
     }
-#if 1
     error = pthread_create(&ubus_thread, NULL, &thread_uloop_run, NULL);
     if (error<0)
 	{
 		CWMP_LOG(ERROR,"Error when creating the ubus thread!");
 	}
-#endif
     error = pthread_create(&periodic_event_thread, NULL, &thread_event_periodic, (void *)cwmp);
     if (error<0)
     {
@@ -696,9 +718,8 @@ int main(int argc, char **argv)
         CWMP_LOG(ERROR,"Error when creating the download thread!");
     }
     cwmp_schedule_session(cwmp);
-#if 1
+
     pthread_join(ubus_thread, NULL);
-#endif
     pthread_join(periodic_event_thread, NULL);
     pthread_join(handle_notify_thread, NULL);
     pthread_join(scheduleInform_thread, NULL);
@@ -708,6 +729,8 @@ int main(int argc, char **argv)
 	pthread_join(apply_schedule_download_thread, NULL);
     pthread_join(change_du_state_thread, NULL);
     pthread_join(http_cr_server_thread, NULL);
+
     CWMP_LOG(INFO,"EXIT ICWMP");
+    cwmp_exit();
     return CWMP_OK;
 }

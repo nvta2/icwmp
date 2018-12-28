@@ -19,6 +19,12 @@
 static mxml_node_t		*bkp_tree = NULL;
 pthread_mutex_t         mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;
 
+void bkp_tree_clean(void) {
+	if(bkp_tree != NULL)
+		MXML_DELETE(bkp_tree);
+	return;
+}
+
 void bkp_session_save()
 {
 	FILE *fp;
@@ -1947,6 +1953,8 @@ void bkp_session_create_file()
 		return;
 	}
 	fprintf(pFile,"%s",CWMP_BACKUP_SESSION);
+	if(bkp_tree != NULL)
+		MXML_DELETE(bkp_tree);
 	bkp_tree = mxmlLoadString(NULL, CWMP_BACKUP_SESSION, MXML_NO_CALLBACK);
 	fclose(pFile);
 	pthread_mutex_unlock (&mutex_backup_session);

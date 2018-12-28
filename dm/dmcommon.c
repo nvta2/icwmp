@@ -408,12 +408,13 @@ int dmcmd_no_wait(char *cmd, int n, ...)
 	int i, pid;
 	static int dmcmd_pfds[2];
 	char *argv[n+2];
-
+	static char sargv[4][128];
 	argv[0] = cmd;
 	va_start(arg,n);
 	for (i=0; i<n; i++)
 	{
-		argv[i+1] = strdup(va_arg(arg, char*));
+		strcpy(sargv[i], va_arg(arg, char*));
+		argv[i+1] = sargv[i];
 	}
 	va_end(arg);
 
@@ -1276,7 +1277,6 @@ void check_create_dmmap_package(char *dmmap_package){
 		fclose(fp);
 	}
 }
-
 
 int is_section_unnamed(char *section_name){
         int i;
