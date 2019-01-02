@@ -143,6 +143,10 @@ int get_wifi_frequency(char *refparam, struct dmctx *ctx, void *data, char *inst
 	dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", wlan_name, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
 	freq = dmjson_get_value(res, 1, "frequency");
+	if(strcmp(freq, "2") == 0 ) {
+		dmastrcat(value, freq, ".4GHz");  // MEM WILL BE FREED IN DMMEMCLEAN
+		return 0;
+	}
 	dmastrcat(value, freq, "GHz");  // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
