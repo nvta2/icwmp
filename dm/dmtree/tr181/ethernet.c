@@ -589,7 +589,12 @@ int get_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 	char *ifname;
 	char *macaddr;
 	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &ifname);
-
+	/*
+	 * parse network interface sections in order to find the correspanding interface to ifname
+	 * Then use the command ubus call network.interface.interface_name (lan for example) (respecting the rule: use only uci and ubus)
+	 * After that use the result to get l3_device whish will be used  in 'ubus call network.device status '{"name":"br-lan"}' and then get the mac address.
+	 * But concerning the Ethernet.Link. object we can use simply the section name instead of the mac address
+	*/
 	macaddr = get_macaddr(ifname);
 	if (macaddr == NULL)
 		return 0;
@@ -608,6 +613,8 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
+
+			// Just change the corresponding ifname from an interface to an other from lan interface to wan interface
 			if (value[strlen(value)-1]!='.') {
 				dmasprintf(&newvalue, "%s.", value);
 				adm_entry_get_linker_value(ctx, newvalue, &linker);
@@ -699,6 +706,9 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
 			break;
 	}
+	/*
+	 * We have to call the function free_dmmap_config_dup_list for dup_list in order to empty the list and so prevent memleak
+	 */
 	return 0;
 }
 
@@ -924,6 +934,9 @@ int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 	struct uci_section *s = NULL;
 	char *id_last = NULL, *id = NULL;
 
+	/*
+	 * Use the synchronize functions
+	 */
 	check_create_dmmap_package("dmmap_network");
 
 	uci_foreach_sections("network", "interface", s) {
@@ -932,6 +945,8 @@ int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 		if (strcmp(type, "alias") == 0 || strcmp(section_name(s), "loopback") == 0)
 			continue;
 
+
+		/* No need of this part get_linker_link function is enough and use in the higher layer adm_entry_get_linker_param to get the corresponding LowerLayers*/
 		if (strcmp(type, "bridge") == 0)
 			dmasprintf(&ifname, "br-%s", section_name(s));
 		else
@@ -939,8 +954,14 @@ int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 
 		if (*ifname != '\0' && *ifname != '@')
 			create_link(ifname);
+
+		/**********************************************/
 	}
 
+	/*
+	 * No need this part if we use synchronize function
+	 * Concerning the link icwmp datamodel give you functions for it it's explained in the corresponding part
+	 */
 	uci_path_foreach_sections(icwmpd, "dmmap_network", "link", s) {
 		args.section = s;
 		id = handle_update_instance(1, dmctx, &id_last, update_instance_alias_icwmpd, 3, s, "link_instance", "link_alias");
