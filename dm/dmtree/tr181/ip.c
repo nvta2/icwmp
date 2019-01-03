@@ -504,10 +504,8 @@ int get_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 
 	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "type", &wtype);
 	if (strcmp(wtype, "bridge") == 0) {
-		char *ifname, *mac;
-		dmasprintf(&ifname, "br-%s", section_name(((struct ip_args *)data)->ip_sec));
-		mac = get_macaddr(ifname);
-		CWMP_LOG(ERROR, "get_ip_int_lower_layer, mac:%s", mac)
+		char *mac;
+		mac = get_macaddr(section_name(((struct ip_args *)data)->ip_sec));
 		if (mac != NULL) {
 			/* Expect the Ethernet.Link to be the lowerlayer*/
 			adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), mac, value);

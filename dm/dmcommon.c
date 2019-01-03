@@ -235,7 +235,7 @@ char *cidr2netmask(int bits)
 	uint8_t u_bits = (uint8_t)bits;
 	char *netmask;
 	char tmp[32] = {0};
-	
+
 	mask = ((0xFFFFFFFFUL << (32 - u_bits)) & 0xFFFFFFFFUL);
 	mask = htonl(mask);
 	ip_addr.s_addr = mask;
@@ -318,8 +318,8 @@ struct uci_section *create_firewall_zone_config(char *fwl, char *iface, char *in
 {
 	struct uci_section *s;
 	char *value, *name;
-	
-	dmuci_add_section_and_rename("firewall", "zone", &s, &value);
+
+	dmuci_add_section("firewall", "zone", &s, &value);
 	dmasprintf(&name, "%s_%s", fwl, iface);
 	dmuci_set_value_by_section(s, "name", name);
 	dmuci_set_value_by_section(s, "input", input);
@@ -335,7 +335,7 @@ int set_interface_firewall_enabled(char *iface, char *refparam, struct dmctx *ct
 	bool b;
 	int cnt = 0;
 	struct uci_section *s = NULL;
-	
+
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -415,13 +415,12 @@ int dmcmd_no_wait(char *cmd, int n, ...)
 	int i, pid;
 	static int dmcmd_pfds[2];
 	char *argv[n+2];
-	static char sargv[4][128];
+
 	argv[0] = cmd;
 	va_start(arg,n);
 	for (i=0; i<n; i++)
 	{
-		strcpy(sargv[i], va_arg(arg, char*));
-		argv[i+1] = sargv[i];
+		argv[i+1] = strdup(va_arg(arg, char*));
 	}
 	va_end(arg);
 
@@ -540,7 +539,7 @@ int network_get_ipaddr(char **value, char *iface)
 {
 	json_object *res, *jobj;
 	char *ipv6_value = "";
-	
+
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", iface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
 	jobj = dmjson_select_obj_in_array_idx(res, 0, 1, "ipv4-address");
@@ -602,7 +601,7 @@ void update_section_option_list(char *config, char *section, char *option, char 
 	struct uci_section *prev_s= NULL, *s;
 	char *instance = NULL, *last_instance  = NULL, *value;
 	bool add_sec = true;
-	
+
 	if (name[0] == '\0') {
 		add_sec = false;
 	}
@@ -794,7 +793,7 @@ int wan_remove_dev_interface(struct uci_section *interface_setion, char *dev)
 	return 0;
 }
 
-int filter_lan_device_interface(struct uci_section *s, void *v)
+int filter_lan_device_interface(struct uci_section *s)
 {
 	char *ifname = NULL;
 	char *phy_itf = NULL, *phy_itf_local;
@@ -1430,59 +1429,24 @@ char **strsplit(const char* str, const char* delim, size_t* numtokens) {
     free(s);
     return tokens;
 }
-
-char *get_macaddr(char *ifname)
+char *get_macaddr(char *interface_name)
 {
-	struct ifreq s;
-	int fd;
-	char macaddr[18];
+	json_object *res;
+	char *device, *mac;
 
-	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-	if (fd < 0) {
-		CWMP_LOG(ERROR, "socket failed %s", ifname);
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", interface_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	if (device == NULL) {
+		CWMP_LOG(ERROR, "failed get device for interface %s", interface_name);
 		return NULL;
 	}
 
-	memset(&s, 0, sizeof(s));
-	strcpy(s.ifr_name, ifname);
-	if (0 != ioctl(fd, SIOCGIFHWADDR, &s)) {
-		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
-		close(fd);
+	dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &res);
+	mac = dmjson_get_value(res, 1, "macaddr");
+	if (mac == NULL) {
+		CWMP_LOG(ERROR, "failed get mac for interface %s", interface_name);
 		return NULL;
 	}
 
-	close(fd);
-
-	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
-	snprintf(macaddr, sizeof(macaddr), "%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2], p[3], p[4], p[5]);
-
-	return dmstrdup(macaddr);
-}
-
-int set_macaddr(char *ifname, char *macaddr)
-{
-	struct ifreq s;
-	int fd;
-
-	CWMP_LOG(ERROR, "set_macaddr %s, %s", ifname, macaddr)
-
-	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-	if (fd < 0) {
-		CWMP_LOG(ERROR, "socket failed %s", ifname);
-		return -1;
-	}
-
-	memset(&s, 0, sizeof(s));
-	strcpy(s.ifr_name, ifname);
-	s.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	unsigned char *p = (unsigned char*)s.ifr_addr.sa_data;
-	sscanf(macaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &p[0], &p[1], &p[2], &p[3], &p[4], &p[5]);
-	if (0 != ioctl(fd, SIOCSIFHWADDR, &s)) {
-		CWMP_LOG(ERROR, "ioctl failed %s", ifname);
-		close(fd);
-		return -1;
-	}
-
-	close(fd);
-	return 0;
+	return mac;
 }

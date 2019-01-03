@@ -180,6 +180,5 @@ unsigned char isdigit_str(char *str);
 char *dm_strword(char *src, char *str);
 char **strsplit(const char* str, const char* delim, size_t* numtokens);
 char *get_macaddr(char *ifname);
-int set_macaddr(char *ifname, char *macaddr);
 
 #endif

@@ -81,7 +81,7 @@ DMLEAF tLinkParams[] = {
 {"Status", &DMREAD, DMT_STRING, get_link_status, NULL, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_link_name, NULL, NULL, NULL},
 {"Alias", &DMWRITE, DMT_STRING, get_link_alias, set_link_alias, NULL, NULL},
-{"MACAddress", &DMWRITE, DMT_STRING, get_link_macaddress, set_link_macaddress, NULL, NULL},
+{"MACAddress", &DMREAD, DMT_STRING, get_link_macaddress, NULL, NULL, NULL},
 {"LowerLayers", &DMWRITE, DMT_STRING, get_link_lowerlayers, set_link_lowerlayers, NULL, NULL},
 {0}
 };
@@ -588,18 +588,17 @@ int get_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 {
 	char *ifname;
 	char *macaddr;
+	struct uci_section *section;
+	
 	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &ifname);
-	/*
-	 * parse network interface sections in order to find the correspanding interface to ifname
-	 * Then use the command ubus call network.interface.interface_name (lan for example) (respecting the rule: use only uci and ubus)
-	 * After that use the result to get l3_device whish will be used  in 'ubus call network.device status '{"name":"br-lan"}' and then get the mac address.
-	 * But concerning the Ethernet.Link. object we can use simply the section name instead of the mac address
-	*/
-	macaddr = get_macaddr(ifname);
-	if (macaddr == NULL)
-		return 0;
-
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), macaddr, value);
+	
+	uci_foreach_option_eq("network", "interface", "ifname", ifname, section) {
+		macaddr = get_macaddr(section_name(section));
+		if (macaddr != NULL && *macaddr != '\0') 
+			adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), macaddr, value);
+		break;
+	}
+	
 	return 0;
 }
 
@@ -608,6 +607,7 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 	char *linker= NULL;
 	char *newvalue= NULL;
 	char *ifname;
+	struct uci_section *section;
 
 	switch (action) {
 		case VALUECHECK:
@@ -621,14 +621,13 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 			} else
 				adm_entry_get_linker_value(ctx, value, &linker);
 
-			if (linker == NULL) {
+			if (linker == NULL || *linker == '\0') {
 				CWMP_LOG(ERROR, "failed to get linker of %s", value)
 				return -1;
 			}
 
-			dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &ifname);
-			/* linker value of Ethernet.Link is the mac address*/
-			return set_macaddr(ifname, linker);
+			/* linker value of Ethernet.Link is the mac address */
+			dmuci_set_value_by_section(((struct dm_args *)data)->section, "macaddr", linker);
 	}
 	return 0;
 }
@@ -706,9 +705,8 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
 			break;
 	}
-	/*
-	 * We have to call the function free_dmmap_config_dup_list for dup_list in order to empty the list and so prevent memleak
-	 */
+
+	free_dmmap_config_dup_list(&dup_list);
 	return 0;
 }
 
@@ -746,44 +744,6 @@ int get_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *ins
 	return 0;
 }
 
-int set_link_macaddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	struct uci_section *s = NULL;
-	char * curr_mac;
-
-	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", &curr_mac);
-	if (strcmp(curr_mac, value) == 0)
-		return 0;
-
-	dmuci_set_value_by_section(((struct dm_args *)data)->section, "mac", value);
-	if (*curr_mac == '\0' || *value == '\0')
-		return 0;
-
-	/* Apply the new mac address for all the relevant interfaces */
-	uci_foreach_sections("network", "interface", s) {
-		char *type, *ifname;
-		char *mac;
-		dmuci_get_value_by_section_string(s, "type", &type);
-		if (strcmp(type, "alias") == 0 || strcmp(section_name(s), "loopback") == 0)
-			continue;
-
-		if (strcmp(type, "bridge") == 0)
-			dmasprintf(&ifname, "br-%s", section_name(s));
-		else
-			dmuci_get_value_by_section_string(s, "ifname", &ifname);
-
-		if (*ifname == '\0' || *ifname == '@')
-			continue;
-
-		mac = get_macaddr(ifname);
-		if (mac != NULL && strcasecmp(mac, curr_mac) == 0) {
-			set_macaddr(ifname, value);
-		}
-	}
-
-	return 0;
-}
-
 int get_link_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "Up";
@@ -809,15 +769,12 @@ int get_link_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *in
 		if (strcmp(type, "alias") == 0 || strcmp(section_name(s), "loopback") == 0)
 			continue;
 
-		if (strcmp(type, "bridge") == 0)
-			dmasprintf(&ifname, "br-%s", section_name(s));
-		else
-			dmuci_get_value_by_section_string(s, "ifname", &ifname);
+		dmuci_get_value_by_section_string(s, "ifname", &ifname);
 
 		if (*ifname == '\0' || *ifname == '@')
 			continue;
 
-		mac = get_macaddr(ifname);
+		mac = get_macaddr(section_name(s));
 		if (mac == NULL || strcasecmp(mac, link_mac) != 0)
 			continue;
 
@@ -865,10 +822,9 @@ int add_link(char *refparam, struct dmctx *ctx, void *data, char **instance_para
 	char *instance;
 	struct uci_section *dmmap_network= NULL;
 
-	check_create_dmmap_package("dmmap_network");
-	instance = get_last_instance_icwmpd("dmmap_network", "link", "link_instance");
+	instance = get_last_instance_icwmpd(DMMAP, "link", "link_instance");
 
-	dmuci_add_section_icwmpd("dmmap_network", "link", &dmmap_network, &v);
+	dmuci_add_section_icwmpd(DMMAP, "link", &dmmap_network, &v);
 	*instance_para = update_instance_icwmpd(dmmap_network, instance, "link_instance");
 
 	return 0;
@@ -885,7 +841,7 @@ int delete_link(char *refparam, struct dmctx *ctx, void *data, char *instance, u
 		dmuci_delete_by_section(((struct dm_args *)data)->section, NULL, NULL);
 		break;
 	case DEL_ALL:
-		DMUCI_DEL_SECTION(icwmpd, "dmmap_network", "link", NULL, NULL);
+		DMUCI_DEL_SECTION(icwmpd, DMMAP, "link", NULL, NULL);
 		break;
 	}
 
@@ -896,7 +852,7 @@ int delete_link(char *refparam, struct dmctx *ctx, void *data, char *instance, u
 static int is_mac_exist(char *macaddr)
 {
 	struct uci_section *s = NULL;
-	uci_path_foreach_sections(icwmpd, "dmmap_network", "link", s) {
+	uci_path_foreach_sections(icwmpd, DMMAP, "link", s) {
 		char *mac;
 		dmuci_get_value_by_section_string(s, "mac", &mac);
 		if (strcmp(mac, macaddr) == 0)
@@ -912,7 +868,7 @@ static void create_link(char *ifname)
 	char *v;
 	char *macaddr;
 
-	struct uci_section *dmmap_network= NULL;
+	struct uci_section *dmmap= NULL;
 
 	macaddr = get_macaddr(ifname);
 	if (macaddr == NULL) {
@@ -924,8 +880,8 @@ static void create_link(char *ifname)
 	if (is_mac_exist(macaddr))
 		return;
 
-	dmuci_add_section_icwmpd("dmmap_network", "link", &dmmap_network, &v);
-	dmuci_set_value_by_section(dmmap_network, "mac", macaddr);
+	dmuci_add_section_icwmpd(DMMAP, "link", &dmmap, &v);
+	dmuci_set_value_by_section(dmmap, "mac", macaddr);
 }
 
 int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
@@ -934,35 +890,21 @@ int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 	struct uci_section *s = NULL;
 	char *id_last = NULL, *id = NULL;
 
-	/*
-	 * Use the synchronize functions
-	 */
-	check_create_dmmap_package("dmmap_network");
-
 	uci_foreach_sections("network", "interface", s) {
 		char *type, *ifname;
 		dmuci_get_value_by_section_string(s, "type", &type);
 		if (strcmp(type, "alias") == 0 || strcmp(section_name(s), "loopback") == 0)
 			continue;
 
+		dmuci_get_value_by_section_string(s, "ifname", &ifname);
 
-		/* No need of this part get_linker_link function is enough and use in the higher layer adm_entry_get_linker_param to get the corresponding LowerLayers*/
-		if (strcmp(type, "bridge") == 0)
-			dmasprintf(&ifname, "br-%s", section_name(s));
-		else
-			dmuci_get_value_by_section_string(s, "ifname", &ifname);
+		if (*ifname == '\0' || *ifname == '@') 
+			continue;
 
-		if (*ifname != '\0' && *ifname != '@')
-			create_link(ifname);
-
-		/**********************************************/
+		create_link(section_name(s));
 	}
 
-	/*
-	 * No need this part if we use synchronize function
-	 * Concerning the link icwmp datamodel give you functions for it it's explained in the corresponding part
-	 */
-	uci_path_foreach_sections(icwmpd, "dmmap_network", "link", s) {
+	uci_path_foreach_sections(icwmpd, DMMAP, "link", s) {
 		args.section = s;
 		id = handle_update_instance(1, dmctx, &id_last, update_instance_alias_icwmpd, 3, s, "link_instance", "link_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&args, id) == DM_STOP) {
@@ -972,5 +914,4 @@ int browseLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 
 	return 0;
 }
-
 
