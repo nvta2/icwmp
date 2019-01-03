@@ -678,7 +678,7 @@ int get_process_state(char* refparam, struct dmctx *ctx, void *data, char *insta
 
 int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance){
 	json_object *res,  *processes, *fields, *process;
-	char *pid_field, *command_field, *state_field, *mem_size_field, *cpu_time_field, *priority_field, *pid, *command, *mem_size, *state, *cpu_time, *priority, *idx, *idx_last;
+	char *pid_field, *command_field, *state_field, *mem_size_field, *cpu_time_field, *priority_field, *pid, *command, *mem_size, *state, *cpu_time, *priority, *idx, *idx_last= NULL;
 	int i, id=0;
 	struct process_args proc_args={};
 
