@@ -599,10 +599,14 @@ int set_ip_int_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *
 						dmuci_delete_by_section(((struct ip_args *)data)->ip_sec, NULL, NULL);
 				}
 				return 0;
-			} else return FAULT_9005;
+			}
 
+			//lowerlayer is expected to be Device.Ethernet.VLANTerminaiton.{i}.
 			if (linker)
 				dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ifname", linker);
+			else
+				return FAULT_9005;
+
 			return 0;
 	}
 	return 0;
