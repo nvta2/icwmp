@@ -1948,7 +1948,9 @@ void codec_priority_sort(struct uci_section *sip_section, char *new_codec)
 	char *ucodec, *coption, *poption;
 	bool found;
 	struct codec sipcodec[ARRAY_SIZE(codec_option_array)+1] = {0};
+	struct uci_section *dmmap_section;
 
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sip_section), &dmmap_section);
 	for (j = 0; j < ARRAY_SIZE(codec_option_array); j++) {
 		dmuci_get_value_by_section_string(sip_section, codec_option_array[j], &ucodec);
 		if(ucodec[0] != '\0') {
@@ -1961,7 +1963,7 @@ void codec_priority_sort(struct uci_section *sip_section, char *new_codec)
 			}
 			if (found) {
 				sipcodec[j].cdc = allowed_sip_codecs[k].allowed_cdc;
-				dmuci_get_value_by_section_string(sip_section, allowed_sip_codecs[k].priority_cdc, &(sipcodec[j].priority));
+				dmuci_get_value_by_section_string(dmmap_section, allowed_sip_codecs[k].priority_cdc, &(sipcodec[j].priority));
 			}
 			sipcodec[j].id = codec_option_array[j];
 		}
@@ -1980,7 +1982,7 @@ void codec_priority_sort(struct uci_section *sip_section, char *new_codec)
 		}
 		if (found) {
 			sipcodec[size].cdc = allowed_sip_codecs[k].allowed_cdc;
-			dmuci_get_value_by_section_string(sip_section, allowed_sip_codecs[k].priority_cdc, &(sipcodec[size].priority));
+			dmuci_get_value_by_section_string(dmmap_section, allowed_sip_codecs[k].priority_cdc, &(sipcodec[size].priority));
 		}
 	}
 	qsort(sipcodec, ARRAY_SIZE(sipcodec), sizeof(struct codec), codec_compare);
@@ -1997,9 +1999,12 @@ void codec_priority_update(struct uci_section *sip_section)
 	char *priority = NULL;
 	char *codec;
 	char pid[4] = "1";
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sip_section), &dmmap_section);
 
 	for (i = 0; i < available_sip_codecs; i++) {
-		dmuci_get_value_by_section_string(sip_section, allowed_sip_codecs[i].priority_cdc, &priority);
+		dmuci_get_value_by_section_string(dmmap_section, allowed_sip_codecs[i].priority_cdc, &priority);
 		if( priority[0] != '\0')
 			continue;
 		found = false;
@@ -2012,7 +2017,7 @@ void codec_priority_update(struct uci_section *sip_section)
 		}
 		if (found)
 			sprintf(pid, "%d", j+1);
-		dmuci_set_value_by_section(sip_section, allowed_sip_codecs[i].priority_cdc, pid);
+		dmuci_set_value_by_section(dmmap_section, allowed_sip_codecs[i].priority_cdc, pid);
 	}
 	codec_priority_sort(sip_section, NULL);
 }
@@ -2089,7 +2094,10 @@ int get_line_codec_list_enable(char *refparam, struct dmctx *ctx, void *data, ch
 int get_line_codec_list_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct line_codec_args *line_codecargs = (struct line_codec_args *)data;
-	dmuci_get_value_by_section_string(line_codecargs->sip_section, line_codecargs->priority_cdc, value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(line_codecargs->sip_section), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, line_codecargs->priority_cdc, value);
 	return 0;
 }
 
@@ -2148,12 +2156,14 @@ int set_line_codec_list_priority(char *refparam, struct dmctx *ctx, void *data, 
 	int i;
 	char *val;
 	struct line_codec_args *line_codecargs = (struct line_codec_args *)data;
+	struct uci_section *dmmap_section;
 
+	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(line_codecargs->sip_section), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(line_codecargs->sip_section, line_codecargs->priority_cdc, value);
+			dmuci_set_value_by_section(dmmap_section, line_codecargs->priority_cdc, value);
 			for (i =0; i < ARRAY_SIZE(codec_option_array); i++) {
 				dmuci_get_value_by_section_string(line_codecargs->sip_section, codec_option_array[i], &val);
 				if (strcmp(val, line_codecargs->cdc) == 0) {
