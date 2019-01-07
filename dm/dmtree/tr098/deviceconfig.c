@@ -20,9 +20,8 @@
 
 #define BACKUP_CONFIG_FILE "/etc/backup"
 #define RESTORE_FUNCTION_PATH "/usr/share/icwmp/functions/conf_backup"
-////////////////////////SET AND GET ALIAS/////////////////////////////////
 
-/*** DMROOT.DownloadDiagnostics. ***/
+/*** DMROOT.ConfigFile. ***/
 DMLEAF tDeviceConfigParam[] = {
 {"ConfigFile", &DMWRITE, DMT_STRING, get_config_file, set_config_file, NULL, NULL},
 {0}
@@ -30,33 +29,27 @@ DMLEAF tDeviceConfigParam[] = {
 
 int get_config_file(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	long length;	
-	FILE * f = NULL; 
-	char *pch = NULL, *spch = NULL;
-	char * buffer = 0;
-	int first = 1;
+	FILE *f = NULL;
+	char *buffer = NULL;
+	long length;
 
-
+	*value = "";
 	dmcmd("/bin/sh", 2, RESTORE_FUNCTION_PATH, "export_conf");
-
 	f = fopen (BACKUP_CONFIG_FILE, "rb");
-	if (f)
+	if (f != NULL)
 	{
 		fseek(f, 0, SEEK_END);
 		length = ftell(f);
-		fseek(f, 0, SEEK_SET);
-		buffer = dmmalloc(length);
+		buffer = dmcalloc(1, length+1);
 		if (buffer)
 		{
+			fseek(f, 0, SEEK_SET);
 			fread(buffer, 1, length, f);
 		}
 		fclose(f);
 	}
 	if (buffer)
-	{
-		*value = dmstrdup(buffer);
-		dmfree(buffer);
-	}
+		*value = buffer;
 	return 0;
 }
 
