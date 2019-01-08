@@ -619,10 +619,13 @@ int get_process_cpu_usage(char* refparam, struct dmctx *ctx, void *data, char *i
 }
 
 int get_process_number_of_entries(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
-	json_object *res;
+	json_object *res,  *processes;
+	int nbre_process = 0;
 
-	dmubus_call("router.system", "info", UBUS_ARGS{{}}, 0, &res);
-	*value = dm_ubus_get_value(res, 2, "system", "procs");
+	dmubus_call("router.system", "processes", UBUS_ARGS{{}}, 0, &res);
+	processes = json_object_object_get(res, "processes");
+	nbre_process= json_object_array_length(processes);
+	dmasprintf(value,"%d",nbre_process);
 	return 0;
 }
 
