@@ -552,6 +552,9 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 	struct args_layer2 *args = (struct args_layer2 *)data;
 	char iface[16];
 	bool found;
+	char *wan_baseifname_marking = NULL;
+
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname_marking);
 
 	dmuci_get_value_by_section_string(args->layer2section, "bridgekey", &old_bridge_key);
 	dmuci_set_value_by_section(args->layer2section, "bridgekey", value);
@@ -565,7 +568,7 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 		}
 		if (!s) return 0;
 	}
-	else if (strncmp(baseifname, wan_baseifname, 4) == 0
+	else if (strncmp(baseifname, wan_baseifname_marking, 4) == 0
 			|| strncmp(baseifname, "ptm", 3) == 0
 			|| strncmp(baseifname, "atm", 3) == 0) {
 		found = false;
@@ -667,7 +670,9 @@ int set_marking_interface_key_sub(char *refparam, struct dmctx *ctx, void *data,
 	struct uci_section *s = NULL, *ss = NULL, *ab, *mb, *sbridge = NULL;
 	struct args_layer2 *args = (struct args_layer2 *)data;
 	mb = args->layer2section;
+	char *wan_baseifname_marking = NULL;
 
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname_marking);
 	uci_path_foreach_option_eq(icwmpd, "dmmap", "available-bridge", "key", value, ab) {
 		break;
 	}
@@ -699,7 +704,7 @@ int set_marking_interface_key_sub(char *refparam, struct dmctx *ctx, void *data,
 		if (bkey[0] == '\0' || !sbridge) return 0;
 		dmuci_set_value("wireless", baseifname, "network",  section_name(sbridge));
 	}
-	else if (strncmp(baseifname, wan_baseifname, 4) == 0
+	else if (strncmp(baseifname, wan_baseifname_marking, 4) == 0
 			|| strncmp(baseifname, "ptm", 3) == 0
 			|| strncmp(baseifname, "atm", 3) == 0) {
 		DMUCI_SET_VALUE_BY_SECTION(icwmpd, mb, "interfacekey",  value);
