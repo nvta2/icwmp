@@ -1999,7 +1999,7 @@ void codec_priority_update(struct uci_section *sip_section)
 	char *priority = NULL;
 	char *codec;
 	char pid[4] = "1";
-	struct uci_section *dmmap_section;
+	struct uci_section *dmmap_section = NULL;
 
 	get_dmmap_section_of_config_section("dmmap_voice_client", "sip_service_provider", section_name(sip_section), &dmmap_section);
 
@@ -2191,6 +2191,7 @@ void codec_update_id()
 	int found = 0;
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
+
 	for (i = 0; i < available_sip_codecs; i++) {
 		update_section_list(DMMAP,"codec_id", "id", 1, allowed_sip_codecs[i].id, NULL, NULL, NULL, NULL);
 	}
@@ -2416,6 +2417,7 @@ int browseLineCodecListInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 	struct uci_section *code_sec = NULL;
 	struct line_codec_args curr_line_codec_args = {0};
 
+	init_allowed_sip_codecs();
 	codec_update_id();
 	codec_priority_update(brcmargs->sip_section);
 	uci_path_foreach_sections(icwmpd, "dmmap", "codec_id", code_sec) {
