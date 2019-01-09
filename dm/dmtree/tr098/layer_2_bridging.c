@@ -417,14 +417,16 @@ void update_remove_vlan_interface(char *bridge_key, char* vid)
 
 void update_add_vlan_to_bridge_interface(char *bridge_key, struct uci_section *dmmap_s)
 {
-	char *ifname, *baseifname;
-	struct uci_section *interface_s, *marking_bridge_s;
+	char *ifname, *baseifname, *sect_name;
+	struct uci_section *interface_s, *marking_bridge_s, *s;
 	char baseifname_dup[16];
 	char *p;
 	char ifname_dup[128];
 	char *ptr;
 
-	uci_foreach_option_eq("network", "interface", "bridge_instance", bridge_key, interface_s) {
+	uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", bridge_key, s){
+		dmuci_get_value_by_section_string(s, "section_name", &sect_name);
+		get_config_section_of_dmmap_section("network", "interface", sect_name, &interface_s);
 		dmuci_get_value_by_section_string(interface_s, "ifname", &ifname);
 		ifname_dup[0] = '\0';
 		ptr = ifname_dup;
@@ -548,11 +550,11 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 {
 	char *old_bridge_key, *baseifname, *ifname, *vid, *enable, *bridgekey, *p;
 	char new_ifname[128];
-	struct uci_section *s, *ss;
+	struct uci_section *s, *ss, *dm_s, *dm_ss;
 	struct args_layer2 *args = (struct args_layer2 *)data;
 	char iface[16];
 	bool found;
-	char *wan_baseifname_marking = NULL;
+	char *wan_baseifname_marking = NULL, *sect_name;
 
 	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname_marking);
 
@@ -561,8 +563,9 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 	dmuci_get_value_by_section_string(args->layer2section, "baseifname", &baseifname);
 
 	if (strncmp(baseifname, "cfg", 3) == 0) {
-		uci_foreach_option_eq("network", "interface", "bridge_instance", value, s)
-		{
+		uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", value, dm_s){
+			dmuci_get_value_by_section_string(s, "section_name", &sect_name);
+			get_config_section_of_dmmap_section("network", "interface", sect_name, &s);
 			dmuci_set_value("wireless", baseifname, "network", section_name(s));
 			break;
 		}
@@ -585,11 +588,12 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 			{
 				dmuci_get_value_by_section_string(s, "vid", &vid);
 				if (vid[0] == '\0') continue;
-				uci_foreach_option_eq("network", "interface", "bridge_instance", old_bridge_key, ss)
-				{
+				uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", old_bridge_key, dm_ss){
 					break;
 				}
-				if (!ss) return 0;
+				if (!dm_ss) return 0;
+				dmuci_get_value_by_section_string(dm_ss, "section_name", &sect_name);
+				get_config_section_of_dmmap_section("network", "interface", sect_name, &ss);
 				dmuci_get_value_by_section_string(ss, "ifname", &ifname);
 				p = iface;
 				dmstrappendstr(p, baseifname);
@@ -612,8 +616,9 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 		}
 	}
 	else if (strncmp(baseifname, "eth", 3) == 0) {
-		uci_foreach_option_eq("network", "interface", "bridge_instance", old_bridge_key, s)
-		{
+		uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", old_bridge_key, dm_s){
+			dmuci_get_value_by_section_string(dm_s, "section_name", &sect_name);
+			get_config_section_of_dmmap_section("network", "interface", sect_name, &s);
 			dmuci_get_value_by_section_string(s, "ifname", &ifname);
 			if (strlen(ifname) > 5) {
 				remove_interface_from_ifname(baseifname, ifname, new_ifname);
@@ -623,8 +628,9 @@ int set_marking_bridge_key_sub(char *refparam, struct dmctx *ctx, void *data, ch
 			}
 			dmuci_set_value_by_section(s, "ifname",  new_ifname);
 		}
-		uci_foreach_option_eq("network", "interface", "bridge_instance", value, ss)
-		{
+		uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", value, dm_ss){
+			dmuci_get_value_by_section_string(dm_ss, "section_name", &sect_name);
+			get_config_section_of_dmmap_section("network", "interface", sect_name, &ss);
 			dmuci_get_value_by_section_string(ss, "ifname", &ifname);
 			p = new_ifname;
 			if (ifname[0] != '\0') {
@@ -664,10 +670,10 @@ int set_marking_interface_key(char *refparam, struct dmctx *ctx, void *data, cha
 
 int set_marking_interface_key_sub(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value)
 {
-	char *vid, *ifname, *baseifname, *bkey, *p, *enable;
+	char *vid, *ifname, *baseifname, *bkey, *p, *enable, *sect_name;
 	char new_ifname[128];
 	char *obifname, *instce;
-	struct uci_section *s = NULL, *ss = NULL, *ab, *mb, *sbridge = NULL;
+	struct uci_section *s = NULL, *ss = NULL, *ab, *mb, *sbridge = NULL, *dm_s, *dm_ss;
 	struct args_layer2 *args = (struct args_layer2 *)data;
 	mb = args->layer2section;
 	char *wan_baseifname_marking = NULL;
@@ -680,13 +686,15 @@ int set_marking_interface_key_sub(char *refparam, struct dmctx *ctx, void *data,
 
 	dmuci_get_value_by_section_string(mb, "bridgekey", &bkey);
 	if (bkey[0] != '\0') {
-		uci_foreach_option_eq("network", "interface", "bridge_instance", bkey, sbridge) {
+		uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", bkey, dm_s){
 			break;
 		}
-		if (sbridge) {
+		if (dm_s) {
 			dmuci_get_value_by_section_string(mb, "baseifname", &obifname);
 			dmuci_get_value_by_section_string(mb, "marking_instance", &instce);
 			if (obifname[0] != '\0') {
+				dmuci_get_value_by_section_string(dm_s, "section_name", &sect_name);
+				get_config_section_of_dmmap_section("network", "interface", sect_name, &sbridge);
 				remove_config_interfaces(obifname, bkey, sbridge, instce);
 			}
 		}
@@ -744,10 +752,12 @@ int set_marking_interface_key_sub(char *refparam, struct dmctx *ctx, void *data,
 }
 
 static int is_bridge_vlan_enabled(char *bkey, char* ifname) {
-	struct uci_section *br_sec;
-	char *br_ifname;
+	struct uci_section *br_sec, *s;
+	char *br_ifname, *sect_name;
 
-	uci_foreach_option_eq("network", "interface", "bridge_instance", bkey, br_sec) {
+	uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", bkey, s){
+		dmuci_get_value_by_section_string(s, "section_name", &sect_name);
+		get_config_section_of_dmmap_section("network", "interface", sect_name, &br_sec);
 		dmuci_get_value_by_section_string(br_sec, "ifname", &br_ifname);
 		if (is_strword_in_optionvalue(br_ifname, ifname))
 			return 1;
@@ -821,8 +831,8 @@ static int update_br_vlan_ifname(struct uci_section* br_sec, char* ifname, char*
 
 int set_bridge_vlan_enable_sub(char *refparam, struct dmctx *ctx, void *data, char *instance, bool b)
 {
-	char *value, *vid, *bkey, *ifname, *baseifname, ifname_dup[128], *ptr, *br_ifname;
-	struct uci_section *vb, *br_sec;
+	char *value, *vid, *bkey, *ifname, *baseifname, ifname_dup[128], *ptr, *br_ifname, *sect_name;
+	struct uci_section *vb, *br_sec, *s;
 	int is_enabled;
 	struct args_layer2 *args = (struct args_layer2 *)data;
 
@@ -832,9 +842,12 @@ int set_bridge_vlan_enable_sub(char *refparam, struct dmctx *ctx, void *data, ch
 	dmuci_get_value_by_section_string(vb, "bridgekey", &bkey);
 	dmasprintf(&baseifname, "%s.%s",ifname, vid);
 	is_enabled = is_bridge_vlan_enabled(bkey, baseifname);
-	uci_foreach_option_eq("network", "interface", "bridge_instance", bkey, br_sec) {
-		if(br_sec)
+	uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", bkey, s){
+		if(s){
+			dmuci_get_value_by_section_string(s, "section_name", &sect_name);
+			get_config_section_of_dmmap_section("network", "interface", sect_name, &br_sec);
 			break;
+		}
 	}
 	dmuci_get_value_by_section_string(br_sec, "ifname", &br_ifname);
 	if (b && !is_enabled) {
@@ -1220,11 +1233,13 @@ void remove_config_interfaces(char *baseifname, char *bridge_key, struct uci_sec
 	bool found = false;
 	char new_ifname[128];
 	char *p, iface[16];
+	char *wan_baseifname_marking = NULL;
 
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &wan_baseifname_marking);
 	if (strncmp(baseifname, "cfg", 3) == 0) {
 		dmuci_delete("wireless", baseifname , "network", NULL);
 	}
-	else if (strncmp(baseifname, wan_baseifname, 4) == 0
+	else if (strncmp(baseifname, wan_baseifname_marking, 4) == 0
 			|| strncmp(baseifname, "ptm", 3) == 0
 			|| strncmp(baseifname, "atm", 3) == 0)
 	{
@@ -1263,8 +1278,8 @@ void remove_config_interfaces(char *baseifname, char *bridge_key, struct uci_sec
 int delete_layer2bridging_marking(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	struct uci_section *mark_s, *prev_s = NULL;
-	char *bifname, *b_key, *m_instance;
-	struct uci_section *bridge_s;
+	char *bifname, *b_key, *m_instance, *sect_name;
+	struct uci_section *bridge_s, *dm_s;
 	struct args_layer2 *args_bridge;
 
 	switch (del_action) {
@@ -1276,7 +1291,9 @@ int delete_layer2bridging_marking(char *refparam, struct dmctx *ctx, void *data,
 			dmuci_delete_by_section(args_bridge->layer2section, NULL, NULL);
 			if(b_key[0] == '\0')
 				return 0;
-			uci_foreach_option_eq("network", "interface", "bridge_instance", b_key, bridge_s) {
+			uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", b_key, dm_s){
+				dmuci_get_value_by_section_string(dm_s, "section_name", &sect_name);
+				get_config_section_of_dmmap_section("network", "interface", sect_name, &bridge_s);
 				remove_config_interfaces(bifname, b_key, bridge_s, m_instance);
 				break;
 			}
@@ -1292,7 +1309,9 @@ int delete_layer2bridging_marking(char *refparam, struct dmctx *ctx, void *data,
 				prev_s = mark_s;
 				if (b_key[0] == '\0')
 					continue;
-				uci_foreach_option_eq("network", "interface", "bridge_instance", b_key, bridge_s) {
+				uci_path_foreach_option_eq(icwmpd, "dmmap_network", "interface", "bridge_instance", b_key, dm_s){
+					dmuci_get_value_by_section_string(dm_s, "section_name", &sect_name);
+					get_config_section_of_dmmap_section("network", "interface", sect_name, &bridge_s);
 					remove_config_interfaces(bifname, b_key, bridge_s, m_instance);
 					break;
 				}
