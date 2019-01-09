@@ -37,7 +37,7 @@ get_acs_url() {
 	if [ "$acs_dhcp_discovery" == "enable" -a -n "$dhcp_url" -o -z "$url" ]; then
 		url="$dhcp_url"
 		echo "ACS URL from DHCP server: $url"
-		[ -n "$url" ] && uci -P /var/state -q set cwmp.acs.url="$url"
+		[ -n "$url" ] && uci -P /var/state -q set cwmp.acs.url="$url" || url="$default_acs"
 	elif [ -n "$url" ];then
 		url="$(uci -q get cwmp.acs.url)"
 		echo "ACS URL from configuration: $url"
