@@ -177,12 +177,12 @@ echo "" > $SCRIPTS_LIST_FILE
 list=`ls $SCRIPTS_PATH |grep -v "common"`
 cd $SCRIPTS_PATH
 
-cat `echo $list` | grep "DMOBJECT\|DMPARAM" |grep -v "^\\s*#" |sed 's/^[ \t]*//' |awk -F '[(,)]' '{type=""; { if($1=="DMOBJECT") { type = "object"; obj_name = $2; print $1 " " $2 " " $4 " " $5;} else {if($7 ~ /xsd:/) {print $1 " " obj_name$2 " " $4 " " $7 " " $8 " " $9 " " $10;} else { print $1 " " obj_name$2 " " $4 " " str " " $8 " " $9 " " $10;}} } }' | awk '{print $1","$2","$3","$4","$5","$6","$7}' | sort -t, -k2 | sed -e "s|.\%|.#|g" | sed -e "s|\"||g" | sed -e "s|DMROOT|$ROOT_PATH|g" > $SCRIPTS_LIST_FILE
+cat `echo $list` | grep "DMOBJECT\|DMPARAM" |grep -v "^\\s*#" |sed 's/^[ \t]*//' |awk -F '[(,)]' '{type=""; { str="string"; if($1=="DMOBJECT") { type = "object"; obj_name = $2; print $1 " " $2 " " $4 " " $5;} else {if($7 ~ /xsd:/) {print $1 " " obj_name$2 " " $4 " " $7 " " $8 " " $9 " " $10;} else { print $1 " " obj_name$2 " " $4 " " str " " $8 " " $9 " " $10;}} } }' | awk '{print $1","$2","$3","$4","$5","$6","$7}' | sort -t, -k2 | sed -e "s|.\%|.#|g" | sed -e "s|\"||g" | sed -e "s|DMROOT|$ROOT_PATH|g" > $SCRIPTS_LIST_FILE
 
 list=`ls $SCRIPTS_PATH_COMMON |grep -v "common"`
 cd $SCRIPTS_PATH_COMMON
 
-cat `echo $list` | grep "DMOBJECT\|DMPARAM" |grep -v "^\\s*#" |sed 's/^[ \t]*//' |awk -F '[(,)]' '{type=""; { if($1=="DMOBJECT") { type = "object"; obj_name = $2; print $1 " " $2 " " $4 " " $5;} else {if($7 ~ /xsd:/) {print $1 " " obj_name$2 " " $4 " " $7 " " $8 " " $9 " " $10;} else {print $1 " " obj_name$2 " " $4 " " $8 " " $9 " " $10;}} } }' | awk '{print $1","$2","$3","$4","$5","$6","$7}' | sort -t, -k2 | sed -e "s|.\%|.#|g" | sed -e "s|\"||g" | sed -e "s|DMROOT|$ROOT_PATH|g" >> $SCRIPTS_LIST_FILE
+cat `echo $list` | grep "DMOBJECT\|DMPARAM" |grep -v "^\\s*#" |sed 's/^[ \t]*//' |awk -F '[(,)]' '{type=""; { str = "string"; if($1=="DMOBJECT") { type = "object"; obj_name = $2; print $1 " " $2 " " $4 " " $5;} else {if($7 ~ /xsd:/) {print $1 " " obj_name$2 " " $4 " " $7 " " $8 " " $9 " " $10;} else {print $1 " " obj_name$2 " " $4 " " str " " $8 " " $9 " " $10;}} } }' | awk '{print $1","$2","$3","$4","$5","$6","$7}' | sort -t, -k2 | sed -e "s|.\%|.#|g" | sed -e "s|\"||g" | sed -e "s|DMROOT|$ROOT_PATH|g" >> $SCRIPTS_LIST_FILE
 cd $EXEC_PATH
 rm -rf tmp.txt
 while read line
