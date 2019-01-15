@@ -93,7 +93,7 @@ int http_client_init(struct cwmp *cwmp)
 	/* TODO debug ssl config from freecwmp*/
 
 #ifdef HTTP_CURL
-	curl_global_init(0);
+	curl_global_init(CURL_GLOBAL_SSL);
 	curl = curl_easy_init();
 	if (!curl) return -1;
 
