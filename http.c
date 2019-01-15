@@ -241,7 +241,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 	curl_easy_setopt(curl, CURLOPT_COOKIEJAR, fc_cookies);
 	
 	if (cwmp->conf.acs_ssl_capath)
-		curl_easy_setopt(curl, CURLOPT_CAPATH,  cwmp->conf.acs_ssl_capath);
+		curl_easy_setopt(curl, CURLOPT_CAINFO,  cwmp->conf.acs_ssl_capath);
 	if (cwmp->conf.insecure_enable) {
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);		
