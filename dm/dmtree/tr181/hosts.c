@@ -44,8 +44,8 @@ DMLEAF thostParam[] = {
 {"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, NULL},
 {"LeaseTimeRemaining", &DMREAD, DMT_INT, get_host_leasetime_remaining, NULL, NULL, NULL},
 {"DHCPClient", &DMREAD, DMT_STRING, get_host_dhcp_client, NULL, NULL, NULL},
-{"X_IOPSYS_InterfaceType", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, NULL},
-{"X_IOPSYS_ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, NULL},
+{CUSTOM_PREFIX"Interface_Type", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, NULL},
+{CUSTOM_PREFIX"ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, NULL},
 {0}
 };
 

@@ -153,7 +153,7 @@ DMLEAF tProfileSIPParams[] = {
 {"ReInviteExpires", &DMWRITE, DMT_UNINT, get_sip_re_invite_expires, set_sip_re_invite_expires, NULL, NULL},
 {"RegisterExpires", &DMWRITE, DMT_UNINT, get_sip_re_invite_expires, set_sip_re_invite_expires, NULL, NULL},
 {"RegisterRetryInterval", &DMWRITE, DMT_UNINT, get_sip_re_invite_expires, set_sip_re_invite_expires, NULL, NULL},
-{"X_002207_CallLines", &DMWRITE, DMT_STRING, get_sip_x_002207_call_lines, set_sip_x_002207_call_lines, NULL, NULL},
+{CUSTOM_PREFIX"CallLines", &DMWRITE, DMT_STRING, get_sip_call_lines, set_sip_call_lines, NULL, NULL},
 {0}
 };
 
@@ -219,8 +219,8 @@ DMLEAF tLineParams[] = {
 {"DirectoryNumber", &DMWRITE, DMT_STRING, get_line_directory_number, set_line_directory_number, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_voice_profile_line_status, set_line_alias, NULL, NULL},
 {"CallState", &DMREAD, DMT_STRING, get_voice_profile_line_callstate, set_line_alias, NULL, NULL},
-{"X_002207_LineProfile", &DMWRITE, DMT_STRING, get_line_x_002207_line_profile, set_line_x_002207_line_profile, NULL, NULL},
-{"X_002207_BRCMLine", &DMWRITE, DMT_STRING, get_line_x_002207_brcm_line, set_line_x_002207_brcm_line, NULL, NULL},
+{CUSTOM_PREFIX"LineProfile", &DMWRITE, DMT_STRING, get_line_line_profile, set_line_line_profile, NULL, NULL},
+{CUSTOM_PREFIX"BRCMLine", &DMWRITE, DMT_STRING, get_line_brcm_line, set_line_brcm_line, NULL, NULL},
 {CUSTOM_PREFIX"Confort_Noise_Enable", &DMWRITE, DMT_BOOL, get_line_confort_noise_enable, set_line_confort_noise_enable, NULL, NULL},
 {0}
 };
@@ -1257,7 +1257,7 @@ int set_sip_re_invite_expires(char *refparam, struct dmctx *ctx, void *data, cha
 }
 
 
-int get_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_sip_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
 	
@@ -1265,7 +1265,7 @@ int get_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-int set_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_sip_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
 	
@@ -1662,7 +1662,7 @@ int get_voice_profile_line_callstate(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
-int get_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct brcm_args *brcmargs = (struct brcm_args *)data;
 
@@ -1670,7 +1670,7 @@ int get_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
-int set_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	char call_lines[32];
 	char *str;
@@ -1706,7 +1706,7 @@ int set_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
-int get_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+int get_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *line_name;
 	struct brcm_args *brcmargs = (struct brcm_args *)data;
@@ -1716,7 +1716,7 @@ int get_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-int set_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+int set_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int error;
 	char bname[8], *stype = NULL, *sipaccount = NULL;

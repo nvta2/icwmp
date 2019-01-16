@@ -182,7 +182,7 @@ int get_sip_outbound_proxy(char *refparam, struct dmctx *ctx, void *data, char *
 int get_sip_outbound_proxy_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_sip_registration_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_sip_re_invite_expires(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_sip_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_voice_service_serviceproviderinfo_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_sip_fax_t38_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_voice_service_vp_rtp_portmin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -195,8 +195,8 @@ int get_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance
 int get_voice_profile_line_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_voice_profile_line_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_voice_profile_line_callstate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_line_confort_noise_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx,  void *data, char *instance, char **value);
 int get_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -232,7 +232,7 @@ int set_sip_outbound_proxy(char *refparam, struct dmctx *ctx, void *data, char *
 int set_sip_outbound_proxy_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_sip_registration_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_sip_re_invite_expires(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_sip_x_002207_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_sip_call_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_voice_service_serviceproviderinfo_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_sip_fax_t38_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_voice_service_vp_rtp_portmin(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -243,8 +243,8 @@ int set_voice_service_vp_rtp_srtp_enable(char *refparam, struct dmctx *ctx, void
 int set_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_voice_profile_line_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_directory_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_line_x_002207_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_line_x_002207_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_confort_noise_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
