@@ -28,6 +28,10 @@ validate_url() {
 	return 1
 }
 
+build_dmmap_instance() {
+	[ ! -e /etc/icwmpd/.icwmpd_backup_session.xml ] && icwmp get name "" 0 >/dev/null 2>&1
+}
+
 get_acs_url() {
 	local default_acs="http://10.10.1.6:8000/openacs/acs"
 	local acs_dhcp_discovery="$(uci -q get cwmp.acs.dhcp_discovery)"
@@ -174,6 +178,7 @@ start_service() {
 		[ -f /usr/sbin/asterisk ] && echo "Waiting for Voice to be started ..." && ubus -t 5 wait_for asterisk
 
 		config_load cwmp
+		build_dmmap_instance
 		set_wan_interface
 		wait_for_option43 20
 		get_acs_url
