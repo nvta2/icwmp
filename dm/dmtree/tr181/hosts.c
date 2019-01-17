@@ -40,11 +40,11 @@ DMLEAF thostParam[] = {
 {"HostName", &DMREAD, DMT_STRING, get_host_hostname, NULL, NULL, NULL},
 {"Active", &DMREAD, DMT_BOOL, get_host_active, NULL, NULL, NULL},
 {"PhysAddress", &DMREAD, DMT_STRING, get_host_phy_address, NULL, NULL, NULL},
-{CUSTOM_PREFIX"InterfaceType", &DMREAD, DMT_STRING, get_host_interfacetype, NULL, NULL, NULL},
+{CUSTOM_PREFIX"LinkType", &DMREAD, DMT_STRING, get_host_interfacetype, NULL, NULL, NULL},
 {"AddressSource", &DMREAD, DMT_STRING, get_host_address_source, NULL, NULL, NULL},
 {"LeaseTimeRemaining", &DMREAD, DMT_INT, get_host_leasetime_remaining, NULL, NULL, NULL},
 {"DHCPClient", &DMREAD, DMT_STRING, get_host_dhcp_client, NULL, NULL, NULL},
-{CUSTOM_PREFIX"Interface_Type", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, NULL},
+{CUSTOM_PREFIX"InterfaceType", &DMREAD, DMT_STRING, get_host_interface_type, NULL, NULL, NULL},
 {CUSTOM_PREFIX"ifname", &DMREAD, DMT_STRING, get_host_interfacename, NULL, NULL, NULL},
 {0}
 };
