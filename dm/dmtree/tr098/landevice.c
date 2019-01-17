@@ -130,7 +130,7 @@ DMLEAF tlandevice_hostParam[] = {
 {"MACAddress", &DMREAD, DMT_STRING, get_lan_host_macaddress, NULL, NULL, &DMNONE},
 {"InterfaceType", &DMREAD, DMT_STRING, get_lan_host_interfacetype, NULL, NULL, &DMNONE},
 {"AddressSource", &DMREAD, DMT_STRING, get_lan_host_addresssource, NULL, NULL, &DMNONE},
-{"LeaseTimeRemaining", &DMREAD, DMT_STRING, get_lan_host_leasetimeremaining, NULL, NULL, &DMNONE},
+{"LeaseTimeRemaining", &DMREAD, DMT_INT, get_lan_host_leasetimeremaining, NULL, NULL, &DMNONE},
 {0}
 };
 
@@ -441,6 +441,76 @@ char *dhcp_option_update_instance_alias_icwmpd(int action, char **last_inst, voi
 }
 
 /*******************ADD-DEL OBJECT*********************/
+char *get_last_instance_of_landevice_cond(char* dmmap_package, char *package, char *section, char *opt_inst)
+{
+	struct uci_section *s, *dmmap_section;
+	char *inst = NULL;
+
+	uci_foreach_sections(package, section, s) {
+		if(filter_lan_device_interface(s)!=0) continue;
+		get_dmmap_section_of_config_section(dmmap_package, section, section_name(s), &dmmap_section);
+		inst = update_instance_icwmpd(dmmap_section, inst, opt_inst);
+	}
+	return inst;
+}
+
+int add_landevice(char *refparam, struct dmctx *ctx, void *data, char **instance)
+{
+	char *v, *inst;
+	char lan_sec[16] = {0};
+	struct uci_section *dmmap_lan_sec=NULL;
+
+	check_create_dmmap_package("dmmap_network");
+	inst = get_last_instance_of_landevice_cond("dmmap_network", "network", "interface", "ldinstance");
+	sprintf(lan_sec, "lan_%d", inst ? (atoi(inst)+1) : 1);
+	dmuci_set_value("network", lan_sec, "", "interface");
+	dmuci_set_value("network", lan_sec, "is_lan", "1");
+	dmuci_set_value("network", lan_sec, "auto", "1");
+	dmuci_set_value("network", lan_sec, "enabled", "1");
+	dmuci_set_value("network", lan_sec, "peerdns", "1");
+	dmuci_set_value("network", lan_sec, "delay", "0");
+	dmuci_set_value("network", lan_sec, "proto", "dhcp");
+	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_lan_sec, &v);
+	dmuci_set_value_by_section(dmmap_lan_sec, "section_name", lan_sec);
+	*instance = update_instance_icwmpd(dmmap_lan_sec, inst, "ldinstance");
+	return 0;
+}
+
+int delete_landevice(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
+{
+	int found = 0;
+	struct uci_section *s = NULL;
+	struct uci_section *ss = NULL, *dmmap_section= NULL;
+
+	switch (del_action) {
+		case DEL_INST:
+			get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ldlanargs *)data)->ldlansection), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+			dmuci_delete_by_section(((struct ldlanargs *)data)->ldlansection, NULL, NULL);
+			break;
+		case DEL_ALL:
+			uci_foreach_sections("network", "interface", s) {
+				if (found != 0){
+					get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = s;
+				found++;
+			}
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+			return 0;
+	}
+	return 0;
+}
+
 int add_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
 	char val[64];
@@ -1860,8 +1930,7 @@ static char *get_interface_type(char *mac, char *ndev)
 	json_object *res;
 	int wlctl_num;
 	struct uci_section *s, *d;
-	char *network, *device, *value, *wunit;
-	char buf[8], *p;
+	char *network, *value, *wunit, *p, buf[8];
 	
 	uci_foreach_sections("wireless", "wifi-device", d) {
 		wlctl_num = 0;
@@ -1879,7 +1948,7 @@ static char *get_interface_type(char *mac, char *ndev)
 				dmubus_call("router.wireless", "stas", UBUS_ARGS{{"vif", p, String}}, 1, &res);
 				if(res) {
 					json_object_object_foreach(res, key, val) {
-						value = dmjson_get_value(val, 1, "assoc_mac");
+						value = dmjson_get_value(val, 1, "macaddr");
 						if (strcasecmp(value, mac) == 0)
 							return "802.11";
 					}
@@ -1957,7 +2026,7 @@ int get_lan_host_leasetimeremaining(char *refparam, struct dmctx *ctx, void *dat
 	}
 	else {
 		mac = dm_ubus_get_value(clientlargs->client, 1, "macaddr");
-		fp = fopen(ARP_FILE, "r");
+		fp = fopen(DHCP_LEASES_FILE, "r");
 		if ( fp != NULL)
 		{
 			while (fgets(line, MAX_DHCP_LEASES, fp) != NULL )
@@ -1977,7 +2046,8 @@ int get_lan_host_leasetimeremaining(char *refparam, struct dmctx *ctx, void *dat
 					return 0;
 				}
 			}
-			fclose(fp);			
+			fclose(fp);
+			*value = "0";
 		}
 	}		
 	return 0;	
@@ -3681,7 +3751,7 @@ int browselandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 
 	synchronize_specific_config_sections_with_dmmap("network", "interface", "dmmap_network", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		if(filter_lan_device_interface(p->config_section, "")!=0) continue;
+		if(filter_lan_device_interface(p->config_section)!=0) continue;
 		idev = handle_update_instance(1, dmctx, &idev_last, update_instance_alias, 3, p->dmmap_section, "ldinstance", "ldalias");
 		init_ldargs_lan(&curr_lanargs, p->config_section, idev);
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_lanargs, idev) == DM_STOP)
@@ -3693,10 +3763,7 @@ int browselandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_dat
 
 int browseIPInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *ss = NULL;
-	struct uci_section *sss = NULL;
 	char *ilan = NULL, *ilan_last = NULL;
-	char *idhcp = NULL, *idhcp_last = NULL;
 	struct ldlanargs *lanargs = (struct ldlanargs *)prev_data;
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
@@ -3707,12 +3774,6 @@ int browseIPInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_d
 		ilan = handle_update_instance(2, dmctx, &ilan_last, update_instance_alias, 3, p->dmmap_section, "lipinstance", "lipalias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)p->config_section, ilan) == DM_STOP)
 			break;
-		/*SUBENTRY(entry_landevice_ipinterface_instance, ctx, idev, ilan);
-	uci_foreach_option_cont("dhcp", "host", "interface", section_name(ss), sss) {
-		idhcp = handle_update_instance(2, ctx, &idhcp_last, update_instance_alias, 3, sss, "ldhcpinstance", "ldhcpalias");
-		init_ldargs_dhcp(ctx, sss);
-		SUBENTRY(entry_landevice_dhcpstaticaddress_instance, ctx, idev, idhcp);
-		}*/
 	}
 	free_dmmap_config_dup_list(&dup_list);
 	return 0;
@@ -3748,7 +3809,6 @@ end:
 
 int browselanethernetinterfaceconfigInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	int i = 0;
 	char *ifname, *wan_eth, *baseifname;
 	char *ieth = NULL, *ieth_last = NULL;
 	struct uci_section *s = NULL;
@@ -3771,7 +3831,6 @@ int browselanethernetinterfaceconfigInst(struct dmctx *dmctx, DMNODE *parent_nod
 int browseWlanConfigurationInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *ss = NULL;
-	struct uci_section *sss = NULL;
 	json_object *res;
 	char *iwlan = NULL, *iwlan_last = NULL;
 	char *network , *wiface, buf[8], *lan_sec, *wifi_iface_device;

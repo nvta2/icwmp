@@ -787,7 +787,7 @@ int wan_remove_dev_interface(struct uci_section *interface_setion, char *dev)
 	return 0;
 }
 
-int filter_lan_device_interface(struct uci_section *s, void *v)
+int filter_lan_device_interface(struct uci_section *s)
 {
 	char *ifname = NULL;
 	char *phy_itf = NULL, *phy_itf_local;

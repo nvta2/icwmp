@@ -119,6 +119,8 @@ int add_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void *d
 int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 int add_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
 int delete_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
+int add_landevice(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
+int delete_landevice(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 
 int get_lan_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_lan_dns(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
