@@ -972,7 +972,7 @@ int get_voice_profile_max_sessions(char *refparam, struct dmctx *ctx, void *data
 int get_voice_profile_number_of_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	int num = 0;
-	json_object *res, *jobj;
+	json_object *res = NULL, *jobj = NULL;
 	struct uci_section *b_section = NULL;
 	struct sip_args *sipargs = (struct sip_args *)data;
 

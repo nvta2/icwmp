@@ -62,7 +62,7 @@ DMLEAF tLanhost_Config_ManagementParam[] = {
 {"ReservedAddresses", &DMWRITE, DMT_STRING, get_lan_dhcp_reserved_addresses, set_lan_dhcp_reserved_addresses, NULL, NULL},
 {"SubnetMask", &DMWRITE, DMT_STRING, get_lan_dhcp_subnetmask, set_lan_dhcp_subnetmask, NULL, NULL},
 {"IPRouters", &DMWRITE, DMT_STRING, get_lan_dhcp_iprouters, set_lan_dhcp_iprouters, NULL, NULL},
-{"DHCPLeaseTime", &DMWRITE, DMT_STRING, get_lan_dhcp_leasetime, set_lan_dhcp_leasetime, NULL, NULL},
+{"DHCPLeaseTime", &DMWRITE, DMT_INT, get_lan_dhcp_leasetime, set_lan_dhcp_leasetime, NULL, NULL},
 {"DomainName", &DMWRITE, DMT_STRING, get_lan_dhcp_domainname, set_lan_dhcp_domainname, NULL, NULL},
 {0}
 };

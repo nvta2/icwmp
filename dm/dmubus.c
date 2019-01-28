@@ -167,10 +167,10 @@ static inline json_object *ubus_call_req(char *obj, char *method, struct ubus_ar
 		}
 		p += strlen(p);
 		sprintf(p, "}");
-		pp = dmcmd("ubus", 7, "-S", "-t", "1", "call", obj, method, bufargs); //TODO wait to fix uloop ubus freeze
+		pp = dmcmd("ubus", 7, "-S", "-t", "3", "call", obj, method, bufargs); //TODO wait to fix uloop ubus freeze
 	}
 	else {
-		pp = dmcmd("ubus", 6, "-S", "-t", "1", "call", obj, method); //TODO wait to fix uloop ubus freeze
+		pp = dmcmd("ubus", 6, "-S", "-t", "3", "call", obj, method); //TODO wait to fix uloop ubus freeze
 	}
 	if (pp) {
 		dmcmd_read_alloc(pp, &ubus_return);
