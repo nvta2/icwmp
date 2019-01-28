@@ -162,6 +162,7 @@ file_filter(){
 		prev_obj=$obl
 	done
 	sed -ri '/^\s*$/d' tmp.txt
+	sed -ri 's/\.i\./\.\{i\}\./g' tmp.txt
 }
 
 add_dm_xml() {
