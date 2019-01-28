@@ -823,9 +823,9 @@ int entry_method_root_layer3_forwarding(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"Layer3Forwarding.") {
 		DMOBJECT(DMROOT"Layer3Forwarding.", ctx, "0", 1, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"Layer3Forwarding.Forwarding.", ctx, "1", 1, add_layer3_forwarding, delete_layer3_forwarding_all, NULL);
 		DMPARAM("DefaultConnectionService", ctx, "1", get_layer3_def_conn_serv, set_layer3_def_conn_serv, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("ForwardNumberOfEntries", ctx, "0", get_layer3_nbr_entry, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMOBJECT(DMROOT"Layer3Forwarding.Forwarding.", ctx, "1", 1, add_layer3_forwarding, delete_layer3_forwarding_all, NULL);
 		SUBENTRY(entry_layer3_forwarding, ctx);
 		return 0;
 	}

@@ -654,8 +654,8 @@ int entry_method_root_routing(struct dmctx *ctx)
 {
 	IF_MATCH(ctx, DMROOT"Routing.") {
 		DMOBJECT(DMROOT"Routing.", ctx, "0", 1, NULL, NULL, NULL);
-		DMOBJECT(DMROOT"Routing.Router.", ctx, "0", 1, NULL, NULL, NULL);
 		DMPARAM("RouterNumberOfEntries", ctx, "0", get_router_nbr_entry, NULL, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
+		DMOBJECT(DMROOT"Routing.Router.", ctx, "0", 1, NULL, NULL, NULL);
 		SUBENTRY(entry_method_router, ctx);
 		return 0;
 	}
