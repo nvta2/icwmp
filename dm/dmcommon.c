@@ -1346,3 +1346,47 @@ void update_dmmap_sections(struct list_head *dup_list, char *instancename, char*
 		dmuci_set_value_by_section(dm_sect, instancename, p->instance);
 	}
 }
+
+struct uci_section *is_dmmap_section_exist(char* package, char* section){
+	struct uci_section *s;
+
+	uci_path_foreach_sections(icwmpd, package, section, s) {
+		return s;
+	}
+	return NULL;
+}
+
+unsigned char isdigit_str(char *str) {
+	if (!(*str)) return 0;
+	while(isdigit(*str++));
+	return ((*(str-1)) ? 0 : 1);
+}
+
+static inline int isword_delim(char c)
+{
+	if (c == ' ' ||
+		c == ',' ||
+		c == '\t' ||
+		c == '\v' ||
+		c == '\r' ||
+		c == '\n' ||
+		c == '\0')
+		return 1;
+	return 0;
+}
+
+char *dm_strword(char *src, char *str)
+{
+	char *ret = src;
+	int len;
+	if (src[0] == '\0')
+		return NULL;
+	len = strlen(str);
+	while ((ret = strstr(ret, str)) != NULL) {
+		if ((ret == src && isword_delim(ret[len])) ||
+			(ret != src && isword_delim(ret[len]) && isword_delim(*(ret - 1))))
+			return ret;
+		ret++;
+	}
+	return NULL;
+}

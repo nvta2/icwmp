@@ -171,5 +171,6 @@ void check_create_dmmap_package(char *dmmap_package);
 int is_section_unnamed(char *section_name);
 void delete_sections_save_next_sections(char* dmmap_package, char *section_type, char *instancename, char *section_name, int instance, struct list_head *dup_list);
 void update_dmmap_sections(struct list_head *dup_list, char *instancename, char* dmmap_package, char *section_type);
-
+unsigned char isdigit_str(char *str);
+char *dm_strword(char *src, char *str);
 #endif
