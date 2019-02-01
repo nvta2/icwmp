@@ -616,8 +616,7 @@ int delete_wan_wanpppconnectiondevice(char *refparam, struct dmctx *ctx, void *d
 				dmuci_delete_by_section(wandcdevargs->wancprotosection, NULL, NULL);
 				return 0;
 			case DEL_ALL:
-				dmuci_get_value_by_section_string(wandcdevargs->wancdsection, "ifname", &ifname);
-				uci_foreach_option_eq("network", "interface", "ifname", ifname, s) {
+				uci_foreach_sections("network", "interface", s) {
 					dmuci_get_value_by_section_string(s, "proto", &iproto);
 					if (strstr(iproto, "ppp")) { //CHECK IF WE CAN OPTIMISE AND IF iproto can be pppoa
 						if (ss){
