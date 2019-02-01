@@ -170,6 +170,7 @@ int dmuci_delete_by_section_icwmpd(struct uci_section *s, char *option, char *va
 int dmuci_rename_section_by_section(struct uci_section *s, char *value);
 int dmuci_exit_icwmpd(void);
 int dmuci_init_icwmpd(void);
+void uci_add_list_to_list(struct uci_list *addlist, struct uci_list *list);
 #define NEW_UCI_PATH(UCI_PATH, CPATH, DPATH)		\
 struct uci_context *uci_ctx_##UCI_PATH;			\
 const char *uci_savedir_##UCI_PATH = DPATH; \

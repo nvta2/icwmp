@@ -21,7 +21,8 @@ extern DMLEAF tLevelParams[];
 extern DMLEAF tChainParams[];
 extern DMOBJ tChainObj[];
 extern DMLEAF tRuleParams[];
-
+extern DMOBJ tRuleObj[];
+extern DMLEAF tTimeSpanParams[];
 
 int browseLevelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseChainInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
@@ -58,6 +59,12 @@ int get_rule_dest_port(char *refparam, struct dmctx *ctx, void *data, char *inst
 int get_rule_dest_port_range_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_rule_source_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_rule_source_port_range_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_rule_icmp_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_rule_source_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_time_span_supported_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_time_span_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_time_span_start_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_time_span_stop_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_firewall_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_firewall_config(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_firewall_advanced_level(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -84,4 +91,10 @@ int set_rule_dest_port(char *refparam, struct dmctx *ctx, void *data, char *inst
 int set_rule_dest_port_range_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_rule_source_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_rule_source_port_range_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_rule_icmp_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_rule_source_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_time_span_supported_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_time_span_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_time_span_start_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_time_span_stop_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif

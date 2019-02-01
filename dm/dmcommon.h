@@ -173,4 +173,5 @@ void delete_sections_save_next_sections(char* dmmap_package, char *section_type,
 void update_dmmap_sections(struct list_head *dup_list, char *instancename, char* dmmap_package, char *section_type);
 unsigned char isdigit_str(char *str);
 char *dm_strword(char *src, char *str);
+char **strsplit(const char* str, const char* delim, size_t* numtokens);
 #endif

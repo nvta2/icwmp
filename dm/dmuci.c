@@ -799,3 +799,16 @@ struct uci_section *dmuci_walk_section (char *package, char *stype, void *arg1, 
 end:
 	return s;
 }
+
+void uci_add_list_to_list(struct uci_list *addlist, struct uci_list *list){
+	struct uci_element *e, *elt;
+	struct uci_list elist;
+
+	uci_foreach_element(addlist, e) {
+		elt = dmcalloc(1, sizeof(struct uci_element));
+		elt->list= e->list;
+		elt->name= e->name;
+		elist= e->list;
+		uci_list_add(list, &elt->list);
+	}
+}

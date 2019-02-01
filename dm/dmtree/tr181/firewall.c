@@ -45,7 +45,12 @@ DMLEAF tChainParams[] = {
 };
 
 DMOBJ tChainObj[] = {
-{"Rule", &DMREAD, NULL, NULL, NULL, browseRuleInst, NULL, NULL, NULL, tRuleParams, NULL},
+{"Rule", &DMREAD, NULL, NULL, NULL, browseRuleInst, NULL, NULL, tRuleObj, tRuleParams, NULL},
+{0}
+};
+
+DMOBJ tRuleObj[] = {
+{CUSTOM_PREFIX"TimeSpan", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tTimeSpanParams, NULL},
 {0}
 };
 
@@ -68,9 +73,18 @@ DMLEAF tRuleParams[] = {
 {"DestPortRangeMax", &DMWRITE, DMT_INT, get_rule_dest_port_range_max, set_rule_dest_port_range_max, NULL, NULL},
 {"SourcePort", &DMWRITE, DMT_INT, get_rule_source_port, set_rule_source_port, NULL, NULL},
 {"SourcePortRangeMax", &DMWRITE, DMT_INT, get_rule_source_port_range_max, set_rule_source_port_range_max, NULL, NULL},
+{CUSTOM_PREFIX"IcmpType", &DMWRITE, DMT_INT, get_rule_icmp_type, set_rule_icmp_type, NULL, NULL},
+{CUSTOM_PREFIX"SourceMac", &DMWRITE, DMT_INT, get_rule_source_mac, set_rule_source_mac, NULL, NULL},
 {0}
 };
 
+DMLEAF tTimeSpanParams[] = {
+{"SupportedDays", &DMWRITE, DMT_STRING, get_time_span_supported_days, set_time_span_supported_days, NULL, NULL},
+{"Days", &DMWRITE, DMT_STRING, get_time_span_days, set_time_span_days, NULL, NULL},
+{"StartTime", &DMWRITE, DMT_STRING, get_time_span_start_time, set_time_span_start_time, NULL, NULL},
+{"StopTime", &DMWRITE, DMT_STRING, get_time_span_stop_time, set_time_span_stop_time, NULL, NULL},
+{0}
+};
 /***************************** Browse Functions ***********************************/
 
 int browseLevelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
@@ -305,21 +319,35 @@ int get_rule_target_chain(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int get_rule_source_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	struct uci_list *v = NULL;
+	struct uci_list *v = NULL, *v1= NULL;
 	struct uci_element *e;
 	char *zone, *ifaceobj, buf[256] = "", *val;
 	struct uci_section *s = NULL;
 	char linker[64] = "", *vallink;
 
 	dmuci_get_value_by_section_string((struct uci_section *)data, "src", &zone);
-	uci_foreach_sections("firewall", "zone", s)
-	{
-		dmuci_get_value_by_section_string(s, "name", &val);
-		if (strcmp(val, zone) == 0) {
-			dmuci_get_value_by_section_list(s, "network", &v);
-			break;
+	if(zone == NULL || strlen(zone)==0)
+		return 0;
+
+	if (strcmp(zone, "*") == 0) {
+		v = dmcalloc(1, sizeof(struct uci_list));
+		uci_list_init(v);
+		uci_foreach_sections("firewall", "zone", s)
+		{
+			dmuci_get_value_by_section_list(s, "network", &v1);
+			uci_add_list_to_list(v1, v);
+		}
+	} else {
+		uci_foreach_sections("firewall", "zone", s)
+		{
+			dmuci_get_value_by_section_string(s, "name", &val);
+			if (strcmp(val, zone) == 0) {
+				dmuci_get_value_by_section_list(s, "network", &v);
+				break;
+			}
 		}
 	}
+
 	if (v != NULL) {
 		uci_foreach_element(v, e) {
 			adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), e->name, &vallink);
@@ -546,6 +574,68 @@ int get_rule_source_port_range_max(char *refparam, struct dmctx *ctx, void *data
 	if (tmp == NULL)
 		tmp = strchr(v, '-');
 	*value = (tmp) ? tmp+1 : "-1";
+	return 0;
+}
+
+int get_rule_icmp_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_list *v= NULL;
+	struct uci_element *e;
+	char *ptr;
+
+	dmasprintf(value, "%s", "");
+	dmuci_get_value_by_section_list((struct uci_section *)data, "icmp_type", &v);
+	if (v != NULL) {
+		uci_foreach_element(v, e) {
+			ptr= dmstrdup(*value);
+			free(*value);
+
+			if(strlen(ptr)==0)
+				dmasprintf(value, "%s", e->name);
+			else{
+				dmasprintf(value, "%s %s", ptr, e->name);
+				free(ptr);
+			}
+		}
+	}
+	return 0;
+}
+
+int get_rule_source_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *v= NULL;
+	dmuci_get_value_by_section_string((struct uci_section *)data, "src_mac", &v);
+	*value = (v) ? v : "";
+	return 0;
+}
+
+int get_time_span_supported_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value= "mon tue wed thu fri sat sun";
+	return 0;
+}
+
+int get_time_span_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *v;
+	dmuci_get_value_by_section_string((struct uci_section *)data, "weekdays", &v);
+	*value = (v) ? v : "";
+	return 0;
+}
+
+int get_time_span_start_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *v;
+	dmuci_get_value_by_section_string((struct uci_section *)data, "start_time", &v);
+	*value = (v) ? v : "";
+	return 0;
+}
+
+int get_time_span_stop_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *v;
+	dmuci_get_value_by_section_string((struct uci_section *)data, "stop_time", &v);
+	*value = (v) ? v : "";
 	return 0;
 }
 
@@ -1054,7 +1144,6 @@ int set_rule_source_port_range_max(char *refparam, struct dmctx *ctx, void *data
 	char *v, *tmp, *buf, buffer[64];
 	switch (action) {
 		case VALUECHECK:
- 	       		//TODO
 			break;
 		case VALUESET:
 			dmuci_get_value_by_section_string((struct uci_section *)data, "src_port", &v);
@@ -1078,3 +1167,72 @@ int set_rule_source_port_range_max(char *refparam, struct dmctx *ctx, void *data
         return 0;
 }
 
+int set_rule_icmp_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	int length, i;
+	char **devices= NULL;
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section((struct uci_section *)data, "icmp_type", "");
+			devices = strsplit(value, " ", &length);
+			for(i=0; i<length; i++)
+				dmuci_add_list_value_by_section((struct uci_section *)data, "icmp_type", devices[i]);
+			break;
+	}
+	return 0;
+}
+
+int set_rule_source_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section((struct uci_section *)data, "src_mac", value);
+			break;
+	}
+	return 0;
+}
+
+int set_time_span_supported_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			break;
+	}
+	return 0;
+}
+
+int set_time_span_days(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section((struct uci_section *)data, "weekdays", value);
+			break;
+	}
+	return 0;
+}
+
+int set_time_span_start_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section((struct uci_section *)data, "start_time", value);
+			break;
+	}
+	return 0;
+}
+
+int set_time_span_stop_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section((struct uci_section *)data, "stop_time", value);
+			break;
+	}
+	return 0;
+}
