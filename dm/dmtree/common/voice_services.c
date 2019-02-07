@@ -501,7 +501,7 @@ int delete_associated_line_instances(char *sip_id, char* profile_key)
 int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	int found = 0;
-	struct uci_section *s, *ss = NULL;
+	struct uci_section *s, *ss = NULL, *sss = NULL;
 	struct sip_args *sipargs = (struct sip_args *)data;
 	struct uci_section *dmmap_section;
 	char *v= NULL;
@@ -534,6 +534,9 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 					dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				delete_associated_line_instances(section_name(ss), v);
 				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+			uci_foreach_sections("voice_client", "brcm_line", sss) {
+				dmuci_set_value_by_section(sss, "sip_account", "-");
 			}
 			break;
 	}
