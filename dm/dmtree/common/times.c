@@ -22,13 +22,18 @@
 DMLEAF tTimeParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification, linker*/
 {"Enable", &DMWRITE, DMT_BOOL, get_time_enable, set_time_enable, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING, get_time_status, NULL, NULL, NULL},
 {"NTPServer1", &DMWRITE, DMT_STRING, get_time_ntpserver1, set_time_ntpserver1, NULL, NULL},
 {"NTPServer2", &DMWRITE, DMT_STRING, get_time_ntpserver2, set_time_ntpserver2, NULL, NULL},
 {"NTPServer3", &DMWRITE, DMT_STRING, get_time_ntpserver3, set_time_ntpserver3, NULL, NULL},
 {"NTPServer4", &DMWRITE, DMT_STRING, get_time_ntpserver4, set_time_ntpserver4, NULL, NULL},
 {"NTPServer5", &DMWRITE, DMT_STRING, get_time_ntpserver5, set_time_ntpserver5, NULL, NULL},
+{"CurrentLocalTime", &DMREAD, DMT_TIME, get_time_CurrentLocalTime, NULL, NULL, NULL},
+{"LocalTimeZone", &DMWRITE, DMT_BOOL, get_time_LocalTimeZone, set_time_LocalTimeZone, NULL, NULL},
+{CUSTOM_PREFIX"LocalTimeZoneOlson", &DMREAD, DMT_STRING, get_local_time_zone_olson, NULL, NULL, NULL},
 {0}
 };
+
 int get_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *path = "/etc/rc.d/*ntpd";
@@ -70,6 +75,62 @@ int set_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 			return 0;
 	}
 	return 0;
+}
+
+int get_time_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	char *path = "/etc/rc.d/*ntpd";
+
+	if (check_file(path))
+		*value = "Synchronized";
+	else
+		*value = "Disabled";
+	return 0;
+}
+
+int get_time_CurrentLocalTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char time_buf[26] = {0};
+	struct tm *t_tm;
+
+	*value = "0001-01-01T00:00:00Z";
+
+	time_t t_time = time(NULL);
+	t_tm = localtime(&t_time);
+	if (t_tm == NULL)
+		return 0;
+
+	if(strftime(time_buf, sizeof(time_buf), "%FT%T%z", t_tm) == 0)
+		return 0;
+
+	time_buf[25] = time_buf[24];
+	time_buf[24] = time_buf[23];
+	time_buf[22] = ':';
+	time_buf[26] = '\0';
+
+	*value = dmstrdup(time_buf);
+	return 0;
+}
+
+int get_time_LocalTimeZone(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	dmuci_get_option_value_string("system", "@system[0]", "timezone", value);
+	return 0;
+}
+
+int set_time_LocalTimeZone(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	switch (action) {
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value("system", "@system[0]", "timezone", value);
+			break;
+	}
+	return 0;
+}
+
+int get_local_time_zone_olson(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	dmuci_get_option_value_string("system", "@system[0]", "zonename", value);
 }
 
 //WE CAN WORK WITHOUT FOUND VALUE TO UPDATE
