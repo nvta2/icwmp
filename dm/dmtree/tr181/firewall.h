@@ -27,6 +27,8 @@ extern DMLEAF tTimeSpanParams[];
 int browseLevelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseChainInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseRuleInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
+int add_firewall_rule(char *refparam, struct dmctx *ctx, void *data, char **instance);
+int delete_firewall_rule(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
 int get_firewall_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_firewall_config(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_firewall_advanced_level(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);

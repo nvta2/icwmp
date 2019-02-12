@@ -45,7 +45,7 @@ DMLEAF tChainParams[] = {
 };
 
 DMOBJ tChainObj[] = {
-{"Rule", &DMREAD, NULL, NULL, NULL, browseRuleInst, NULL, NULL, tRuleObj, tRuleParams, NULL},
+{"Rule", &DMWRITE, add_firewall_rule, delete_firewall_rule, NULL, browseRuleInst, NULL, NULL, tRuleObj, tRuleParams, NULL},
 {0}
 };
 
@@ -73,8 +73,8 @@ DMLEAF tRuleParams[] = {
 {"DestPortRangeMax", &DMWRITE, DMT_INT, get_rule_dest_port_range_max, set_rule_dest_port_range_max, NULL, NULL},
 {"SourcePort", &DMWRITE, DMT_INT, get_rule_source_port, set_rule_source_port, NULL, NULL},
 {"SourcePortRangeMax", &DMWRITE, DMT_INT, get_rule_source_port_range_max, set_rule_source_port_range_max, NULL, NULL},
-{CUSTOM_PREFIX"IcmpType", &DMWRITE, DMT_INT, get_rule_icmp_type, set_rule_icmp_type, NULL, NULL},
-{CUSTOM_PREFIX"SourceMac", &DMWRITE, DMT_INT, get_rule_source_mac, set_rule_source_mac, NULL, NULL},
+{CUSTOM_PREFIX"IcmpType", &DMWRITE, DMT_STRING, get_rule_icmp_type, set_rule_icmp_type, NULL, NULL},
+{CUSTOM_PREFIX"SourceMac", &DMWRITE, DMT_STRING, get_rule_source_mac, set_rule_source_mac, NULL, NULL},
 {0}
 };
 
@@ -132,6 +132,70 @@ int browseRuleInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 			return 0;
 	}
 	free_dmmap_config_dup_list(&dup_list);
+	return 0;
+}
+
+int add_firewall_rule(char *refparam, struct dmctx *ctx, void *data, char **instance){
+	struct uci_section *s, *dmmap_firewall_rule;
+	char *last_inst= NULL, *sect_name= NULL, *rule_name, *v;
+	char ib[8];
+	last_inst= get_last_instance_icwmpd("dmmap_firewall", "rule", "firewall_chain_rule_instance");
+	if (last_inst)
+		sprintf(ib, "%s", last_inst);
+	else
+		sprintf(ib, "%s", "1");
+	dmasprintf(&rule_name, "Firewall rule %d", atoi(ib)+1);
+
+	dmuci_add_section("firewall", "rule", &s, &sect_name);
+	dmuci_set_value_by_section(s, "name", rule_name);
+	dmuci_set_value_by_section(s, "dest", "lan");
+	dmuci_set_value_by_section(s, "src", "wan");
+	dmuci_set_value_by_section(s, "target", "ACCEPT");
+
+
+	dmuci_add_section_icwmpd("dmmap_firewall", "rule", &dmmap_firewall_rule, &v);
+	dmuci_set_value_by_section(dmmap_firewall_rule, "section_name", sect_name);
+	*instance = update_instance_icwmpd(dmmap_firewall_rule, last_inst, "firewall_chain_rule_instance");
+	return 0;
+}
+
+int delete_firewall_rule(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action){
+	struct uci_section *s = NULL;
+	struct uci_section *ss = NULL;
+	struct uci_section *dmmap_section;
+	int found = 0;
+
+	switch (del_action) {
+		case DEL_INST:
+			if(is_section_unnamed(section_name((struct uci_section *)data))){
+				LIST_HEAD(dup_list);
+				delete_sections_save_next_sections("dmmap_firewall", "rule", "firewall_chain_rule_instance", section_name((struct uci_section *)data), atoi(instance), &dup_list);
+				update_dmmap_sections(&dup_list, "firewall_chain_rule_instance", "dmmap_firewall", "rule");
+				dmuci_delete_by_section_unnamed((struct uci_section *)data, NULL, NULL);
+			} else {
+				get_dmmap_section_of_config_section("dmmap_firewall", "rule", section_name((struct uci_section *)data), &dmmap_section);
+				dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section((struct uci_section *)data, NULL, NULL);
+			}
+			break;
+		case DEL_ALL:
+			uci_foreach_sections("firewall", "rule", s) {
+				if (found != 0){
+					get_dmmap_section_of_config_section("dmmap_firewall", "rule", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = s;
+				found++;
+			}
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_firewall", "rule", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+	}
 	return 0;
 }
 
@@ -260,7 +324,7 @@ int get_rule_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 {
 	char *v;
 	dmuci_get_value_by_section_string((struct uci_section *)data, "enabled", &v);
-	*value = (*v == 'n' || *v == '0') ? "0" : "1";
+	*value = (*v == 'n' || *v == '0' || strlen(v)== 0) ? "0" : "1";
 	return 0;
 }
 
@@ -440,7 +504,7 @@ int get_rule_dest_mask(char *refparam, struct dmctx *ctx, void *data, char *inst
 
 	pch = strchr(destip, '/');
 	if (pch) {
-		*value = pch;
+		*value = pch+1;
 	}
 	else {
 		*value = "";
@@ -474,7 +538,7 @@ int get_rule_source_mask(char *refparam, struct dmctx *ctx, void *data, char *in
 
 	pch = strchr(srcip, '/');
 	if (pch) {
-		*value = pch;
+		*value = pch+1;
 	}
 	else {
 		*value = "";
@@ -919,7 +983,7 @@ int set_rule_dest_interface(char *refparam, struct dmctx *ctx, void *data, char 
 			if (iface != NULL && iface[0] != '\0') {
 				uci_foreach_sections("firewall", "zone", s)
 				{
-					dmuci_get_value_by_section_string(s, "network", &net);
+					dmuci_get_value_by_section_string(s, "name", &net);
 					if (dm_strword(net, iface)) {
 						dmuci_get_value_by_section_string(s, "name", &zone);
 						dmuci_set_value_by_section((struct uci_section *)data, "dest", zone);
