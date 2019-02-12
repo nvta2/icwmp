@@ -31,6 +31,7 @@ DMLEAF tTimeParams[] = {
 {"CurrentLocalTime", &DMREAD, DMT_TIME, get_time_CurrentLocalTime, NULL, NULL, NULL},
 {"LocalTimeZone", &DMWRITE, DMT_BOOL, get_time_LocalTimeZone, set_time_LocalTimeZone, NULL, NULL},
 {CUSTOM_PREFIX"LocalTimeZoneOlson", &DMREAD, DMT_STRING, get_local_time_zone_olson, NULL, NULL, NULL},
+{CUSTOM_PREFIX"SourceInterface", &DMREAD, DMT_STRING, get_time_source_interface, NULL, NULL, NULL},
 {0}
 };
 
@@ -160,6 +161,10 @@ int get_time_ntpserver(char *refparam, struct dmctx *ctx, char **value, int inde
 	if (strcmp(*value, "none") == 0) {
 		*value = "";
 	}
+	return 0;
+}
+
+int get_time_source_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	return 0;
 }
 
