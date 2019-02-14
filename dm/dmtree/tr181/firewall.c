@@ -324,7 +324,7 @@ int get_rule_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 {
 	char *v;
 	dmuci_get_value_by_section_string((struct uci_section *)data, "enabled", &v);
-	*value = (*v == 'n' || *v == '0' || strlen(v)== 0) ? "0" : "1";
+	*value = (*v == 'n' || *v == '0' ) ? "0" : "1";
 	return 0;
 }
 
