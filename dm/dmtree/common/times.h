@@ -22,4 +22,5 @@ int set_time_ntpserver3(char *refparam, struct dmctx *ctx, void *data, char *ins
 int set_time_ntpserver4(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_time_ntpserver5(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_time_LocalTimeZone(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_time_source_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif

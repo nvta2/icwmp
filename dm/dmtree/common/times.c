@@ -29,9 +29,9 @@ DMLEAF tTimeParams[] = {
 {"NTPServer4", &DMWRITE, DMT_STRING, get_time_ntpserver4, set_time_ntpserver4, NULL, NULL},
 {"NTPServer5", &DMWRITE, DMT_STRING, get_time_ntpserver5, set_time_ntpserver5, NULL, NULL},
 {"CurrentLocalTime", &DMREAD, DMT_TIME, get_time_CurrentLocalTime, NULL, NULL, NULL},
-{"LocalTimeZone", &DMWRITE, DMT_BOOL, get_time_LocalTimeZone, set_time_LocalTimeZone, NULL, NULL},
+{"LocalTimeZone", &DMWRITE, DMT_STRING, get_time_LocalTimeZone, set_time_LocalTimeZone, NULL, NULL},
 {CUSTOM_PREFIX"LocalTimeZoneOlson", &DMREAD, DMT_STRING, get_local_time_zone_olson, NULL, NULL, NULL},
-{CUSTOM_PREFIX"SourceInterface", &DMREAD, DMT_STRING, get_time_source_interface, NULL, NULL, NULL},
+{CUSTOM_PREFIX"SourceInterface", &DMWRITE, DMT_STRING, get_time_source_interface, set_time_source_interface, NULL, NULL},
 {0}
 };
 
@@ -165,6 +165,15 @@ int get_time_ntpserver(char *refparam, struct dmctx *ctx, char **value, int inde
 }
 
 int get_time_source_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	char *iface= NULL, *interface= NULL;
+	*value= "";
+	dmuci_get_option_value_string("system", "ntp", "interface", &iface);
+	if (*iface == '\0' || strlen(iface)== 0)
+		return 0;
+	adm_entry_get_linker_param(ctx, dm_print_path("%s%cIP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), iface, &interface);
+	if (*interface == '\0')
+		return 0;
+	*value= dmstrdup(interface);
 	return 0;
 }
 
@@ -191,6 +200,23 @@ int get_time_ntpserver4(char *refparam, struct dmctx *ctx, void *data, char *ins
 int get_time_ntpserver5(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_time_ntpserver(refparam, ctx, value, 5);
+}
+
+int set_time_source_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	char *iface= NULL;
+	switch (action) {
+		case VALUECHECK:
+			adm_entry_get_linker_value(ctx, value, &iface);
+			if(iface == NULL ||  iface[0] == '\0')
+				return FAULT_9007;
+			break;
+		case VALUESET:
+			adm_entry_get_linker_value(ctx, value, &iface);
+			dmuci_set_value("system", "ntp", "interface", iface);
+			return 0;
+	}
+	return 0;
 }
 
 int set_time_ntpserver(char *refparam, struct dmctx *ctx, int action, char *value, int index)
