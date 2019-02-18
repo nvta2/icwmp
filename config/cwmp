@@ -41,7 +41,7 @@ config cwmp 'cpe'
 	option datamodel 'tr181'
 	option notification '1'
 	#vlan_method: 1: iopsys method 2: genexis method
-	option vlan_method '2'
+	option vlan_method '1'
 
 config cwmp 'lwn'
 	option enable '1'

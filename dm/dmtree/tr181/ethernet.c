@@ -653,9 +653,9 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 /*******************ADD-DEL OBJECT*********************/
 int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance_para)
 {
-	char *value, *v;
+	char *value, *v, *eth_wan, *vid, *name, *vlan_name, *vlan_method= NULL;
 	char *instance;
-	struct uci_section *s = NULL, *dmmap_network= NULL, *vlan_method= NULL;
+	struct uci_section *dmmap_network= NULL;
 
 	check_create_dmmap_package("dmmap_network");
 	dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
@@ -664,16 +664,23 @@ int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance
 	else
 		instance = get_last_instance_icwmpd("dmmap_network", "device", "vlan_term_instance");
 
-	dmuci_add_section("network", "device", &s, &value);
-	dmuci_set_value_by_section(s, "ifname", "eth0");
-	dmuci_set_value_by_section(s, "type", "8021q");
+	dmuci_get_option_value_string("ports", "WAN", "ifname", &eth_wan);
+	dmasprintf(&vid, "%d", atoi(instance)+1);
+	dmasprintf(&vlan_name, "vlan_%s", vid);
+	dmuci_set_value("network", vlan_name, "", "device");
+	dmuci_set_value("network", vlan_name, "ifname", eth_wan);
+	dmuci_set_value("network", vlan_name, "type", "8021q");
+	dmuci_set_value("network", vlan_name, "vid", vid);
+	dmasprintf(&name, "%s.%s", eth_wan, vid);
+	dmuci_set_value("network", vlan_name, "name", name);
 
 	dmuci_add_section_icwmpd("dmmap_network", "device", &dmmap_network, &v);
-	dmuci_set_value_by_section(dmmap_network, "section_name", section_name(s));
+	dmuci_set_value_by_section(dmmap_network, "section_name", vlan_name);
 	if(strcmp(vlan_method, "2") == 0)
 		*instance_para = update_instance_icwmpd(dmmap_network, instance, "genexis_vlan_term_instance");
 	else
 		*instance_para = update_instance_icwmpd(dmmap_network, instance, "vlan_term_instance");
+
 	return 0;
 }
 
