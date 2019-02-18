@@ -1429,6 +1429,7 @@ char **strsplit(const char* str, const char* delim, size_t* numtokens) {
     free(s);
     return tokens;
 }
+
 char *get_macaddr(char *interface_name)
 {
 	json_object *res;

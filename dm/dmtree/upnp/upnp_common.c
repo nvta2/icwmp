@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 int upnp_get_NetworkInterfaceNumberOfEntries(){
 	int n = 0;
 	struct uci_section *s = NULL;

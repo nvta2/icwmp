@@ -586,17 +586,24 @@ int get_vlan_term_name(char *refparam, struct dmctx *ctx, void *data, char *inst
 ***************************************************************************/
 int get_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *ifname;
-	char *macaddr;
+	char *devifname, *ifname, *dupifname;
+	char *macaddr, *pch, *spch;
 	struct uci_section *section;
 	
-	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &ifname);
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &devifname);
 	
-	uci_foreach_option_eq("network", "interface", "ifname", ifname, section) {
-		macaddr = get_macaddr(section_name(section));
-		if (macaddr != NULL && *macaddr != '\0') 
-			adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), macaddr, value);
-		break;
+	uci_foreach_sections("network", "interface", section) {
+		dmuci_get_value_by_section_string(section, "ifname", &ifname);
+		dupifname = dmstrdup(ifname);
+		for (pch = strtok_r(dupifname, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
+			if(strcmp(pch, devifname) == 0){
+				macaddr = get_macaddr(section_name(section));
+				if (macaddr != NULL && *macaddr != '\0'){
+					adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), macaddr, value);
+				}
+				break;
+			}
+		}
 	}
 	
 	return 0;
