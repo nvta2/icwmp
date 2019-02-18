@@ -102,7 +102,6 @@ int set_ipping_interface(char *refparam, struct dmctx *ctx, void *data, char *in
 
 int get_ipping_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-
 	dmuci_get_varstate_string("cwmp", "@ippingdiagnostic[0]", "Host", value);
 	return 0;
 }
@@ -238,14 +237,12 @@ int set_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instanc
 int get_ipping_success_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("SuccessCount", "0");
-	
 	return 0;
 }
 
 int get_ipping_failure_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("FailureCount", "0");
-	
 	return 0;
 }
 

@@ -312,14 +312,12 @@ int set_ip_ping_block_size(char *refparam, struct dmctx *ctx, void *data, char *
 int get_ip_ping_success_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("SuccessCount", "0");
-
 	return 0;
 }
 
 int get_ip_ping_failure_count(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("FailureCount", "0");
-
 	return 0;
 }
 
@@ -332,14 +330,12 @@ int get_ip_ping_average_response_time(char *refparam, struct dmctx *ctx, void *d
 int get_ip_ping_min_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("MinimumResponseTime", "0");
-
 	return 0;
 }
 
 int get_ip_ping_max_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("MaximumResponseTime", "0");
-
 	return 0;
 }
 

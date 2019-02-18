@@ -557,6 +557,12 @@ int run_session_end_func (struct session *session)
 		exit(EXIT_SUCCESS);
 	}
 
+	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC)
+	{
+		CWMP_LOG (INFO,"Executing nslookupdiagnostic: end session request");
+		cwmp_nslookup_diagnostic();
+	}
+
 	dm_entry_restart_services();
 
 	end_session_flag = 0;

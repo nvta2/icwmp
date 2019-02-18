@@ -42,4 +42,9 @@ char *__dmjson_get_value_array_all(json_object *mainjobj, char *delim, int argc,
 #define dmjson_get_value_array_all(MAINJOBJ,DELIM,ARGC,args...) \
 	__dmjson_get_value_array_all(MAINJOBJ, DELIM, ARGC, ##args);
 
+#define dmjson_foreach_value_in_array(MAINJOBJ,ARROBJ,VAL,INDEX,ARGC,args...) \
+	for (INDEX = 0, ARROBJ = NULL, VAL = __dmjson_get_value_in_array_idx(MAINJOBJ, &(ARROBJ), NULL, INDEX, ARGC, ##args);\
+		VAL; \
+		VAL = __dmjson_get_value_in_array_idx(MAINJOBJ, &(ARROBJ), NULL, ++INDEX, 0))
+
 #endif

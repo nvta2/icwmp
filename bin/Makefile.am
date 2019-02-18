@@ -59,7 +59,8 @@ libdatamodel_la_SOURCES +=							\
 	../dm/dmtree/tr181/nat.c						\
 	../dm/dmtree/tr181/routing.c					\
 	../dm/dmtree/tr181/userinterface.c				\
-	../dm/dmtree/tr181/firewall.c
+	../dm/dmtree/tr181/firewall.c					\
+	../dm/dmtree/tr181/dns.c
 
 if UPNP_TR064
 libdatamodel_la_SOURCES +=							\

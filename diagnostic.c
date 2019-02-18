@@ -722,3 +722,8 @@ int cwmp_start_diagnostic(int diagnostic_type)
 	return 0;
 }
 
+int cwmp_nslookup_diagnostic()
+{
+	dmcmd_no_wait("/bin/sh", 2, NSLOOKUP_PATH, "run");
+    return 0;
+}

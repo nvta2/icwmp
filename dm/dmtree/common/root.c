@@ -56,6 +56,7 @@
 #include "uploaddiagnostic.h"
 #include "deviceconfig.h"
 #include "firewall.h"
+#include "dns.h"
 
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
@@ -134,6 +135,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"Routing", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tRoutingObj, tRoutingParam, NULL},
 {"UserInterface", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUserInterfaceObj, NULL, NULL},
 {"Firewall", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tFirewallObj, tFirewallParams, NULL},
+{"DNS", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDNSObj, tDNSParams, NULL},
 #ifdef XMPP_ENABLE
 {"XMPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL,tXMPPObj, tXMPPParams, NULL},
 #endif

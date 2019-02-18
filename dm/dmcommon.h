@@ -65,6 +65,9 @@ do { \
 #define UPLOAD_DIAGNOSTIC_PATH "/usr/share/icwmp/functions/upload_launch"
 #define UPLOAD_DUMP_FILE "/tmp/upload_dump"
 #define UPLOAD_DIAGNOSTIC_STOP DMCMD("/bin/sh", 2, UPLOAD_DIAGNOSTIC_PATH, "stop");
+#define NSLOOKUP_STOP DMCMD("/bin/sh", 2, NSLOOKUP_PATH, "stop");
+#define NSLOOKUP_PATH "/usr/share/icwmp/functions/nslookup_launch"
+#define NSLOOKUP_LOG_FILE "/tmp/nslookup.log"
 
 enum notification_enum {
 	notification_none,
@@ -118,6 +121,7 @@ struct dmmap_sect {
 	char *section_name;
 	char *instance;
 };
+
 struct dm_args
 {
 	struct uci_section *section;

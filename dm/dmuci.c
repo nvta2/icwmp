@@ -676,6 +676,7 @@ int dmuci_delete_by_section(struct uci_section *s, char *option, char *value)
 
 	return 0;
 }
+
 int dmuci_delete_by_section_unnamed(struct uci_section *s, char *option, char *value)
 {
 	struct uci_ptr up = {0};

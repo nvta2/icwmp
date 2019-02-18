@@ -318,8 +318,8 @@ struct uci_section *create_firewall_zone_config(char *fwl, char *iface, char *in
 {
 	struct uci_section *s;
 	char *value, *name;
-
-	dmuci_add_section("firewall", "zone", &s, &value);
+	
+	dmuci_add_section_and_rename("firewall", "zone", &s, &value);
 	dmasprintf(&name, "%s_%s", fwl, iface);
 	dmuci_set_value_by_section(s, "name", name);
 	dmuci_set_value_by_section(s, "input", input);
@@ -415,12 +415,13 @@ int dmcmd_no_wait(char *cmd, int n, ...)
 	int i, pid;
 	static int dmcmd_pfds[2];
 	char *argv[n+2];
-
+	static char sargv[4][128];
 	argv[0] = cmd;
 	va_start(arg,n);
 	for (i=0; i<n; i++)
 	{
-		argv[i+1] = strdup(va_arg(arg, char*));
+		strcpy(sargv[i], va_arg(arg, char*));
+		argv[i+1] = sargv[i];
 	}
 	va_end(arg);
 
@@ -650,7 +651,7 @@ void update_section_option_list(char *config, char *section, char *option, char 
 			dmuci_delete_by_section(prev_s, NULL, NULL);
 		}
 		if (add_sec) {
-			dmuci_add_section(config, section, &s, &add_value);
+			dmuci_add_section_and_rename(config, section, &s, &add_value);
 			dmuci_set_value_by_section(s, option, val);
 			dmuci_set_value_by_section(s, option_2, val_2);
 		}
@@ -717,7 +718,7 @@ void update_section_list(char *config, char *section, char *option, int number, 
 			}
 		}
 		while (i < number) {
-			dmuci_add_section(config, section, &s, &add_value);
+			dmuci_add_section_and_rename(config, section, &s, &add_value);
 			if (option)dmuci_set_value_by_section(s, option, filter);
 			if (option1)dmuci_set_value_by_section(s, option1, val1);
 			if (option2)dmuci_set_value_by_section(s, option2, val2);
@@ -1058,7 +1059,7 @@ void synchronize_specific_config_sections_with_dmmap(char *package, char *sectio
 	uci_path_foreach_sections_safe(icwmpd, dmmap_package, section_type, stmp, s) {
 		dmuci_get_value_by_section_string(s, "section_name", &v);
 		if(get_origin_section_from_config(package, section_type, v) == NULL){
-			dmuci_delete_by_section(s, NULL, NULL);
+			dmuci_delete_by_section_unnamed_icwmpd(s, NULL, NULL);
 		}
 	}
 }

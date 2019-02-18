@@ -38,7 +38,7 @@ DMLEAF tTimeParams[] = {
 int get_time_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *path = "/etc/rc.d/*ntpd";
-	
+
 	if (check_file(path))
 		*value = "1";
 	else

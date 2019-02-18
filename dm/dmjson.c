@@ -227,7 +227,6 @@ char *__dmjson_get_value_in_array_idx(json_object *mainjobj, json_object **arrob
 	return (v ? v : defret) ;
 }
 
-
 char *____dmjson_get_value_array_all(json_object *mainjobj, char *delim, char *argv[])
 {
 	json_object *arrobj;

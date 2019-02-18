@@ -67,5 +67,6 @@ enum diagnostic_type {
 
 int cwmp_ip_ping_diagnostic();
 int cwmp_start_diagnostic(int diagnostic_type);
+int cwmp_nslookup_diagnostic();
 
 #endif
