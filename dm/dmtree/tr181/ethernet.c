@@ -689,14 +689,29 @@ int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instan
 	int found = 0;
 	char *lan_name;
 	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL, *dmmap_section= NULL;
+	struct uci_section *ss = NULL, *dmmap_section= NULL, *vlan_method= NULL;
 
 	switch (del_action) {
 	case DEL_INST:
-		get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
-		if(dmmap_section != NULL)
-			dmuci_delete_by_section(dmmap_section, NULL, NULL);
-		dmuci_delete_by_section(((struct dm_args *)data)->section, NULL, NULL);
+		dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
+		//section_name(((struct dm_args *)data)->section)
+		if(is_section_unnamed(section_name(((struct dm_args *)data)->section))){
+			LIST_HEAD(dup_list);
+			if(strcmp(vlan_method, "2") == 0){
+				delete_sections_save_next_sections("dmmap_network", "device", "genexis_vlan_term_instance", section_name((struct uci_section *)data), atoi(instance), &dup_list);
+				update_dmmap_sections(&dup_list, "genexis_vlan_term_instance", "dmmap_network", "device");
+			}
+			else{
+				delete_sections_save_next_sections("dmmap_network", "device", "vlan_term_instance", section_name((struct uci_section *)data), atoi(instance), &dup_list);
+				update_dmmap_sections(&dup_list, "vlan_term_instance", "dmmap_network", "device");
+			}
+			dmuci_delete_by_section_unnamed(((struct dm_args *)data)->section, NULL, NULL);
+		} else {
+			get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(((struct dm_args *)data)->section), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
+			dmuci_delete_by_section(((struct dm_args *)data)->section, NULL, NULL);
+		}
 		break;
 	case DEL_ALL:
 		uci_foreach_sections("network", "device", s) {
