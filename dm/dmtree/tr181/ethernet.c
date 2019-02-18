@@ -502,9 +502,14 @@ int set_vlan_term_vlanid(char *refparam, struct dmctx *ctx, void *data, char *in
 int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *dmmap_section;
+	char *vlan_method= NULL;
 
 	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
-	dmuci_get_value_by_section_string(dmmap_section, "vlan_term_alias", value);
+	dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
+	if(strcmp(vlan_method, "2") == 0)
+		dmuci_get_value_by_section_string(dmmap_section, "genexis_vlan_term_alias", value);
+	else
+		dmuci_get_value_by_section_string(dmmap_section, "vlan_term_alias", value);
 
 	return 0;
 }
@@ -512,13 +517,18 @@ int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct uci_section *dmmap_section;
+	char *vlan_method= NULL;
 
 	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(dmmap_section, "vlan_term_alias", value);
+			dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
+			if(strcmp(vlan_method, "2") == 0)
+				dmuci_set_value_by_section(dmmap_section, "genexis_vlan_term_alias", value);
+			else
+				dmuci_set_value_by_section(dmmap_section, "vlan_term_alias", value);
 			return 0;
 	}
 	return 0;
@@ -645,17 +655,25 @@ int add_vlan_term(char *refparam, struct dmctx *ctx, void *data, char **instance
 {
 	char *value, *v;
 	char *instance;
-	struct uci_section *s = NULL, *dmmap_network= NULL;
+	struct uci_section *s = NULL, *dmmap_network= NULL, *vlan_method= NULL;
 
 	check_create_dmmap_package("dmmap_network");
-	instance = get_last_instance_icwmpd("dmmap_network", "device", "vlan_term_instance");
+	dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
+	if(strcmp(vlan_method, "2") == 0)
+		instance = get_last_instance_icwmpd("dmmap_network", "device", "genexis_vlan_term_instance");
+	else
+		instance = get_last_instance_icwmpd("dmmap_network", "device", "vlan_term_instance");
+
 	dmuci_add_section("network", "device", &s, &value);
 	dmuci_set_value_by_section(s, "ifname", "eth0");
 	dmuci_set_value_by_section(s, "type", "8021q");
 
 	dmuci_add_section_icwmpd("dmmap_network", "device", &dmmap_network, &v);
 	dmuci_set_value_by_section(dmmap_network, "section_name", section_name(s));
-	*instance_para = update_instance_icwmpd(dmmap_network, instance, "vlan_term_instance");
+	if(strcmp(vlan_method, "2") == 0)
+		*instance_para = update_instance_icwmpd(dmmap_network, instance, "genexis_vlan_term_instance");
+	else
+		*instance_para = update_instance_icwmpd(dmmap_network, instance, "vlan_term_instance");
 	return 0;
 }
 
@@ -700,15 +718,22 @@ int delete_vlan_term(char *refparam, struct dmctx *ctx, void *data, char *instan
 /*************************************************************/
 int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	char *vlan_term = NULL, *vlan_term_last = NULL;
+	char *vlan_term = NULL, *vlan_term_last = NULL, *type= NULL, *vlan_method= NULL;
 	struct dm_args curr_vlan_term_args = {0};
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
 
 	synchronize_specific_config_sections_with_dmmap("network", "device", "dmmap_network", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->config_section, "type", &type);
+		dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
+		if ((strcmp(vlan_method, "2") != 0 && strcmp(vlan_method, "1") != 0) || (strcmp(vlan_method, "1") == 0 && strcmp(type, "untagged") == 0) ) //&& (strcmp(vlan_method, "1") != 0 || strcmp(type, "untagged") != 0)
+			continue;
 		curr_vlan_term_args.section = p->config_section;
-		vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "vlan_term_instance", "vlan_term_alias");
+		if(strcmp(vlan_method, "2") == 0)
+			vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "genexis_vlan_term_instance", "genexis_vlan_term_alias");
+		else
+			vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "vlan_term_instance", "vlan_term_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
 			break;
 	}
