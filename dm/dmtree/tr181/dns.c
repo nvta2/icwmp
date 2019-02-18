@@ -20,7 +20,6 @@ DMOBJ tDNSObj[] = {
 {"Client", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tClientObj, tClientParams, NULL},
 {"Relay", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tRelayObj, tRelayParams, NULL},
 {"Diagnostics", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDiagnosticsObj, NULL, NULL},
-//{"SD", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tSDObj, tSDParams, NULL},
 {0}
 };
 
@@ -102,46 +101,6 @@ DMLEAF tResultParams[] = {
 {"IPAddresses", &DMREAD, DMT_STRING, get_result_i_p_addresses, NULL, NULL, NULL},
 {"DNSServerIP", &DMREAD, DMT_STRING, get_result_d_n_s_server_i_p, NULL, NULL, NULL},
 {"ResponseTime", &DMREAD, DMT_UNINT, get_result_response_time, NULL, NULL, NULL},
-{0}
-};
-
-DMLEAF tSDParams[] = {
-{"Enable", &DMWRITE, DMT_BOOL, get_sd_enable, set_sd_enable, NULL, NULL},
-{"ServiceNumberOfEntries", &DMREAD, DMT_UNINT, get_sd_service_number_of_entries, NULL, NULL, NULL},
-{"AdvertisedInterfaces", &DMWRITE, DMT_STRING, get_sd_advertised_interfaces, set_sd_advertised_interfaces, NULL, NULL},
-{0}
-};
-
-DMOBJ tSDObj[] = {
-{"Service", &DMREAD, NULL, NULL, NULL, browseServiceInst, NULL, NULL, tSDServiceObj, tServiceParams, NULL},
-{0}
-};
-
-DMLEAF tServiceParams[] = {
-{"InstanceName", &DMREAD, DMT_STRING, get_service_instance_name, NULL, NULL, NULL},
-{"ApplicationProtocol", &DMREAD, DMT_STRING, get_service_application_protocol, NULL, NULL, NULL},
-{"TransportProtocol", &DMREAD, DMT_STRING, get_service_transport_protocol, NULL, NULL, NULL},
-{"Domain", &DMREAD, DMT_STRING, get_service_domain, NULL, NULL, NULL},
-{"Port", &DMREAD, DMT_UNINT, get_service_port, NULL, NULL, NULL},
-{"Target", &DMREAD, DMT_STRING, get_service_target, NULL, NULL, NULL},
-{"Status", &DMREAD, DMT_STRING, get_service_status, NULL, NULL, NULL},
-{"LastUpdate", &DMREAD, DMT_TIME, get_service_last_update, NULL, NULL, NULL},
-{"Host", &DMREAD, DMT_STRING, get_service_host, NULL, NULL, NULL},
-{"TimeToLive", &DMREAD, DMT_UNINT, get_service_time_to_live, NULL, NULL, NULL},
-{"Priority", &DMREAD, DMT_UNINT, get_service_priority, NULL, NULL, NULL},
-{"Weight", &DMREAD, DMT_UNINT, get_service_weight, NULL, NULL, NULL},
-{"TextRecordNumberOfEntries", &DMREAD, DMT_UNINT, get_service_text_record_number_of_entries, NULL, NULL, NULL},
-{0}
-};
-
-DMOBJ tSDServiceObj[] = {
-{"TextRecord", &DMREAD, NULL, NULL, NULL, browseTextRecordInst, NULL, NULL, NULL, tTextRecordParams, NULL},
-{0}
-};
-
-DMLEAF tTextRecordParams[] = {
-{"Key", &DMREAD, DMT_STRING, get_textrecord_key, NULL, NULL, NULL},
-{"Value", &DMREAD, DMT_STRING, get_textrecord_value, NULL, NULL, NULL},
 {0}
 };
 
@@ -778,114 +737,6 @@ int get_result_response_time(char *refparam, struct dmctx *ctx, void *data, char
 	return 0;
 }
 
-int get_sd_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_sd_service_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_sd_advertised_interfaces(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_instance_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_application_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_transport_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_domain(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_last_update(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_time_to_live(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_weight(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_service_text_record_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_textrecord_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
-int get_textrecord_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	//TODO
-	return 0;
-}
-
 int set_client_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
@@ -1276,29 +1127,4 @@ int set_nslookupdiagnostics_number_of_repetitions(char *refparam, struct dmctx *
 	return 0;
 }
 
-int set_sd_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	switch (action) {
-		case VALUECHECK:
-			//TODO
-			break;
-		case VALUESET:
-			//TODO
-			break;
-	}
-	return 0;
-}
-
-int set_sd_advertised_interfaces(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	switch (action) {
-		case VALUECHECK:
-			//TODO
-			break;
-		case VALUESET:
-			//TODO
-			break;
-	}
-	return 0;
-}
 

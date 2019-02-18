@@ -45,8 +45,6 @@ struct NSLookupResult
 int browseServerInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseRelayForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseResultInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
-int browseServiceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
-int browseTextRecordInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 
 int add_client_server(char *refparam, struct dmctx *ctx, void *data, char **instance);
 int add_relay_forwarding(char *refparam, struct dmctx *ctx, void *data, char **instance);
@@ -87,24 +85,6 @@ int get_result_host_name_returned(char *refparam, struct dmctx *ctx, void *data,
 int get_result_i_p_addresses(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_result_d_n_s_server_i_p(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_result_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_sd_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_sd_service_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_sd_advertised_interfaces(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_instance_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_application_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_transport_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_domain(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_last_update(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_time_to_live(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_priority(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_weight(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_service_text_record_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_textrecord_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_textrecord_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 
 int set_client_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_server_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
@@ -122,7 +102,5 @@ int set_nslookupdiagnostics_host_name(char *refparam, struct dmctx *ctx, void *d
 int set_nslookupdiagnostics_d_n_s_server(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_nslookupdiagnostics_timeout(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_nslookupdiagnostics_number_of_repetitions(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_sd_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_sd_advertised_interfaces(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 #endif
