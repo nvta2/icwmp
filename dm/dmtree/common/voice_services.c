@@ -548,10 +548,8 @@ int delete_profile_object(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_line_max_instance(struct uci_section **brcm_section)
 {
 	struct uci_section *s;
-	int line_number, i=0;
-	json_object *res;
+	int line_number, i = 0, found = 0;
 	char *value;
-	int found=0;
 	
 	line_number = get_voice_service_max_line();
 	
@@ -874,16 +872,13 @@ int get_capabilities_sip_pperiod(char *refparam, struct dmctx *ctx, void *data, 
 }
 
 /*******************Voiceprofile END **********************************/
-
 int get_voice_service_max_line()
 {
-	int num = 0;
-	json_object *res;
-	json_object *brcm = NULL;
-	char *num_lines= NULL;
+	char *num_lines = NULL;
 
 	db_get_value_string("hw", "board", "VoicePorts", &num_lines);
-	if(num_lines) return atoi(num_lines);
+	if(num_lines)
+		return atoi(num_lines);
 	return 0;
 }
 
@@ -1279,6 +1274,7 @@ int set_sip_call_lines(char *refparam, struct dmctx *ctx, void *data, char *inst
 			dmuci_set_value_by_section(sipargs->sip_section, "call_lines", value);
 			return 0;
 	}
+	return 0;
 }
 
 int get_voice_profile_sip_dtmfmethod(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
@@ -1722,9 +1718,9 @@ int get_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *inst
 int set_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int error;
-	char bname[8], *stype = NULL, *sipaccount = NULL;
-	char *lineinstance = NULL;
+	char bname[8], *stype = NULL, *sipaccount = NULL, *lineinstance = NULL, *linealias = NULL, *voice_profile_key = NULL, *v;
 	struct brcm_args *brcmargs = (struct brcm_args *)data;
+	struct uci_section *dmmap_section = NULL, *dmmap_brcm_line_section = NULL;
 
 	switch (action) {
 		case VALUECHECK:
@@ -1732,20 +1728,28 @@ int set_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *inst
 		case VALUESET:
 			sprintf(bname, "brcm%s", value);
 			error = dmuci_get_section_type("voice_client", bname, &stype);
-			if(error){
+			if(error)
 				return 0;
-			}
 			dmuci_get_option_value_string("voice_client", bname, "sip_account", &sipaccount);
-			dmuci_get_option_value_string("voice_client", bname, "lineinstance", &lineinstance);
 			if ((sipaccount[0] != '\0' && sipaccount[0] != '-'))
 				return 0;
 			dmuci_get_value_by_section_string(brcmargs->brcm_section, "sip_account", &sipaccount);
-			dmuci_get_value_by_section_string(brcmargs->brcm_section, "lineinstance", &lineinstance);
-			dmuci_set_value_by_section(brcmargs->brcm_section, "lineinstance", "");
-			dmuci_set_value_by_section(brcmargs->brcm_section, "linealias", "");
 			dmuci_set_value_by_section(brcmargs->brcm_section, "sip_account", "-");
+			get_dmmap_section_of_config_section("dmmap_voice_client", "brcm_line", section_name(brcmargs->brcm_section), &dmmap_section);
+			if(dmmap_section != NULL) {
+				dmuci_get_value_by_section_string(dmmap_section, "voice_profile_key", &voice_profile_key);
+				dmuci_get_value_by_section_string(dmmap_section, "lineinstance", &lineinstance);
+				dmuci_get_value_by_section_string(dmmap_section, "linealias", &linealias);
+				dmuci_delete_by_section(dmmap_section, NULL, NULL);
+			}
 			dmuci_set_value("voice_client", bname, "sip_account", sipaccount);
-			dmuci_set_value("voice_client", bname, "lineinstance", lineinstance);
+			dmuci_add_section_icwmpd("dmmap_voice_client", "brcm_line", &dmmap_brcm_line_section, &v);
+			if(dmmap_section != NULL) {
+				dmuci_set_value_by_section(dmmap_brcm_line_section, "section_name", bname);
+				dmuci_set_value_by_section(dmmap_brcm_line_section, "voice_profile_key", voice_profile_key);
+				dmuci_set_value_by_section(dmmap_brcm_line_section, "lineinstance", lineinstance);
+				dmuci_set_value_by_section(dmmap_brcm_line_section, "linealias", linealias);
+			}
 			return 0;
 	}
 	return 0;
