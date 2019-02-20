@@ -1452,3 +1452,54 @@ char *get_macaddr(char *interface_name)
 
 	return mac;
 }
+
+/*
+ * Manage string lists
+ */
+
+int is_ifname_exit_in_list(char *iface_list, char *ifname){
+	char *pch, *spch, *list;
+	list= strdup(iface_list);
+	for (pch = strtok_r(list, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
+		if(strcmp(pch, ifname) == 0)
+			return 1;
+	}
+	return 0;
+}
+
+void add_iface_to_iface_list(char **iface_list, char *ifname){
+	char *list= NULL;
+
+	list= dmstrdup(*iface_list);
+	dmfree(*iface_list);
+	*iface_list= NULL;
+	dmasprintf(iface_list, "%s %s", list, ifname);
+}
+
+void remove_iface_from_iface_list(char **iface_list, char *ifname){
+	char *list= NULL, *tmp=NULL;
+	char *pch, *spch;
+
+	list= dmstrdup(*iface_list);
+	dmfree(*iface_list);
+	*iface_list= NULL;
+	for (pch = strtok_r(list, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
+		if(strcmp(pch, ifname) == 0)
+			continue;
+		if(tmp == NULL)
+			dmasprintf(iface_list, "%s", pch);
+		else
+			dmasprintf(iface_list, "%s %s", tmp, pch);
+
+		if(tmp){
+			dmfree(tmp);
+			tmp= NULL;
+		}
+		if(*iface_list){
+			tmp= dmstrdup(*iface_list);
+			dmfree(*iface_list);
+			*iface_list= NULL;
+		}
+	}
+	dmasprintf(iface_list, "%s", tmp);
+}

@@ -539,6 +539,26 @@ char *update_instance_without_section(int action, char **last_inst, void *argv[]
 	return instance;
 }
 
+char *get_vlan_last_instance_icwmpd(char *package, char *section, char *opt_inst, char *vlan_method)
+{
+	struct uci_section *s;
+	char *inst = NULL;
+	char *last_inst = NULL, *type, *confsect, *sect_name;
+
+	uci_path_foreach_sections(icwmpd, package, section, s) {
+		dmuci_get_value_by_section_string(s, "section_name", &sect_name);
+		get_config_section_of_dmmap_section("network", "device", sect_name, &confsect);
+		dmuci_get_value_by_section_string(confsect, "type", &type);
+		if ((strcmp(vlan_method, "2") != 0 && strcmp(vlan_method, "1") != 0) || (strcmp(vlan_method, "1") == 0 && strcmp(type, "untagged") == 0) )
+			continue;
+		inst = update_instance_icwmpd(s, last_inst, opt_inst);
+		if(last_inst)
+			dmfree(last_inst);
+		last_inst = dmstrdup(inst);
+	}
+	return inst;
+}
+
 char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst)
 {
 	struct uci_section *s;

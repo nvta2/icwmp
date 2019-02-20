@@ -125,6 +125,7 @@ struct dmmap_sect {
 struct dm_args
 {
 	struct uci_section *section;
+	struct uci_section *dmmap_section;
 	char *name;
 };
 
@@ -184,5 +185,8 @@ unsigned char isdigit_str(char *str);
 char *dm_strword(char *src, char *str);
 char **strsplit(const char* str, const char* delim, size_t* numtokens);
 char *get_macaddr(char *ifname);
+int is_ifname_exit_in_list(char *iface_list, char *ifname);
+void add_iface_to_iface_list(char **iface_list, char *ifname);
+void remove_iface_from_iface_list(char **iface_list, char *ifname);
 
 #endif
