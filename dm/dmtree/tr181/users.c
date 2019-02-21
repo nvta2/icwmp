@@ -4,8 +4,9 @@
  *      the Free Software Foundation, either version 2 of the License, or
  *      (at your option) any later version.
  *
- *      Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
- *              Author: Omar Kallel <omar.kallel@pivasoftware.com>
+ *      Copyright (C) 2019 iopsys Software Solutions AB
+ *
+ *      Author: Omar Kallel <omar.kallel@pivasoftware.com>
  */
 #include "dmcwmp.h"
 #include "users.h"
