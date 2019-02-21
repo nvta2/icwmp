@@ -57,6 +57,7 @@
 #include "deviceconfig.h"
 #include "firewall.h"
 #include "dns.h"
+#include "users.h"
 
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
@@ -136,6 +137,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"UserInterface", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUserInterfaceObj, NULL, NULL},
 {"Firewall", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tFirewallObj, tFirewallParams, NULL},
 {"DNS", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDNSObj, tDNSParams, NULL},
+{"Users", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUsersObj, tUsersParams, NULL},
 #ifdef XMPP_ENABLE
 {"XMPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL,tXMPPObj, tXMPPParams, NULL},
 #endif

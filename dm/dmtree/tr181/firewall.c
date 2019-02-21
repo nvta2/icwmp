@@ -152,7 +152,6 @@ int add_firewall_rule(char *refparam, struct dmctx *ctx, void *data, char **inst
 	dmuci_set_value_by_section(s, "src", "wan");
 	dmuci_set_value_by_section(s, "target", "ACCEPT");
 
-
 	dmuci_add_section_icwmpd("dmmap_firewall", "rule", &dmmap_firewall_rule, &v);
 	dmuci_set_value_by_section(dmmap_firewall_rule, "section_name", sect_name);
 	*instance = update_instance_icwmpd(dmmap_firewall_rule, last_inst, "firewall_chain_rule_instance");
