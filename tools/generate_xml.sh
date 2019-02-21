@@ -410,4 +410,4 @@ cnt_param=`grep -c "parameter," tmp.txt`
 echo "Number of TR181 objects is $cnt_obj"
 echo "Number of TR181 parameters is $cnt_param"
 echo "End of TR181 Generation"
-rm -rf tmp_.txt
+rm -rf tmp.txt
