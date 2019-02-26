@@ -28,8 +28,12 @@ int get_user_alias(char *refparam, struct dmctx *ctx, void *data, char *instance
 int get_user_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_user_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_user_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_user_remote_accessable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_user_language(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_user_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_user_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_user_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_user_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_user_remote_accessable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_user_language(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif

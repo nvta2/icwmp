@@ -27,6 +27,8 @@ DMLEAF tUserParams[] = {
 {"Enable", &DMWRITE, DMT_BOOL, get_user_enable, set_user_enable, NULL, NULL},
 {"Username", &DMWRITE, DMT_STRING, get_user_username, set_user_username, NULL, NULL},
 {"Password", &DMWRITE, DMT_STRING, get_user_password, set_user_password, NULL, NULL},
+{"RemoteAccessCapable", &DMWRITE, DMT_BOOL, get_user_remote_accessable, set_user_remote_accessable, NULL, NULL},
+{"Language", &DMWRITE, DMT_STRING, get_user_language, set_user_language, NULL, NULL},
 {0}
 };
 
@@ -114,6 +116,7 @@ int delete_users_user(char *refparam, struct dmctx *ctx, void *data, char *insta
 	}
 	return 0;
 }
+
 /***************************************** Set/Get Parameter functions ***********************/
 int get_users_user_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
@@ -154,6 +157,22 @@ int get_user_password(char *refparam, struct dmctx *ctx, void *data, char *insta
 {
 	char *v;
 	dmuci_get_value_by_section_string((struct uci_section *)data, "password", &v);
+	*value= dmstrdup(v);
+    return 0;
+}
+
+int get_user_remote_accessable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *v;
+	dmuci_get_value_by_section_string((struct uci_section *)data, "remote_access", &v);
+	*value= dmstrdup(v);
+    return 0;
+}
+
+int get_user_language(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *v;
+	dmuci_get_value_by_section_string((struct uci_section *)data, "language", &v);
 	*value= dmstrdup(v);
     return 0;
 }
@@ -206,6 +225,30 @@ int set_user_password(char *refparam, struct dmctx *ctx, void *data, char *insta
 					break;
 			case VALUESET:
 				dmuci_set_value_by_section((struct uci_section *)data, "password", value);
+				break;
+        }
+        return 0;
+}
+
+int set_user_remote_accessable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+        switch (action) {
+			case VALUECHECK:
+					break;
+			case VALUESET:
+				dmuci_set_value_by_section((struct uci_section *)data, "remote_access", value);
+				break;
+        }
+        return 0;
+}
+
+int set_user_language(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+        switch (action) {
+			case VALUECHECK:
+					break;
+			case VALUESET:
+				dmuci_set_value_by_section((struct uci_section *)data, "language", value);
 				break;
         }
         return 0;
