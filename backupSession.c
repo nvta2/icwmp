@@ -670,7 +670,7 @@ void bkp_session_insert_du_state_change_complete(struct du_state_change_complete
 	struct opresult *p;
 	list_for_each_entry(p, &(pdu_state_change_complete->list_opresult), list) {			
 		n =	bkp_session_insert(b,"opresult",NULL);
-		sprintf(resolved,"%b",p->resolved);
+		sprintf(resolved,"%d",p->resolved);
 		sprintf(fault_code,"%d",p->fault);
 		bkp_session_insert(n,"uuid",p->uuid);
 		bkp_session_insert(n,"du_ref",p->du_ref);

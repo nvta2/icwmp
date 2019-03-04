@@ -183,6 +183,14 @@ end:
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 }
 
+int free_cache_mem() {
+    FILE  *fp = NULL;
+    fp = fopen("/proc/sys/vm/drop_caches", "w");
+    fputs("3", fp);
+    fclose(fp);
+    return 0;
+}
+
 void cwmp_schedule_session (struct cwmp *cwmp)
 {
     struct list_head                    *ilist;
@@ -223,6 +231,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         CWMP_LOG (INFO,"Start session");
         error = cwmp_schedule_rpc (cwmp,session);
         CWMP_LOG (INFO,"End session");
+        free_cache_mem();
         run_session_end_func(session);
         if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )
         {

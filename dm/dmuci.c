@@ -130,8 +130,8 @@ void free_all_list_package_change(struct list_head *clist)
 /**** UCI LOOKUP ****/
 int dmuci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value)
 {
-	/*value*/
-	ptr->value = value;
+	/* value */
+		ptr->value = value;
 
 	/*package*/
 	if (!package && !package[0])
@@ -410,6 +410,7 @@ int dmuci_change_packages(struct list_head *clist)
 			continue;
 		add_list_package_change(clist, *p);
 	}
+	free(configs);
 	return 0;
 }
 

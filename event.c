@@ -317,7 +317,7 @@ void cwmp_lwnotification()
 	free_all_list_lw_notify(); 
 	//freeaddrinfo(servaddr); //To check
 	CTXFREE(msg);
-	CTXFREE(msg_out);
+	FREE(msg_out);
 }
 
 void cwmp_add_notification(void)
