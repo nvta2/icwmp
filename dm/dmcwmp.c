@@ -413,6 +413,7 @@ char *handle_update_instance(int instance_ranck, struct dmctx *ctx, char **last_
 	unsigned int pos = instance_ranck - 1;
 	unsigned int alias_resister = 0, max, action;
 	void *argv[argc];
+	char *str;
 
 	va_start(arg, argc);
 	for (i = 0; i < argc; i++) {
@@ -428,6 +429,7 @@ char *handle_update_instance(int instance_ranck, struct dmctx *ctx, char **last_
 	} else {
 		action = INSTANCE_UPDATE_NUMBER;
 	}
+
 	instance = up_instance(action, last_inst, argv);
 	if(*last_inst)
 		ctx->inst_buf[pos] = dmstrdup(*last_inst);
@@ -464,11 +466,9 @@ char *update_instance_alias_icwmpd(int action, char **last_inst , void *argv[])
 	char *instance;
 	char *alias;
 	char buf[64] = {0};
-
 	struct uci_section *s = (struct uci_section *) argv[0];
 	char *inst_opt = (char *) argv[1];
 	char *alias_opt = (char *) argv[2];
-
 	dmuci_get_value_by_section_string(s, inst_opt, &instance);
 	if (instance[0] == '\0') {
 		if (*last_inst == NULL)
@@ -597,15 +597,14 @@ char *get_last_instance(char *package, char *section, char *opt_inst)
 	return inst;
 }
 
-char *get_last_instance_lev2_icwmpd_dmmap_opt(char *package, char *section, char* dmmap_package, char *opt_inst, char *opt_check, char *value_check)
+char *get_last_instance_lev2_icwmpd_dmmap_opt(char* dmmap_package, char *section,  char *opt_inst, char *opt_check, char *value_check)
 {
-	struct uci_section *s, *config_section;
+	struct uci_section *s;
 	char *instance = NULL, *section_name= NULL;
 	char *last_inst = NULL;
 
 	uci_path_foreach_option_eq(icwmpd, dmmap_package, section, opt_check, value_check, s) {
 		dmuci_get_value_by_section_string(s, "section_name", &section_name);
-		get_config_section_of_dmmap_section(package, section, section_name, &config_section);
 		instance = update_instance_icwmpd(s, last_inst, opt_inst);
 		if(last_inst)
 			dmfree(last_inst);

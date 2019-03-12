@@ -854,7 +854,7 @@ int add_br_vlan(char *refparam, struct dmctx *ctx, void *data, char **instance)
 	struct uci_section *vlan_s, *dmmap_bridge_vlan;
 
 	check_create_dmmap_package("dmmap_network");
-	last_instance = get_last_instance_lev2_icwmpd_dmmap_opt("network", "device", "dmmap_network", "bridge_vlan_instance", "bridge_key", ((struct bridging_args *)data)->br_key);
+	last_instance = get_last_instance_lev2_icwmpd_dmmap_opt("dmmap_network", "device", "bridge_vlan_instance", "bridge_key", ((struct bridging_args *)data)->br_key);
 	dmasprintf(&vlan_name, "vlan%d", last_instance ? atoi(last_instance)+ 1 : 1);
 	last_vid = get_last_vid();
 	dmasprintf(&name, "%s.%d", wan_baseifname, last_vid ? atoi(last_vid)+ 1 : 1001);

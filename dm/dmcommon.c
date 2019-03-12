@@ -1024,6 +1024,18 @@ struct uci_section *get_dup_section_in_dmmap(char *dmmap_package, char *section_
 	return NULL;
 }
 
+struct uci_section *get_dup_section_in_dmmap_eq(char *dmmap_package, char* section_type, char*sect_name, char *opt_name, char* opt_value){
+	struct uci_section *s;
+	char *v;
+
+	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, "section_name", sect_name, s) {
+		dmuci_get_value_by_section_string(s, opt_name, &v);
+		if(strcmp(v, opt_value)== 0)
+			return s;
+	}
+	return NULL;
+}
+
 void synchronize_specific_config_sections_with_dmmap(char *package, char *section_type, char *dmmap_package, struct list_head *dup_list)
 {
 	struct uci_section *s, *stmp, *dmmap_sect;
@@ -1101,6 +1113,39 @@ void synchronize_specific_config_sections_with_dmmap_eq(char *package, char *sec
 		if(get_origin_section_from_config(package, section_type, v) == NULL){
 			dmuci_delete_by_section(s, NULL, NULL);
 		}
+	}
+}
+
+void synchronize_specific_config_sections_with_dmmap_eq_no_delete(char *package, char *section_type, char *dmmap_package, char* option_name, char* option_value, struct list_head *dup_list)
+{
+	struct uci_section *s, *stmp, *dmmap_sect;
+	FILE *fp;
+	char *v, *dmmap_file_path, *sect_name;
+
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+	uci_foreach_option_eq(package, section_type, option_name, option_value, s) {
+		/*
+		 * create/update corresponding dmmap section that have same config_section link and using param_value_array
+		 */
+		if ((dmmap_sect = get_dup_section_in_dmmap(dmmap_package, section_type, section_name(s))) == NULL) {
+			dmuci_add_section_icwmpd(dmmap_package, section_type, &dmmap_sect, &v);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, "section_name", section_name(s));
+		}
+	}
+
+	dmmap_sect= NULL;
+	s= NULL;
+	uci_path_foreach_sections(icwmpd, dmmap_package, section_type, dmmap_sect) {
+		dmuci_get_value_by_section_string(dmmap_sect, "section_name", &v);
+		get_config_section_of_dmmap_section("network", "interface", v, &s);
+		add_sectons_list_paramameter(dup_list, s, dmmap_sect, NULL);
 	}
 }
 
@@ -1457,26 +1502,26 @@ char *get_macaddr(char *interface_name)
  * Manage string lists
  */
 
-int is_ifname_exit_in_list(char *iface_list, char *ifname){
+int is_elt_exit_in_str_list(char *str_list, char *elt){
 	char *pch, *spch, *list;
-	list= strdup(iface_list);
+	list= dmstrdup(str_list);
 	for (pch = strtok_r(list, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
-		if(strcmp(pch, ifname) == 0)
+		if(strcmp(pch, elt) == 0)
 			return 1;
 	}
 	return 0;
 }
 
-void add_iface_to_iface_list(char **iface_list, char *ifname){
+void add_elt_to_str_list(char **str_list, char *elt){
 	char *list= NULL;
 
-	list= dmstrdup(*iface_list);
-	dmfree(*iface_list);
-	*iface_list= NULL;
-	dmasprintf(iface_list, "%s %s", list, ifname);
+	list= dmstrdup(*str_list);
+	dmfree(*str_list);
+	*str_list= NULL;
+	dmasprintf(str_list, "%s %s", list, elt);
 }
 
-void remove_iface_from_iface_list(char **iface_list, char *ifname){
+void remove_elt_from_str_list(char **iface_list, char *ifname){
 	char *list= NULL, *tmp=NULL;
 	char *pch, *spch;
 
@@ -1490,7 +1535,6 @@ void remove_iface_from_iface_list(char **iface_list, char *ifname){
 			dmasprintf(iface_list, "%s", pch);
 		else
 			dmasprintf(iface_list, "%s %s", tmp, pch);
-
 		if(tmp){
 			dmfree(tmp);
 			tmp= NULL;

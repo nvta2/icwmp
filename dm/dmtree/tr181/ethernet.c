@@ -642,11 +642,11 @@ int set_vlan_term_lowerlayers(char *refparam, struct dmctx *ctx, void *data, cha
 			dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &vlan_name);
 			uci_foreach_sections("network", "interface", s) {
 				dmuci_get_value_by_section_string(s, "ifname", &iface_list);
-				if(strcmp(section_name(s), linker) != 0 && is_ifname_exit_in_list(iface_list, vlan_name)){
-					remove_iface_from_iface_list(&iface_list, vlan_name);
+				if(strcmp(section_name(s), linker) != 0 && is_elt_exit_in_str_list(iface_list, vlan_name)){
+					remove_elt_from_str_list(&iface_list, vlan_name);
 					dmuci_set_value_by_section(s, "ifname", iface_list);
-				} else if (strcmp(section_name(s), linker) == 0 && !is_ifname_exit_in_list(iface_list, vlan_name)){
-					add_iface_to_iface_list(&iface_list, vlan_name);
+				} else if (strcmp(section_name(s), linker) == 0 && !is_elt_exit_in_str_list(iface_list, vlan_name)){
+					add_elt_to_str_list(&iface_list, vlan_name);
 					dmuci_set_value_by_section(s, "ifname", iface_list);
 				}
 			}
