@@ -6,6 +6,7 @@
  *
  *	Copyright (C) 2016 Inteno Broadband Technology AB
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *		Author: Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -161,6 +162,7 @@ DMLEAF tDhcpServerPoolClientParams[] = {
 DMLEAF tDhcpServerPoolClientIPv4AddressParams[] = {
 /* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"LeaseTimeRemaining", &DMREAD, DMT_TIME,  get_dhcp_client_ipv4address_leasetime, NULL, NULL, NULL},
+{"IPAddress", &DMREAD, DMT_TIME,  get_dhcp_client_ipv4address_ip_address, NULL, NULL, NULL},
 {0}
 };
 
@@ -668,18 +670,57 @@ int delObjDHCPv4ServerPoolOption(char *refparam, struct dmctx *ctx, void *data, 
 
 int addObjDHCPv4RelayForwarding(char *refparam, struct dmctx *ctx, void *data, char **instance)
 {
-	//TODO
+	struct uci_section *s, *dmmap_sect;
+	char *wan_eth, *value, *bridgerelay, *instancepara, *v;
+
+	check_create_dmmap_package("dmmap_dhcp_relay");
+	instancepara = get_last_instance_icwmpd("dmmap_dhcp_relay", "interface", "cwmp_dhcpv4relay_instance");
+	dmuci_add_section("network", "interface", &s, &value);
+	dmuci_set_value_by_section(s, "proto", "relay");
+	dmuci_add_section_icwmpd("dmmap_dhcp_relay", "interface", &dmmap_sect, &v);
+	dmuci_set_value_by_section(dmmap_sect, "section_name", section_name(s));
+	*instance = update_instance_icwmpd(dmmap_sect, instancepara, "cwmp_dhcpv4relay_instance");
 	return 0;
 }
 
 int delObjDHCPv4RelayForwarding(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
+	struct dhcp_client_args *dhcp_relay_args = (struct dhcp_client_args*)data;
+	struct uci_section *s = NULL;
+	struct uci_section *ss = NULL;
+	struct uci_section *dmmap_section;
+	int found= 0;
+
 	switch (del_action) {
 		case DEL_INST:
-			//TODO
+			if(is_section_unnamed(section_name((struct uci_section *)data))){
+				LIST_HEAD(dup_list);
+				delete_sections_save_next_sections("dmmap_dhcp_relay", "interface", "cwmp_dhcpv4relay_instance", section_name(dhcp_relay_args->dhcp_client_conf), atoi(instance), &dup_list);
+				update_dmmap_sections(&dup_list, "cwmp_dhcpv4relay_instance", "dmmap_dhcp_relay", "interface");
+				dmuci_delete_by_section_unnamed(dhcp_relay_args->dhcp_client_conf, NULL, NULL);
+			} else {
+				get_dmmap_section_of_config_section("dmmap_dhcp_relay", "interface", section_name(dhcp_relay_args->dhcp_client_conf), &dmmap_section);
+				dmuci_delete_by_section_unnamed_icwmpd(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(dhcp_relay_args->dhcp_client_conf, NULL, NULL);
+			}
 			break;
 		case DEL_ALL:
-			//TODO
+			uci_foreach_sections("network", "interface", s) {
+				if (found != 0){
+					get_dmmap_section_of_config_section("dmmap_dhcp_relay", "interface", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = s;
+				found++;
+			}
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_dhcp_relay", "interface", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 			break;
 	}
 	return 0;
@@ -1502,6 +1543,16 @@ int get_dhcp_client_ipv4address_leasetime(char *refparam, struct dmctx *ctx, voi
 	time_buf[26] = '\0';
 
 	*value = dmstrdup(time_buf);
+	return 0;
+}
+
+int get_dhcp_client_ipv4address_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value) {
+	struct dhcp_client_ipv4address_args current_dhcp_client_ipv4address_args = *((struct dhcp_client_ipv4address_args*)data);
+
+	if(current_dhcp_client_ipv4address_args.ip != NULL && strlen(current_dhcp_client_ipv4address_args.ip)>0)
+		*value= dmstrdup(current_dhcp_client_ipv4address_args.ip);
+	else
+		*value= "";
 	return 0;
 }
 
@@ -2797,7 +2848,19 @@ int get_DHCPv4Relay_Status(char *refparam, struct dmctx *ctx, void *data, char *
 
 int get_DHCPv4Relay_ForwardingNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct uci_section *s, *dmmap_sect;
+	int nbre_confs= 0, nbre_dmmaps= 0;
+
+	uci_foreach_option_eq("network", "interface", "proto", "relay", s) {
+		nbre_confs++;
+	}
+	uci_path_foreach_sections(icwmpd, "dmmap_dhcp_relay", "interface", dmmap_sect) {
+		nbre_dmmaps++;
+	}
+	if(nbre_dmmaps ==0 || nbre_dmmaps < nbre_confs)
+		dmasprintf(value, "%d", nbre_confs);
+	else
+		dmasprintf(value, "%d", nbre_dmmaps);
 	return 0;
 }
 
@@ -2895,7 +2958,7 @@ int browseDhcpClientIPv4Inst(struct dmctx *dmctx, DMNODE *parent_node, void *pre
 		passed_args= ((struct client_args*)prev_data)->client;
 		macaddr=dmjson_get_value(passed_args, 1, "macaddr");
 		if(!strcmp(mac, macaddr)){
-			current_dhcp_client_ipv4address_args.ip= dmjson_get_value(passed_args, 1, "ipddr");
+			current_dhcp_client_ipv4address_args.ip= dmstrdup(ip);
 			current_dhcp_client_ipv4address_args.mac= dmstrdup(macaddr);
 			current_dhcp_client_ipv4address_args.leasetime= leasetime;
 
@@ -3224,7 +3287,7 @@ int browseDHCPv4RelayForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, vo
 
 			dmuci_get_value_by_section_string(p->config_section, "ip_int_instance", &inst);
 
-			if (ipv4addr[0] == '\0' && ipv6addr[0] == '\0' && strcmp(proto, "dhcp") != 0 && strcmp(proto, "dhcpv6") != 0 && strcmp(inst, "") == 0 && strcmp(type, "bridge") != 0) {
+			if (ipv4addr[0] == '\0' && ipv6addr[0] == '\0' && strcmp(inst, "") == 0 && strcmp(type, "bridge") != 0 && strcmp(proto, "relay") != 0) {
 				p->config_section=NULL;
 				DMUCI_SET_VALUE_BY_SECTION(icwmpd, p->dmmap_section, "section_name", "");
 			}

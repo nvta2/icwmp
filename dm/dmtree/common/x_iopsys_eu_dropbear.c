@@ -437,21 +437,21 @@ int delete_dropbear_instance(char *refparam, struct dmctx *ctx, void *data, char
 			break;
 		case DEL_ALL:
 			uci_foreach_sections("dropbear", "dropbear", s) {
-		if (found != 0){
-			get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(ss), &dmmap_section);
-			if(dmmap_section != NULL)
-				dmuci_delete_by_section(dmmap_section, NULL, NULL);
-			dmuci_delete_by_section(ss, NULL, NULL);
-		}
-		ss = s;
-		found++;
-		}
-		if (ss != NULL){
-			get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(ss), &dmmap_section);
-			if(dmmap_section != NULL)
-				dmuci_delete_by_section(dmmap_section, NULL, NULL);
-			dmuci_delete_by_section(ss, NULL, NULL);
-		}
+				if (found != 0){
+					get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = s;
+				found++;
+			}
+			if (ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_dropbear", "dropbear", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
 		return 0;
 	}
 	return 0;

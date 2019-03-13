@@ -116,6 +116,7 @@ int get_dhcp_static_alias(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_dhcp_staticaddress_chaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_dhcp_staticaddress_yiaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_dhcp_client_chaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_dhcp_client_ipv4address_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_dhcp_client_ipv4address_leasetime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_dhcp_sever_pool_order(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_static_address_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
