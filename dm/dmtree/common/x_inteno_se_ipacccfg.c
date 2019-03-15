@@ -20,11 +20,14 @@
 
 struct ipaccargs cur_ipaccargs = {0};
 struct pforwardrgs cur_pforwardrgs = {0};
+struct zones cur_zones = {0};
+struct zoneforwards cur_zoneforwards = {0};
 
 inline int entry_xinteno_ipacccfg_listcfgobj(struct dmctx *ctx);
 inline int entry_xinteno_ipacccfg_portforwarding(struct dmctx *ctx);
 inline int entry_xinteno_ipacccfg_portforwarding_instance(struct dmctx *ctx, char *iforward);
 inline int entry_xinteno_ipacccfg_listcfgobj_instance(struct dmctx *ctx, char *irule);
+inline int entry_xinteno_ipacccfg_zone_instance(struct dmctx *ctx, char *irule);
 inline int init_args_ipacc(struct dmctx *ctx, struct uci_section *s)
 {
 	struct ipaccargs *args = &cur_ipaccargs;
@@ -40,6 +43,23 @@ inline int init_args_pforward(struct dmctx *ctx, struct uci_section *s)
 	args->forwardsection = s;
 	return 0;
 }
+
+inline int init_args_zone(struct dmctx *ctx, struct uci_section *s)
+{
+	struct zones *args = &cur_zones;
+	ctx->args = (void *)args;
+	args->zonesection = s;
+	return 0;
+}
+
+inline int init_args_zone_forwarding(struct dmctx *ctx, struct uci_section *s)
+{
+	struct zoneforwards *args = &cur_zoneforwards;
+	ctx->args = (void *)args;
+	args->zonefwdsection = s;
+	return 0;
+}
+
 
 /************************************************************************************* 
 **** function related to get_object_ip_acc_list_cfgobj ****
@@ -692,6 +712,90 @@ int delete_ipacccfg_rule_instance(struct dmctx *ctx)
 	return 0;
 }
 
+/// Zone
+int add_ipacccfg_zone(struct dmctx *ctx, char **instancepara)
+{
+	char *value;
+	char *instance;
+	struct uci_section *zone = NULL;
+	char zonename[16] = {};
+	instance = get_last_instance("firewall", "zone", "fzoneinstance");
+	dmuci_add_section("firewall", "zone", &zone, &value);
+	*instancepara = update_instance(zone, instance, "fzoneinstance");
+	dmuci_set_value_by_section(zone, "name", zonename);
+	dmuci_set_value_by_section(zone, "network", "");
+	dmuci_set_value_by_section(zone, "input", "ACCEPT");
+	dmuci_set_value_by_section(zone, "output", "ACCEPT");
+	dmuci_set_value_by_section(zone, "forward", "ACCEPT");
+	dmuci_set_value_by_section(zone, "masq", "0");
+	dmuci_set_value_by_section(zone, "mtu_fix", "0");
+	//dmfree(zonename);
+	return 0;
+}
+
+int delete_ipacccfg_zone_all(struct dmctx *ctx)
+{
+	struct uci_section *s = NULL; 
+	struct uci_section *ss = NULL;
+	int found = 0;
+	
+	uci_foreach_sections("firewall", "zone", s) {
+		if (found != 0)
+			dmuci_delete_by_section(ss, NULL, NULL);
+		ss = s;
+		found++;
+	}
+	if (ss != NULL)
+		dmuci_delete_by_section(ss, NULL, NULL);
+	return 0;
+}
+
+int delete_ipacccfg_zone_instance(struct dmctx *ctx)
+{	
+	struct zones *zone = (struct zones *)ctx->args;
+	dmuci_delete_by_section(zone->zonesection, NULL, NULL);
+	return 0;
+}
+
+/// Zone forwarding
+int add_ipacccfg_zone_forwarding(struct dmctx *ctx, char **instancepara)
+{
+	char *value;
+	char *instance;
+	struct uci_section *forwarding = NULL;
+	char *forwardingname = NULL;
+	instance = get_last_instance("firewall", "forwarding", "fzonefwdinstance");
+	dmuci_add_section("firewall", "forwarding", &forwarding, &value);
+	*instancepara = update_instance(forwarding, instance, "fzonefwdinstance");
+	dmuci_set_value_by_section(forwarding, "src", "");
+	dmuci_set_value_by_section(forwarding, "dest", "");
+	return 0;
+}
+
+int delete_ipacccfg_zone_forwarding_all(struct dmctx *ctx)
+{
+	struct uci_section *s = NULL; 
+	struct uci_section *ss = NULL;
+	int found = 0;
+
+	uci_foreach_sections("firewall", "forwarding", s) {
+		if (found != 0)
+			dmuci_delete_by_section(ss, NULL, NULL);
+		ss = s;
+		found++;
+	}
+	if (ss != NULL)
+		dmuci_delete_by_section(ss, NULL, NULL);
+	return 0;
+}
+
+int delete_ipacccfg_zone_forwarding_instance(struct dmctx *ctx)
+{
+	struct zoneforwards *forwarding = (struct zoneforwards *)ctx->args;
+	dmuci_delete_by_section(forwarding->zonefwdsection, NULL, NULL);
+	return 0;
+}
+///
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 int get_x_inteno_cfgobj_address_alias(char *refparam, struct dmctx *ctx, char **value)
 {
@@ -729,6 +833,194 @@ int set_port_forwarding_alias(char *refparam, struct dmctx *ctx, int action, cha
 	return 0;
 }
 
+
+/////// Zone
+int get_zone_alias (char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "fzonealias", value);
+	return 0;
+}
+
+int set_zone_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "fzonealias", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_zone_name(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "name", value);
+	return 0;
+}
+int set_zone_name(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "name", value);
+			return 0;
+	}
+	return 0;
+}
+int get_zone_network(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "network", value);
+	return 0;
+}
+int set_zone_network(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "network", value);
+			return 0;
+	}
+	return 0;
+}
+int get_zone_input(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "input", value);
+	return 0;
+}
+int set_zone_input(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "input", value);
+			return 0;
+	}
+	return 0;
+}
+int get_zone_output(char *refparam, struct dmctx *ctx, char **value) 
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "output", value);
+	return 0;
+}
+int set_zone_output(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "output", value);
+			return 0;
+	}
+	return 0;
+}
+int get_zone_forward(char *refparam, struct dmctx *ctx, char **value) 
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "forward", value);
+	return 0;
+}
+int set_zone_forward(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "forward", value);
+			return 0;
+	}
+	return 0;
+}
+int get_zone_masq(char *refparam, struct dmctx *ctx, char **value) 
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "masq", value);
+	return 0;
+}
+int set_zone_masq(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "masq", value);
+			return 0;
+	}
+	return 0;
+}
+int get_zone_mtufix(char *refparam, struct dmctx *ctx, char **value) 
+{
+	dmuci_get_value_by_section_string(cur_zones.zonesection, "mtu_fix", value);
+	return 0;
+}
+int set_zone_mtufix(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zones.zonesection, "mtu_fix", value);
+			return 0;
+	}
+	return 0;
+}
+
+/////// Zone Forwarding
+int get_zone_forwarding_alias (char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zoneforwards.zonefwdsection, "fzonefwdalias", value);
+	return 0;
+}
+
+int set_zone_forwarding_alias(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zoneforwards.zonefwdsection, "fzonefwdalias", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_zone_forwarding_source(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zoneforwards.zonefwdsection, "src", value);
+	return 0;
+}
+
+int set_zone_forwarding_source(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zoneforwards.zonefwdsection, "src", value);
+			return 0;
+	}
+	return 0;
+}
+
+int get_zone_forwarding_destination(char *refparam, struct dmctx *ctx, char **value)
+{
+	dmuci_get_value_by_section_string(cur_zoneforwards.zonefwdsection, "dest", value);
+	return 0;
+}
+
+int set_zone_forwarding_destination(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_set_value_by_section(cur_zoneforwards.zonefwdsection, "dest", value);
+			return 0;
+	}
+	return 0;
+}
+
 /////////////SUB ENTRIES///////////////
 inline int entry_xinteno_ipacccfg_listcfgobj(struct dmctx *ctx)
 {
@@ -754,6 +1046,35 @@ inline int entry_xinteno_ipacccfg_portforwarding(struct dmctx *ctx)
 	}
 	return 0;
 }
+
+//// ZONE
+inline int entry_xinteno_ipacccfg_zone(struct dmctx *ctx)
+{
+	char *izone = NULL, *izone_last = NULL;
+	struct uci_section *s = NULL;
+
+	uci_foreach_sections("firewall", "zone", s) {
+		init_args_zone(ctx, s);
+		izone =  handle_update_instance(1, ctx, &izone_last, update_instance_alias, 3, s, "fzoneinstance", "fzonealias");
+		SUBENTRY(entry_xinteno_ipacccfg_zone_instance, ctx, izone);
+	}
+	return 0;
+}
+
+
+/// Zone Forwarding
+inline int entry_xinteno_ipacccfg_zone_forwarding(struct dmctx *ctx)
+{
+	char *izonefwd = NULL, *izonefwd_last = NULL;
+	struct uci_section *s = NULL;
+
+	uci_foreach_sections("firewall", "forwarding", s) {
+		init_args_zone_forwarding(ctx, s);
+		izonefwd =  handle_update_instance(1, ctx, &izonefwd_last, update_instance_alias, 3, s, "fzonefwdinstance", "fzonefwdalias");
+		SUBENTRY(entry_xinteno_ipacccfg_zone_forwarding_instance, ctx, izonefwd);
+	}
+	return 0;
+}
 //////////////////////////////////////
 
 int entry_method_root_X_INTENO_SE_IpAccCfg(struct dmctx *ctx)
@@ -762,8 +1083,12 @@ int entry_method_root_X_INTENO_SE_IpAccCfg(struct dmctx *ctx)
 		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.", ctx, "0", 1, NULL, NULL, NULL);
 		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_IpAccListCfgObj.", ctx, "1", 1, add_ipacccfg_rule, delete_ipacccfg_rule_all, NULL);
 		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_PortForwarding.", ctx, "1", 1, add_ipacccfg_port_forwarding, delete_ipacccfg_port_forwarding_all, NULL);
+		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_Zone.", ctx, "1", 1, add_ipacccfg_zone, delete_ipacccfg_zone_all, NULL);
+		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_ZoneForwarding.", ctx, "1", 1, add_ipacccfg_zone_forwarding, delete_ipacccfg_zone_forwarding_all, NULL);
 		SUBENTRY(entry_xinteno_ipacccfg_listcfgobj, ctx);
 		SUBENTRY(entry_xinteno_ipacccfg_portforwarding, ctx);
+		SUBENTRY(entry_xinteno_ipacccfg_zone, ctx);
+		SUBENTRY(entry_xinteno_ipacccfg_zone_forwarding, ctx);
 		return 0;
 	}
 	return FAULT_9005;
@@ -804,6 +1129,35 @@ inline int entry_xinteno_ipacccfg_portforwarding_instance(struct dmctx *ctx, cha
 		DMPARAM("ExternalIpAddress", ctx, "1", get_port_forwarding_external_ipaddress, set_port_forwarding_external_ipaddress, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("SourceIpAddress", ctx, "1", get_port_forwarding_source_ipaddress, set_port_forwarding_source_ipaddress, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("SourceMacAddress", ctx, "1", get_port_forwarding_src_mac, set_port_forwarding_src_mac, NULL, 0, 1, UNDEF, NULL);
+		return 0;
+	}
+	return FAULT_9005;
+}
+
+inline int entry_xinteno_ipacccfg_zone_instance(struct dmctx *ctx, char *izone)
+{
+	IF_MATCH(ctx, DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_Zone.%s.", izone) {
+		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_Zone.%s.", ctx, "0", 1, NULL, delete_ipacccfg_zone_instance, NULL, izone);
+		DMPARAM("Alias", ctx, "1", get_zone_alias, set_zone_alias, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Name", ctx, "1", get_zone_name, set_zone_name, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Network", ctx, "1", get_zone_network, set_zone_network, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Input", ctx, "1", get_zone_input, set_zone_input, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Output", ctx, "1", get_zone_output, set_zone_output, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Forward", ctx, "1", get_zone_forward, set_zone_forward, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Masq", ctx, "1", get_zone_masq, set_zone_masq, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("MtuFix", ctx, "1", get_zone_mtufix, set_zone_mtufix, NULL, 0, 1, UNDEF, NULL);
+		return 0;
+	}
+	return FAULT_9005;
+}
+
+inline int entry_xinteno_ipacccfg_zone_forwarding_instance(struct dmctx *ctx, char *izoneforward)
+{
+	IF_MATCH(ctx, DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_ZoneForwarding.%s.", izoneforward) {
+		DMOBJECT(DMROOT"X_INTENO_SE_IpAccCfg.X_INTENO_SE_ZoneForwarding.%s.", ctx, "0", 1, NULL, delete_ipacccfg_zone_forwarding_instance, NULL, izoneforward);
+		DMPARAM("Alias", ctx, "1", get_zone_forwarding_alias, set_zone_forwarding_alias, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Source", ctx, "1", get_zone_forwarding_source, set_zone_forwarding_source, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Destination", ctx, "1", get_zone_forwarding_destination, set_zone_forwarding_destination, NULL, 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;
