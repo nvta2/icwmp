@@ -2098,6 +2098,35 @@ int get_wan_link_connection_eth_pack_sent(char *refparam, struct dmctx *ctx, cha
 	return 0;
 }
 
+int get_wan_link_connection_defaultgateway(char *refparam, struct dmctx *ctx, char **value)
+{
+	struct wancdevargs *wancdevargs = (struct wancdevargs *) (ctx->args);
+	dmuci_get_value_by_section_string(wancdevargs->wandevsection, "defaultroute", value);
+	if((*value)[0] == '\0') {
+		*value = "0";
+	}
+	return 0;
+}
+
+int set_wan_link_connection_defaultgateway(char *refparam, struct dmctx *ctx, int action, char *value)
+{
+	bool b;
+	struct wancdevargs *wancdevargs = (struct wancdevargs *) (ctx->args);
+	switch (action) {
+		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
+			return 0;
+		case VALUESET:
+			string_to_bool(value, &b);
+			if(b)
+				dmuci_set_value_by_section(wancdevargs->wandevsection, "defaultroute", "1");
+			else
+				dmuci_set_value_by_section(wancdevargs->wandevsection, "defaultroute", "0");
+			return 0;
+	}
+	return 0;
+}
 ////////////////////////SET AND GET ALIAS/////////////////////////////////
 int get_wan_dev_alias(char *refparam, struct dmctx *ctx, char **value)
 {
@@ -2449,6 +2478,7 @@ inline int entry_wandevice_wanprotocolconnection_instance(struct dmctx *ctx, cha
 			DMPARAM("DNSEnabled", ctx, "1", get_wan_ip_link_connection_dns_enabled, set_wan_ip_link_connection_dns_enabled, "xsd:boolean", 0, 1, UNDEF, NULL);
 			DMPARAM("DNSOverrideAllowed", ctx, "0", get_empty, NULL, NULL, 0, 1, UNDEF, NULL);
 			DMPARAM("Name", ctx, "1", get_wan_ip_link_connection_name, set_wan_ip_link_connection_connection_name, NULL, 0, 1, UNDEF, NULL);
+			DMPARAM("X_INTENO_COM_DefaultGateway", ctx, "1", get_wan_link_connection_defaultgateway,set_wan_link_connection_defaultgateway, "xsd:boolean", 0, 1, UNDEF, NULL);
 			DMOBJECT(DMROOT"WANDevice.%s.WANConnectionDevice.%s.WANIPConnection.%s.X_INTENO_COM_VLAN.", ctx, "1", 1, NULL, NULL, NULL, idev, iwan, iconp);
 			DMPARAM("VLANID", ctx, "1", get_wan_ip_link_connection_vid, set_wan_ip_link_connection_vid, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
 			DMPARAM("VLANPriority", ctx, "1", get_wan_ip_link_connection_vpriority, set_wan_ip_link_connection_vpriority, "xsd:unsignedInt", 0, 1, UNDEF, NULL);
