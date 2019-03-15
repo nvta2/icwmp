@@ -2579,7 +2579,11 @@ int set_DHCPv4RelayForwarding_Interface(char *refparam, struct dmctx *ctx, void 
 
 int get_DHCPv4RelayForwarding_VendorClassID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value= "";
+	struct dhcp_client_args *dhcp_relay_args = (struct dhcp_client_args*)data;
+	char *vendorclass;
+	if(dhcp_relay_args->vendorclassidclassifier == NULL)
+		return 0;
+	dmuci_get_value_by_section_string(dhcp_relay_args->vendorclassidclassifier, "vendorclass", value);
 	return 0;
 }
 
@@ -2597,7 +2601,7 @@ int set_DHCPv4RelayForwarding_VendorClassID(char *refparam, struct dmctx *ctx, v
 
 int get_DHCPv4RelayForwarding_VendorClassIDExclude(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	*value="false";
 	return 0;
 }
 
@@ -2615,7 +2619,7 @@ int set_DHCPv4RelayForwarding_VendorClassIDExclude(char *refparam, struct dmctx 
 
 int get_DHCPv4RelayForwarding_VendorClassIDMode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	*value= "Prefix";
 	return 0;
 }
 
@@ -2633,7 +2637,32 @@ int set_DHCPv4RelayForwarding_VendorClassIDMode(char *refparam, struct dmctx *ct
 
 int get_DHCPv4RelayForwarding_Chaddr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct dhcp_client_args *dhcp_relay_args = (struct dhcp_client_args*)data;
+	char *mac, *mac1, *mac2, *mac3, *mac4, *mac5, *mac6, **macarray, *res= NULL, *tmp= "";
+	int length, i;
+
+	if(dhcp_relay_args->macclassifier == NULL) {
+		*value= "";
+		return 0;
+	}
+	dmuci_get_value_by_section_string(dhcp_relay_args->macclassifier, "mac", &mac);
+	macarray= strsplit(mac, ":", &length);
+	res= (char*)dmcalloc(18, sizeof(char));
+	tmp=res;
+	for(i= 0; i<6; i++){
+		if(strcmp(macarray[i], "*") == 0) {
+			sprintf(tmp, "%s", "00");
+		} else{
+			sprintf(tmp, "%s", macarray[i]);
+		}
+		tmp+=2;
+
+		if(i<5){
+			sprintf(tmp, "%s", ":");
+			tmp++;
+		}
+	}
+	dmasprintf(value, "%s", res);
 	return 0;
 }
 
@@ -2651,7 +2680,32 @@ int set_DHCPv4RelayForwarding_Chaddr(char *refparam, struct dmctx *ctx, void *da
 
 int get_DHCPv4RelayForwarding_ChaddrMask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct dhcp_client_args *dhcp_relay_args = (struct dhcp_client_args*)data;
+	char *mac, *mac1, *mac2, *mac3, *mac4, *mac5, *mac6, **macarray, *res= NULL, *tmp= "";
+	int length, i;
+
+	if(dhcp_relay_args->macclassifier == NULL) {
+		*value= "";
+		return 0;
+	}
+	dmuci_get_value_by_section_string(dhcp_relay_args->macclassifier, "mac", &mac);
+	macarray= strsplit(mac, ":", &length);
+	res= (char*)dmcalloc(18, sizeof(char));
+	tmp=res;
+	for(i= 0; i<6; i++){
+		if(strcmp(macarray[i], "*") == 0) {
+			sprintf(tmp, "%s", "00");
+		} else{
+			sprintf(tmp, "%s", "FF");
+		}
+		tmp+=2;
+
+		if(i<5){
+			sprintf(tmp, "%s", ":");
+			tmp++;
+		}
+	}
+	dmasprintf(value, "%s", res);
 	return 0;
 }
 
@@ -2766,7 +2820,11 @@ int set_DHCPv4RelayForwarding_ClientIDExclude(char *refparam, struct dmctx *ctx,
 
 int get_DHCPv4RelayForwarding_UserClassID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct dhcp_client_args *dhcp_relay_args = (struct dhcp_client_args*)data;
+	char *vendorclass;
+	if(dhcp_relay_args->userclassclassifier == NULL)
+		return 0;
+	dmuci_get_value_by_section_string(dhcp_relay_args->userclassclassifier, "userclass", value);
 	return 0;
 }
 
@@ -2784,7 +2842,7 @@ int set_DHCPv4RelayForwarding_UserClassID(char *refparam, struct dmctx *ctx, voi
 
 int get_DHCPv4RelayForwarding_UserClassIDExclude(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	*value= "false";
 	return 0;
 }
 
@@ -3225,10 +3283,38 @@ int browseDHCPv4ServerPoolClientOptionInst(struct dmctx *dmctx, DMNODE *parent_n
 	return 0;
 }
 
+char *get_dhcp_network_from_relay_list(char *net_list){
+	struct uci_section *s;
+	char **net_list_arr, *v;
+	int length, i;
+
+	net_list_arr= strsplit(net_list, " ", &length);
+	uci_foreach_sections("network", "interface", s) {
+		dmuci_get_value_by_section_string(s, "proto", &v);
+		for(i=0; i<length; i++) {
+			if(strcmp(net_list_arr[i], section_name(s)) == 0 && strcmp(v, "dhcp") == 0)
+				return net_list_arr[i];
+		}
+	}
+	return "";
+}
+
+struct uci_section* get_dhcp_classifier(char *classifier_name, char *network) {
+	struct uci_section* s= NULL;
+	char *v;
+
+	uci_foreach_sections("dhcp", classifier_name, s) {
+		dmuci_get_value_by_section_string(s, "networkid", &v);
+		if(strcmp(v, network) == 0)
+			return s;
+	}
+	return NULL;
+}
+
 int browseDHCPv4RelayForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *s = NULL;
-	char *instance, *instnbr = NULL, *v;
+	struct uci_section *s = NULL, *macclassifier= NULL, *vendorclassidclassifier= NULL, *userclassclassifier= NULL;
+	char *instance, *instnbr = NULL, *v, *dhcp_network= NULL, *mac= NULL, *userclass= NULL, *vendorclass= NULL;
 	struct dmmap_dup *p;
 	char *type, *ipv4addr = "", *ipv6addr = "", *proto, *inst, *mask4= NULL;
 	json_object *res, *jobj;
@@ -3303,10 +3389,20 @@ int browseDHCPv4RelayForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, vo
 		else
 			dhcp_relay_arg.mask = dmstrdup(mask4);
 
+		dmuci_get_value_by_section_string(p->config_section, "network", &v);
+		dhcp_network= get_dhcp_network_from_relay_list(v);
+		if(dhcp_network && strlen(dhcp_network)>0){
+			dhcp_relay_arg.macclassifier= get_dhcp_classifier("mac", dhcp_network);
+			dhcp_relay_arg.vendorclassidclassifier= get_dhcp_classifier("vendorclass", dhcp_network);
+			dhcp_relay_arg.userclassclassifier= get_dhcp_classifier("userclass", dhcp_network);
+		} else {
+			dhcp_relay_arg.macclassifier= NULL;
+			dhcp_relay_arg.vendorclassidclassifier= NULL;
+			dhcp_relay_arg.userclassclassifier= NULL;
+		}
 		dhcp_relay_arg.dhcp_client_conf = p->config_section;
 
 		dhcp_relay_arg.dhcp_client_dm= p->dmmap_section;
-
 		instance= handle_update_instance(1, dmctx, &instnbr, update_instance_alias_icwmpd, 3, (void *)p->dmmap_section, "cwmp_dhcpv4relay_instance", "cwmp_dhcpv4relay_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, &dhcp_relay_arg, instance) == DM_STOP)
 			break;

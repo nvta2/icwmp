@@ -39,6 +39,9 @@ struct dhcp_client_ipv4address_args {
 struct dhcp_client_args {
 	struct uci_section *dhcp_client_conf;
 	struct uci_section *dhcp_client_dm;
+	struct uci_section *macclassifier;
+	struct uci_section *vendorclassidclassifier;
+	struct uci_section *userclassclassifier;
 	char *ip;
 	char *mask;
 };
