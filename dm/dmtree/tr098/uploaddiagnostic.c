@@ -44,6 +44,7 @@ static inline char *upload_diagnostic_get(char *option, char *def)
 	else
 		return tmp;
 }
+
 int get_upload_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = upload_diagnostic_get("DiagnosticState", "None");
@@ -101,7 +102,6 @@ int set_upload_diagnostics_interface(char *refparam, struct dmctx *ctx, void *da
 
 int get_upload_diagnostics_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-
 	dmuci_get_varstate_string("cwmp", "@uploaddiagnostic[0]", "url", value);
 	return 0;
 }

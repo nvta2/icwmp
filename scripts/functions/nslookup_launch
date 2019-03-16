@@ -4,18 +4,13 @@
 
 
 UCI_CONFIG_DIR="/etc/config/"
-UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get "
-UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set "
+UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get"
+UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set"
 LOG_FILE="/tmp/nslookup.log"
 
 nslookup_get() {
 	local val=`$UCI_GET_VARSTATE $1`
 	echo ${val:-$2}
-}
-
-nslookup_set() {
-	$UCI_SET_VARSTATE $1=$2
-	return 0
 }
 
 nslookup_launch() {

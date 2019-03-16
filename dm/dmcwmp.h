@@ -120,7 +120,7 @@ typedef struct dm_leaf_s {
 } DMLEAF;
 
 typedef struct dm_obj_s {
-	/* OBJ, permission, addobj, delobj, browseinstobj, forced_inform, notification, nextobj, leaf, linker(10)*/
+	/* OBJ, permission, addobj, delobj, checkobj, browseinstobj, forced_inform, notification, nextobj, leaf, linker(11)*/
 	char *obj;
 	struct dm_permession_s *permission;
 	int (*addobj)(char *refparam, struct dmctx *ctx, void *data, char **instance);
@@ -375,7 +375,10 @@ enum end_session_enum {
 	END_SESSION_DOWNLOAD_DIAGNOSTIC = 1<<5,
 	END_SESSION_UPLOAD_DIAGNOSTIC = 1<<6,
 	END_SESSION_X_FACTORY_RESET_SOFT = 1<<7,
-	END_SESSION_NSLOOKUP_DIAGNOSTIC = 1<<8
+	END_SESSION_NSLOOKUP_DIAGNOSTIC = 1<<8,
+	END_SESSION_TRACEROUTE_DIAGNOSTIC = 1<<9,
+	END_SESSION_UDPECHO_DIAGNOSTIC = 1<<10,
+	END_SESSION_SERVERSELECTION_DIAGNOSTIC = 1<<11
 };
 
 enum dm_browse_enum {

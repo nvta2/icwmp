@@ -1,0 +1,138 @@
+#!/bin/sh
+# Copyright (C) 2019 PIVA Software <www.pivasoftware.com>
+# 	Author: AMIN Ben Ramdhane <amin.benramdhane@pivasoftware.com>
+
+
+UCI_CONFIG_DIR="/etc/config/"
+UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get"
+UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set"
+
+serverselection_get() {
+	local val=`$UCI_GET_VARSTATE $1`
+	echo ${val:-$2}
+}
+
+serverselection_launch() {
+	local i res ba stc times sc1 success_count min_time avg_time max_time avg_time_sum min max fasthost micros
+	[ "`$UCI_GET_VARSTATE cwmp.@serverselectiondiagnostic[0].DiagnosticState`" != "Requested" ] && return
+	local hostlist=`serverselection_get cwmp.@serverselectiondiagnostic[0].HostList`
+	local cnt=`serverselection_get cwmp.@serverselectiondiagnostic[0].NumberOfRepetitions 3`
+	local timeout=`serverselection_get cwmp.@serverselectiondiagnostic[0].Timeout 1000`
+	local port=`serverselection_get cwmp.@serverselectiondiagnostic[0].port`
+	local protoversion=`serverselection_get cwmp.@serverselectiondiagnostic[0].ProtocolVersion Any`
+	local proto=`serverselection_get cwmp.@serverselectiondiagnostic[0].Protocol ICMP`
+	[ "$hostlist" = "" ] && return
+	timeout=$((timeout/1000))
+	[ "$timeout" = "0" ] && timeout="1"
+	micros=1000
+	success_count=0
+	avg_time_sum=0
+	avg_time_host=9999999
+	min=9999999
+	max=0
+	i=0
+
+	for host in $(echo $hostlist | tr "," "\n"); do
+		if [ "$proto" == "ICMP" ]; then
+			while [ $i -lt $cnt ]; do
+				let i++
+				[ "$protoversion" = "Any" ] && res=$(ping -q -c 1 -W $timeout $host 2>&1)
+				[ "$protoversion" = "IPv4" ] && res=$(ping -q -4 -c 1 -W $timeout $host 2>&1)
+				[ "$protoversion" = "IPv6" ] && res=$(ping -q -6 -c 1 -W $timeout $host 2>&1)
+				ba=`echo "$res" | grep "bad address"`
+				[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].DiagnosticState=Error_CannotResolveHostName; break; }
+				ba=`echo "$res" | grep "unknown host"`
+				[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].DiagnosticState=Error_CannotResolveHostName; break; }
+				stc=`echo "$res" | grep "received"`
+				[ -z "$stc" ] && { $UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].DiagnosticState=Error_Other; break; }
+				times=`echo "$res" | grep "min/avg/max"`
+				[ -z "$times" ] && break
+				sc1=`echo $stc | awk '{print $4}'`
+				sc1=${sc1:-0}
+				success_count=$((success_count+sc1))
+				times=`echo $times | awk -F'=' '{ print $2 }'`
+				min_time=`echo $times | awk -F'[=/ ]' '{ print $1 }'`	
+				avg_time=`echo $times | awk -F'[=/ ]' '{ print $2 }'`
+				max_time=`echo $times | awk -F'[=/ ]' '{ print $3 }'`
+				min_time=${min_time:-0}
+				avg_time=${avg_time:-0}
+				max_time=${max_time:-0}
+				min_time=$(echo $min_time $micros | awk '{printf "%3.0f\n",$1*$2}')
+				avg_time=$(echo $avg_time $micros | awk '{printf "%3.0f\n",$1*$2}')
+				max_time=$(echo $max_time $micros | awk '{printf "%3.0f\n",$1*$2}')
+				[ $min_time -lt $min ] && min=$min_time
+				[ $max_time -gt $max ] && max=$max_time
+				avg_time_sum=$((avg_time_sum+avg_time))
+			done
+		else
+			while [ $i -lt $cnt ]; do
+				[ "$port" = "" ] && return
+				let i++
+				[ "$protoversion" = "Any" ] && res=$(nping -c 1 --udp --dest-port $port --data-length 24 $host 2>&1)
+				[ "$protoversion" = "IPv4" ] && res=$(nping -4 -c 1 --udp --dest-port $port --data-length 24 $host 2>&1)
+				[ "$protoversion" = "IPv6" ] && res=$(nping -6 -c 1 --udp --dest-port $port --data-length 24 $host 2>&1)
+				ba=`echo "$res" | grep "RCVD"`
+				[ -z "$ba" ] && { $UCI_SET_VARSTATE cwmp.@ippingdiagnostic[0].DiagnosticState=Error_CannotResolveHostName; return; }
+				stc=`echo "$res" | grep "RCVD" | grep "unreachable"`
+				[ -n "$stc" ] && { $UCI_SET_VARSTATE cwmp.@ippingdiagnostic[0].DiagnosticState=Error_Other; return; }
+				times=`echo "$res" | grep "rtt"`
+				[ -z "$times" ] && continue
+				sc1=`echo "$res" | grep "Rcvd" | awk -F': ' '{print $3}' | awk -F'(' '{ print $1 }'`
+				sc1=${sc1:-0}
+				success_count=$((success_count+sc1))
+				max_time=`echo $times | awk -F': ' '{ print $2 }' | awk -F'ms' '{ print $1 }'`
+				min_time=`echo $times | awk -F': ' '{ print $3 }' | awk -F'ms' '{ print $1 }'`
+				avg_time=`echo $times | awk -F': ' '{ print $4 }' | awk -F'ms' '{ print $1 }'`
+				min_time=${min_time:-0}
+				avg_time=${avg_time:-0}
+				max_time=${max_time:-0}
+				min_time=$(echo $min_time $micros | awk '{printf "%3.0f\n",$1*$2}')
+				avg_time=$(echo $avg_time $micros | awk '{printf "%3.0f\n",$1*$2}')
+				max_time=$(echo $max_time $micros | awk '{printf "%3.0f\n",$1*$2}')
+				[ $min_time -lt $min ] && min=$min_time
+				[ $max_time -gt $max ] && max=$max_time
+				avg_time_sum=$((avg_time_sum+avg_time))
+			done
+		fi
+		[ $success_count -gt 0 ] && avg_time=$((avg_time_sum/success_count)) || avg_time=0
+		[[ "$avg_time" != "0" && $avg_time -lt $avg_time_host ]] && avg_time_host=$avg_time && min_time=$min && max_time=$max && fasthost=$host
+		success_count=0
+		avg_time_sum=0
+		min=9999999
+		max=0
+		i=0
+	done
+	$UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].DiagnosticState=Complete
+	$UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].FastestHost=$fasthost
+	$UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].AverageResponseTime=$avg_time_host
+	$UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].MinimumResponseTime=$min_time
+	$UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].MaximumResponseTime=$max_time
+	event_dignostic
+}
+
+event_dignostic() {
+	local e=1
+	local i=0
+	while [ "$e" != 0 -a $i -lt 200 ]; do
+		ubus -t 1 call tr069 inform '{"event":"8 DIAGNOSTICS COMPLETE"}' &>/dev/null
+		e=$?
+		[ "$e" != "0" ] && sleep 1;
+		let i++
+	done
+}
+
+serverselection_stop_diagnostic() {
+	local pids=`ps | grep serverselection_launch | grep -v grep | awk '{print $1}'`
+	if [ -n "$pids" ]; then
+		kill -9 $pids &>/dev/null
+		$UCI_SET_VARSTATE cwmp.@serverselectiondiagnostic[0].DiagnosticState=None
+	fi
+}
+
+if [ "$1" == "run" ] ; then
+	serverselection_launch  
+elif [ "$1" == "stop" ]; then
+	serverselection_stop_diagnostic
+else
+	return
+fi

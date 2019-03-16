@@ -324,18 +324,6 @@ end:
 	return 0;
 }
 
-int browseServiceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
-{
-	//TODO
-	return 0;
-}
-
-int browseTextRecordInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
-{
-	//TODO
-	return 0;
-}
-
 /*********************************** Add/Delet Object functions *************************/
 int add_client_server(char *refparam, struct dmctx *ctx, void *data, char **instance)
 {

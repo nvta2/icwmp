@@ -35,7 +35,6 @@ DMLEAF tIPPingDiagnosticsParam[] = {
 {0}
 };
 
-
 static inline char *ipping_get(char *option, char *def)
 {
 	char *tmp;
@@ -210,13 +209,11 @@ int set_ipping_block_size(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("DSCP", "0");
-
-		return 0;
+	return 0;
 }
 
 int set_ipping_dscp(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-
 	char *tmp;
 	struct uci_section *curr_section = NULL;
 	switch (action) {
@@ -255,14 +252,12 @@ int get_ipping_average_response_time(char *refparam, struct dmctx *ctx, void *da
 int get_ipping_min_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ipping_get("MinimumResponseTime", "0");
-	
 	return 0;
 }
 
 int get_ipping_max_response_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = ipping_get("MaximumResponseTime", "0");	
-	
+	*value = ipping_get("MaximumResponseTime", "0");
 	return 0;
 }
 

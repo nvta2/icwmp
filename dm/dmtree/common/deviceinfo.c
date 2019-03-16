@@ -713,6 +713,7 @@ int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 				break;
 		}
 	}
+	return 0;
 }
 
 int browseVcfInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)

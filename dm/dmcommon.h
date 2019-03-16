@@ -57,17 +57,23 @@ do { \
 	if (mpp) close (mpp); \
 } while (0)
 
-#define IPPING_STOP DMCMD("/bin/sh", 2, FUNCTION_PATH, "stop");
-#define FUNCTION_PATH "/usr/share/icwmp/functions/ipping_launch"
+#define IPPING_PATH "/usr/share/icwmp/functions/ipping_launch"
+#define IPPING_STOP DMCMD("/bin/sh", 2, IPPING_PATH, "stop");
 #define DOWNLOAD_DIAGNOSTIC_PATH "/usr/share/icwmp/functions/download_launch"
 #define DOWNLOAD_DUMP_FILE "/tmp/download_dump"
 #define DOWNLOAD_DIAGNOSTIC_STOP DMCMD("/bin/sh", 2, DOWNLOAD_DIAGNOSTIC_PATH, "stop");
 #define UPLOAD_DIAGNOSTIC_PATH "/usr/share/icwmp/functions/upload_launch"
 #define UPLOAD_DUMP_FILE "/tmp/upload_dump"
 #define UPLOAD_DIAGNOSTIC_STOP DMCMD("/bin/sh", 2, UPLOAD_DIAGNOSTIC_PATH, "stop");
-#define NSLOOKUP_STOP DMCMD("/bin/sh", 2, NSLOOKUP_PATH, "stop");
 #define NSLOOKUP_PATH "/usr/share/icwmp/functions/nslookup_launch"
 #define NSLOOKUP_LOG_FILE "/tmp/nslookup.log"
+#define NSLOOKUP_STOP DMCMD("/bin/sh", 2, NSLOOKUP_PATH, "stop");
+#define TRACEROUTE_PATH "/usr/share/icwmp/functions/traceroute_launch"
+#define TRACEROUTE_STOP DMCMD("/bin/sh", 2, TRACEROUTE_PATH, "stop");
+#define UDPECHO_PATH "/usr/share/icwmp/functions/udpecho_launch"
+#define UDPECHO_STOP DMCMD("/bin/sh", 2, UDPECHO_PATH, "stop");
+#define SERVERSELECTION_PATH "/usr/share/icwmp/functions/serverselection_launch"
+#define SERVERSELECTION_STOP DMCMD("/bin/sh", 2, SERVERSELECTION_PATH, "stop");
 
 enum notification_enum {
 	notification_none,

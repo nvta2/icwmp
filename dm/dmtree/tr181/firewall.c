@@ -85,8 +85,8 @@ DMLEAF tTimeSpanParams[] = {
 {"StopTime", &DMWRITE, DMT_STRING, get_time_span_stop_time, set_time_span_stop_time, NULL, NULL},
 {0}
 };
-/***************************** Browse Functions ***********************************/
 
+/***************************** Browse Functions ***********************************/
 int browseLevelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *s;
@@ -223,8 +223,8 @@ int get_firewall_advanced_level(char *refparam, struct dmctx *ctx, void *data, c
 
 int get_firewall_level_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-        *value="1";
-        return 0;
+	*value="1";
+	return 0;
 }
 
 int get_firewall_chain_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
@@ -235,16 +235,16 @@ int get_firewall_chain_number_of_entries(char *refparam, struct dmctx *ctx, void
 
 int get_level_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-        struct uci_section* levels=(struct uci_section *)data;
-        dmuci_get_value_by_section_string(levels, "name", value);
-        return 0;
+	struct uci_section* levels=(struct uci_section *)data;
+	dmuci_get_value_by_section_string(levels, "name", value);
+	return 0;
 }
 
 int get_level_description(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
     struct uci_section* levels=(struct uci_section *)data;
     dmuci_get_value_by_section_string(levels, "description", value);
-        return 0;
+    return 0;
 }
 
 int get_level_chain(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)

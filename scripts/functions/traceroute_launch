@@ -1,0 +1,88 @@
+#!/bin/sh
+# Copyright (C) 2019 PIVA Software <www.pivasoftware.com>
+# 	Author: AMIN Ben Ramdhane <amin.benramdhane@pivasoftware.com>
+
+UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get"
+UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set"
+UCI_ADD_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state add"
+UCI_DELETE_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state delete"
+UCI_SHOW_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state show"
+
+traceroute_get() {
+	local val=`$UCI_GET_VARSTATE $1`
+	echo ${val:-$2}
+}
+
+traceroute_launch() {
+	local i res host ip time=0
+	[ "`$UCI_GET_VARSTATE cwmp.@traceroutediagnostic[0].DiagnosticState`" != "Requested" ] && return
+	local host=`traceroute_get cwmp.@traceroutediagnostic[0].Host`
+	local cnt=`traceroute_get cwmp.@traceroutediagnostic[0].NumberOfTries 3`
+	local dsize=`traceroute_get cwmp.@traceroutediagnostic[0].DataBlockSize 38`
+	local timeout=`traceroute_get cwmp.@traceroutediagnostic[0].Timeout 5000`
+	local maxhop=`traceroute_get cwmp.@traceroutediagnostic[0].MaxHops 30`
+	local proto=`traceroute_get cwmp.@traceroutediagnostic[0].ProtocolVersion Any`
+	[ "$host" = "" ] && return
+	timeout=$((timeout/1000))
+	[ "$timeout" = "0" ] && timeout = "1"
+	i=-2
+	delete_all_route_hops
+	rm -f /tmp/traceres
+	[ "$proto" = "Any" ] && traceroute -m $maxhop -w $timeout -q $cnt $host $dsize 2>&1 >/tmp/traceres
+	[ "$proto" = "IPv4" ] && traceroute -m $maxhop -w $timeout -q $cnt -4 $host $dsize 2>&1 >/tmp/traceres
+	[ "$proto" = "IPv6" ] && traceroute -m $maxhop -w $timeout -q $cnt -6 $host $dsize 2>&1 >/tmp/traceres
+	while read _ host ip time _; do
+		[ "$host" = "*" -a "$ip" = "*" ] && continue
+		let i++
+		[ "$i" = "-1" ] && continue;
+		ip=${ip#(}; ip=${ip%)}
+		time=${time%.*}
+		$UCI_ADD_VARSTATE cwmp RouteHops
+		$UCI_SET_VARSTATE cwmp.@RouteHops[$i].host=$host
+		$UCI_SET_VARSTATE cwmp.@RouteHops[$i].ip=$ip
+		$UCI_SET_VARSTATE cwmp.@RouteHops[$i].time=$time
+	done < /tmp/traceres
+	rm -f /tmp/traceres
+	let i++
+
+	$UCI_SET_VARSTATE cwmp.@traceroutediagnostic[0].DiagnosticState=Complete
+	$UCI_SET_VARSTATE cwmp.@traceroutediagnostic[0].NumberOfHops=$i
+	$UCI_SET_VARSTATE cwmp.@traceroutediagnostic[0].ResponseTime=$($UCI_GET_VARSTATE cwmp.@RouteHops[-1].time)
+	event_diagnostic
+}
+
+delete_all_route_hops() {
+	local j
+	for j in $($UCI_SHOW_VARSTATE cwmp | grep "cwmp.@RouteHops.*=RouteHops"); do
+		$UCI_DELETE_VARSTATE cwmp.@RouteHops[-1]
+	done
+}
+
+event_diagnostic() {
+	local e=1
+	local i=0
+	while [ "$e" != 0 -a $i -lt 200 ]; do
+		ubus -t 1 call tr069 inform '{"event":"8 DIAGNOSTICS COMPLETE"}'
+		e=$?
+		[ "$e" != "0" ] && sleep 1;
+		let i++
+	done
+}
+
+traceroute_stop() {
+	delete_all_route_hops
+	local pids=`ps aux | grep traceroute_launch | grep -v grep | grep -v stop | awk '{print $2}'`
+	[ -z "$pids" ] && pids=`ps | grep traceroute_launch | grep -v grep | grep -v stop | awk '{print $2}'`
+	if [ -n "$pids" ]; then
+		kill -9 $pids 2>/dev/null
+		$UCI_SET_VARSTATE cwmp.@traceroutediagnostic[0].DiagnosticState=None
+	fi
+}
+
+if [ "$1" == "run" ]; then
+	traceroute_launch 2>/dev/null  
+elif [ "$1" == "stop" ]; then
+	traceroute_stop 2>/dev/null
+else
+	return
+fi

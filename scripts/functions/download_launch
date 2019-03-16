@@ -1,22 +1,44 @@
 #!/bin/sh
-# Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
+# Copyright (C) 2019 PIVA Software <www.pivasoftware.com>
 # 	Author: IMEN Bhiri <imen.bhiri@pivasoftware.com>
+# 	Author: AMIN Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 
 
 UCI_CONFIG_DIR="/etc/config/"
-UCI_GET_VARSTATE="/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get -q "
-UCI_SET_VARSTATE="/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set -q "
+UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get"
+UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set"
+UCI_ADD_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state add"
+UCI_DELETE_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state delete"
 CAPTURE_FILE="/tmp/download_dump"
 DOWNLOAD_DIAGNOSTIC_FILE="/tmp/icwmp_download_diagnostic"
 
+download_get() {
+	local val=`$UCI_GET_VARSTATE $1`
+	echo ${val:-$2}
+}
+
 download_launch() {
-	url=$1
-	interface=$2
+	local tx_bytes_before rx_bytes_before time1 tx_bytes_after rx_bytes_after time2 res rh ba stc periodtime
+	local url=$1
+	local interface=$2
+	[ "`$UCI_GET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState`" != "Requested" ] && return
+	[ "$url" = "" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_InitConnectionFailed; return; }
+	local proto=`download_get cwmp.@downloaddiagnostic[0].ProtocolVersion Any`
 	tcpdump -i $interface tcp -w ${CAPTURE_FILE} > /dev/null 2>&1 &
 	PID=$!
 	sleep 1
 	if [ ${url:0:7} = http:// -o ${url:0:6} = ftp:// ]; then
-		res=$(wget -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
+		tx_bytes_before=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "tx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
+		rx_bytes_before=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "rx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
+		time1=`date +%s`
+		[ "$proto" = "Any" ] && res=$(wget -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
+		[ "$proto" = "IPv4" ] && res=$(wget -4 -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
+		[ "$proto" = "IPv6" ] && res=$(wget -6 -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
+		time2=`date +%s`
+		tx_bytes_after=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "tx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
+		rx_bytes_after=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "rx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
+		rh=`echo "$res" | grep "resolve host"`
+		[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_CannotResolveHostName; kill $PID 2> /dev/null; return; }
 		ba=`echo "$res" | grep "bad address"`
 		[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_InitConnectionFailed; kill $PID 2> /dev/null; return; }
 		stc=`echo "$res" | grep "404 Not Found"`
@@ -24,7 +46,21 @@ download_launch() {
 		stc=`echo "$res" | grep "100%"`
 		[ -z "$stc" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_TransferFailed; kill $PID 2> /dev/null; return; }
 	fi
+	tx_bytes=$((tx_bytes_after-tx_bytes_before))
+	rx_bytes=$((rx_bytes_after-rx_bytes_before))
+	periodtime=$(($((time2-time1))*1000000))
 	$UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Completed
+	$UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].TotalBytesReceived=$rx_bytes
+	$UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].TotalBytesSent=$tx_bytes
+	$UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].PeriodOfFullLoading=$periodtime
+	local perconnection=`$UCI_GET_VARSTATE cwmp.@downloaddiagnostic[0].EnablePerConnection`
+	if ([ "$perconnection" == "true" ] || [ "$perconnection" == "1" ]); then
+		$UCI_ADD_VARSTATE cwmp DownloadPerConnection
+		$UCI_SET_VARSTATE cwmp.@DownloadPerConnection[0].TotalBytesReceived=$rx_bytes
+		$UCI_SET_VARSTATE cwmp.@DownloadPerConnection[0].TotalBytesSent=$tx_bytes
+	else
+		$UCI_DELETE_VARSTATE cwmp.@DownloadPerConnection[0]
+	fi
 	rm ${DOWNLOAD_DIAGNOSTIC_FILE} 2>/dev/null
 	sleep 1
 	local pids=`ps | grep $PID`
@@ -32,12 +68,13 @@ download_launch() {
 }
 
 download_stop_diagnostic() {
+	$UCI_DELETE_VARSTATE cwmp.@DownloadPerConnection[0]
 	local pids=`ps | grep download_launch.*run | grep -v grep | awk '{print $1}'`
 	if [ -n "$pids" ]; then
 		kill -9 $pids &>/dev/null
 		$UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=None
 	fi
-	local pids=`ps | grep upload_launch.*run | grep -v grep | awk '{print $1}'`                               
+	local pids=`ps | grep download_launch.*run | grep -v grep | awk '{print $1}'`                               
     if [ -n "$pids" ]; then
     	kids=$(grep -l "PPid.*$pids" /proc/*/task/*/status | grep -o "[0-9]*")                    
 		for kid in $kids; do                                                  

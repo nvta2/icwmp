@@ -239,4 +239,25 @@ icwmp_xmppd_LDADD =				\
 	$(LIBUBOX_LIBS)				\
 	$(LIBSTROPHE_LIBS)
 endif
+
+bin_PROGRAMS += icwmp_udpechoserverd
+
+icwmp_udpechoserverd_SOURCES =		    \
+	../udpechoserver/udpechoserver.c			\
+	../udpechoserver/udpechoserver.h			\
+	../udpechoserver/udpechoserveruci.c			\
+	../udpechoserver/udpechoserveruci.h			\
+	../udpechoserver/udpechoserverlog.c			\
+	../udpechoserver/udpechoserverlog.h
+
+icwmp_udpechoserverd_CFLAGS =			\
+	$(AM_CFLAGS)				\
+	$(LIBUCI_CFLAGS)
+
+icwmp_udpechoserverd_LDFLAGS =			\
+	$(AM_LDFLAGS)				\
+	$(LIBUCI_LDFLAGS)
 	
+icwmp_udpechoserverd_LDADD =				\
+	$(AM_LIBS)					\
+	$(LIBUCI_LIBS)

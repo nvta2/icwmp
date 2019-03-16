@@ -106,6 +106,11 @@ struct package_change {
 		section != NULL; \
 		section = dmuci_walk_section(package, stype, arg, NULL, CMP_FILTER_FUNC, func, section, GET_NEXT_SECTION))
 
+#define uci_foreach_sections_state(package, stype, section) \
+	for (section = dmuci_walk_state_section(package, stype, NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION); \
+		section != NULL; \
+		section = dmuci_walk_state_section(package, stype, NULL, NULL, CMP_SECTION, NULL, section, GET_NEXT_SECTION))
+
 #define section_name(s) (s)->e.name
 
 static inline void uci_list_insert(struct uci_list *list, struct uci_list *ptr)

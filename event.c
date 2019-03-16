@@ -347,7 +347,7 @@ void cwmp_add_notification(void)
 
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
-		return 0;
+		return;
 
 	while (fgets(buf, 512, fp) != NULL) {
 		dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);

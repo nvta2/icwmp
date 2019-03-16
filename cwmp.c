@@ -563,6 +563,24 @@ int run_session_end_func (struct session *session)
 		cwmp_nslookup_diagnostic();
 	}
 
+	if (end_session_flag & END_SESSION_TRACEROUTE_DIAGNOSTIC)
+	{
+		CWMP_LOG (INFO,"Executing traceroutediagnostic: end session request");
+		cwmp_traceroute_diagnostic();
+	}
+
+	if (end_session_flag & END_SESSION_UDPECHO_DIAGNOSTIC)
+	{
+		CWMP_LOG (INFO,"Executing udpechodiagnostic: end session request");
+		cwmp_udp_echo_diagnostic();
+	}
+
+	if (end_session_flag & END_SESSION_SERVERSELECTION_DIAGNOSTIC)
+	{
+		CWMP_LOG (INFO,"Executing serverselectiondiagnostic: end session request");
+		cwmp_serverselection_diagnostic();
+	}
+
 	dm_entry_restart_services();
 
 	end_session_flag = 0;
