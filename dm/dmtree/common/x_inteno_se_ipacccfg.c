@@ -936,33 +936,58 @@ int set_zone_forward(char *refparam, struct dmctx *ctx, int action, char *value)
 int get_zone_masq(char *refparam, struct dmctx *ctx, char **value) 
 {
 	dmuci_get_value_by_section_string(cur_zones.zonesection, "masq", value);
+	if((*value)[0] == '\0') {
+		*value = "1";
+	}
+
 	return 0;
 }
 int set_zone_masq(char *refparam, struct dmctx *ctx, int action, char *value)
 {
+	bool b;
+
 	switch (action) {
 		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_zones.zonesection, "masq", value);
+			string_to_bool(value, &b);
+			if(b)
+				dmuci_set_value_by_section(cur_zones.zonesection, "masq", "1");
+			else
+				dmuci_set_value_by_section(cur_zones.zonesection, "masq", "0");
 			return 0;
 	}
+
 	return 0;
 }
 int get_zone_mtufix(char *refparam, struct dmctx *ctx, char **value) 
 {
 	dmuci_get_value_by_section_string(cur_zones.zonesection, "mtu_fix", value);
+	if((*value)[0] == '\0') {
+		*value = "1";
+	}
 	return 0;
 }
 int set_zone_mtufix(char *refparam, struct dmctx *ctx, int action, char *value)
 {
+	bool b;
+
 	switch (action) {
 		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(cur_zones.zonesection, "mtu_fix", value);
+			string_to_bool(value, &b);
+			if(b)
+				dmuci_set_value_by_section(cur_zones.zonesection, "mtu_fix", "1");
+			else
+				dmuci_set_value_by_section(cur_zones.zonesection, "mtu_fix", "0");
 			return 0;
 	}
+
 	return 0;
 }
 
@@ -1144,8 +1169,8 @@ inline int entry_xinteno_ipacccfg_zone_instance(struct dmctx *ctx, char *izone)
 		DMPARAM("Input", ctx, "1", get_zone_input, set_zone_input, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Output", ctx, "1", get_zone_output, set_zone_output, NULL, 0, 1, UNDEF, NULL);
 		DMPARAM("Forward", ctx, "1", get_zone_forward, set_zone_forward, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("Masq", ctx, "1", get_zone_masq, set_zone_masq, NULL, 0, 1, UNDEF, NULL);
-		DMPARAM("MtuFix", ctx, "1", get_zone_mtufix, set_zone_mtufix, NULL, 0, 1, UNDEF, NULL);
+		DMPARAM("Masq", ctx, "1", get_zone_masq, set_zone_masq, "xsd:boolean", 0, 1, UNDEF, NULL);
+		DMPARAM("MtuFix", ctx, "1", get_zone_mtufix, set_zone_mtufix, "xsd:boolean", 0, 1, UNDEF, NULL);
 		return 0;
 	}
 	return FAULT_9005;
