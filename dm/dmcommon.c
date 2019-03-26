@@ -1514,7 +1514,10 @@ int is_elt_exit_in_str_list(char *str_list, char *elt){
 
 void add_elt_to_str_list(char **str_list, char *elt){
 	char *list= NULL;
-
+	if(*str_list == NULL || strlen(*str_list) == 0){
+		dmasprintf(str_list, "%s", elt);
+		return;
+	}
 	list= dmstrdup(*str_list);
 	dmfree(*str_list);
 	*str_list= NULL;
@@ -1524,7 +1527,8 @@ void add_elt_to_str_list(char **str_list, char *elt){
 void remove_elt_from_str_list(char **iface_list, char *ifname){
 	char *list= NULL, *tmp=NULL;
 	char *pch, *spch;
-
+	if (*iface_list == NULL || strlen(*iface_list) == 0)
+		return;
 	list= dmstrdup(*iface_list);
 	dmfree(*iface_list);
 	*iface_list= NULL;
