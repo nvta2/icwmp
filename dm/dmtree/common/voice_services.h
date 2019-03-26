@@ -68,9 +68,9 @@ struct sip_args
 	char *profile_num;
 };
 
-struct brcm_args
+struct tel_args
 {
-	struct uci_section *brcm_section;
+	struct uci_section *tel_section;
 	struct uci_section *sip_section;
 	char *profile_num;
 };
@@ -196,7 +196,7 @@ int get_voice_profile_line_enable(char *refparam, struct dmctx *ctx, void *data,
 int get_voice_profile_line_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_voice_profile_line_callstate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_line_confort_noise_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx,  void *data, char *instance, char **value);
 int get_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -244,7 +244,7 @@ int set_line_alias(char *refparam, struct dmctx *ctx, void *data, char *instance
 int set_voice_profile_line_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_directory_number(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
-int set_line_brcm_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_confort_noise_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_calling_features_caller_id_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_line_voice_processing_cancellation_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
