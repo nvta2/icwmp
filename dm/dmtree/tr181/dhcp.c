@@ -1028,6 +1028,7 @@ int get_dhcp_interval_address(struct dmctx *ctx, void *data, char *instance, cha
 	}
 	return 0;
 }
+
 int get_dhcp_interval_address_min(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_dhcp_interval_address(ctx, data, instance, value, LANIP_INTERVAL_START);
@@ -1172,7 +1173,7 @@ int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *data, c
 	struct uci_section *dhcp_section = NULL;
 	char *min, *max, *ip, *val, *local_value;
 	char *pch, *spch;
-	unsigned int n_min, n_max, n_ip;
+	unsigned int n_min, n_max, n_ip, ipexist= 0;
 
 	switch (action) {
 		case VALUECHECK:
@@ -1188,16 +1189,19 @@ int set_dhcp_reserved_addresses(char *refparam, struct dmctx *ctx, void *data, c
 				pch != NULL;
 				pch = strtok_r(NULL, ",", &spch)) {
 				uci_foreach_option_eq("dhcp", "host", "ip", pch, s) {
-					continue;
+					ipexist= 1;
 				}
+				if(ipexist)
+					continue;
 				n_ip = inet_network(pch);
-				if (n_ip < n_min && n_ip > n_max)
+
+
+				if (n_ip < n_min || n_ip > n_max)
 					continue;
-				else {
-					dmuci_add_section_and_rename("dhcp", "host", &dhcp_section, &val);
-					dmuci_set_value_by_section(dhcp_section, "dhcp", ((struct dhcp_args *)data)->interface);
-					dmuci_set_value_by_section(dhcp_section, "ip", pch);
-				}
+
+				dmuci_add_section_and_rename("dhcp", "host", &dhcp_section, &val);
+				dmuci_set_value_by_section(dhcp_section, "dhcp", ((struct dhcp_args *)data)->interface);
+				dmuci_set_value_by_section(dhcp_section, "ip", pch);
 			}
 			dmfree(local_value);
 			return 0;
@@ -2601,7 +2605,6 @@ int get_DHCPv4RelayForwarding_VendorClassID(char *refparam, struct dmctx *ctx, v
 int set_DHCPv4RelayForwarding_VendorClassID(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct dhcp_client_args *dhcp_relay_args = (struct dhcp_client_args*)data;
-	char *vendorclass;
 
 	switch (action)	{
 		case VALUECHECK:
