@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2019 PIVA Software <www.pivasoftware.com>
+# Copyright (C) 2019 iopsys Software Solutions AB
 # 	Author: IMEN Bhiri <imen.bhiri@pivasoftware.com>
 # 	Author: AMIN Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 
@@ -26,6 +26,8 @@ upload_launch() {
 	[ "`$UCI_GET_VARSTATE cwmp.@uploaddiagnostic[0].DiagnosticState`" != "Requested" ] && return
 	[ "$url" = "" ] && { $UCI_SET_VARSTATE cwmp.@uploaddiagnostic[0].DiagnosticState=Error_InitConnectionFailed; return; }
 	local proto=`upload_get cwmp.@uploaddiagnostic[0].ProtocolVersion Any`
+	# Disable acceleration on Broadcom devices to capture all packets with tcpdump
+	[ -e /usr/sbin/fcctl ] && { fcctl disable >/dev/null 2>&1; fcctl flush >/dev/null 2>&1; }
 	tcpdump -i $interface tcp -w ${CAPTURE_FILE} > /dev/null 2>&1 &
 	PID=$!
 	sleep 1
@@ -90,7 +92,9 @@ upload_launch() {
 	rm ${UPLOAD_DIAGNOSTIC_FILE} &>/dev/null
 	sleep 3 
 	local pids=`ps | grep $PID`
-	kill $PID &>/dev/null	
+	kill $PID &>/dev/null
+	# Enable acceleration on Broadcom devices after killing the tcpdump pid 
+	[ -e /usr/sbin/fcctl ] && { fcctl enable >/dev/null 2>&1; fcctl flush >/dev/null 2>&1; }	
 }
 
 upload_stop_diagnostic() {

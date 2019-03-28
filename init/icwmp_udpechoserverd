@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 #UDP Echo Server software
-# Copyright (C) 2019 Iopsys Broadband Technology AB
+# Copyright (C) 2019 iopsys Software Solutions AB
 #Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 
 START=99
@@ -14,13 +14,13 @@ start_service() {
 	local port_udpechoserver=`uci -q get cwmp_udpechoserver.udpechoserver.server_port`
 	if [ "$port_udpechoserver" != "0" ]; then
 		if [ "$enable_udpechoserver" = "1" ]; then
-			iptables -I zone_wan_input -p udp --dport $port_udpechoserver -j ACCEPT -m comment --comment "Open UDPechoserver port"
+			iptables -I zone_wan_input -p udp --dport "$port_udpechoserver" -j ACCEPT -m comment --comment "Open UDPechoserver port"
 			procd_open_instance
 			procd_set_param command "$PROG"
 			procd_set_param respawn "3" "7" "0"
 			procd_close_instance
 		else
-			iptables -I zone_wan_input -p udp --dport $port_udpechoserver -j REJECT -m comment --comment "Close UDPechoserver port"
+			iptables -I zone_wan_input -p udp --dport "$port_udpechoserver" -j REJECT -m comment --comment "Close UDPechoserver port"
 		fi
 	fi
 }

@@ -330,6 +330,7 @@ unsigned char get_ipv4_finform(char *refparam, struct dmctx *dmctx, void *data, 
 {
 	return 1;
 }
+
 unsigned char get_ipv6_finform(char *refparam, struct dmctx *dmctx, void *data, char *instance)
 {
 	return 1;
@@ -1303,19 +1304,19 @@ int set_IPDiagnosticsDownloadDiagnostics_EnablePerConnectionResults(char *refpar
 
 int get_IPDiagnosticsDownloadDiagnosticsPerConnectionResult_ROMTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = download_get("ROMTime", "0");
+	*value = download_get("ROMtime", "0");
 	return 0;
 }
 
 int get_IPDiagnosticsDownloadDiagnosticsPerConnectionResult_BOMTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = download_get("BOMTime", "0");
+	*value = download_get("BOMtime", "0");
 	return 0;
 }
 
 int get_IPDiagnosticsDownloadDiagnosticsPerConnectionResult_EOMTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = download_get("EOMTime", "0");
+	*value = download_get("EOMtime", "0");
 	return 0;
 }
 
@@ -1714,19 +1715,19 @@ int set_IPDiagnosticsUploadDiagnostics_EnablePerConnectionResults(char *refparam
 
 int get_IPDiagnosticsUploadDiagnosticsPerConnectionResult_ROMTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = upload_get("ROMTime", "0");
+	*value = upload_get("ROMtime", "0");
 	return 0;
 }
 
 int get_IPDiagnosticsUploadDiagnosticsPerConnectionResult_BOMTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = upload_get("BOMTime", "0");
+	*value = upload_get("BOMtime", "0");
 	return 0;
 }
 
 int get_IPDiagnosticsUploadDiagnosticsPerConnectionResult_EOMTime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = upload_get("EOMTime", "0");
+	*value = upload_get("EOMtime", "0");
 	return 0;
 }
 
@@ -1774,6 +1775,7 @@ int get_IPDiagnosticsUDPEchoConfig_Enable(char *refparam, struct dmctx *ctx, voi
 int set_IPDiagnosticsUDPEchoConfig_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	bool b;
+	char file[32] = "/var/state/cwmp_udpechoserver";
 
 	switch (action) {
 		case VALUECHECK:
@@ -1782,8 +1784,11 @@ int set_IPDiagnosticsUDPEchoConfig_Enable(char *refparam, struct dmctx *ctx, voi
 			return 0;
 		case VALUESET:
 			string_to_bool(value, &b);
-			if (b)
+			if (b) {
+				if( access( file, F_OK ) != -1 )
+					dmcmd("/bin/rm", 1, file);
 				dmuci_set_value("cwmp_udpechoserver", "udpechoserver", "enable", "1");
+			}
 			else
 				dmuci_set_value("cwmp_udpechoserver", "udpechoserver", "enable", "0");
 			return 0;
@@ -2023,7 +2028,7 @@ int set_IPDiagnosticsUDPEchoDiagnostics_Host(char *refparam, struct dmctx *ctx, 
 
 int get_IPDiagnosticsUDPEchoDiagnostics_Port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_varstate_string("cwmp", "@udpechodiagnostic[0]", "Port", value);
+	dmuci_get_varstate_string("cwmp", "@udpechodiagnostic[0]", "port", value);
 	return 0;
 }
 
@@ -2381,7 +2386,7 @@ int set_IPDiagnosticsServerSelectionDiagnostics_Protocol(char *refparam, struct 
 
 int get_IPDiagnosticsServerSelectionDiagnostics_Port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_varstate_string("cwmp", "@serverselectiondiagnostic[0]", "Port", value);
+	dmuci_get_varstate_string("cwmp", "@serverselectiondiagnostic[0]", "port", value);
 	return 0;
 }
 

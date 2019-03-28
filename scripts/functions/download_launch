@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2019 PIVA Software <www.pivasoftware.com>
+# Copyright (C) 2019 iopsys Software Solutions AB
 # 	Author: IMEN Bhiri <imen.bhiri@pivasoftware.com>
 # 	Author: AMIN Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 
@@ -11,6 +11,8 @@ UCI_ADD_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/sta
 UCI_DELETE_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state delete"
 CAPTURE_FILE="/tmp/download_dump"
 DOWNLOAD_DIAGNOSTIC_FILE="/tmp/icwmp_download_diagnostic"
+DOWNLOAD_DIAGNOSTIC_LOG_FILE="/tmp/icwmp_download_diagnostic_log"
+CONNECTION_TIMEOUT=10
 
 download_get() {
 	local val=`$UCI_GET_VARSTATE $1`
@@ -24,6 +26,8 @@ download_launch() {
 	[ "`$UCI_GET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState`" != "Requested" ] && return
 	[ "$url" = "" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_InitConnectionFailed; return; }
 	local proto=`download_get cwmp.@downloaddiagnostic[0].ProtocolVersion Any`
+	# Disable acceleration on Broadcom devices to capture all packets with tcpdump
+	[ -e /usr/sbin/fcctl ] && { fcctl disable >/dev/null 2>&1; fcctl flush >/dev/null 2>&1; }
 	tcpdump -i $interface tcp -w ${CAPTURE_FILE} > /dev/null 2>&1 &
 	PID=$!
 	sleep 1
@@ -31,19 +35,19 @@ download_launch() {
 		tx_bytes_before=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "tx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
 		rx_bytes_before=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "rx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
 		time1=`date +%s`
-		[ "$proto" = "Any" ] && res=$(wget -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
-		[ "$proto" = "IPv4" ] && res=$(wget -4 -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
-		[ "$proto" = "IPv6" ] && res=$(wget -6 -O ${DOWNLOAD_DIAGNOSTIC_FILE} $url 2>&1)
+		[ "$proto" = "Any" ] && res=$(wget -t 1 --timeout=${CONNECTION_TIMEOUT} -O ${DOWNLOAD_DIAGNOSTIC_FILE} -o ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} $url 2>&1)
+		[ "$proto" = "IPv4" ] && res=$(wget -4 -t 1 --timeout=${CONNECTION_TIMEOUT} -O ${DOWNLOAD_DIAGNOSTIC_FILE} -o ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} $url 2>&1)
+		[ "$proto" = "IPv6" ] && res=$(wget -6 -t 1 --timeout=${CONNECTION_TIMEOUT} -O ${DOWNLOAD_DIAGNOSTIC_FILE} -o ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} $url 2>&1)
 		time2=`date +%s`
 		tx_bytes_after=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "tx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
 		rx_bytes_after=`ubus call network.device status "{'name':'$interface'}" | sed -n '/statistics/,$ p' | grep "rx_bytes" | awk -F ": " '{print $2}' | sed 's/.$//'`
-		rh=`echo "$res" | grep "resolve host"`
+		rh=`cat ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} | grep "resolve host"`
 		[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_CannotResolveHostName; kill $PID 2> /dev/null; return; }
 		ba=`echo "$res" | grep "bad address"`
 		[ -n "$ba" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_InitConnectionFailed; kill $PID 2> /dev/null; return; }
-		stc=`echo "$res" | grep "404 Not Found"`
+		stc=`cat ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} | grep "404 Not Found"`
 		[ -n "$stc" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_NoResponse; kill $PID 2> /dev/null; return; }
-		stc=`echo "$res" | grep "100%"`
+		stc=`cat ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} | grep "100%"`
 		[ -z "$stc" ] && { $UCI_SET_VARSTATE cwmp.@downloaddiagnostic[0].DiagnosticState=Error_TransferFailed; kill $PID 2> /dev/null; return; }
 	fi
 	tx_bytes=$((tx_bytes_after-tx_bytes_before))
@@ -62,9 +66,12 @@ download_launch() {
 		$UCI_DELETE_VARSTATE cwmp.@DownloadPerConnection[0]
 	fi
 	rm ${DOWNLOAD_DIAGNOSTIC_FILE} 2>/dev/null
+	rm ${DOWNLOAD_DIAGNOSTIC_LOG_FILE} 2>/dev/null
 	sleep 1
 	local pids=`ps | grep $PID`
 	kill $PID &>/dev/null
+	# Enable acceleration on Broadcom devices after killing the tcpdump pid 
+	[ -e /usr/sbin/fcctl ] && { fcctl enable >/dev/null 2>&1; fcctl flush >/dev/null 2>&1; }
 }
 
 download_stop_diagnostic() {
