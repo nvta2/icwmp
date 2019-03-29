@@ -403,11 +403,11 @@ int delete_relay_forwarding(char *refparam, struct dmctx *ctx, void *data, char 
 
 	switch (del_action) {
 		case DEL_INST:
-			dmuci_get_value_by_section_string((struct uci_section *)data, "peerdns", str);
+			dmuci_get_value_by_section_string((struct uci_section *)data, "peerdns", &str);
 			if (str[0] == '1')
 				return 0;
-			dmuci_get_value_by_section_string((struct uci_section *)data, "interface", interface);
-			dmuci_get_value_by_section_string((struct uci_section *)data, "ip", ip);
+			dmuci_get_value_by_section_string((struct uci_section *)data, "interface", &interface);
+			dmuci_get_value_by_section_string((struct uci_section *)data, "ip", &ip);
 			dmuci_del_list_value("network", interface, "dns", ip);
 			dmuci_delete_by_section((struct uci_section *)data, NULL, NULL);
 			break;
