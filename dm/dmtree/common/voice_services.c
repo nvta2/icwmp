@@ -1348,8 +1348,9 @@ int get_voice_service_serviceproviderinfo_name(char *refparam, struct dmctx *ctx
 	struct sip_args *sipargs = (struct sip_args *)data;
 	
 	dmuci_get_value_by_section_string(sipargs->sip_section, "provider_name", value);
-	if(value[0] == '\0')
+	if(*value[0] == '\0') {
 		dmuci_get_value_by_section_string(sipargs->sip_section, "domain", value);
+	}
 	return 0;
 }
 
