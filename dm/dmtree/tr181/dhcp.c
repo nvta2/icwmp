@@ -2567,6 +2567,8 @@ int set_DHCPv4RelayForwarding_Interface(char *refparam, struct dmctx *ctx, void 
 				adm_entry_get_linker_value(ctx, newvalue, &linker);
 			} else
 				adm_entry_get_linker_value(ctx, value, &linker);
+			if(linker == NULL)
+				return FAULT_9007;
 			uci_path_foreach_sections(icwmpd, "dmmap_dhcp_relay", "interface", s) {
 				dmuci_get_value_by_section_string(s, "section_name", &v);
 				if(strcmp(v, linker) == 0)
