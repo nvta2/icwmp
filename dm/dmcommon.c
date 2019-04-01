@@ -919,8 +919,8 @@ char *print_bin(unsigned int n, char *buf, int sep)
 void parse_proc_route_line(char *line, struct proc_routing *proute)
 {
 	char *pch, *spch;
-	proute->iface = strtok_r(line, " \t", &spch);
 
+	proute->iface = strtok_r(line, " \t", &spch);
 	pch = strtok_r(NULL, " \t", &spch);
 	hex_to_ip(pch, proute->destination);
 	pch = strtok_r(NULL, " \t", &spch);
