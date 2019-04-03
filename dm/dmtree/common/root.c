@@ -59,7 +59,7 @@
 #include "dns.h"
 #include "users.h"
 #include "dsl.h"
-
+#include "dhcpv6.h"
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
@@ -131,6 +131,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"ATM",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tAtmObj, NULL, NULL},
 {"PTM", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tPtmObj, NULL, NULL},
 {"DHCPv4", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDhcpv4Obj, tDHCPv4Params, NULL},
+{"DHCPv6", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDHCPv6Obj, tDHCPv6Params, NULL},
 {"Hosts", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, thostsObj, thostsParam, NULL},
 {"NAT", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tnatObj, NULL, NULL},
 {"PPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tpppObj, NULL, NULL},
