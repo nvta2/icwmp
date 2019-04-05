@@ -58,6 +58,7 @@
 #include "firewall.h"
 #include "dns.h"
 #include "users.h"
+#include "dsl.h"
 
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
@@ -126,7 +127,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"WiFi",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tWifiObj, tWifiParams, NULL},
 {"IP",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tIPObj, NULL, NULL},
 {"Ethernet", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tEthernetObj, NULL, NULL},
-{"DSL",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDslObj, NULL, NULL},
+{"DSL",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDSLObj, tDSLParams, NULL},
 {"ATM",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tAtmObj, NULL, NULL},
 {"PTM", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tPtmObj, NULL, NULL},
 {"DHCPv4", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDhcpv4Obj, tDHCPv4Params, NULL},

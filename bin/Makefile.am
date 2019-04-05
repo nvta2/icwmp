@@ -61,7 +61,8 @@ libdatamodel_la_SOURCES +=							\
 	../dm/dmtree/tr181/userinterface.c				\
 	../dm/dmtree/tr181/firewall.c					\
 	../dm/dmtree/tr181/dns.c						\
-	../dm/dmtree/tr181/users.c
+	../dm/dmtree/tr181/users.c						\
+	../dm/dmtree/tr181/dsl.c
 
 if UPNP_TR064
 libdatamodel_la_SOURCES +=							\

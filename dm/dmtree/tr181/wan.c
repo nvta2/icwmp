@@ -17,16 +17,6 @@
 #include "wan.h"
 #include "dmjson.h"
 
-#define DSL_LINE 2
-
-/*** DSL. ***/
-DMOBJ tDslObj[] = {
-/* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
-{"Line", &DMREAD, NULL, NULL, NULL, browseDslLineInst, NULL, NULL, NULL, tDslLineParams, get_dsl_line_linker},
-{"Channel", &DMREAD, NULL, NULL, NULL, browseDslChannelInst, NULL, NULL, NULL, tDslChanelParams, get_dsl_channel_linker},
-{0}
-};
-
 /*** ATM. ***/
 DMOBJ tAtmObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
@@ -41,43 +31,7 @@ DMOBJ tPtmObj[] = {
 {0}
 };
 
-/*** DSL.Line ***/
-DMLEAF tDslLineParams[] = {
-/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
-{"Alias", &DMWRITE, DMT_STRING, get_dsl_link_alias, set_dsl_link_alias, NULL, NULL},
-{"Name", &DMREAD, DMT_STRING, get_line_name, NULL, NULL, NULL},
-{"Status", &DMREAD, DMT_STRING,  get_dsl_status, NULL, NULL, NULL},
-{"LinkStatus", &DMREAD, DMT_STRING,get_dsl_link_status, NULL, NULL, NULL},
-{"StandardsSupported", &DMREAD, DMT_STRING, get_dsl_link_supported_standard, NULL, NULL, NULL},
-{"StandardUsed", &DMREAD, DMT_STRING, get_dsl_link_standard_inuse, NULL, NULL, NULL},
-{"AllowedProfiles", &DMREAD, DMT_STRING,  get_vdsl_link_supported_profile, NULL, NULL, NULL},
-{"CurrentProfile", &DMREAD, DMT_STRING, get_vdsl_link_profile_inuse, NULL, NULL, NULL},
-{"DownstreamMaxBitRate", &DMREAD, DMT_UNINT, get_dsl_link_downstreammaxrate, NULL, NULL, NULL},
-{"DownstreamAttenuation", &DMREAD, DMT_INT, get_dsl_link_downstreamattenuation, NULL, NULL, NULL},
-{"DownstreamNoiseMargin", &DMREAD, DMT_INT, get_dsl_link_downstreamnoisemargin, NULL, NULL, NULL},
-{"UpstreamMaxBitRate", &DMREAD, DMT_UNINT, get_dsl_link_upstreammaxrate, NULL, NULL, NULL},
-{"UpstreamAttenuation", &DMREAD, DMT_INT, get_dsl_link_upstreamattenuation, NULL, NULL, NULL},
-{"UpstreamNoiseMargin", &DMREAD, DMT_INT, get_dsl_link_upstreamnoisemargin, NULL, NULL, NULL},
-{0}
-};
-
-/*** DSL.Channel ***/
-DMLEAF tDslChanelParams[] = {
-/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
-{"Alias", &DMWRITE, DMT_STRING, get_channel_alias, set_channel_alias, NULL, NULL},
-{"Status", &DMREAD, DMT_STRING, get_dsl_status, NULL, NULL, NULL},
-{"Name", &DMREAD, DMT_STRING, get_line_name, NULL, NULL, NULL},
-{"LowerLayers", &DMREAD, DMT_STRING, get_channel_lower_layer, NULL, NULL, NULL},
-{"DownstreamCurrRate", &DMREAD, DMT_UNINT, get_dsl_channel_downstreamcurrrate, NULL, NULL, NULL},
-{"UpstreamCurrRate", &DMREAD, DMT_UNINT, get_dsl_channel_upstreamcurrrate, NULL, NULL, NULL},
-{CUSTOM_PREFIX"AnnexMEnable", &DMWRITE, DMT_BOOL,  get_channel_annexm_status, set_channel_annexm_status, NULL, NULL},
-{"LinkEncapsulationSupported", &DMREAD, DMT_STRING, get_channel_supported_encap, NULL, NULL, NULL},
-{"LinkEncapsulationUsed", &DMREAD, DMT_STRING, get_empty, NULL, NULL, NULL},
-{0}
-};
-
 /*** ATM.Link. ***/
-
 DMOBJ tAtmLinkStatsObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf, linker*/
 {"Stats", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tAtmLinkStatsParams, NULL},
@@ -134,22 +88,6 @@ DMLEAF tPtmLinkStatsParams[] = {
 {0}
 };
 
-enum enum_dslline_idx {
-	IDX_VDSL,
-	IDX_ADSL
-};
-
-struct dsl_line
-{
-	char *instance;
-	char *type;
-};
-
-struct dsl_line dsl_lines[DSL_LINE] = {
-	[IDX_VDSL] = {"1", "vdsl"},
-	[IDX_ADSL] = {"2", "adsl"}
-};
-
 /**************************************************************************
 * LINKER
 ***************************************************************************/
@@ -170,33 +108,10 @@ int get_ptm_linker(char *refparam, struct dmctx *dmctx, void *data, char *instan
 	*linker = "" ;
 	return 0;
 }
-int get_dsl_line_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (data && ((struct dsl_line_args *)data)->type) {
-		*linker = ((struct dsl_line_args *)data)->type;
-		return 0;
-	}
-	*linker = "" ;
-	return 0;
-}
 
-int get_dsl_channel_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker) {
-	if (data && ((struct dsl_line_args *)data)->type){
-		*linker = ((struct dsl_line_args *)data)->type;
-		return 0;
-	}
-	*linker = "" ;
-	return 0;
-}
 /**************************************************************************
 * INIT
 ***************************************************************************/
-inline int init_dsl_link(struct dsl_line_args *args, struct uci_section *s, char *type)
-{
-	args->line_sec = s;
-	args->type = type;
-	return 0;
-}
-
 inline int init_atm_link(struct atm_args *args, struct uci_section *s, char *ifname)
 {
 	args->atm_sec = s;
@@ -214,345 +129,6 @@ inline int init_ptm_link(struct ptm_args *args, struct uci_section *s, char *ifn
 /**************************************************************************
 * SET & GET DSL LINK PARAMETERS
 ***************************************************************************/
-
-int get_dsl_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *status;
-	json_object *res;
-
-	*value = "Down";
-	if(strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1 || strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "");
-		status = dmjson_get_value(res, 2, "dslstats", "status");
-		if (strcmp(status, "Showtime") == 0)
-			*value = "Up";
-		else
-			*value = "Down";
-	}
-	return 0;
-}
-
-int get_dsl_link_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *status;
-	json_object *res;
-
-	*value = "NoSignal";
-	if(strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1 || strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "");
-		status = dmjson_get_value(res, 2, "dslstats", "status");
-		if (strcmp(status, "Showtime") == 0)
-			*value = "Up";
-		else if (strcmp(status, "Training") == 0)
-			*value = "Initializing";
-		else if (strcmp(status, "Channel Analysis") == 0)
-			*value = "EstablishingLink";
-		else if (strcmp(status, "Disabled") == 0)
-			*value = "Disabled";
-		else
-			*value = "NoSignal";
-	}
-	return 0;
-}
-
-int get_dsl_link_supported_standard(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	*value = "G.992.1_Annex_A, G.992.2, T1.413, G.992.3_Annex_A, G.992.3_Annex_L, G.992.5_Annex_A, G.992.5_Annex_M";
-	return 0;
-}
-
-int get_dsl_link_standard_inuse(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *mode;
-	json_object *res = NULL;
-	*value = "";
-	if(strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "");
-		mode = dmjson_get_value(res, 2, "dslstats", "mode");
-		if (strcmp(mode, "G.Dmt") == 0)
-			*value = "G.992.1_Annex_A"; // TO CHECK
-		else if (strcmp(mode, "G.lite") == 0)
-			*value = "G.992.2";
-		else if (strcmp(mode, "T1.413") == 0)
-			*value = "T1.413";
-		else if (strcmp(mode, "ADSL2") == 0)
-			*value = "G.992.3_Annex_A";
-		else if (strcmp(mode, "AnnexL") == 0)
-			*value = "G.992.3_Annex_L";
-		else if (strcmp(mode, "ADSL2+") == 0)
-			*value = "G.992.5_Annex_A";
-		else
-			*value = mode;
-	}
-	return 0;
-}
-
-int check_dsl_link_type()
-{
-	char *mode, *status, *trafic;
-	json_object *res = NULL;
-	dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-	DM_ASSERT(res, status = "");
-	status = dmjson_get_value(res, 2, "dslstats", "status");
-	trafic = dmjson_get_value(res, 2, "dslstats", "traffic");
-	if (strcmp(status, "Showtime") == 0 && strstr(trafic, "ATM"))
-		return 1;
-	return 0;
-}
-int get_vdsl_link_supported_profile(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	*value = "8a, 8b, 8c, 8d, 12a, 12b, 17a, 17b, 30a";
-	return 0;
-}
-
-int get_vdsl_link_profile_inuse(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *mode;
-	json_object *res = NULL;
-	*value = "";
-	if (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "");
-		mode = dmjson_get_value(res, 2, "dslstats", "mode");
-		*value = mode;
-	}
-	return 0;
-}
-
-int get_dsl_link_downstreammaxrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *max_down;
-	json_object *res = NULL;
-	json_object *sub_obj = NULL;
-	json_object *sub_obj_2 = NULL;
-	*value = "0";
-	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "0");
-		sub_obj = dmjson_get_obj(res, 1, "dslstats");
-		if (sub_obj)
-		{
-			sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
-			max_down = dmjson_get_value(sub_obj_2, 1, "max_rate_down");
-		}
-		else
-			return 0;
-		if (max_down && max_down[0] != '\0') {
-			*value = max_down;
-		}
-	}
-	return 0;
-}
-
-int get_dsl_link_downstreamattenuation(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *attn_down_x100;
-	json_object *res = NULL;
-	*value = "0";
-	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "0");
-		attn_down_x100 = dmjson_get_value(res, 2, "dslstats", "attn_down_x100");
-		if (attn_down_x100) {
-			dmasprintf(&attn_down_x100, "%d", (atoi(attn_down_x100) / 10));// MEM WILL BE FREED IN DMMEMCLEAN
-			*value = attn_down_x100;
-		}
-	}
-	return 0;
-}
-
-int get_dsl_link_downstreamnoisemargin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *snr_down_x100;
-	json_object *res;
-	*value = "0";
-	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "0");
-		snr_down_x100 = dmjson_get_value(res, 2, "dslstats", "snr_down_x100");
-		if (snr_down_x100) {
-			dmasprintf(&snr_down_x100, "%d", (atoi(snr_down_x100) / 10));// MEM WILL BE FREED IN DMMEMCLEAN
-			*value = snr_down_x100;
-		}
-	}
-	return 0;
-}
-
-int get_dsl_link_upstreammaxrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *max_up;
-	json_object *res = NULL;
-	json_object *sub_obj = NULL;
-	json_object *sub_obj_2 = NULL;
-	*value = "0";
-	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "0");
-		sub_obj = dmjson_get_obj(res, 1, "dslstats");
-		if (sub_obj)
-		{
-			sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
-			max_up = dmjson_get_value(sub_obj_2, 1, "max_rate_up");
-		}
-		else
-			return 0;
-		*value = max_up;
-	}
-	return 0;
-}
-
-int get_dsl_link_upstreamattenuation(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *attn_up_x100;
-	json_object *res = NULL;
-	*value = "0";
-	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "0");
-		attn_up_x100 = dmjson_get_value(res, 2, "dslstats", "attn_up_x100");
-		if (attn_up_x100) {
-			dmasprintf(&attn_up_x100, "%d", (atoi(attn_up_x100) / 10)); // MEM WILL BE FREED IN DMMEMCLEAN
-			*value = attn_up_x100;
-		}
-	}
-	return 0;
-}
-
-int get_dsl_link_upstreamnoisemargin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *snr_up_x100;
-	json_object *res;
-	*value = "0";
-	if((strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0 && check_dsl_link_type() == 1) || (strcmp(((struct dsl_line_args *)data)->type, "vdsl") == 0 && check_dsl_link_type() == 0)) {
-		dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-		DM_ASSERT(res, *value = "0");
-		snr_up_x100 = dmjson_get_value(res, 2, "dslstats", "snr_up_x100");
-		if (snr_up_x100) {
-			dmasprintf(&snr_up_x100, "%d", (atoi(snr_up_x100) / 10));// MEM WILL BE FREED IN DMMEMCLEAN
-			*value = snr_up_x100;
-		}
-		else {
-			*value = "0";
-		}
-	}
-	return 0;
-}
-
-int get_channel_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cDSL%cLine%c", dmroot, dm_delim, dm_delim, dm_delim), ((struct dsl_line_args *)data)->type, value); // MEM WILL BE FREED IN DMMEMCLEAN
-	if (*value == NULL)
-		*value = "";
-	return 0;
-}
-
-int get_dsl_channel_downstreamcurrrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *rate_down;
-	json_object *res = NULL;
-	json_object *sub_obj= NULL;
-	json_object *sub_obj_2= NULL;
-
-	dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-	DM_ASSERT(res, *value = "0");
-	sub_obj = dmjson_get_obj(res, 1, "dslstats");
-	if (sub_obj)
-	{
-		sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
-		rate_down = dmjson_get_value(sub_obj_2, 1, "rate_down");
-	}
-	else
-		return 0;
-	if (rate_down && rate_down[0] != '\0') {
-		*value = rate_down;
-	}
-	return 0;
-}
-
-int get_dsl_channel_upstreamcurrrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	char *rate_up;
-	json_object *res = NULL;
-	json_object *sub_obj = NULL;
-	json_object *sub_obj_2 = NULL;
-
-	dmubus_call("router.dsl", "stats", UBUS_ARGS{}, 0, &res);
-	DM_ASSERT(res, *value = "0");
-	sub_obj = dmjson_get_obj(res, 1, "dslstats");
-	if (sub_obj)
-	{
-		sub_obj_2 = dmjson_select_obj_in_array_idx(sub_obj, 0, 1, "bearers");
-		rate_up = dmjson_get_value(sub_obj_2, 1, "rate_up");
-	}
-	else
-		return 0;
-	*value = rate_up;
-	return 0;
-}
-
-int get_channel_annexm_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	struct uci_list *v;
-	struct uci_element *e;
-	*value = "0";
-
-	if (strcmp(((struct dsl_line_args *)data)->type, "adsl") == 0) {
-		dmuci_get_option_value_list("dsl","line","mode", &v);
-		if (v) {
-			uci_foreach_element(v, e) {
-				if (strcasecmp(e->name, "AnnexM") == 0) {
-					*value = "1";
-					return 0;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-int set_channel_annexm_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	struct uci_list *v;
-	struct uci_element *e;
-	bool b;
-
-	switch (action) {
-		case VALUECHECK:
-			if (string_to_bool(value, &b))
-				return FAULT_9007;
-			return 0;
-		case VALUESET:
-			if (strcmp(((struct dsl_line_args *)data)->type, "adsl") != 0) {
-				return 0;
-			}
-			string_to_bool(value, &b);
-
-			dmuci_get_option_value_list("dsl","line","mode", &v);
-			if (v) {
-				uci_foreach_element(v, e) {
-					if (strcasecmp(e->name, "AnnexM") == 0 && b==false) {
-						dmuci_del_list_value("dsl", "line", "mode", "annexm");
-						return 0;
-					}else if(strcasecmp(e->name, "AnnexM") != 0 && b==true){
-						dmuci_add_list_value("dsl", "line", "mode", "annexm");
-						return 0;
-					}
-				}
-			}
-	}
-	return 0;
-}
-
-int get_channel_supported_encap(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	*value = "G.992.3_Annex_K_ATM, G.992.3_Annex_K_PTM, G.993.2_Annex_K_ATM, G.993.2_Annex_K_PTM, G.994.1";
-	return 0;
-}
-
-
 int get_atm_destination_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *vpi, *vci;
@@ -604,7 +180,6 @@ int get_ptm_link_name(char *refparam, struct dmctx *ctx, void *data, char *insta
 	return 0;
 }
 
-
 int get_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *encapsulation;
@@ -629,12 +204,10 @@ int set_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *i
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			if (strcmp(value, "VCMUX") == 0) {
+			if (strcmp(value, "VCMUX") == 0)
 				encapsulation = "vcmux";
-			}
-			else if (strcmp(value, "LLC") == 0) {
+			else if (strcmp(value, "LLC") == 0)
 				encapsulation = "llc";
-			}
 			else
 				return 0;
 
@@ -666,7 +239,8 @@ int set_atm_link_type(char *refparam, struct dmctx *ctx, void *data, char *insta
 
 int get_atm_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *linker = "adsl";
+	char linker[16];
+	sprintf(linker, "channel_%d", atoi(instance)-1);
 	adm_entry_get_linker_param(ctx, dm_print_path("%s%cDSL%cChannel%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
@@ -675,17 +249,16 @@ int get_atm_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *ins
 
 int get_ptm_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *linker = "vdsl";
+	char linker[16];
+	sprintf(linker, "channel_%d", atoi(instance)-1);
 	adm_entry_get_linker_param(ctx, dm_print_path("%s%cDSL%cChannel%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value); // MEM WILL BE FREED IN DMMEMCLEAN
 	if (*value == NULL)
 		*value = "";
 	return 0;
 }
 
-
 inline int ubus_atm_stats(json_object *res, char **value, char *stat_mod, void *data)
 {
-
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", ((struct atm_args *)data)->ifname, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
 	*value = dmjson_get_value(res, 2, "statistics", stat_mod);
@@ -757,12 +330,6 @@ int get_ptm_stats_pack_sent(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
-int get_line_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	*value = dmstrdup(((struct dsl_line_args *)data)->type);
-	return 0;
-}
-
 int get_atm_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "true";
@@ -774,15 +341,14 @@ int get_ptm_enable(char *refparam, struct dmctx *ctx, void *data, char *instance
 	*value = "true";
 	return 0;
 }
+
 /*************************************************************
  * ADD OBJ
 /*************************************************************/
 int add_atm_link(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *instance = NULL;
-	char *atm_device = NULL, *v= NULL;
-	char *instance_update = NULL;
-	struct uci_section *dmmap_atm=NULL;
+	char *instance = NULL, *atm_device = NULL, *v = NULL, *instance_update = NULL;
+	struct uci_section *dmmap_atm = NULL;
 
 	check_create_dmmap_package("dmmap_dsl");
 	instance = get_last_instance_icwmpd("dmmap_dsl", "atm-device", "atmlinkinstance");
@@ -804,10 +370,8 @@ int add_atm_link(char *refparam, struct dmctx *ctx, void *data, char **instancep
 
 int add_ptm_link(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *instance = NULL;
-	char *ptm_device = NULL, *v= NULL;
-	char *instance_update = NULL;
-	struct uci_section *dmmap_ptm=NULL;
+	char *instance = NULL, *ptm_device = NULL, *v = NULL, *instance_update = NULL;
+	struct uci_section *dmmap_ptm = NULL;
 
 	check_create_dmmap_package("dmmap_dsl");
 	instance = get_last_instance_icwmpd("dmmap_dsl", "ptm-device", "ptmlinkinstance");
@@ -826,10 +390,7 @@ int add_ptm_link(char *refparam, struct dmctx *ctx, void *data, char **instancep
 
 int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL;
-	struct uci_section *ns = NULL;
-	struct uci_section *nss = NULL, *dmmap_section= NULL;
+	struct uci_section *s = NULL, *ss = NULL, *ns = NULL, *nss = NULL, *dmmap_section= NULL;
 	char *ifname;
 
 	switch (del_action) {
@@ -886,10 +447,7 @@ int delete_atm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	char *ifname;
-	struct uci_section *s = NULL;
-	struct uci_section *ss = NULL;
-	struct uci_section *ns = NULL;
-	struct uci_section *nss = NULL, *dmmap_section= NULL;
+	struct uci_section *s = NULL, *ss = NULL, *ns = NULL, *nss = NULL, *dmmap_section= NULL;
 
 	switch (del_action) {
 	case DEL_INST:
@@ -941,45 +499,10 @@ int delete_ptm_link(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	}
 	return 0;
 }
+
 /*************************************************************
  * SET AND GET ALIAS
 /*************************************************************/
-int get_dsl_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	dmuci_get_value_by_section_string(((struct dsl_line_args *)data)->line_sec, "dsllinkalias", value);
-	return 0;
-}
-
-int set_dsl_link_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	switch (action) {
-		case VALUECHECK:
-			return 0;
-		case VALUESET:
-			dmuci_set_value_by_section(((struct dsl_line_args *)data)->line_sec, "dsllinkalias", value);
-			return 0;
-	}
-	return 0;
-}
-
-int get_channel_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
-{
-	dmuci_get_value_by_section_string(((struct dsl_line_args *)data)->line_sec, "channelalias", value);
-	return 0;
-}
-
-int set_channel_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
-{
-	switch (action) {
-		case VALUECHECK:
-			return 0;
-		case VALUESET:
-			dmuci_set_value_by_section(((struct dsl_line_args *)data)->line_sec, "channelalias", value);
-			return 0;
-	}
-	return 0;
-}
-
 int get_atm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *dmmap_section;
@@ -1031,69 +554,9 @@ int set_ptm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
-int update_create_dmmap_dsl(void){
-	struct uci_section *s;
-	char *alias;
-	int i;
-
-	uci_foreach_sections("dsl", "dsl-line", s) {
-		uci_path_foreach_sections(icwmpd, DMMAP, "dsltype", s) {
-			return 1;
-		}
-
-		for(i=0; i<DSL_LINE; i++){
-			asprintf(&alias, "cpe-%d", i+1);
-			DMUCI_SET_VALUE(icwmpd, "dmmap", dsl_lines[i].type, "", "dsltype");
-			DMUCI_SET_VALUE(icwmpd, "dmmap", dsl_lines[i].type, "dsllinkinstance", dsl_lines[i].instance);
-			DMUCI_SET_VALUE(icwmpd, "dmmap", dsl_lines[i].type, "dsllinkalias", alias);
-			free(alias);
-		}
-		return 1;
-	}
-	return 0;
-}
-
-
-int browseDslLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
-{
-	char *wnum = NULL, *wnum_last = NULL;
-	struct uci_section *s = NULL;
-	struct dsl_line_args curr_dsl_line_args = {0};
-
-	if (update_create_dmmap_dsl())
-	{
-		uci_path_foreach_sections(icwmpd, DMMAP, "dsltype", s) {
-			init_dsl_link(&curr_dsl_line_args, s, section_name(s));
-			wnum = handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, s, "dsllinkinstance", "dsllinkalias");
-			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dsl_line_args, wnum) == DM_STOP)
-				break;
-		}
-	}
-	return 0;
-}
-
-int browseDslChannelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
-{
-	char *wnum = NULL, *wnum_last = NULL;
-	struct uci_section *s = NULL;
-	struct dsl_line_args curr_dsl_line_args = {0};
-
-	if (update_create_dmmap_dsl())
-	{
-		uci_path_foreach_sections(icwmpd, DMMAP, "dsltype", s) {
-			init_dsl_link(&curr_dsl_line_args, s, section_name(s));
-			wnum = handle_update_instance(1, dmctx, &wnum_last, update_instance_alias, 3, s, "channelinstance", "channelalias");
-			if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_dsl_line_args, wnum) == DM_STOP)
-				break;
-		}
-	}
-	return 0;
-}
-
 int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *wnum = NULL, *channel_last = NULL, *ifname;
-	struct uci_section *s = NULL;
 	struct atm_args curr_atm_args = {0};
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
@@ -1113,7 +576,6 @@ int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 int browsePtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *wnum = NULL, *channel_last = NULL, *ifname;
-	struct uci_section *s = NULL;
 	struct ptm_args curr_ptm_args = {0};
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
@@ -1122,7 +584,7 @@ int browsePtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	list_for_each_entry(p, &dup_list, list) {
 		dmuci_get_value_by_section_string(p->config_section, "device", &ifname);
 		init_ptm_link(&curr_ptm_args, p->config_section, ifname);
-		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, p->dmmap_section, "ptmlinkinstance", "ptmlinkalias"); //finish here
+		wnum = handle_update_instance(1, dmctx, &channel_last, update_instance_alias, 3, p->dmmap_section, "ptmlinkinstance", "ptmlinkalias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_ptm_args, wnum) == DM_STOP)
 			break;
 	}
