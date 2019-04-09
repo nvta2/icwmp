@@ -29,6 +29,15 @@ extern DMLEAF tDHCPv6ServerPoolClientIPv6PrefixParams[];
 extern DMLEAF tDHCPv6ServerPoolClientOptionParams[];
 extern DMLEAF tDHCPv6ServerPoolOptionParams[];
 
+struct dhcpv6_client_args {
+	struct uci_section *dhcp_client_conf;
+	struct uci_section *dhcp_client_dm;
+	struct uci_section *macclassifier;
+	struct uci_section *vendorclassidclassifier;
+	struct uci_section *userclassclassifier;
+	char *ip;
+};
+
 int browseDHCPv6ClientInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseDHCPv6ClientServerInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 int browseDHCPv6ClientSentOptionInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);

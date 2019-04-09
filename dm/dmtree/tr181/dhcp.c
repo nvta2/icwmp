@@ -1632,8 +1632,6 @@ int set_DHCPv4Client_Enable(char *refparam, struct dmctx *ctx, void *data, char 
 int get_DHCPv4Client_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcp_client_args *dhcp_client_args = (struct dhcp_client_args*)data;
-	struct uci_section *dmmap_section;
-	char *v;
 
 	dmuci_get_value_by_section_string(dhcp_client_args->dhcp_client_dm, "cwmp_dhcpv4client_alias", value);
 
@@ -1643,7 +1641,7 @@ int get_DHCPv4Client_Alias(char *refparam, struct dmctx *ctx, void *data, char *
 int set_DHCPv4Client_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	struct dhcp_client_args *dhcp_client_args = (struct dhcp_client_args*)data;
-	struct uci_section *dmmap_section;
+
 	switch (action)	{
 		case VALUECHECK:
 			break;
@@ -1713,7 +1711,6 @@ int set_DHCPv4Client_Interface(char *refparam, struct dmctx *ctx, void *data, ch
 
 int get_DHCPv4Client_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-
 	struct dhcp_client_args *dhcp_client_args = (struct dhcp_client_args*)data;
 	char *v= "";
 	if(dhcp_client_args->dhcp_client_conf == NULL)
@@ -3436,8 +3433,11 @@ int browseDHCPv4RelayForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, vo
 			dhcp_relay_arg.mask = dmstrdup("");
 		else
 			dhcp_relay_arg.mask = dmstrdup(mask4);
+		if(p->config_section != NULL)
+			dmuci_get_value_by_section_string(p->config_section, "network", &v);
+		else
+			v= dmstrdup("");
 
-		dmuci_get_value_by_section_string(p->config_section, "network", &v);
 		dhcp_network= get_dhcp_network_from_relay_list(v);
 		if(dhcp_network && strlen(dhcp_network)>0){
 			dhcp_relay_arg.macclassifier= get_dhcp_classifier("mac", dhcp_network);
