@@ -507,7 +507,7 @@ int get_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 	get_dmmap_section_of_config_section("dmmap_network", "device", section_name(((struct dm_args *)data)->section), &dmmap_section);
 	dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
 	if(strcmp(vlan_method, "2") == 0)
-		dmuci_get_value_by_section_string(dmmap_section, "genexis_vlan_term_alias", value);
+		dmuci_get_value_by_section_string(dmmap_section, "all_vlan_term_alias", value);
 	else
 		dmuci_get_value_by_section_string(dmmap_section, "vlan_term_alias", value);
 
@@ -526,7 +526,7 @@ int set_vlan_term_alias(char *refparam, struct dmctx *ctx, void *data, char *ins
 		case VALUESET:
 			dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
 			if(strcmp(vlan_method, "2") == 0)
-				dmuci_set_value_by_section(dmmap_section, "genexis_vlan_term_alias", value);
+				dmuci_set_value_by_section(dmmap_section, "all_vlan_term_alias", value);
 			else
 				dmuci_set_value_by_section(dmmap_section, "vlan_term_alias", value);
 			return 0;
@@ -758,7 +758,7 @@ int browseVLANTermInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 			continue;
 		curr_vlan_term_args.section = p->config_section;
 		if(strcmp(vlan_method, "2") == 0)
-			vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "all_vlan_term_instance", "genexis_vlan_term_alias");
+			vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "all_vlan_term_instance", "all_vlan_term_alias");
 		else
 			vlan_term = handle_update_instance(1, dmctx, &vlan_term_last, update_instance_alias, 3, p->dmmap_section, "only_tagged_vlan_term_instance", "vlan_term_alias");
 		if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&curr_vlan_term_args, vlan_term) == DM_STOP)
