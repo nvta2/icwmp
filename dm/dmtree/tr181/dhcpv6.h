@@ -32,10 +32,27 @@ extern DMLEAF tDHCPv6ServerPoolOptionParams[];
 struct dhcpv6_client_args {
 	struct uci_section *dhcp_client_conf;
 	struct uci_section *dhcp_client_dm;
-	struct uci_section *macclassifier;
-	struct uci_section *vendorclassidclassifier;
-	struct uci_section *userclassclassifier;
 	char *ip;
+};
+
+struct dhcpv6_args
+{
+	struct uci_section *dhcp_sec;
+	char *interface;
+};
+
+struct clientv6_args
+{
+	json_object *client;
+	json_object *clientparam;
+	int idx;
+};
+
+struct dhcpv6_client_option_args {
+	struct uci_section *opt_sect;
+	struct uci_section *client_sect;
+	char *option_tag;
+	char *value;
 };
 
 int browseDHCPv6ClientInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
