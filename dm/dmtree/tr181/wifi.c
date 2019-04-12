@@ -779,9 +779,9 @@ static char *get_associative_device_statistics(struct wifi_associative_device_ar
 	char *macaddr, *stats = "0";
 	int entries = 0;
 
-	dmubus_call("wifix", "stas", UBUS_ARGS{{"vif", wifi_associative_device->wdev, String}}, 1, &res);
+	dmubus_call("wifix", "stations", UBUS_ARGS{{"vif", wifi_associative_device->wdev, String}}, 1, &res);
 	while (res) {
-		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stas");
+		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stations");
 		if(jobj) {
 			macaddr = dmjson_get_value(jobj, 1, "macaddr");
 			if (!strcmp(macaddr, wifi_associative_device->macaddress)) {
@@ -950,9 +950,9 @@ int get_access_point_total_associations(char *refparam, struct dmctx *ctx, void 
 	int entries = 0;
 	*value = "0";
 
-	dmubus_call("wifix", "stas", UBUS_ARGS{{"vif", ((struct wifi_ssid_args *)data)->ifname, String}}, 1, &res);
+	dmubus_call("wifix", "stations", UBUS_ARGS{{"vif", ((struct wifi_ssid_args *)data)->ifname, String}}, 1, &res);
 	while (res) {
-		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stas");
+		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stations");
 		if(jobj)
 			entries++;
 		else
@@ -1715,9 +1715,9 @@ int browse_wifi_associated_device(struct dmctx *dmctx, DMNODE *parent_node, void
 		}
 	}
 
-	dmubus_call("wifix", "stas", UBUS_ARGS{{"vif", ap_ifname, String}}, 1, &res);
+	dmubus_call("wifix", "stations", UBUS_ARGS{{"vif", ap_ifname, String}}, 1, &res);
 	while (res) {
-		associated_client_obj = dmjson_select_obj_in_array_idx(res, entries, 1, "stas");
+		associated_client_obj = dmjson_select_obj_in_array_idx(res, entries, 1, "stations");
 		if(associated_client_obj) {
 			cur_wifi_associative_device_args.wdev = ap_ifname;
 			macaddr = dmjson_get_value(associated_client_obj, 1, "macaddr");
