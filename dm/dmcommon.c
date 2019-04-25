@@ -1551,3 +1551,35 @@ void remove_elt_from_str_list(char **iface_list, char *ifname){
 	}
 	dmasprintf(iface_list, "%s", tmp);
 }
+
+int get_shift_time_time(int shift_time, char *local_time, int size)
+{
+	time_t t_time;
+	struct tm *t_tm;
+
+	t_time = time(NULL) + shift_time;
+	t_tm = localtime(&t_time);
+	if (t_tm == NULL)
+		return -1;
+
+	if(strftime(local_time, size, "%FT%T%z", t_tm) == 0)
+		return -1;
+
+	local_time[25] = local_time[24];
+	local_time[24] = local_time[23];
+	local_time[22] = ':';
+	local_time[26] = '\0';
+
+	return 0;
+}
+
+int get_shift_time_shift(char *local_time, char *shift)
+{
+	struct tm tm = {0};
+
+	strptime(local_time,"%FT%T", &tm);
+	sprintf(shift, "%u", (unsigned int)(mktime(&tm) - time(NULL)));
+
+	return 0;
+}
+
