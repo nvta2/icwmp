@@ -21,6 +21,7 @@ extern DMLEAF tIPInterfaceParam[];
 extern DMLEAF tlanethernetinterfaceconfigParam[];
 extern DMOBJ tLanhost_Config_ManagementObj[];
 extern DMLEAF tWlanConfigurationParam[];
+extern DMLEAF tIEEE80211rParams[];
 extern DMLEAF tWPSParam[];
 extern DMLEAF tWepKeyParam[];
 extern DMLEAF tpresharedkeyParam[];
@@ -205,6 +206,7 @@ int get_x_iopsys_eu_maxssid(char *refparam, struct dmctx *ctx, void *data, char 
 int get_x_iopsys_eu_scantimer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_x_iopsys_eu_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_wps_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_wep_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_psk_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wlan_psk_assoc_MACAddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -271,6 +273,7 @@ int set_x_iopsys_eu_maxssid(char *refparam, struct dmctx *ctx, void *data, char 
 int set_x_iopsys_eu_scantimer(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_x_iopsys_eu_frequency(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_wps_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_wep_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_wep_key1(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wlan_psk_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);

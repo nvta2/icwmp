@@ -28,6 +28,7 @@ libdatamodel_la_SOURCES =	\
 	../dm/dmtree/common/x_iopsys_eu_dropbear.c		\
 	../dm/dmtree/common/x_iopsys_eu_owsd.c			\
 	../dm/dmtree/common/x_iopsys_eu_buttons.c		\
+	../dm/dmtree/common/x_iopsys_eu_wifilife.c		\
 	../dm/dmtree/common/root.c
 
 if XMPP_ENABLE

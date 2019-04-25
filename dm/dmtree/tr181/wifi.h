@@ -58,6 +58,7 @@ extern DMLEAF tWifiSsidParams[];
 extern DMLEAF tWifiRadioParams[];
 extern DMLEAF tWifiAcessPointSecurityParams[];
 extern DMLEAF tWifiAcessPointAssociatedDeviceParams[];
+extern DMLEAF tWifiAcessPointIEEE80211rParams[];
 extern DMOBJ tWifiAcessPointAssociatedDeviceObj[];
 extern DMLEAF tWifiAcessPointAssociatedDeviceStatsParams[];
 extern DMLEAF tWifiRadioStatsParams[];
@@ -124,6 +125,7 @@ int get_access_point_security_wepkey_index(char *refparam, struct dmctx *ctx, vo
 int get_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_radius_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_security_radius_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int get_access_point_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_lastdatadownlinkrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_lastdatauplinkrate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_access_point_associative_device_signalstrength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -176,6 +178,7 @@ int set_access_point_security_rekey_interval(char *refparam, struct dmctx *ctx, 
 int set_access_point_security_radius_ip_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_radius_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_access_point_security_radius_secret(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_access_point_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_neighboring_wifi_diagnostics_diagnostics_state(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 static int set_wmm_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 #endif
