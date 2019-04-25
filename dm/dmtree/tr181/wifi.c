@@ -109,11 +109,11 @@ DMLEAF tWifiSsidStatsParams[] = {
 };
 
 /*** WiFi.AccessPoint. ***/
-
 DMOBJ tAcessPointSecurityObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
 {"Security", &DMWRITE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWifiAcessPointSecurityParams, NULL},
 {"AssociatedDevice", &DMREAD, NULL, NULL, NULL, browse_wifi_associated_device, NULL, NULL, tWifiAcessPointAssociatedDeviceObj, tWifiAcessPointAssociatedDeviceParams, get_linker_associated_device},
+{CUSTOM_PREFIX"IEEE80211r", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tWifiAcessPointIEEE80211rParams, NULL},
 {0}
 };
 
@@ -155,6 +155,13 @@ DMLEAF tWifiAcessPointAssociatedDeviceParams[] = {
 {"LastDataDownlinkRate", &DMREAD, DMT_UNINT, get_access_point_associative_device_lastdatadownlinkrate, NULL, NULL, NULL},
 {"LastDataUplinkRate", &DMREAD, DMT_UNINT, get_access_point_associative_device_lastdatauplinkrate, NULL, NULL, NULL},
 {"SignalStrength", &DMREAD, DMT_INT, get_access_point_associative_device_signalstrength, NULL, NULL, NULL},
+{0}
+};
+
+/*** WiFi.AccessPoint.X_IOPSYS_EU_IEEE80211r. ***/
+DMLEAF tWifiAcessPointIEEE80211rParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"Enable", &DMWRITE, DMT_BOOL, get_access_point_ieee80211r_enable, set_access_point_ieee80211r_enable, NULL, NULL},
 {0}
 };
 
@@ -1340,10 +1347,35 @@ int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, v
 	dmasprintf(value, cur_wifi_associative_device_args_ptr->macaddress);
 	return 0;
 }
+
 int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
 	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->active);
+	return 0;
+}
+
+int get_access_point_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "ieee80211r", value);
+	if ((*value)[0] == '\0')
+		*value = "0";
+	return 0;
+}
+
+int set_access_point_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	bool b;
+	switch (action) {
+		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
+			return 0;
+		case VALUESET:
+			string_to_bool(value, &b);
+			dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "ieee80211r", b?"1":"0");
+			return 0;
+	}
 	return 0;
 }
 

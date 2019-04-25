@@ -164,6 +164,7 @@ DMOBJ tWlanConfigurationObj[] = {
 {"WEPKey", &DMREAD, NULL, NULL, NULL, browseWepKeyInst, NULL, NULL, NULL, tWepKeyParam, NULL},
 {"PreSharedKey", &DMREAD, NULL, NULL, NULL, browsepresharedkeyInst, NULL, NULL, NULL, tpresharedkeyParam, NULL},
 {"AssociatedDevice", &DMREAD, NULL, NULL, NULL, browseassociateddeviceInst, NULL, NULL, NULL, tassociateddeviceParam, NULL},
+{CUSTOM_PREFIX"IEEE80211r", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tIEEE80211rParams, NULL},
 {0}
 };
 
@@ -236,6 +237,12 @@ DMLEAF tassociateddeviceParam[] = {
 {"AssociatedDeviceMACAddress", &DMREAD, DMT_STRING, get_wlan_associated_macaddress, NULL, NULL, &DMNONE},
 {"AssociatedDeviceIPAddress", &DMREAD, DMT_STRING, get_wlan_associated_ipddress, NULL, NULL, &DMNONE},
 {"AssociatedDeviceAuthenticationState", &DMREAD, DMT_BOOL, get_wlan_associated_authenticationstate, NULL, NULL, &DMNONE},
+{0}
+};
+
+/*** LANDevice.{i}.WLANConfiguration.{i}.X_IOPSYS_EU_IEEE80211r. ***/
+DMLEAF tIEEE80211rParams[] = {
+{"Enable", &DMWRITE, DMT_BOOL, get_ieee80211r_enable, set_ieee80211r_enable, NULL, NULL},
 {0}
 };
 
@@ -3006,6 +3013,33 @@ int set_wlan_wps_enable(char *refparam, struct dmctx *ctx, void *data, char *ins
 				dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
 			else
 				dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "");
+			return 0;
+	}
+	return 0;
+}
+
+int get_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
+	dmuci_get_value_by_section_string(wlanargs->lwlansection, "ieee80211r", value);
+	if ((*value)[0] == '\0')
+		*value = "0";
+	return 0;
+}
+
+int set_ieee80211r_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	bool b;
+	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
+
+	switch (action) {
+		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
+			return 0;
+		case VALUESET:
+			string_to_bool(value, &b);
+			dmuci_set_value_by_section(wlanargs->lwlansection, "ieee80211r", b?"1":"0");
 			return 0;
 	}
 	return 0;
