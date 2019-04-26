@@ -264,3 +264,26 @@ icwmp_udpechoserverd_LDFLAGS =			\
 icwmp_udpechoserverd_LDADD =				\
 	$(AM_LIBS)					\
 	$(LIBUCI_LIBS)
+
+bin_PROGRAMS += icwmp_twampd
+
+icwmp_twampd_SOURCES =		    \
+	../twamp/twamp.c			\
+	../twamp/twamp.h			\
+	../twamp/twamptimestamp.c	\
+	../twamp/twampuci.c			\
+	../twamp/twampuci.h			\
+	../twamp/twamplog.c			\
+	../twamp/twamplog.h
+
+icwmp_twampd_CFLAGS =			\
+	$(AM_CFLAGS)				\
+	$(LIBUCI_CFLAGS)
+
+icwmp_twampd_LDFLAGS =			\
+	$(AM_LDFLAGS)				\
+	$(LIBUCI_LDFLAGS)
+	
+icwmp_twampd_LDADD =				\
+	$(AM_LIBS)					\
+	$(LIBUCI_LIBS)

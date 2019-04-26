@@ -61,6 +61,7 @@
 #include "users.h"
 #include "dsl.h"
 #include "dhcpv6.h"
+
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
@@ -128,7 +129,7 @@ DMOBJ tRoot_181_Obj[] = {
 {CUSTOM_PREFIX"WiFiLife", &DMREAD, NULL, NULL, NULL, NULL, NULL, &DMNONE, X_IOPSYS_EU_WiFiLifeObj, X_IOPSYS_EU_WiFiLifeParams, NULL},
 {"Bridging",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tBridgingObj, NULL, NULL},
 {"WiFi",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tWifiObj, tWifiParams, NULL},
-{"IP",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tIPObj, NULL, NULL},
+{"IP",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tIPObj, tIPParams, NULL},
 {"Ethernet", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tEthernetObj, NULL, NULL},
 {"DSL",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDSLObj, tDSLParams, NULL},
 {"ATM",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tAtmObj, NULL, NULL},
