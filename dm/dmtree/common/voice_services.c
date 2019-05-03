@@ -682,7 +682,7 @@ int delete_line(struct uci_section *line_section, struct uci_section *sip_sectio
 	char *pch, *spch, *call_lines, *p, new_call_lines[34] = {0};
 	
 	section_name = section_name(line_section);
-	line_id = section_name + sizeof("tel") - 1;
+	line_id = section_name + strlen(section_name) - 1;
 	dmuci_set_value_by_section(line_section, "sip_account", "-");
 	dmuci_set_value_by_section(line_section, "lineinstance", "");
 	dmuci_set_value_by_section(line_section, "linealias", "");
@@ -1693,11 +1693,11 @@ int set_line_line_profile(char *refparam, struct dmctx *ctx, void *data, char *i
 
 			dmuci_get_value_by_section_string(sip_s, "call_lines", &value);
 			if (value[0] == '\0') {
-				value = section_name(telargs->tel_section) + sizeof("tel") - 1;
+				value = section_name(telargs->tel_section) + strlen(section_name(telargs->tel_section)) - 1;
 				dmuci_set_value_by_section(sip_s, "call_lines", value);
 			}
 			else {
-				str = (section_name(telargs->tel_section) + sizeof("tel") - 1);
+				str = (section_name(telargs->tel_section) + strlen(section_name(telargs->tel_section)) - 1);
 				sprintf(call_lines, "%s %s", value, str);
 				dmuci_set_value_by_section(sip_s, "call_lines", call_lines);
 			}
@@ -1712,7 +1712,7 @@ int get_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *insta
 	struct tel_args *telargs = (struct tel_args *)data;
 	
 	line_name = section_name(telargs->tel_section);
-	*value = dmstrdup(line_name + sizeof("telx") - 1); //  MEM WILL BE FREED IN DMMEMCLEAN
+	*value = dmstrdup(line_name + strlen(line_name) - 1); //  MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
 
@@ -2404,7 +2404,7 @@ int browseLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, ch
 
 	synchronize_specific_config_sections_with_dmmap_eq("voice_client", "tel_line", "dmmap_voice_client", "sip_account", section_name(sipargs->sip_section), &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
-		line_id = atoi(section_name(p->config_section) + sizeof("tel") - 1);
+		line_id = atoi(section_name(p->config_section) + strlen(section_name(p->config_section)) - 1);
 		if ( line_id >= maxLine )
 			continue;
 		set_voice_profile_key_of_line(p->dmmap_section, prev_instance);
