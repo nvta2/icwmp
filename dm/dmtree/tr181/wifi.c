@@ -534,28 +534,26 @@ int get_radio_supported_standard(char *refparam, struct dmctx *ctx, void *data, 
 	json_object *res;
 	wlan_name = section_name(((struct wifi_radio_args *)data)->wifi_radio_sec);
 	dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", wlan_name, String}}, 1, &res);
-	DM_ASSERT(res, *value = "b, g, n");
+	DM_ASSERT(res, *value = "b,g,n");
 	freq = dmjson_get_value(res, 1, "frequency");
 	if (strcmp(freq, "5") == 0)
-		*value = "a, n, ac";
+		*value = "a,n,ac";
 	else
-		*value = "b, g, n";
+		*value = "b,g,n";
 	return 0;
 }
 
 int get_radio_operating_standard(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct wifi_radio_args *)data)->wifi_radio_sec, "hwmode", value);
-	if (strcmp(*value, "11b") == 0)
-		*value = "b";
-	else if (strcmp(*value, "11bg") == 0)
-		*value = "b,g";
-	else if (strcmp(*value, "11g") == 0 || strcmp(*value, "11gst") == 0 || strcmp(*value, "11lrs") == 0)
-		*value = "g";
-	else if (strcmp(*value, "11n") == 0 || strcmp(*value, "auto") == 0)
-		*value = "n";
-	else if (strcmp(*value, "11ac") == 0)
-		*value = "ac";
+	json_object *res = NULL;
+	dmubus_call("router.wireless", "radios", UBUS_ARGS{}, 0, &res);
+	DM_ASSERT(res, *value = "");
+	json_object_object_foreach(res, key, radio_obj) {
+		if(strcmp(section_name(((struct wifi_radio_args *)data)->wifi_radio_sec), key) == 0) {
+			*value = dmjson_get_value(radio_obj, 1, "opmode");
+			break;
+		}
+	}
 	return 0;
 }
 
