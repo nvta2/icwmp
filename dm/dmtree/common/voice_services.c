@@ -1712,7 +1712,7 @@ int get_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *insta
 	struct tel_args *telargs = (struct tel_args *)data;
 	
 	line_name = section_name(telargs->tel_section);
-	*value = dmstrdup(line_name + sizeof("tel") - 1); //  MEM WILL BE FREED IN DMMEMCLEAN
+	*value = dmstrdup(line_name + sizeof("telx") - 1); //  MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
 }
 
