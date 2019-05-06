@@ -137,7 +137,7 @@ inline int init_args_ipv6forward(struct routingfwdargs *args, struct uci_section
 static bool is_proc_route_in_config(struct proc_routing *proute)
 {
 	struct uci_section *s;
-	char *mask, *target, *gateway, *interface;
+	char *mask, *target, *gateway, *device;
 
 	uci_foreach_option_eq("network", "route", "target", proute->destination, s) {
 		dmuci_get_value_by_section_string(s, "netmask", &mask);
@@ -152,8 +152,8 @@ static bool is_proc_route_in_config(struct proc_routing *proute)
 	uci_path_foreach_sections(icwmpd, "dmmap_route_forwarding", "route_dynamic", s) {
 		dmuci_get_value_by_section_string(s, "target", &target);
 		dmuci_get_value_by_section_string(s, "gateway", &gateway);
-		dmuci_get_value_by_section_string(s, "interface", &interface);
-		if (strcmp(target, proute->destination) == 0 && strcmp(gateway, proute->gateway) == 0 && strcmp(interface, proute->iface) == 0) {
+		dmuci_get_value_by_section_string(s, "device", &device);
+		if (strcmp(target, proute->destination) == 0 && strcmp(gateway, proute->gateway) == 0 && strcmp(device, proute->iface) == 0) {
 			return true;
 		}
 	}
@@ -951,6 +951,7 @@ int get_router_ipv4forwarding_alias(char *refparam, struct dmctx *ctx, void *dat
 {
 	struct uci_section *dmmap_section;
 	*value = "";
+
 	if(((struct routingfwdargs *)data)->type == ROUTE_DYNAMIC)
 		dmmap_section= ((struct routingfwdargs *)data)->routefwdsection;
 	else if (((struct routingfwdargs *)data)->type == ROUTE_STATIC)
@@ -1138,7 +1139,7 @@ static int dmmap_synchronizeRoutingRouterIPv4Forwarding(struct dmctx *dmctx, DMN
 	check_create_dmmap_package("dmmap_route_forwarding");
 	uci_path_foreach_sections_safe(icwmpd, "dmmap_route_forwarding", "route_dynamic", stmp, s) {
 		dmuci_get_value_by_section_string(s, "target", &target);
-		dmuci_get_value_by_section_string(s, "interface", &iface);
+		dmuci_get_value_by_section_string(s, "device", &iface);
 		found = 0;
 		fp = fopen(ROUTING_FILE, "r");
 		if ( fp != NULL)
