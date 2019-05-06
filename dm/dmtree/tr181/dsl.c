@@ -410,11 +410,10 @@ int browseDSLChannelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 static char *get_dsl_value_without_argument(char *command1, char *id, char *command2, char *key)
 {
 	json_object *res;
-	char command[16], *value;
+	char command[16], *value = "0";
 
 	sprintf(command, "%s.%s", command1, id);
 	dmubus_call(command, command2, UBUS_ARGS{}, 0, &res);
-	DM_ASSERT(res, value = "0");
 	value = dmjson_get_value(res, 1, key);
 	return value;
 }
@@ -422,11 +421,10 @@ static char *get_dsl_value_without_argument(char *command1, char *id, char *comm
 static char *get_dsl_value_without_argument_and_with_two_key(char *command1, char *id, char *command2, char *key1, char *key2)
 {
 	json_object *res;
-	char command[16], *value;
+	char command[16], *value = "0";
 
 	sprintf(command, "%s.%s", command1, id);
 	dmubus_call(command, command2, UBUS_ARGS{}, 0, &res);
-	DM_ASSERT(res, value = "0");
 	value = dmjson_get_value(res, 2, key1, key2);
 	return value;
 }
@@ -434,11 +432,10 @@ static char *get_dsl_value_without_argument_and_with_two_key(char *command1, cha
 static char *get_dsl_value_with_argument(char *command1, char *id, char *command2, char *argument, char *key)
 {
 	json_object *res;
-	char command[16], *value;
+	char command[16], *value = "0";
 
 	sprintf(command, "%s.%s", command1, id);
 	dmubus_call(command, command2, UBUS_ARGS{{"interval", argument, String}}, 1, &res);
-	DM_ASSERT(res, value = "0");
 	value = dmjson_get_value(res, 1, key);
 	return value;
 }
@@ -446,11 +443,10 @@ static char *get_dsl_value_with_argument(char *command1, char *id, char *command
 static char *get_dsl_value_array_without_argument(char *command1, char *id, char *command2, char *key)
 {
 	json_object *res;
-	char command[16], *value;
+	char command[16], *value= "0";
 
 	sprintf(command, "%s.%s", command1, id);
 	dmubus_call(command, command2, UBUS_ARGS{}, 0, &res);
-	DM_ASSERT(res, value = "0");
 	value = dmjson_get_value_array_all(res, DELIMITOR, 1, key);
 	return value;
 }
