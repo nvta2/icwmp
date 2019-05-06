@@ -2740,13 +2740,12 @@ int set_IP_ULAPrefix(char *refparam, struct dmctx *ctx, void *data, char *instan
 int get_IP_InterfaceNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
-	char *inst = NULL;
 	int cnt = 0;
 
-	uci_path_foreach_sections(icwmpd, "dmmap_network", "interface", s) {
-		dmuci_get_value_by_section_string(s, "ip_int_instance", &inst);
-		if(inst[0] != '\0')
-			cnt++;
+	uci_foreach_sections("network", "interface", s) {
+		if (strcmp(section_name(s), "loopback") == 0)
+			continue;
+		cnt++;
 	}
 	dmasprintf(value, "%d", cnt);
 	return 0;
@@ -3435,7 +3434,7 @@ int set_IPInterfaceIPv6Prefix_Prefix(char *refparam, struct dmctx *ctx, void *da
 		case VALUESET:
 			dmuci_get_value_by_section_string(((struct ipv6prefix_args *)data)->ip_sec, "proto", &proto);
 			if(strcmp(proto, "static") == 0)
-				dmuci_set_value_by_section(((struct ipv6prefix_args *)data)->ip_sec, "ip_6prefixaddress", value);
+				dmuci_set_value_by_section(((struct ipv6prefix_args *)data)->ip_sec, "ip6prefix", value);
 			return 0;
 	}
 	return 0;
@@ -3561,129 +3560,71 @@ int set_IPInterfaceIPv6Prefix_ValidLifetime(char *refparam, struct dmctx *ctx, v
 /*
  * *** Device.IP.Interface.{i}.Stats. ***
  */
-int get_ip_interface_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+static char *get_ip_interface_statistics(char *interface, char *key)
 {
 	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
+	char *device, *value = "0";
+
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", interface, String}}, 1, &res);
 	device = dmjson_get_value(res, 1, "device");
-	if(device) {
+	if(device[0] != '\0') {
 		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "tx_bytes");
+		value = dmjson_get_value(diag, 2, "statistics", key);
 	}
+	return value;
+}
+
+int get_ip_interface_statistics_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "tx_bytes");
 	return 0;
 }
 
 int get_ip_interface_statistics_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "rx_bytes");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "rx_bytes");
 	return 0;
 }
 
 int get_ip_interface_statistics_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "tx_packets");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "tx_packets");
 	return 0;
 }
 
 int get_ip_interface_statistics_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "rx_packets");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "rx_packets");
 	return 0;
 }
 
 int get_ip_interface_statistics_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "tx_errors");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "tx_errors");
 	return 0;
 }
 
 int get_ip_interface_statistics_rx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "rx_errors");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "rx_errors");
 	return 0;
 }
 
 int get_ip_interface_statistics_tx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "tx_dropped");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "tx_dropped");
 	return 0;
 }
 
 int get_ip_interface_statistics_rx_discardpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "rx_dropped");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "rx_dropped");
 	return 0;
 }
 
 int get_ip_interface_statistics_rx_multicastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res, *diag;
-	char *lan_name = section_name(((struct ip_args *)data)->ip_sec), *device= NULL;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
-	device = dmjson_get_value(res, 1, "device");
-	if(device) {
-		dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &diag);
-		DM_ASSERT(diag, *value = "");
-		*value = dmjson_get_value(diag, 2, "statistics", "multicast");
-	}
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "multicast");
 	return 0;
 }
 
@@ -3855,17 +3796,24 @@ int set_IPInterfaceTWAMPReflector_PortAllowedList(char *refparam, struct dmctx *
 /*************************************************************/
 int get_IPInterface_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ip_int_alias", value);
+	struct uci_section *dmmap_section;
+
+	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
+	dmuci_get_value_by_section_string(dmmap_section, "ip_int_alias", value);
 	return 0;
 }
 
 int set_IPInterface_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct uci_section *dmmap_section =NULL;
+
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ip_int_alias", value);
+			get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
+			if(dmmap_section != NULL)
+				dmuci_set_value_by_section(dmmap_section, "ip_int_alias", value);
 			return 0;
 	}
 	return 0;
@@ -3882,16 +3830,14 @@ int get_ipv4_alias(char *refparam, struct dmctx *ctx, void *data, char *instance
 
 int set_ipv4_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	struct uci_section *dmmap_section;
+	struct uci_section *dmmap_section =NULL;
 
-	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
-	char *proto;
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "proto", &proto);
-			if(strcmp(proto, "static") == 0)
+			get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
+			if(dmmap_section != NULL)
 				dmuci_set_value_by_section(dmmap_section, "ipv4_alias", value);
 			return 0;
 	}
@@ -3913,18 +3859,18 @@ int get_IPInterfaceIPv6Address_Alias(char *refparam, struct dmctx *ctx, void *da
 
 int set_IPInterfaceIPv6Address_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	char *proto, *name;
 	struct uci_section *dmmap_section;
+	char *name;
 
-	uci_path_foreach_option_eq(icwmpd, "dmmap_network", "ipv6", "ipv6_instance", instance, dmmap_section) {
-		dmuci_get_value_by_section_string(dmmap_section, "section_name", &name);
-		if(strcmp(name, section_name(((struct ipv6_args *)data)->ip_sec)) == 0)
-			break;
-	}
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
+			uci_path_foreach_option_eq(icwmpd, "dmmap_network", "ipv6", "ipv6_instance", instance, dmmap_section) {
+				dmuci_get_value_by_section_string(dmmap_section, "section_name", &name);
+				if(strcmp(name, section_name(((struct ipv6_args *)data)->ip_sec)) == 0)
+					break;
+			}
 			dmuci_set_value_by_section(dmmap_section, "ipv6_alias", value);
 			return 0;
 	}
@@ -3946,18 +3892,18 @@ int get_IPInterfaceIPv6Prefix_Alias(char *refparam, struct dmctx *ctx, void *dat
 
 int set_IPInterfaceIPv6Prefix_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	char *proto, *name;
 	struct uci_section *dmmap_section;
+	char *name;
 
-	uci_path_foreach_option_eq(icwmpd, "dmmap_network", "ipv6prefix", "ipv6prefix_instance", instance, dmmap_section) {
-		dmuci_get_value_by_section_string(dmmap_section, "section_name", &name);
-		if(strcmp(name, section_name(((struct ipv6prefix_args *)data)->ip_sec)) == 0)
-			break;
-	}
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
+			uci_path_foreach_option_eq(icwmpd, "dmmap_network", "ipv6prefix", "ipv6prefix_instance", instance, dmmap_section) {
+				dmuci_get_value_by_section_string(dmmap_section, "section_name", &name);
+				if(strcmp(name, section_name(((struct ipv6prefix_args *)data)->ip_sec)) == 0)
+					break;
+			}
 			dmuci_set_value_by_section(dmmap_section, "ipv6prefix_alias", value);
 			return 0;
 	}
@@ -4033,21 +3979,14 @@ int add_ip_interface(char *refparam, struct dmctx *ctx, void *data, char **insta
 
 int delete_ip_interface(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-	struct uci_section *dmmap_section;
-
+	struct uci_section *dmmap_section = NULL;
 
 	switch (del_action) {
 	case DEL_INST:
-		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "proto", "");
-		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "type", "");
-		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ifname", "");
-		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ipaddr", "");
-		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ip6addr", "");
-
+		dmuci_delete_by_section(((struct ip_args *)data)->ip_sec, NULL, NULL);
 		get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
-		dmuci_set_value_by_section(dmmap_section, "ip_int_instance", "");
-		dmuci_set_value_by_section(dmmap_section, "ipv4_instance", "");
-		dmuci_set_value_by_section(dmmap_section, "ipv6_instance", "");
+		if(dmmap_section != NULL)
+			dmuci_delete_by_section(dmmap_section, NULL, NULL);
 		break;
 	case DEL_ALL:
 		return FAULT_9005;
@@ -4075,12 +4014,13 @@ int delete_ipv4(char *refparam, struct dmctx *ctx, void *data, char *instance, u
 {
 	struct uci_section *dmmap_section;
 
-	get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
 	switch (del_action) {
 	case DEL_INST:
 		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ipaddr", "");
-		dmuci_set_value_by_section(dmmap_section, "ipv4_instance", "");
 		dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "proto", "");
+		get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
+		if(dmmap_section != NULL)
+			dmuci_set_value_by_section(dmmap_section, "ipv4_instance", "");
 		break;
 	case DEL_ALL:
 		return FAULT_9005;
