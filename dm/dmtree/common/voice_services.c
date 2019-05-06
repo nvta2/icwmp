@@ -1719,7 +1719,7 @@ int get_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *insta
 int set_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	int error;
-	char bname[8], *stype = NULL, *sipaccount = NULL, *lineinstance = NULL, *linealias = NULL, *voice_profile_key = NULL, *v;
+	char line_name[8], bname[8], *stype = NULL, *sipaccount = NULL, *lineinstance = NULL, *linealias = NULL, *voice_profile_key = NULL, *v;
 	struct tel_args *telargs = (struct tel_args *)data;
 	struct uci_section *dmmap_section = NULL, *dmmap_tel_line_section = NULL;
 
@@ -1727,7 +1727,9 @@ int set_line_tel_line(char *refparam, struct dmctx *ctx, void *data, char *insta
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			sprintf(bname, "tel%s", value);
+			memset(line_name, '\0', sizeof(line_name));
+			strncpy(line_name, section_name(telargs->tel_section), strlen(section_name(telargs->tel_section)) - 1);
+			sprintf(bname, "%s%s", line_name, value);
 			error = dmuci_get_section_type("voice_client", bname, &stype);
 			if(error)
 				return 0;
