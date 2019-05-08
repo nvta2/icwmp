@@ -137,7 +137,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"DHCPv4", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDhcpv4Obj, tDHCPv4Params, NULL},
 {"DHCPv6", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDHCPv6Obj, tDHCPv6Params, NULL},
 {"Hosts", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, thostsObj, thostsParam, NULL},
-{"NAT", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tnatObj, NULL, NULL},
+{"NAT", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tnatObj, tnatParam, NULL},
 {"PPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tpppObj, NULL, NULL},
 {"Routing", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tRoutingObj, tRoutingParam, NULL},
 {"UserInterface", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUserInterfaceObj, NULL, NULL},
