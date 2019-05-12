@@ -153,6 +153,17 @@ wait_for_resolvfile() {
 	done
 }
 
+wait_for_asterisk() {
+	local time=$1
+	local tm=1
+
+	while [ -z "$(pidof asterisk)" ]; do
+		sleep 1
+		[ $tm -ge $time ] && break
+		tm=$((tm+1))
+	done
+}
+
 set_wan_interface() {
 	local l3_device=""
 	local default_wan_interface=""
@@ -175,7 +186,7 @@ start_service() {
 		[ -f /etc/config/wireless ] && echo "Waiting for WiFi to be started ..." && wait_for_wifi 20
 		[ -f /usr/sbin/dnsmasq ] && echo "Waiting for DNS Proxy to be started ..." && ubus -t 5 wait_for dnsmasq
 		[ -f /etc/config/dhcp ] && echo "Waiting for DNS Server(s) ..." && wait_for_resolvfile 20
-		[ -f /usr/sbin/asterisk ] && echo "Waiting for Voice to be started ..." && ubus -t 5 wait_for asterisk
+		[ -f /usr/sbin/asterisk ] && echo "Waiting for Voice to be started ..." && wait_for_asterisk 5
 
 		config_load cwmp
 		build_dmmap_instance
