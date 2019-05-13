@@ -349,9 +349,173 @@ static char *forwarding6_update_instance_alias_icwmpd(int action, char **last_in
 	}
 	return instance;
 }
-/**************************************/
 
+static int dmmap_synchronizeRoutingRouterIPv4Forwarding(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
+	struct uci_section *s = NULL, *stmp;
+	struct proc_routing proute = {0};
+	json_object *jobj;
+	FILE* fp = NULL;
+	char *target, *iface, *name, *instance, *str, line[MAX_PROC_ROUTING];
+	int found, last_inst;
 
+	check_create_dmmap_package("dmmap_route_forwarding");
+	uci_path_foreach_sections_safe(icwmpd, "dmmap_route_forwarding", "route_dynamic", stmp, s) {
+		dmuci_get_value_by_section_string(s, "target", &target);
+		dmuci_get_value_by_section_string(s, "device", &iface);
+		found = 0;
+		fp = fopen(ROUTING_FILE, "r");
+		if ( fp != NULL)
+		{
+			fgets(line, MAX_PROC_ROUTING, fp);
+			while (fgets(line, MAX_PROC_ROUTING, fp) != NULL )
+			{
+				if (line[0] == '\n')
+					continue;
+				parse_proc_route_line(line, &proute);
+				if ((strcmp(iface, proute.iface) == 0) && strcmp(target, proute.destination) == 0) {
+					found = 1;
+					break;
+				}
+			}
+			if (!found)
+				dmuci_delete_by_section(s, NULL, NULL);
+			fclose(fp);
+		}
+	}
+
+	fp = fopen(ROUTING_FILE, "r");
+	if ( fp != NULL) {
+		fgets(line, MAX_PROC_ROUTING, fp);
+		while (fgets(line, MAX_PROC_ROUTING, fp) != NULL )
+		{
+			if (line[0] == '\n')
+				continue;
+			parse_proc_route_line(line, &proute);
+			if (is_proc_route_in_config(&proute))
+				continue;
+			iface = "";
+			uci_foreach_sections("network", "interface", s) {
+				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(s), String}}, 1, &jobj);
+				str = dmjson_get_value(jobj, 1, "device");
+				if (strcmp(str, proute.iface) == 0) {
+					iface = section_name(s);
+					break;
+				}
+			}
+			last_inst = get_forwarding_last_inst();
+			dmasprintf(&instance, "%d", last_inst+1);
+			DMUCI_ADD_SECTION(icwmpd, "dmmap_route_forwarding", "route_dynamic", &s, &name);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "target", proute.destination);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "netmask", proute.mask);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "metric", proute.metric);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "gateway", proute.gateway);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "device", proute.iface);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "interface", iface);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "routeinstance", instance);
+			dmfree(instance);
+		}
+		fclose(fp);
+	}
+	return 0;
+}
+
+static int dmmap_synchronizeRoutingRouterIPv6Forwarding(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
+{
+	struct uci_section *s = NULL, *stmp;
+	char buf[512], dev[32], ipstr[INET6_ADDRSTRLEN + 8], gwstr[INET6_ADDRSTRLEN + 8];
+	unsigned int ip[4], gw[4];
+	unsigned int flags, refcnt, use, metric, prefix;
+	char *iface, *str, *target, *name, *instance;
+	json_object *jobj;
+	FILE* fp = NULL;
+	int found, last_inst;
+
+	check_create_dmmap_package("dmmap_route_forwarding");
+	uci_path_foreach_sections_safe(icwmpd, "dmmap_route_forwarding", "route6_dynamic", stmp, s) {
+		dmuci_get_value_by_section_string(s, "target", &target);
+		dmuci_get_value_by_section_string(s, "device", &iface);
+		fp = fopen(PROC_ROUTE6, "r");
+		if (fp == NULL)
+			return 0;
+
+		found = 0;
+		while (fgets(buf, 512, fp) != NULL) {
+			if (*buf == '\n' || *buf == '\0')
+				continue;
+			sscanf(buf, "%8x%8x%8x%8x %x %*s %*s %8x%8x%8x%8x %x %x %x %x %s", &ip[0], &ip[1], &ip[2], &ip[3],
+					&prefix, &gw[0], &gw[1], &gw[2], &gw[3], &metric, &refcnt, &use, &flags, dev);
+			if (strcmp(dev, "lo") == 0)
+				continue;
+			ip[0] = htonl(ip[0]);
+			ip[1] = htonl(ip[1]);
+			ip[2] = htonl(ip[2]);
+			ip[3] = htonl(ip[3]);
+			inet_ntop(AF_INET6, ip, buf, INET6_ADDRSTRLEN);
+			sprintf(ipstr, "%s/%u", buf, prefix);
+			if (strcmp(iface, dev) == 0 && strcmp(ipstr, target) == 0) {
+				found = 1;
+				break;
+			}
+
+		}
+		if (!found)
+			dmuci_delete_by_section(s, NULL, NULL);
+		fclose(fp);
+	}
+
+	fp = fopen(PROC_ROUTE6, "r");
+	if (fp == NULL)
+		return 0;
+
+	while (fgets(buf , 512 , fp) != NULL) {
+		if (*buf == '\n' || *buf == '\0')
+			continue;
+		sscanf(buf, "%8x%8x%8x%8x %x %*s %*s %8x%8x%8x%8x %x %x %x %x %s", &ip[0], &ip[1], &ip[2], &ip[3],
+				&prefix, &gw[0], &gw[1], &gw[2], &gw[3], &metric, &refcnt, &use, &flags, dev);
+		if (strcmp(dev, "lo") == 0)
+			continue;
+		ip[0] = htonl(ip[0]);
+		ip[1] = htonl(ip[1]);
+		ip[2] = htonl(ip[2]);
+		ip[3] = htonl(ip[3]);
+		gw[0] = htonl(gw[0]);
+		gw[1] = htonl(gw[1]);
+		gw[2] = htonl(gw[2]);
+		gw[3] = htonl(gw[3]);
+		inet_ntop(AF_INET6, ip, buf, INET6_ADDRSTRLEN);
+		sprintf(ipstr, "%s/%u", buf, prefix);
+		inet_ntop(AF_INET6, gw, gwstr, INET6_ADDRSTRLEN);
+		if (is_proc_route6_in_config(dev, ipstr, gwstr))
+			continue;
+		iface = "";
+		uci_foreach_sections("network", "interface", s) {
+			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(s), String}}, 1, &jobj);
+			str = dmjson_get_value(jobj, 1, "device");
+			if (strcmp(str, dev) == 0) {
+				iface = section_name(s);
+				break;
+			}
+		}
+		last_inst = get_forwarding6_last_inst();
+		dmasprintf(&instance, "%d", last_inst+1);
+		DMUCI_ADD_SECTION(icwmpd, "dmmap_route_forwarding", "route6_dynamic", &s, &name);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "target", ipstr);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "gateway", gwstr);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "interface", iface);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "device", dev);
+		sprintf(buf, "%u", metric);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "metric", buf);
+		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "route6instance", instance);
+		dmfree(instance);
+	}
+	fclose(fp);
+	return 0;
+}
+
+/*************************************************************
+ * GET & SET PARAM
+/*************************************************************/
 int get_router_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "1";
@@ -392,6 +556,7 @@ int get_RoutingRouter_IPv4ForwardingNumberOfEntries(char *refparam, struct dmctx
 	uci_foreach_sections("network", "route_disabled", s) {
 		cnt++;
 	}
+	dmmap_synchronizeRoutingRouterIPv4Forwarding(ctx, NULL, NULL, NULL);
 	uci_path_foreach_sections(icwmpd, "dmmap_route_forwarding", "route_dynamic", s) {
 		cnt++;
 	}
@@ -407,6 +572,7 @@ int get_RoutingRouter_IPv6ForwardingNumberOfEntries(char *refparam, struct dmctx
 	uci_foreach_sections("network", "route6", s) {
 		cnt++;
 	}
+	dmmap_synchronizeRoutingRouterIPv6Forwarding(ctx, NULL, NULL, NULL);
 	uci_path_foreach_sections(icwmpd, "dmmap_route_forwarding", "route6_dynamic", s) {
 		cnt++;
 	}
@@ -1126,171 +1292,6 @@ int browseRouterInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, 
 	}
 	return 0;
 }
-
-static int dmmap_synchronizeRoutingRouterIPv4Forwarding(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
-{
-	struct uci_section *s = NULL, *stmp;
-	struct proc_routing proute = {0};
-	json_object *jobj;
-	FILE* fp = NULL;
-	char *target, *iface, *name, *instance, *str, line[MAX_PROC_ROUTING];
-	int found, last_inst;
-
-	check_create_dmmap_package("dmmap_route_forwarding");
-	uci_path_foreach_sections_safe(icwmpd, "dmmap_route_forwarding", "route_dynamic", stmp, s) {
-		dmuci_get_value_by_section_string(s, "target", &target);
-		dmuci_get_value_by_section_string(s, "device", &iface);
-		found = 0;
-		fp = fopen(ROUTING_FILE, "r");
-		if ( fp != NULL)
-		{
-			fgets(line, MAX_PROC_ROUTING, fp);
-			while (fgets(line, MAX_PROC_ROUTING, fp) != NULL )
-			{
-				if (line[0] == '\n')
-					continue;
-				parse_proc_route_line(line, &proute);
-				if ((strcmp(iface, proute.iface) == 0) && strcmp(target, proute.destination) == 0) {
-					found = 1;
-					break;
-				}
-			}
-			if (!found)
-				dmuci_delete_by_section(s, NULL, NULL);
-			fclose(fp);
-		}
-	}
-
-	fp = fopen(ROUTING_FILE, "r");
-	if ( fp != NULL) {
-		fgets(line, MAX_PROC_ROUTING, fp);
-		while (fgets(line, MAX_PROC_ROUTING, fp) != NULL )
-		{
-			if (line[0] == '\n')
-				continue;
-			parse_proc_route_line(line, &proute);
-			if (is_proc_route_in_config(&proute))
-				continue;
-			iface = "";
-			uci_foreach_sections("network", "interface", s) {
-				dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(s), String}}, 1, &jobj);
-				str = dmjson_get_value(jobj, 1, "device");
-				if (strcmp(str, proute.iface) == 0) {
-					iface = section_name(s);
-					break;
-				}
-			}
-			last_inst = get_forwarding_last_inst();
-			dmasprintf(&instance, "%d", last_inst+1);
-			DMUCI_ADD_SECTION(icwmpd, "dmmap_route_forwarding", "route_dynamic", &s, &name);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "target", proute.destination);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "netmask", proute.mask);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "metric", proute.metric);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "gateway", proute.gateway);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "device", proute.iface);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "interface", iface);
-			DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "routeinstance", instance);
-			dmfree(instance);
-		}
-		fclose(fp);
-	}
-	return 0;
-}
-
-static int dmmap_synchronizeRoutingRouterIPv6Forwarding(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
-{
-	struct uci_section *s = NULL, *stmp;
-	char buf[512], dev[32], ipstr[INET6_ADDRSTRLEN + 8], gwstr[INET6_ADDRSTRLEN + 8];
-	unsigned int ip[4], gw[4];
-	unsigned int flags, refcnt, use, metric, prefix;
-	char *iface, *str, *target, *name, *instance;
-	json_object *jobj;
-	FILE* fp = NULL;
-	int found, last_inst;
-
-	check_create_dmmap_package("dmmap_route_forwarding");
-	uci_path_foreach_sections_safe(icwmpd, "dmmap_route_forwarding", "route6_dynamic", stmp, s) {
-		dmuci_get_value_by_section_string(s, "target", &target);
-		dmuci_get_value_by_section_string(s, "device", &iface);
-		fp = fopen(PROC_ROUTE6, "r");
-		if (fp == NULL)
-			return 0;
-
-		found = 0;
-		while (fgets(buf, 512, fp) != NULL) {
-			if (*buf == '\n' || *buf == '\0')
-				continue;
-			sscanf(buf, "%8x%8x%8x%8x %x %*s %*s %8x%8x%8x%8x %x %x %x %x %s", &ip[0], &ip[1], &ip[2], &ip[3],
-					&prefix, &gw[0], &gw[1], &gw[2], &gw[3], &metric, &refcnt, &use, &flags, dev);
-			if (strcmp(dev, "lo") == 0)
-				continue;
-			ip[0] = htonl(ip[0]);
-			ip[1] = htonl(ip[1]);
-			ip[2] = htonl(ip[2]);
-			ip[3] = htonl(ip[3]);
-			inet_ntop(AF_INET6, ip, buf, INET6_ADDRSTRLEN);
-			sprintf(ipstr, "%s/%u", buf, prefix);
-			if (strcmp(iface, dev) == 0 && strcmp(ipstr, target) == 0) {
-				found = 1;
-				break;
-			}
-
-		}
-		if (!found)
-			dmuci_delete_by_section(s, NULL, NULL);
-		fclose(fp);
-	}
-
-	fp = fopen(PROC_ROUTE6, "r");
-	if (fp == NULL)
-		return 0;
-
-	while (fgets(buf , 512 , fp) != NULL) {
-		if (*buf == '\n' || *buf == '\0')
-			continue;
-		sscanf(buf, "%8x%8x%8x%8x %x %*s %*s %8x%8x%8x%8x %x %x %x %x %s", &ip[0], &ip[1], &ip[2], &ip[3],
-				&prefix, &gw[0], &gw[1], &gw[2], &gw[3], &metric, &refcnt, &use, &flags, dev);
-		if (strcmp(dev, "lo") == 0)
-			continue;
-		ip[0] = htonl(ip[0]);
-		ip[1] = htonl(ip[1]);
-		ip[2] = htonl(ip[2]);
-		ip[3] = htonl(ip[3]);
-		gw[0] = htonl(gw[0]);
-		gw[1] = htonl(gw[1]);
-		gw[2] = htonl(gw[2]);
-		gw[3] = htonl(gw[3]);
-		inet_ntop(AF_INET6, ip, buf, INET6_ADDRSTRLEN);
-		sprintf(ipstr, "%s/%u", buf, prefix);
-		inet_ntop(AF_INET6, gw, gwstr, INET6_ADDRSTRLEN);
-		if (is_proc_route6_in_config(dev, ipstr, gwstr))
-			continue;
-		iface = "";
-		uci_foreach_sections("network", "interface", s) {
-			dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(s), String}}, 1, &jobj);
-			str = dmjson_get_value(jobj, 1, "device");
-			if (strcmp(str, dev) == 0) {
-				iface = section_name(s);
-				break;
-			}
-		}
-		last_inst = get_forwarding6_last_inst();
-		dmasprintf(&instance, "%d", last_inst+1);
-		DMUCI_ADD_SECTION(icwmpd, "dmmap_route_forwarding", "route6_dynamic", &s, &name);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "target", ipstr);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "gateway", gwstr);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "interface", iface);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "device", dev);
-		sprintf(buf, "%u", metric);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "metric", buf);
-		DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "route6instance", instance);
-		dmfree(instance);
-	}
-	fclose(fp);
-	return 0;
-}
-
-
 
 int browseIPv4ForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
