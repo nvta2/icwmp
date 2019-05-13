@@ -134,7 +134,13 @@ DMLEAF tIPInterfaceStatsParams[] = {
 {"ErrorsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_errors, NULL, NULL, NULL},
 {"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_discardpackets, NULL, NULL, NULL},
 {"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_discardpackets, NULL, NULL, NULL},
+{"UnicastPacketsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_unicastpackets, NULL, NULL, NULL},
+{"UnicastPacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_unicastpackets, NULL, NULL, NULL},
+{"MulticastPacketsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_multicastpackets, NULL, NULL, NULL},
 {"MulticastPacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_multicastpackets, NULL, NULL, NULL},
+{"BroadcastPacketsSent", &DMREAD, DMT_UNINT, get_ip_interface_statistics_tx_broadcastpackets, NULL, NULL, NULL},
+{"BroadcastPacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_broadcastpackets, NULL, NULL, NULL},
+{"UnknownProtoPacketsReceived", &DMREAD, DMT_UNINT, get_ip_interface_statistics_rx_unknownprotopackets, NULL, NULL, NULL},
 {0}
 };
 
@@ -3622,9 +3628,63 @@ int get_ip_interface_statistics_rx_discardpackets(char *refparam, struct dmctx *
 	return 0;
 }
 
+int get_ip_interface_statistics_tx_unicastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "TX", "unicast"));
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_unicastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "RX", "unicast"));
+	return 0;
+}
+
+int get_ip_interface_statistics_tx_multicastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "TX", "multicast"));
+	return 0;
+}
+
 int get_ip_interface_statistics_rx_multicastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "multicast");
+	*value = "0";
+	char *device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "RX", "multicast"));
+	return 0;
+}
+
+int get_ip_interface_statistics_tx_broadcastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "TX", "broadcast"));
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_broadcastpackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "RX", "broadcast"));
+	return 0;
+}
+
+int get_ip_interface_statistics_rx_unknownprotopackets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = get_ip_interface_statistics(section_name(((struct ip_args *)data)->ip_sec), "rx_over_errors");
 	return 0;
 }
 
