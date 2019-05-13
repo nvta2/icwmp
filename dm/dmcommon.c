@@ -34,7 +34,6 @@
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "dmjson.h"
-#include "log.h"
 
 char *array_notifcation_char[__MAX_notification] = {
 	[notification_none] = "0",
@@ -1479,23 +1478,25 @@ char **strsplit(const char* str, const char* delim, size_t* numtokens) {
 char *get_macaddr(char *interface_name)
 {
 	json_object *res;
-	char *device, *mac;
+	char *device, *mac = "";
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", interface_name, String}}, 1, &res);
 	device = dmjson_get_value(res, 1, "device");
-	if (device == NULL) {
-		CWMP_LOG(ERROR, "failed get device for interface %s", interface_name);
-		return NULL;
-	}
-
+	if(device[0] == '\0')
+		return "";
 	dmubus_call("network.device", "status", UBUS_ARGS{{"name", device, String}}, 1, &res);
 	mac = dmjson_get_value(res, 1, "macaddr");
-	if (mac == NULL) {
-		CWMP_LOG(ERROR, "failed get mac for interface %s", interface_name);
-		return NULL;
-	}
-
 	return mac;
+}
+
+char *get_device(char *interface_name)
+{
+	json_object *res;
+	char *device;
+
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", interface_name, String}}, 1, &res);
+	device = dmjson_get_value(res, 1, "device");
+	return device;
 }
 
 /*
@@ -1583,3 +1584,25 @@ int get_shift_time_shift(char *local_time, char *shift)
 	return 0;
 }
 
+int get_stats_from_ifconfig_command(char *device, char *direction, char *option)
+{
+	char buf[1024], *pch, *pchr, *ret;
+	int pp, r, stats = 0;
+
+	pp = dmcmd("ifconfig", 1, device);
+	if (pp) {
+		r = dmcmd_read(pp, buf, 1024);
+		for(pch = strtok_r(buf, "\n", &pchr); pch != NULL; pch = strtok_r(NULL, "\n", &pchr)) {
+			if(!strstr(pch, direction))
+				continue;
+			ret = strstr(pch, option);
+			if(ret) {
+				strtok_r(ret, ":", &ret);
+				sscanf(ret, "%d", &stats);
+				break;
+			}
+		}
+		close(pp);
+	}
+	return stats;
+}

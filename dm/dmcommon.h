@@ -192,11 +192,13 @@ unsigned char isdigit_str(char *str);
 char *dm_strword(char *src, char *str);
 char **strsplit(const char* str, const char* delim, size_t* numtokens);
 char *get_macaddr(char *ifname);
+char *get_device(char *ifname);
 int is_elt_exit_in_str_list(char *str_list, char *elt);
 void add_elt_to_str_list(char **str_list, char *elt);
 void remove_elt_from_str_list(char **iface_list, char *ifname);
 struct uci_section *get_dup_section_in_dmmap_eq(char *dmmap_package, char* section_type, char*sect_name, char *opt_name, char* opt_value);
 int get_shift_time_time(int shift_time, char *local_time, int size);
 int get_shift_time_shift(char *local_time, char *shift);
+int get_stats_from_ifconfig_command(char *device, char *direction, char *option);
 
 #endif

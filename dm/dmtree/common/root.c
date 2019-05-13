@@ -130,7 +130,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"Bridging",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tBridgingObj, NULL, NULL},
 {"WiFi",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tWifiObj, tWifiParams, NULL},
 {"IP",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tIPObj, tIPParams, NULL},
-{"Ethernet", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tEthernetObj, NULL, NULL},
+{"Ethernet", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tEthernetObj, tEthernetParams, NULL},
 {"DSL",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDSLObj, tDSLParams, NULL},
 {"ATM",&DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tAtmObj, NULL, NULL},
 {"PTM", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tPtmObj, NULL, NULL},
