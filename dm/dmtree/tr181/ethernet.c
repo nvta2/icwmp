@@ -154,15 +154,15 @@ DMLEAF tEthernetVLANTerminationStatsParams[] = {
 {"PacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_PacketsReceived, NULL, NULL, NULL},
 {"ErrorsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_ErrorsSent, NULL, NULL, NULL},
 {"ErrorsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_ErrorsReceived, NULL, NULL, NULL},
-//{"UnicastPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_UnicastPacketsSent, NULL, NULL, NULL},
-//{"UnicastPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_UnicastPacketsReceived, NULL, NULL, NULL},
-//{"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_DiscardPacketsSent, NULL, NULL, NULL},
-//{"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_DiscardPacketsReceived, NULL, NULL, NULL},
+{"UnicastPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_UnicastPacketsSent, NULL, NULL, NULL},
+{"UnicastPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_UnicastPacketsReceived, NULL, NULL, NULL},
+{"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_DiscardPacketsSent, NULL, NULL, NULL},
+{"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_DiscardPacketsReceived, NULL, NULL, NULL},
 {"MulticastPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_MulticastPacketsSent, NULL, NULL, NULL},
-//{"MulticastPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_MulticastPacketsReceived, NULL, NULL, NULL},
-//{"BroadcastPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_BroadcastPacketsSent, NULL, NULL, NULL},
-//{"BroadcastPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_BroadcastPacketsReceived, NULL, NULL, NULL},
-//{"UnknownProtoPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_UnknownProtoPacketsReceived, NULL, NULL, NULL},
+{"MulticastPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_MulticastPacketsReceived, NULL, NULL, NULL},
+{"BroadcastPacketsSent", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_BroadcastPacketsSent, NULL, NULL, NULL},
+{"BroadcastPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_BroadcastPacketsReceived, NULL, NULL, NULL},
+{"UnknownProtoPacketsReceived", &DMREAD, DMT_UNINT, get_EthernetVLANTerminationStats_UnknownProtoPacketsReceived, NULL, NULL, NULL},
 {0}
 };
 
