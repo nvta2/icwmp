@@ -347,7 +347,6 @@ int addObjEthernetLink(char *refparam, struct dmctx *ctx, void *data, char **ins
 
 	dmuci_add_section_icwmpd(DMMAP, "link", &dmmap_network, &v);
 	*instance = update_instance_icwmpd(dmmap_network, inst, "link_instance");
-
 	return 0;
 }
 
@@ -938,7 +937,10 @@ int get_EthernetLink_Name(char *refparam, struct dmctx *ctx, void *data, char *i
 int get_EthernetLink_LastChange(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(((struct dm_args *)data)->section), String}}, 1, &res);
+	char *interface;
+
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "section_name", &interface);
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", interface, String}}, 1, &res);
 	DM_ASSERT(res, *value = "0");
 	*value = dmjson_get_value(res, 1, "uptime");
 	if((*value)[0] == '\0')
