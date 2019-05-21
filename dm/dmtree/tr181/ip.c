@@ -3111,66 +3111,29 @@ int set_ipv4_addressing_type(char *refparam, struct dmctx *ctx, void *data, char
 int get_IPInterface_LowerLayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *dmmap_section;
-	char *wifname, *wtype, *br_inst, *mg, *device, *proto;
-	struct uci_section *port;
-	json_object *res;
-	char buf[8];
-	char linker[64] = "";
+	char linker[64] = "", *proto, *device, *mac;
 
-	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "type", &wtype);
-	if (strcmp(wtype, "bridge") == 0) {
-		char *mac;
-		mac = get_macaddr(section_name(((struct ip_args *)data)->ip_sec));
-		if (mac != NULL) {
-			/* Expect the Ethernet.Link to be the lowerlayer*/
-			adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), mac, value);
-			return 0;
-		}
-		get_dmmap_section_of_config_section("dmmap_network", "interface", section_name(((struct ip_args *)data)->ip_sec), &dmmap_section);
-		dmuci_get_value_by_section_string(dmmap_section, "bridge_instance", &br_inst);
-		uci_path_foreach_option_eq(icwmpd, "dmmap_bridge_port", "bridge_port", "bridge_key", br_inst, port) {
-			dmuci_get_value_by_section_string(port, "mg_port", &mg);
-			if (strcmp(mg, "true") == 0)
-				sprintf(linker, "%s+", section_name(port));
-			adm_entry_get_linker_param(ctx, dm_print_path("%s%cBridging%cBridge%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-			if (*value == NULL)
-				*value = "";
-			return 0;
-		}
-	} else if (wtype[0] == '\0' || strcmp(wtype, "anywan") == 0) {
-		dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name(((struct ip_args *)data)->ip_sec), String}}, 1, &res);
-		dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ifname", &wifname);
-		strcpy (linker, wifname);
-		if (res) {
-			device = dmjson_get_value(res, 1, "device");
-			strcpy(linker, device);
-			if(device[0] == '\0') {
-				strncpy(buf, wifname, 6);
-				buf[6]='\0';
-				strcpy(linker, buf);
-			}
-		}
-		dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "proto", &proto);
-		if (strstr(proto, "ppp")) {
-			sprintf(linker, "%s", section_name(((struct ip_args *)data)->ip_sec));
-		}
-	}
-	adm_entry_get_linker_param(ctx, dm_print_path("%s%cATM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-	if (*value == NULL)
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPTM%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-
-	if (*value == NULL)
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cVLANTermination%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-
-	if (*value == NULL)
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-
-	if (*value == NULL)
-		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cSSID%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
-
-	if (*value == NULL)
+	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "proto", &proto);
+	if (strstr(proto, "ppp")) {
+		sprintf(linker, "%s", section_name(((struct ip_args *)data)->ip_sec));
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPPP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), linker, value);
+		goto end;
+	}
 
+	device = get_device(section_name(((struct ip_args *)data)->ip_sec));
+	if (device[0] != '\0') {
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cVLANTermination%c", dmroot, dm_delim, dm_delim, dm_delim), device, value);
+		if (*value != NULL)
+			return 0;
+	}
+
+	mac = get_macaddr(section_name(((struct ip_args *)data)->ip_sec));
+	if (mac[0] != '\0') {
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), mac, value);
+		goto end;
+	}
+
+end :
 	if (*value == NULL)
 		*value = "";
 	return 0;
@@ -3178,11 +3141,8 @@ int get_IPInterface_LowerLayers(char *refparam, struct dmctx *ctx, void *data, c
 
 int set_IPInterface_LowerLayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	char *linker= NULL, *pch, *spch, *dup, *b_key, *proto, *ipaddr, *ip_inst, *ipv4_inst, *p, *type;
-	char *newvalue= NULL;
-	char sec[16];
+	char *linker = NULL, *newvalue = NULL;
 	struct uci_section *s;
-	char pat[32] = "";
 
 	switch (action) {
 		case VALUECHECK:
@@ -3193,29 +3153,7 @@ int set_IPInterface_LowerLayers(char *refparam, struct dmctx *ctx, void *data, c
 				adm_entry_get_linker_value(ctx, newvalue, &linker);
 			} else
 				adm_entry_get_linker_value(ctx, value, &linker);
-			sprintf(pat, "%cPort%c1%c", dm_delim, dm_delim, dm_delim);
-			if (linker && strstr(value, pat))
-			{
-				strncpy(sec, linker, strlen(linker) - 1);
-				sec[strlen(linker) - 1] = '\0';
-				DMUCI_GET_OPTION_VALUE_STRING(icwmpd, "dmmap_bridge_port", sec, "bridge_key", &b_key);
-				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "proto", &proto);
-				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ipaddr", &ipaddr);
-				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ip_int_instance", &ip_inst);
-				dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "ipv4_instance", &ipv4_inst);
-				uci_foreach_option_eq("network", "interface", "bridge_instance", b_key, s) {
-					dmuci_set_value_by_section(s, "proto", proto);
-					dmuci_set_value_by_section(s, "ipaddr", ipaddr);
-					dmuci_set_value_by_section(s, "ip_int_instance", ip_inst);
-					dmuci_set_value_by_section(s, "ipv4_instance", ipv4_inst);
-					dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "type", &type);
-					if (strcmp (type, "bridge"))
-						dmuci_delete_by_section(((struct ip_args *)data)->ip_sec, NULL, NULL);
-				}
-				return 0;
-			}
 
-			//lowerlayer is expected to be Device.Ethernet.VLANTerminaiton.{i}.
 			if (linker)
 				dmuci_set_value_by_section(((struct ip_args *)data)->ip_sec, "ifname", linker);
 			else

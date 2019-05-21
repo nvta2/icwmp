@@ -320,7 +320,7 @@ int get_linker_interface(char *refparam, struct dmctx *dmctx, void *data, char *
 
 int get_linker_link(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker)
 {
-	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "section_name", linker);
+	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", linker);
 	return 0;
 }
 
@@ -951,7 +951,7 @@ int get_EthernetLink_LastChange(char *refparam, struct dmctx *ctx, void *data, c
 int get_EthernetLink_LowerLayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
-	char *link_mac, *type, *ifname, *mac, *br_inst, *mg, *p, linker[64] = "";
+	char *link_mac, *type, *ifname, *mac, *br_inst, *mg, *wanifname, *wanlinker, linker[64] = "";
 	struct uci_section *dmmap_section, *port;
 
 	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "mac", &link_mac);
@@ -983,16 +983,16 @@ int get_EthernetLink_LowerLayers(char *refparam, struct dmctx *ctx, void *data, 
 			}
 		}
 		else {
+			dmuci_get_option_value_string("ports", "WAN", "ifname", &wanifname);
 			/* for upstream interface, set the lowerlayer to wan port of Ethernet.Interface */
-			p = strchr(ifname, '.');
-			if (p) {
-				/*linker of wan port of interface is eth0.1*/
-				*(p+1) = '1';
-				*(p+2) = '\0';
-				adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), ifname, value);
+			if(strstr(ifname, wanifname)) {
+				dmasprintf(&wanlinker, "%s.1", wanifname);
+				adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), wanlinker, value);
+				dmfree(wanlinker);
+				if (*value == NULL)
+					*value = "";
 			}
 		}
-		break;
 	}
 	return 0;
 }
@@ -1223,17 +1223,21 @@ int get_EthernetVLANTermination_LastChange(char *refparam, struct dmctx *ctx, vo
 
 int get_EthernetVLANTermination_LowerLayers(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *pch, *spch, *devifname, *ifname, *dupifname;
+	char *pch, *spch, *devifname, *ifname, *mac;
 	struct uci_section *section;
 	
 	dmuci_get_value_by_section_string(((struct dm_args *)data)->section, "name", &devifname);
 	uci_foreach_sections("network", "interface", section) {
 		dmuci_get_value_by_section_string(section, "ifname", &ifname);
-		dupifname = dmstrdup(ifname);
-		for (pch = strtok_r(dupifname, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
-			if(strcmp(pch, devifname) == 0){
-				adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), section_name(section), value);
-				break;
+		for (pch = strtok_r(ifname, " ", &spch); pch != NULL; pch = strtok_r(NULL, " ", &spch)) {
+			if(strcmp(pch, devifname) == 0) {
+				mac = get_macaddr(section_name(section));
+				if (mac[0] != '\0') {
+					adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cLink%c", dmroot, dm_delim, dm_delim, dm_delim), mac, value);
+					if (*value == NULL)
+						*value = "";
+					break;
+				}
 			}
 		}
 	}

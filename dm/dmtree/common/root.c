@@ -29,12 +29,6 @@
 #include "x_iopsys_eu_dropbear.h"
 #include "x_iopsys_eu_buttons.h"
 #include "x_iopsys_eu_wifilife.h"
-#ifdef UPNP_TR064
-#include "upnp_deviceinfo.h"
-#include "upnp_configuration.h"
-#include "upnp_monitoring.h"
-#endif
-
 #include "ip.h"
 #include "ethernet.h"
 #include "bridging.h"
@@ -61,6 +55,14 @@
 #include "users.h"
 #include "dsl.h"
 #include "dhcpv6.h"
+#include "interfacestack.h"
+
+#ifdef UPNP_TR064
+#include "upnp_deviceinfo.h"
+#include "upnp_configuration.h"
+#include "upnp_monitoring.h"
+#endif
+
 
 /* *** CWMP *** */
 DMOBJ tEntry098Obj[] = {
@@ -71,7 +73,7 @@ DMOBJ tEntry098Obj[] = {
 
 DMOBJ tEntry181Obj[] = {
 /*OBJ, permission, addobj, delobj, browseinstobj, finform, NOTIFICATION, nextobj, leaf, linker*/
-{(char *)&dmroot, &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot_181_Obj, NULL, NULL},
+{(char *)&dmroot, &DMREAD, NULL, NULL, NULL, NULL, &DMFINFRM, &DMNONE, tRoot_181_Obj, tRoot_181_Params, NULL},
 {0}
 };
 
@@ -106,6 +108,12 @@ DMOBJ tRoot_098_Obj[] = {
 #ifdef XMPP_ENABLE
 {"XMPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL,tXMPPObj, tXMPPParams, NULL},
 #endif
+{0}
+};
+
+DMLEAF tRoot_181_Params[] = {
+/* PARAM, permission, type, getvalue, setvalue, forced_inform, notification*/
+{"InterfaceStackNumberOfEntries", &DMREAD, DMT_UNINT, get_Device_InterfaceStackNumberOfEntries, NULL, NULL, NULL},
 {0}
 };
 
@@ -144,6 +152,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"Firewall", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tFirewallObj, tFirewallParams, NULL},
 {"DNS", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDNSObj, tDNSParams, NULL},
 {"Users", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUsersObj, tUsersParams, NULL},
+{"InterfaceStack", &DMREAD, NULL, NULL, NULL, browseInterfaceStackInst, NULL, NULL, NULL, tInterfaceStackParams, NULL},
 #ifdef XMPP_ENABLE
 {"XMPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL,tXMPPObj, tXMPPParams, NULL},
 #endif

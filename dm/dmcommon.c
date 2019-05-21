@@ -1327,6 +1327,7 @@ void check_create_dmmap_package(char *dmmap_package){
 		fp = fopen(dmmap_file_path, "w"); // new empty file
 		fclose(fp);
 	}
+	dmfree(dmmap_file_path);
 }
 
 int is_section_unnamed(char *section_name){
@@ -1492,7 +1493,7 @@ char *get_macaddr(char *interface_name)
 char *get_device(char *interface_name)
 {
 	json_object *res;
-	char *device;
+	char *device = "";
 
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", interface_name, String}}, 1, &res);
 	device = dmjson_get_value(res, 1, "device");

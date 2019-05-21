@@ -20,6 +20,7 @@ extern DMOBJ tEntry098Obj[];
 extern DMOBJ tEntry181Obj[];
 extern DMOBJ tRoot_098_Obj[];
 extern DMOBJ tRoot_181_Obj[];
+extern DMLEAF tRoot_181_Params[];
 
 #ifdef UPNP_TR064
 extern DMOBJ tEntry098ObjUPNP[];
