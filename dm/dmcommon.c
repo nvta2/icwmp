@@ -1554,6 +1554,16 @@ void remove_elt_from_str_list(char **iface_list, char *ifname){
 	dmasprintf(iface_list, "%s", tmp);
 }
 
+int is_array_elt_exist(char **str_array, char *str, int length){
+	int i;
+
+	for(i=0; i<length; i++){
+		if(strcmp(str_array[i], str) == 0)
+			return 1;
+	}
+	return 0;
+}
+
 int get_shift_time_time(int shift_time, char *local_time, int size)
 {
 	time_t t_time;
@@ -1607,3 +1617,26 @@ int get_stats_from_ifconfig_command(char *device, char *direction, char *option)
 	}
 	return stats;
 }
+
+int command_exec_output_to_array(char *cmd, char **output, int *length) {
+        FILE *fp;
+        char out[1035];
+        int i= 0;
+
+        /* Open the command for reading. */
+        fp = popen(cmd, "r");
+        if (fp == NULL)
+                exit(1);
+
+        /* Read the output line by line and store it in output array. */
+        while (fgets(out, sizeof(out)-1, fp) != NULL)
+                asprintf(&output[i++], "%s", out);
+
+        *length= i;
+
+        /* close */
+        pclose(fp);
+
+        return 0;
+}
+
