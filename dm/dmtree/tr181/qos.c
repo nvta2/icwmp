@@ -617,7 +617,7 @@ int addObjQoSShaper(char *refparam, struct dmctx *ctx, void *data, char **instan
 	struct uci_section *s, *dmmap_qos_class;
 	char *last_inst= NULL, *sect_name= NULL, *qos_comment, *v;
 	char ib[8];
-	last_inst= get_last_instance_icwmpd("dmmap_qos", "class", "shaperinstance");
+	last_inst= get_last_instance_icwmpd_without_update("dmmap_qos", "class", "shaperinstance");
 	if (last_inst)
 		sprintf(ib, "%s", last_inst);
 	else

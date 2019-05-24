@@ -574,6 +574,21 @@ char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst)
 	return inst;
 }
 
+char *get_last_instance_icwmpd_without_update(char *package, char *section, char *opt_inst)
+{
+	struct uci_section *s;
+	char *inst = NULL;
+	char *last_inst = NULL;
+
+	uci_path_foreach_sections(icwmpd, package, section, s) {
+		dmuci_get_value_by_section_string(s, opt_inst, &inst);
+		if(last_inst)
+			dmfree(last_inst);
+		last_inst = dmstrdup(inst);
+	}
+	return inst;
+}
+
 char *get_last_instance(char *package, char *section, char *opt_inst)
 {
 	struct uci_section *s;
