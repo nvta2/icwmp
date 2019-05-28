@@ -154,7 +154,7 @@ DMOBJ tRoot_181_Obj[] = {
 {"DNS", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tDNSObj, tDNSParams, NULL},
 {"Users", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tUsersObj, tUsersParams, NULL},
 {"InterfaceStack", &DMREAD, NULL, NULL, NULL, browseInterfaceStackInst, NULL, NULL, NULL, tInterfaceStackParams, NULL},
-{"QoS", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tQoSObj, tQoSParams, NULL},
+//{"QoS", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, tQoSObj, tQoSParams, NULL},
 #ifdef XMPP_ENABLE
 {"XMPP", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL,tXMPPObj, tXMPPParams, NULL},
 #endif
