@@ -69,6 +69,9 @@ get_param_type(){
 		"DMT_HEXBIN" )
 			echo "hexbin"
 			;;
+		"DMT_BASE64" )
+			echo "base64"
+			;;
 	esac
 	
 }

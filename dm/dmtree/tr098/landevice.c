@@ -117,8 +117,8 @@ DMLEAF tDHCPConditionalServingPoolParam[] = {
 
 DMLEAF tDHCPOptionParam[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_dhcp_servingpool_alias, set_dhcp_servingpool_alias, NULL, &DMNONE},
-{"Tag", &DMWRITE, DMT_BOOL, get_dhcp_servingpool_tag, set_dhcp_servingpool_tag, NULL, &DMNONE},
-{"Value", &DMWRITE, DMT_UNINT, get_dhcp_servingpool_value, set_dhcp_servingpool_value, NULL, &DMNONE},
+{"Tag", &DMWRITE, DMT_UNINT, get_dhcp_servingpool_tag, set_dhcp_servingpool_tag, NULL, &DMNONE},
+{"Value", &DMWRITE, DMT_BASE64, get_dhcp_servingpool_value, set_dhcp_servingpool_value, NULL, &DMNONE},
 {0}
 };
 
@@ -245,6 +245,78 @@ DMLEAF tIEEE80211rParams[] = {
 {"Enable", &DMWRITE, DMT_BOOL, get_ieee80211r_enable, set_ieee80211r_enable, NULL, NULL},
 {0}
 };
+
+
+const char base64_dec[255] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 62, 0, 0, 0, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+    0, 0, 0, -1, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0, 0, 0, 0, 0, 0, 26, 27,
+    28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
+    46, 47, 48, 49, 50, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+const unsigned char base64_enc[64]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static int base64_mod[] = {0, 2, 1};
+
+char *base64_decode(const char* src) {
+	int in_len = strlen(src);
+	int i = 0;
+	char* dest;
+	char* result;
+	if (in_len % 4) {
+		return NULL;
+	}
+	result = dest = dmmalloc(in_len / 4 * 3 + 1);
+	if (result == NULL)
+		return NULL;
+	while (*src) {
+		char a = base64_dec[(unsigned char) *(src++)];
+		char b = base64_dec[(unsigned char) *(src++)];
+		char c = base64_dec[(unsigned char) *(src++)];
+		char d = base64_dec[(unsigned char) *(src++)];
+		*(dest++) = (a << 2) | ((b & 0x30) >> 4);
+		if (c == (char) -1)
+			break;
+		*(dest++) = ((b & 0x0f) << 4) | ((c & 0x3c) >> 2);
+		if (d == (char) -1)
+			break;
+		*(dest++) = ((c & 0x03) << 6) | d;
+	}
+	*dest = 0;
+	return result;
+}
+
+char *dmbase64_encode(const char *src, int input_length)
+{
+	int i, j;
+	char *encoded_data, *dst;
+	int dst_length;
+	dst_length = 4 * ((input_length + 2) / 3);
+	dst = dmcalloc(1, dst_length + 1);
+	encoded_data = dst;
+	if(encoded_data == NULL)
+		return NULL;
+	for (i = 0, j = 0; i < input_length;) {
+		uint32_t byte_a = i < input_length ? (unsigned char)src[i++] : 0;
+		uint32_t byte_b = i < input_length ? (unsigned char)src[i++] : 0;
+		uint32_t byte_c = i < input_length ? (unsigned char)src[i++] : 0;
+		uint32_t triple = (byte_a << 0x10) + (byte_b << 0x08) + byte_c;
+		encoded_data[j++] = base64_enc[(triple >> 3 * 6) & 0x3F];
+		encoded_data[j++] = base64_enc[(triple >> 2 * 6) & 0x3F];
+		encoded_data[j++] = base64_enc[(triple >> 1 * 6) & 0x3F];
+		encoded_data[j++] = base64_enc[(triple >> 0 * 6) & 0x3F];
+	}
+
+	for (i = 0; i < base64_mod[input_length % 3]; i++)
+		encoded_data[dst_length - 1 - i] = '=';
+	return dst;
+}
 
 inline int init_ldargs_lan(struct ldlanargs *args, struct uci_section *s, char *iwan)
 {
@@ -3735,8 +3807,9 @@ int set_dhcp_servingpool_tag(char *refparam, struct dmctx *ctx, void *data, char
 int get_dhcp_servingpool_value(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcppooloptionargs *pooloptionargs = (struct dhcppooloptionargs *)data;
-
-	dmuci_get_value_by_section_string(pooloptionargs->dhcppooloptionsection, "value", value);
+	char *v;
+	dmuci_get_value_by_section_string(pooloptionargs->dhcppooloptionsection, "value", &v);
+	*value = dmbase64_encode((const char *)v, strlen(v));
 	return 0;
 }
 
@@ -3745,11 +3818,20 @@ int set_dhcp_servingpool_value(char *refparam, struct dmctx *ctx, void *data, ch
 
 	char *tmp;
 	struct dhcppooloptionargs *pooloptionargs = (struct dhcppooloptionargs *)data;
+	char *dec_value = NULL;
 
 	switch (action) {
 		case VALUECHECK:
-				return 0;
+			dec_value = base64_decode(value);
+			if(dec_value == NULL)
+				return FAULT_9007;
+			return 0;
 		case VALUESET:
+			dec_value = base64_decode(value);
+			if(dec_value == NULL){
+				return FAULT_9007;
+			}
+			value = dmstrdup(dec_value);
 			dmuci_get_value_by_section_string(pooloptionargs->dhcppooloptionsection, "dhcp_option", &tmp);
 			set_uci_dhcpserver_option(ctx, pooloptionargs->dhcppoolsection, tmp, value);
 			DMUCI_SET_VALUE_BY_SECTION(icwmpd, pooloptionargs->dhcppooloptionsection, "value", value);
@@ -4030,19 +4112,14 @@ int browseentry_landevice_dhcpconditionalservingpool_option_instance(struct dmct
 				tt = dmstrdup(tmp->name);
 				pch = strtok_r(tt, ",", &spch);
 				found = 0;
-				uci_path_foreach_option_eq(icwmpd, "dmmap", section_name((struct uci_section *)prev_data), "dhcp_option", pch, ss)
+				uci_path_foreach_option_eq(icwmpd, "dmmap", section_name((struct uci_section *)prev_data), "value", spch, ss)
 				{
-					dmuci_get_value_by_section_string(ss, "value", &value);
-					if (strcmp(spch, value) == 0) {
-						dmuci_get_value_by_section_string(ss, "optioninst", &idx);
-						found = 1;
-					}
-					else
-						continue;
+					dmuci_get_value_by_section_string(ss, "optioninst", &idx);
+					found = 1;
 					init_args_pool_option(&cur_dhcp_option, ss, (struct uci_section *)prev_data);
 					if (DM_LINK_INST_OBJ(dmctx, parent_node, (void *)&cur_dhcp_option, idx) == DM_STOP) {
 						dmfree(tt);
-						break;
+						return 0;
 					}
 				}
 				if (!found)
@@ -4060,4 +4137,5 @@ int browseentry_landevice_dhcpconditionalservingpool_option_instance(struct dmct
 				}
 			}
 		}
+	return 0;
 }

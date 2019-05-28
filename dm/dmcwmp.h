@@ -395,6 +395,7 @@ enum dmt_type_enum {
 	DMT_BOOL,
 	DMT_TIME,
 	DMT_HEXBIN,
+	DMT_BASE64,
 };
 
 enum amd_version_enum{
