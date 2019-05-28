@@ -1171,7 +1171,7 @@ int set_QoSClassification_SourceIPExclude(char *refparam, struct dmctx *ctx, voi
 int get_QoSClassification_Protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
-	dmuci_get_value_by_section_string(p->config_section, "protocol", value);
+	dmuci_get_value_by_section_string(p->config_section, "proto", value);
 	return 0;
 }
 
@@ -1182,7 +1182,7 @@ int set_QoSClassification_Protocol(char *refparam, struct dmctx *ctx, void *data
 		case VALUECHECK:
 			break;
 		case VALUESET:
-			dmuci_set_value_by_section(p->config_section, "protocol", value);
+			dmuci_set_value_by_section(p->config_section, "proto", value);
 			break;
 	}
 	return 0;
@@ -2184,7 +2184,7 @@ int set_QoSClassification_DSCPMark(char *refparam, struct dmctx *ctx, void *data
 		case VALUECHECK:
 			break;
 		case VALUESET:
-			dmuci_set_value_by_section(p->dmmap_section, "dscp", value);
+			dmuci_set_value_by_section(p->config_section, "dscp", value);
 			break;
 	}
 	return 0;
@@ -3494,6 +3494,8 @@ int get_QoSQueueStats_Interface(char *refparam, struct dmctx *ctx, void *data, c
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cPPP%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), qts->dev, value);
 	if (*value == NULL)
 		adm_entry_get_linker_param(ctx, dm_print_path("%s%cEthernet%cInterface%c", dmroot, dm_delim, dm_delim, dm_delim), qts->dev, value);
+	if (*value == NULL)
+		adm_entry_get_linker_param(ctx, dm_print_path("%s%cWiFi%cRadio%c", dmroot, dm_delim, dm_delim, dm_delim), qts->dev, value);
 	if (*value == NULL)
 		*value = "";
 	return 0;
