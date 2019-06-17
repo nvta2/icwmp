@@ -57,7 +57,6 @@ DMLEAF tWifiRadioParams[] = {
 {"MaxBitRate", &DMREAD, DMT_UNINT,get_radio_max_bit_rate, NULL, NULL, NULL},
 {"OperatingFrequencyBand", &DMREAD, DMT_STRING, get_radio_frequency, NULL, NULL, NULL},
 {"SupportedFrequencyBands", &DMREAD, DMT_STRING, get_radio_supported_frequency_bands, NULL, NULL, NULL},
-{"OperatingChannelBandwidth", &DMWRITE, DMT_STRING,  get_radio_operating_channel_bandwidth, set_radio_operating_channel_bandwidth, NULL, NULL},
 {CUSTOM_PREFIX"MaxAssociations", &DMWRITE, DMT_STRING, get_radio_maxassoc, set_radio_maxassoc, NULL, NULL},
 {CUSTOM_PREFIX"DFSEnable", &DMWRITE, DMT_BOOL, get_radio_dfsenable, set_radio_dfsenable, NULL, NULL},
 {"SupportedStandards", &DMREAD, DMT_STRING, get_radio_supported_standard, NULL, NULL, NULL},
@@ -75,6 +74,8 @@ DMLEAF tWifiRadioParams[] = {
 {"DTIMPeriod", &DMWRITE, DMT_UNINT, get_WiFiRadio_DTIMPeriod, set_WiFiRadio_DTIMPeriod, NULL, NULL},
 {"SupportedOperatingChannelBandwidths", &DMREAD, DMT_STRING, get_WiFiRadio_SupportedOperatingChannelBandwidths, NULL, NULL, NULL},
 {"OperatingChannelBandwidth", &DMWRITE, DMT_STRING, get_WiFiRadio_OperatingChannelBandwidth, set_WiFiRadio_OperatingChannelBandwidth, NULL, NULL},
+{"CurrentOperatingChannelBandwidth", &DMREAD, DMT_STRING, get_WiFiRadio_CurrentOperatingChannelBandwidth, NULL, NULL, NULL},
+{"PreambleType", &DMWRITE, DMT_STRING, get_WiFiRadio_PreambleType, set_WiFiRadio_PreambleType, NULL, NULL},
 {0}
 };
 
@@ -124,6 +125,10 @@ DMLEAF tWifiSsidStatsParams[] = {
 {"ErrorsReceived", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_ErrorsReceived, NULL, NULL, NULL},
 {"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_DiscardPacketsSent, NULL, NULL, NULL},
 {"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_DiscardPacketsReceived, NULL, NULL, NULL},
+{"MulticastPacketsSent", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_MulticastPacketsSent, NULL, NULL, NULL},
+{"MulticastPacketsReceived", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_MulticastPacketsReceived, NULL, NULL, NULL},
+{"BroadcastPacketsSent", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_BroadcastPacketsSent, NULL, NULL, NULL},
+{"BroadcastPacketsReceived", &DMREAD, DMT_UNINT, get_WiFiSSIDStats_BroadcastPacketsReceived, NULL, NULL, NULL},
 {0}
 };
 
@@ -830,17 +835,23 @@ int set_WiFiRadio_DTIMPeriod(char *refparam, struct dmctx *ctx, void *data, char
 
 int get_WiFiRadio_SupportedOperatingChannelBandwidths(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	json_object *res;
+	json_object *res, *jobj;
 
 	dmubus_call("router.wireless", "radios", UBUS_ARGS{{}}, 0, &res);
 	if(res)
-		*value = dmjson_get_value(res, 2, section_name(((struct wifi_radio_args *)data)->wifi_radio_sec), "bandwidth");
+		*value = dmjson_get_value_array_all(res, DELIMITOR, 2, section_name(((struct wifi_radio_args *)data)->wifi_radio_sec), "bwcaps");
+
 	return 0;
 }
 
 int get_WiFiRadio_OperatingChannelBandwidth(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct wifi_radio_args *)data)->wifi_radio_sec, "bandwidth", value);
+	if(*value[0] == '\0') {
+		*value= "";
+		return 0;
+	}
+	dmastrcat(value, *value, "MHz");
 	return 0;
 }
 
@@ -860,9 +871,28 @@ int get_WiFiRadio_CurrentOperatingChannelBandwidth(char *refparam, struct dmctx 
 {
 	json_object *res;
 
-	dmubus_call("router.wireless", "radios", UBUS_ARGS{{}}, 0, &res);
+	dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", section_name(((struct wifi_radio_args *)data)->wifi_radio_sec), String}}, 1, &res);
+	DM_ASSERT(res, *value = "");
 	if(res)
-		*value = dmjson_get_value_array_all(res, DELIMITOR, 2, section_name(((struct wifi_radio_args *)data)->wifi_radio_sec), "bandwidth");
+		*value = dmjson_get_value(res, 1, "bandwidth");
+	return 0;
+}
+
+int get_WiFiRadio_PreambleType(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	dmuci_get_value_by_section_string(((struct wifi_radio_args *)data)->wifi_radio_sec, "type", value);
+	return 0;
+}
+
+int set_WiFiRadio_PreambleType(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	switch (action)	{
+		case VALUECHECK:
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section(((struct wifi_radio_args *)data)->wifi_radio_sec, "type", value);
+			break;
+	}
 	return 0;
 }
 
@@ -1077,6 +1107,34 @@ int get_WiFiSSIDStats_DiscardPacketsReceived(char *refparam, struct dmctx *ctx, 
 	return 0;
 }
 
+int get_WiFiSSIDStats_MulticastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	if (((struct wifi_ssid_args *)data)->ifname && strlen(((struct wifi_ssid_args *)data)->ifname)>0)
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(((struct wifi_ssid_args *)data)->ifname, "TX", "multicast"));
+	return 0;
+}
+
+int get_WiFiSSIDStats_MulticastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	if (((struct wifi_ssid_args *)data)->ifname && strlen(((struct wifi_ssid_args *)data)->ifname)>0)
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(((struct wifi_ssid_args *)data)->ifname, "RX", "multicast"));
+	return 0;
+}
+
+int get_WiFiSSIDStats_BroadcastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	if (((struct wifi_ssid_args *)data)->ifname && strlen(((struct wifi_ssid_args *)data)->ifname)>0)
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(((struct wifi_ssid_args *)data)->ifname, "TX", "broadcast"));
+	return 0;
+}
+
+int get_WiFiSSIDStats_BroadcastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	if (((struct wifi_ssid_args *)data)->ifname && strlen(((struct wifi_ssid_args *)data)->ifname)>0)
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(((struct wifi_ssid_args *)data)->ifname, "RX", "broadcast"));
+	return 0;
+}
+
 static char *get_associative_device_statistics(struct wifi_associative_device_args *wifi_associative_device, char *key)
 {
 	json_object *res, *jobj;
@@ -1252,15 +1310,13 @@ int get_access_point_total_associations(char *refparam, struct dmctx *ctx, void 
 {
 	json_object *res, *jobj;
 	int entries = 0;
-	*value = "0";
-
 	dmubus_call("wifix", "stations", UBUS_ARGS{{"vif", ((struct wifi_ssid_args *)data)->ifname, String}}, 1, &res);
-	while (res) {
+
+	while (1) {
 		jobj = dmjson_select_obj_in_array_idx(res, entries, 1, "stations");
-		if(jobj)
-			entries++;
-		else
+		if (jobj == NULL)
 			break;
+		entries++;
 	}
 	dmasprintf(value, "%d", entries); // MEM WILL BE FREED IN DMMEMCLEAN
 	return 0;
@@ -1688,17 +1744,24 @@ int set_WiFiAccessPointSecurity_MFPConfig(char *refparam, struct dmctx *ctx, voi
 
 int get_WiFiAccessPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_option_value_string("wireless", "wifi-status", "wps", value);
+	dmuci_get_option_value_string("wireless", "status", "wps", value);
 	return 0;
 }
 
 int set_WiFiAccessPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	bool b;
+	char *boolS;
+
 	switch (action)	{
 		case VALUECHECK:
 			break;
 		case VALUESET:
-			dmuci_set_value("wireless", "wifi-status", "wps", value);
+			string_to_bool(value, &b);
+			if(b)
+				dmuci_set_value("wireless", "status", "wps", "1");
+			else
+				dmuci_set_value("wireless", "status", "wps", "0");
 			break;
 	}
 	return 0;
@@ -1956,7 +2019,7 @@ int get_access_point_associative_device_mac(char *refparam, struct dmctx *ctx, v
 int get_access_point_associative_device_active(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct wifi_associative_device_args *cur_wifi_associative_device_args_ptr=(struct wifi_associative_device_args*)data;
-	dmasprintf(value, "%d", cur_wifi_associative_device_args_ptr->active);
+	dmasprintf(value, "%s", cur_wifi_associative_device_args_ptr->active?"true":"false");
 	return 0;
 }
 

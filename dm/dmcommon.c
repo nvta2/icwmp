@@ -1564,6 +1564,8 @@ int is_array_elt_exist(char **str_array, char *str, int length){
 	return 0;
 }
 
+/**********************************************/
+
 int get_shift_time_time(int shift_time, char *local_time, int size)
 {
 	time_t t_time;
