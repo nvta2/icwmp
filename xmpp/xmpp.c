@@ -320,8 +320,10 @@ void xmpp_connecting(void)
 	log_cwmp_xmpp.userdata = &(xmpp_mesode_log_level);
 	ctx = xmpp_ctx_new(NULL, &log_cwmp_xmpp);
 	conn = xmpp_conn_new(ctx);
-	flags |= XMPP_CONN_FLAG_TRUST_TLS;
-	xmpp_conn_set_flags(conn, flags);
+	/* Set flag XMPP_CONN_FLAG_TRUST_TLS to
+	ignore result of the verification */
+	/*flags |= XMPP_CONN_FLAG_TRUST_TLS;*/
+	/*xmpp_conn_set_flags(conn, flags);*/
 	asprintf(&jid, "%s@%s/%s", cur_xmpp_con.username, cur_xmpp_con.domain, cur_xmpp_con.resource);
 	xmpp_conn_set_jid(conn, jid);
 	xmpp_conn_set_pass(conn, cur_xmpp_con.password);
