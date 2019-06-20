@@ -320,10 +320,13 @@ void xmpp_connecting(void)
 	log_cwmp_xmpp.userdata = &(xmpp_mesode_log_level);
 	ctx = xmpp_ctx_new(NULL, &log_cwmp_xmpp);
 	conn = xmpp_conn_new(ctx);
-	/* Set flag XMPP_CONN_FLAG_TRUST_TLS to
-	ignore result of the verification */
-	/*flags |= XMPP_CONN_FLAG_TRUST_TLS;*/
-	/*xmpp_conn_set_flags(conn, flags);*/
+
+	if(cur_xmpp_con.usetls)
+		flags |= XMPP_CONN_FLAG_MANDATORY_TLS; /* Set flag XMPP_CONN_FLAG_MANDATORY_TLS to oblige the verification of tls */
+	else
+		flags |= XMPP_CONN_FLAG_TRUST_TLS; /* Set flag XMPP_CONN_FLAG_TRUST_TLS to ignore result of the verification */
+	xmpp_conn_set_flags(conn, flags);
+
 	asprintf(&jid, "%s@%s/%s", cur_xmpp_con.username, cur_xmpp_con.domain, cur_xmpp_con.resource);
 	xmpp_conn_set_jid(conn, jid);
 	xmpp_conn_set_pass(conn, cur_xmpp_con.password);
@@ -453,6 +456,7 @@ int xmpp_con_init(void)
 	cur_xmpp_con.password = strdup((const char *)get_xmpp_password(instance));
 	cur_xmpp_con.domain = strdup((const char *)get_xmpp_domain(instance));
 	cur_xmpp_con.resource = strdup((const char *)get_xmpp_resource(instance));
+	cur_xmpp_con.usetls = atoi((const char *)get_xmpp_usetls(instance));
 	cur_xmpp_con.serveralgorithm = strdup((const char *)get_xmpp_serveralgorithm(instance));
 	cur_xmpp_con.serveraddress = strdup((const char *)get_xmpp_server_address(instance));
 	cur_xmpp_con.port = atoi((const char *)get_xmpp_port(instance));
@@ -472,6 +476,7 @@ int xmpp_con_init(void)
 	cwmp_xmpp_log(SDEBUG,"XMPP password: %s", cur_xmpp_con.password);
 	cwmp_xmpp_log(SDEBUG,"XMPP domain: %s", cur_xmpp_con.domain);
 	cwmp_xmpp_log(SDEBUG,"XMPP resource: %s", cur_xmpp_con.resource);
+	cwmp_xmpp_log(SDEBUG,"XMPP use_tls: %d", cur_xmpp_con.usetls);
 	cwmp_xmpp_log(SDEBUG,"XMPP serveralgorithm: %s", cur_xmpp_con.serveralgorithm);
 	cwmp_xmpp_log(SDEBUG,"XMPP server_address: %s", cur_xmpp_con.serveraddress);
 	cwmp_xmpp_log(SDEBUG,"XMPP port: %d", cur_xmpp_con.port);

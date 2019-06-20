@@ -121,6 +121,22 @@ char *get_xmpp_resource(char *instance)
 	return v;
 }
 
+char *get_xmpp_usetls(char *instance)
+{
+	struct uci_section *s;
+	char *v, *conn_inst;
+	dmuci_foreach_section("cwmp_xmpp", "xmpp_connection", s) {
+		conn_inst = dmuci_get_value_bysection(s, "connection_instance");
+		if(strcmp(conn_inst, instance) == 0)
+		{
+			v = dmuci_get_value_bysection(s, "usetls");
+			return v;
+		}
+	}
+	v = "";
+	return v;
+}
+
 char *get_xmpp_keepalive_interval(char *instance)
 {
 	struct uci_section *s;

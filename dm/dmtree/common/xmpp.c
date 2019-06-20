@@ -170,7 +170,8 @@ int set_connection_enable(char *refparam, struct dmctx *ctx, void *data, char *i
 				return FAULT_9007;
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(connsection, "enable", value);
+			string_to_bool(value, &b);
+			dmuci_set_value_by_section(connsection, "enable", b ? "1" : "0");
 			return 0;
 	}
 	return 0;
@@ -447,7 +448,8 @@ int set_xmpp_connection_server_usetls(char *refparam, struct dmctx *ctx, void *d
 				return FAULT_9007;
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(connsection, "usetls", value);
+			string_to_bool(value, &b);
+			dmuci_set_value_by_section(connsection, "usetls", b ? "1" : "0");
 			return 0;
 	}
 	return 0;
@@ -506,7 +508,8 @@ int set_xmpp_connection_server_enable(char *refparam, struct dmctx *ctx, void *d
 				return FAULT_9007;
 			return 0;
 		case VALUESET:
-			dmuci_set_value_by_section(connsection, "enable", value);
+			string_to_bool(value, &b);
+			dmuci_set_value_by_section(connsection, "enable", b ? "1" : "0");
 			return 0;
 	}
 	return 0;

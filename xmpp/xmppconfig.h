@@ -32,6 +32,7 @@ char *get_xmpp_username(char *instance);
 char *get_xmpp_password(char *instance);
 char *get_xmpp_domain(char *instance);
 char *get_xmpp_resource(char *instance);
+char *get_xmpp_usetls(char *instance);
 char *get_xmpp_keepalive_interval(char *instance);
 char *get_xmpp_connect_attempts(char *instance);
 char *get_xmpp_connect_initial_retry_interval(char *instance);

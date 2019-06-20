@@ -31,7 +31,6 @@
 #define DEFAULT_RETRY_INTERVAL_MULTIPLIER	2000
 #define DEFAULT_RETRY_MAX_INTERVAL			60
 #define DEFAULT_XMPP_RECONNECTION_RETRY		5
-#define XMPP_CONN_FLAG_TRUST_TLS     (1UL << 3)
 
 enum xmpp_cr_error {
 	XMPP_CR_NO_ERROR = 0,
@@ -61,6 +60,7 @@ struct xmpp_connection
 	int retry_interval_multiplier;
 	int retry_max_interval;
 	int port;
+	bool usetls;
 };
 
 extern struct xmpp_config cur_xmpp_conf;

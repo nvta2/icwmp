@@ -13,6 +13,7 @@ config xmpp_connection
 	option password ''
 	option domain 	''
 	option resource ''
+	option usetls '0'
 	option interval '30'
 	option attempt '16'
 	option initial_retry_interval ''
