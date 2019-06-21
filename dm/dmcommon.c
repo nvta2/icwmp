@@ -1642,3 +1642,15 @@ int command_exec_output_to_array(char *cmd, char **output, int *length) {
         return 0;
 }
 
+char* int_period_to_date_time_format(int time){
+	char *datetime;
+	int seconds, minutes, hours, days;
+	minutes= time/60;
+	seconds= time%60;
+	hours= minutes/60;
+	minutes= minutes%60;
+    days= hours/24;
+    hours= hours%24;
+    dmasprintf(&datetime, "%dT%d:%d:%d", days, hours, minutes, seconds);
+	return datetime;
+}

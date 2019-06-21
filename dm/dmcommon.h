@@ -202,5 +202,6 @@ int get_shift_time_time(int shift_time, char *local_time, int size);
 int get_shift_time_shift(char *local_time, char *shift);
 int get_stats_from_ifconfig_command(char *device, char *direction, char *option);
 int command_exec_output_to_array(char *cmd, char **output, int *length);
+char* int_period_to_date_time_format(int time);
 
 #endif
