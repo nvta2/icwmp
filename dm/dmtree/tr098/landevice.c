@@ -888,25 +888,59 @@ int delete_landevice_wlanconfiguration(char *refparam, struct dmctx *ctx, void *
 **** ****  function related to landevice_lanhostconfigmanagement  **** ****
 ***************************************************************************/
 
+int get_uci_dhcpserver_option(struct uci_section *s, char *option, char *value)
+{
+	struct uci_list *v;
+	struct uci_element *e;
+	char *pch, *str;
+	char bufopt[8];
+	int len = 0;
+	int i = 41;
+	dmuci_get_value_by_section_list(s, "dhcp_option", &v);
+	if (v == NULL)
+		return -1;
+	str=value;
+	uci_foreach_element(v, e) {
+		pch = strchr(e->name, ',');
+		if (pch) {
+			len = pch - e->name;
+			strncpy(bufopt, e->name, len);
+			bufopt[len] = '\0';
+			if (strcmp(bufopt, option) == 0) {
+				if (value[0] != '\0')
+					dmstrappendchr(str, ',');
+				dmstrappendstr(str, pch+1);
+			}
+		}
+	}
+	dmstrappendend(str);
+	if (value[0] != '\0')
+		return 0;
+	return -1;
+}
+
 int get_lan_dns(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
 	int len;
 	struct ldlanargs *lanargs = (struct ldlanargs *)data;
 	char *lan_name = section_name(lanargs->ldlansection);
-	
+	struct uci_section *s = NULL;
+	char buf[1024];
+	int i = 1;
 	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", lan_name, String}}, 1, &res);
 	DM_ASSERT(res, *value = "");
-	*value = dmjson_get_value_array_all(res, DELIMITOR, 1, "dns-server");
+	if(res){
+		*value = dmjson_get_value_array_all(res, DELIMITOR, 1, "dns-server");
+	} else {
+		*value = "";
+	}
 	if ((*value)[0] == '\0') {
-		dmuci_get_value_by_section_string(lanargs->ldlansection, "dns", value);
-		*value = dmstrdup(*value); // MEM WILL BE FREED IN DMMEMCLEAN
-		char *p = *value;
-		while (*p) {
-			if (*p == ' ' && p != *value && *(p-1) != ',')
-				*p++ = ',';
-			else
-				p++;
+		uci_foreach_option_eq("dhcp", "dhcp", "interface", lan_name, s) {
+			if (get_uci_dhcpserver_option(s, "6", buf) == 0) {
+				*value = dmstrdup(buf);
+				break;
+			}
 		}
 	}
 	if ((*value)[0] == '\0') {
@@ -918,22 +952,17 @@ int get_lan_dns(char *refparam, struct dmctx *ctx, void *data, char *instance, c
 int set_lan_dns(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {	
 	struct ldlanargs *lanargs = (struct ldlanargs *)data;
+	struct uci_section *s = NULL;
+	char *lan_name = section_name(lanargs->ldlansection);
 	char *dup, *p;
 	
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dup = dmstrdup(value);
-			p = dup;
-			while (*p) {
-				if (*p == ',')
-					*p++ = ' ';
-				else
-					p++;
+			uci_foreach_option_eq("dhcp", "dhcp", "interface", section_name(lanargs->ldlansection), s) {
+				set_uci_dhcpserver_option(ctx, s, "6", value);
 			}
-			dmuci_set_value_by_section(lanargs->ldlansection, "dns", dup);
-			dmfree(dup);
 			return 0;
 	}
 	return 0;
@@ -3854,7 +3883,6 @@ int get_linker_lanhost_interface(char *refparam, struct dmctx *dmctx, void *data
 	*linker = "";
 	return 0;
 }
-
 
 
 int browselandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
