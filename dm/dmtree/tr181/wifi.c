@@ -1533,10 +1533,10 @@ int get_access_point_control_enable(char *refparam, struct dmctx *ctx, void *dat
 {
 	char *macfilter;
 	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "macfilter", &macfilter);
-	if (macfilter[0] != '0')
-		*value = "1";
+	if (strcmp(macfilter, "deny") == 0 || strcmp(macfilter, "disable") == 0)
+		*value = "false";
 	else
-		*value = "0";
+		*value = "true";
 	return 0;
 }
 
@@ -1608,10 +1608,10 @@ int set_access_point_control_enable(char *refparam, struct dmctx *ctx, void *dat
 		case VALUESET:
 			string_to_bool(value, &b);
 			if (b)
-				value = "2";
+				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "macfilter", "allow");
 			else
-				value = "0";
-			dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "macfilter", value);
+				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "macfilter", "disable");
+
 			return 0;
 	}
 	return 0;

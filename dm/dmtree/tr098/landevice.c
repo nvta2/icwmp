@@ -2322,10 +2322,10 @@ int get_wlan_mac_control_enable(char *refparam, struct dmctx *ctx, void *data, c
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
 	char *macfilter;
 	dmuci_get_value_by_section_string(wlanargs->lwlansection, "macfilter", &macfilter);
-	if (macfilter[0] != '0')
-		*value = "1";
+	if (strcmp(macfilter, "deny") == 0 || strcmp(macfilter, "disable") == 0)
+		*value = "false";
 	else
-		*value = "0";
+		*value = "true";
 	return 0;
 }
 
@@ -2341,10 +2341,10 @@ int set_wlan_mac_control_enable(char *refparam, struct dmctx *ctx, void *data, c
 		case VALUESET:
 			string_to_bool(value, &b);
 			if (b)
-				value = "2";
+				dmuci_set_value_by_section(wlanargs->lwlansection, "macfilter", "allow");
 			else
-				value = "0";
-			dmuci_set_value_by_section(wlanargs->lwlansection, "macfilter", value);
+				dmuci_set_value_by_section(wlanargs->lwlansection, "macfilter", "disable");
+
 			return 0;
 	}
 	return 0;
