@@ -739,7 +739,7 @@ int reset_wlan(struct uci_section *s)
 {
 	dmuci_delete_by_section(s, "gtk_rekey", NULL);
 	dmuci_delete_by_section(s, "cipher", NULL);
-	dmuci_delete_by_section(s, "wps_pbc", NULL);
+	dmuci_delete_by_section(s, "wps", NULL);
 	dmuci_delete_by_section(s, "key", NULL);
 	dmuci_delete_by_section(s, "key1", NULL);
 	dmuci_delete_by_section(s, "key2", NULL);

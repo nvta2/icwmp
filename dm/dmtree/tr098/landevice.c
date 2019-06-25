@@ -2294,7 +2294,7 @@ int set_wlan_beacon_type(char *refparam, struct dmctx *ctx, void *data, char *in
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", gnw);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "cipher", "ccmp");
 					dmuci_set_value_by_section(wlanargs->lwlansection, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+					dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 					dmfree(gnw);
 				}
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", value);
@@ -2307,7 +2307,7 @@ int set_wlan_beacon_type(char *refparam, struct dmctx *ctx, void *data, char *in
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", gnw);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "cipher", "tkip+ccmp");
 					dmuci_set_value_by_section(wlanargs->lwlansection, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+					dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 					dmfree(gnw);
 				}
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", value);
@@ -2708,7 +2708,7 @@ int set_wlan_ieee_11i_encryption_modes(char *refparam, struct dmctx *ctx, void *
 					char *gnw = get_nvram_wpakey();
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", gnw);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+					dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 					dmfree(gnw);
 				}
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", "psk2+tkip");
@@ -2719,7 +2719,7 @@ int set_wlan_ieee_11i_encryption_modes(char *refparam, struct dmctx *ctx, void *
 					char *gnw = get_nvram_wpakey();
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", gnw);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+					dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 					dmfree(gnw);
 				}
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", "psk2+ccmp");
@@ -2730,7 +2730,7 @@ int set_wlan_ieee_11i_encryption_modes(char *refparam, struct dmctx *ctx, void *
 					char *gnw = get_nvram_wpakey();
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", gnw);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+					dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 					dmfree(gnw);
 				}
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", "psk2+tkip+ccmp");
@@ -2769,7 +2769,7 @@ int set_wlan_ieee_11i_authentication_mode(char *refparam, struct dmctx *ctx, voi
 					char *gnw = get_nvram_wpakey();
 					dmuci_set_value_by_section(wlanargs->lwlansection, "key", gnw);
 					dmuci_set_value_by_section(wlanargs->lwlansection, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+					dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 					dmfree(gnw);
 				}
 				dmuci_set_value_by_section(wlanargs->lwlansection, "encryption", "psk2");
@@ -2987,10 +2987,10 @@ static int set_wlan_ssid_advertisement_enable(char *refparam, struct dmctx *ctx,
 
 int get_wlan_wps_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *wps_pbc;
+	char *wps;
 	struct ldwlanargs *wlanargs = (struct ldwlanargs *)data;
-	dmuci_get_value_by_section_string(wlanargs->lwlansection, "wps_pbc", &wps_pbc);
-	if (wps_pbc[0] == '1' && wps_pbc[1] == '\0')
+	dmuci_get_value_by_section_string(wlanargs->lwlansection, "wps", &wps);
+	if (wps[0] == '1' && wps[1] == '\0')
 		*value = "1";
 	else
 		*value = "0";
@@ -3010,9 +3010,9 @@ int set_wlan_wps_enable(char *refparam, struct dmctx *ctx, void *data, char *ins
 		case VALUESET:
 			string_to_bool(value, &b);
 			if (b)
-				dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "1");
+				dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "1");
 			else
-				dmuci_set_value_by_section(wlanargs->lwlansection, "wps_pbc", "");
+				dmuci_set_value_by_section(wlanargs->lwlansection, "wps", "");
 			return 0;
 	}
 	return 0;
