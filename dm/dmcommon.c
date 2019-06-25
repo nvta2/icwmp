@@ -1303,6 +1303,16 @@ void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type
 	*dmmap_section= NULL;
 }
 
+void get_dmmap_section_of_config_section_eq(char* dmmap_package, char* section_type, char *opt, char* value, struct uci_section **dmmap_section){
+	struct uci_section* s;
+
+	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, opt, value, s){
+		*dmmap_section= s;
+		return;
+	}
+	*dmmap_section= NULL;
+}
+
 void get_config_section_of_dmmap_section(char* package, char* section_type, char *section_name, struct uci_section **config_section){
 	struct uci_section* s;
 
@@ -1403,6 +1413,15 @@ struct uci_section *is_dmmap_section_exist(char* package, char* section){
 	struct uci_section *s;
 
 	uci_path_foreach_sections(icwmpd, package, section, s) {
+		return s;
+	}
+	return NULL;
+}
+
+struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char* opt, char* value){
+	struct uci_section *s;
+
+	uci_path_foreach_option_eq(icwmpd, package, section, opt, value, s) {
 		return s;
 	}
 	return NULL;

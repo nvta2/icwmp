@@ -183,6 +183,7 @@ void synchronize_specific_config_sections_with_dmmap_cont(char *package, char *s
 bool synchronize_multi_config_sections_with_dmmap_eq(char *package, char *section_type, char *dmmap_package, char* dmmap_section, char* option_name, char* option_value, void* additional_attribute, struct list_head *dup_list);
 bool synchronize_multi_config_sections_with_dmmap_eq_diff(char *package, char *section_type, char *dmmap_package, char* dmmap_section, char* option_name, char* option_value, char* opt_diff_name, char* opt_diff_value, void* additional_attribute, struct list_head *dup_list);
 void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section);
+void get_dmmap_section_of_config_section_eq(char* dmmap_package, char* section_type, char *opt, char* value, struct uci_section **dmmap_section);
 void get_config_section_of_dmmap_section(char* package, char* section_type, char *section_name, struct uci_section **config_section);
 void check_create_dmmap_package(char *dmmap_package);
 int is_section_unnamed(char *section_name);
@@ -203,5 +204,6 @@ int get_shift_time_shift(char *local_time, char *shift);
 int get_stats_from_ifconfig_command(char *device, char *direction, char *option);
 int command_exec_output_to_array(char *cmd, char **output, int *length);
 char* int_period_to_date_time_format(int time);
+struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char* opt, char* value);
 
 #endif
