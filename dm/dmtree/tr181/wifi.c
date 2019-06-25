@@ -1737,7 +1737,7 @@ int set_access_point_security_modes(char *refparam, struct dmctx *ctx, void *dat
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "ccmp");
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pbc", "1");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps", "1");
 					dmfree(gnw);
 				}
 				else if (strcmp(value, "WPA2-Enterprise") == 0) {
@@ -1754,7 +1754,7 @@ int set_access_point_security_modes(char *refparam, struct dmctx *ctx, void *dat
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "key", gnw);
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "cipher", "tkip+ccmp");
 					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "gtk_rekey", "3600");
-					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pbc", "1");
+					dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps", "1");
 					dmfree(gnw);
 				}
 				else if (strcmp(value, "WPA-WPA2-Enterprise") == 0) {
@@ -1952,7 +1952,9 @@ int set_WiFiAccessPointSecurity_MFPConfig(char *refparam, struct dmctx *ctx, voi
 
 int get_WiFiAccessPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_option_value_string("wireless", "status", "wps", value);
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps", value);
+	if(*value[0] == '\0')
+		*value= "0";
 	return 0;
 }
 
@@ -1967,9 +1969,9 @@ int set_WiFiAccessPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data,
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value("wireless", "status", "wps", "1");
+				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps", "1");
 			else
-				dmuci_set_value("wireless", "status", "wps", "0");
+				dmuci_set_value_by_section(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps", "0");
 			break;
 	}
 	return 0;
@@ -1977,18 +1979,42 @@ int set_WiFiAccessPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data,
 
 int get_WiFiAccessPointWPS_ConfigMethodsSupported(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value= "PushButton";
+	*value= "PushButton,Label,PIN";
 	return 0;
 }
 
 int get_WiFiAccessPointWPS_ConfigMethodsEnabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *pushbut;
-	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pushbutton", &pushbut);
-	if(strcmp(pushbut, "1") == 0)
-		*value= "PushButton";
+	char *pushbut= NULL, *label= NULL, *pin= NULL, *methodenabled= NULL, *tmp, *str1, *str2, *str3;
+	bool a, b, c;
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps_pushbutton", &pushbut);
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps_label", &label);
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps_pin", &pin);
+
+	if(pushbut == NULL || pushbut[0]=='\0' || strcmp(pushbut, "1")!=0)
+		str1= dmstrdup("");
 	else
-		*value= "";
+		str1= dmstrdup("PushButton");
+
+	if(label == NULL || label[0]=='\0' || strcmp(label, "1")!=0)
+		str2= dmstrdup("");
+	else {
+		if(pushbut == NULL || pushbut[0]=='\0' || strcmp(pushbut, "1")!=0)
+			str2= dmstrdup("Label");
+		else
+			str2= dmstrdup(",Label");
+	}
+
+	if(pin == NULL || pin[0]=='\0')
+		str3= dmstrdup("");
+	else {
+		if((pushbut != NULL && pushbut[0]!='\0' && strcmp(pushbut, "1")==0) || (label != NULL && label[0]!='\0' && strcmp(label, "1")==0))
+			str3= dmstrdup(",PIN");
+		else
+			str3= dmstrdup("PIN");
+	}
+
+	dmasprintf(value,"%s%s%s", str1, str2, str3);
 	return 0;
 }
 
@@ -2006,7 +2032,7 @@ int set_WiFiAccessPointWPS_ConfigMethodsEnabled(char *refparam, struct dmctx *ct
 int get_WiFiAccessPointWPS_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *wps_status;
-	dmuci_get_option_value_string("wireless", "wifi-status", "wps", &wps_status);
+	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps", &wps_status);
 	if(strcmp(wps_status, "0") == 0)
 		*value= "Disabled";
 	else
@@ -2393,7 +2419,9 @@ int get_WiFiEndPointSecurity_ModesSupported(char *refparam, struct dmctx *ctx, v
 
 int get_WiFiEndPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_option_value_string("wireless", "status", "wps", value);
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps", value);
+	if(*value[0] == '\0')
+		*value= "0";
 	return 0;
 }
 
@@ -2408,9 +2436,9 @@ int set_WiFiEndPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data, ch
 		case VALUESET:
 			string_to_bool(value, &b);
 			if(b)
-				dmuci_set_value("wireless", "status", "wps", "1");
+				dmuci_set_value_by_section(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps", "1");
 			else
-				dmuci_set_value("wireless", "status", "wps", "0");
+				dmuci_set_value_by_section(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps", "0");
 			break;
 	}
 	return 0;
@@ -2418,18 +2446,42 @@ int set_WiFiEndPointWPS_Enable(char *refparam, struct dmctx *ctx, void *data, ch
 
 int get_WiFiEndPointWPS_ConfigMethodsSupported(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value= "PushButton";
+	*value= "PushButton,Label,PIN";
 	return 0;
 }
 
 int get_WiFiEndPointWPS_ConfigMethodsEnabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	char *pushbut;
-	dmuci_get_value_by_section_string(((struct wifi_acp_args *)data)->wifi_acp_sec, "wps_pushbutton", &pushbut);
-	if(strcmp(pushbut, "1") == 0)
-		*value= "PushButton";
+	char *pushbut= NULL, *label= NULL, *pin= NULL, *methodenabled= NULL, *tmp, *str1, *str2, *str3;
+	bool a, b, c;
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps_pushbutton", &pushbut);
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps_label", &label);
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps_pin", &pin);
+
+	if(pushbut == NULL || pushbut[0]=='\0' || strcmp(pushbut, "1")!=0)
+		str1= dmstrdup("");
 	else
-		*value= "";
+		str1= dmstrdup("PushButton");
+
+	if(label == NULL || label[0]=='\0' || strcmp(label, "1")!=0)
+		str2= dmstrdup("");
+	else {
+		if(pushbut == NULL || pushbut[0]=='\0' || strcmp(pushbut, "1")!=0)
+			str2= dmstrdup("Label");
+		else
+			str2= dmstrdup(",Label");
+	}
+
+	if(pin == NULL || pin[0]=='\0')
+		str3= dmstrdup("");
+	else {
+		if((pushbut != NULL && pushbut[0]!='\0' && strcmp(pushbut, "1")==0) || (label != NULL && label[0]!='\0' && strcmp(label, "1")==0))
+			str3= dmstrdup(",PIN");
+		else
+			str3= dmstrdup("PIN");
+	}
+
+	dmasprintf(value,"%s%s%s", str1, str2, str3);
 	return 0;
 }
 
@@ -2448,7 +2500,7 @@ int set_WiFiEndPointWPS_ConfigMethodsEnabled(char *refparam, struct dmctx *ctx, 
 int get_WiFiEndPointWPS_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *wps_status;
-	dmuci_get_option_value_string("wireless", "wifi-status", "wps", &wps_status);
+	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps", &wps_status);
 	if(strcmp(wps_status, "0") == 0)
 		*value= "Disabled";
 	else
