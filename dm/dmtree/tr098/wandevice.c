@@ -69,15 +69,15 @@ DMLEAF tWANIPConnectionParam[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_wan_ip_con_alias, set_wan_ip_con_alias, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL, get_interface_enable_wanproto, set_interface_enable_wanproto, NULL, NULL},
 {"ConnectionStatus", &DMREAD, DMT_STRING, get_wan_device_mng_status, NULL, NULL, NULL},
-{"ExternalIPAddress", &DMREAD, DMT_STRING, get_wan_device_mng_interface_ip, NULL, &DMWANConnectionProtocolinform, &DMWANConnectionDevicenotif}, //TO CHECK
-{"MACAddress", &DMREAD, DMT_STRING, get_wan_device_mng_interface_mac, NULL, NULL, NULL},
+{"ExternalIPAddress", &DMWANExternalIPPerm, DMT_STRING, get_wan_device_mng_interface_ip, NULL, &DMWANConnectionProtocolinform, &DMWANConnectionDevicenotif}, //TO CHECK
+{"MACAddress", &DMWRITE, DMT_STRING, get_wan_device_mng_interface_mac, set_wan_device_mng_interface_mac, NULL, NULL},
 {"ConnectionType", &DMWRITE, DMT_STRING, get_wan_ip_link_connection_connection_type, set_wan_ip_link_connection_connection_type, NULL, NULL},
 {"AddressingType", &DMWRITE, DMT_STRING, get_wan_ip_link_connection_addressing_type, set_wan_ip_link_connection_addressing_type, NULL, NULL},
 {"NATEnabled", &DMWRITE, DMT_BOOL, get_wan_ip_link_connection_nat_enabled, set_wan_ip_link_connection_nat_enabled, NULL, NULL},
 {CUSTOM_PREFIX"FirewallEnabled", &DMWRITE, DMT_BOOL, get_interface_firewall_enabled_wanproto, set_interface_firewall_enabled_wanproto, NULL, NULL},
 {CUSTOM_PREFIX"IGMPEnabled", &DMWRITE, DMT_BOOL, get_wan_ip_link_connection_igmp_enabled, set_wan_ip_link_connection_igmp_enabled, NULL, NULL},
 {"DNSEnabled", &DMWRITE, DMT_BOOL, get_wan_ip_link_connection_dns_enabled, set_wan_ip_link_connection_dns_enabled, NULL, NULL},
-{"DNSOverrideAllowed", &DMREAD, DMT_STRING, get_empty, NULL, NULL, NULL},
+{"DNSOverrideAllowed", &DMWRITE, DMT_STRING, get_empty, set_wan_ip_link_connection_dns_override, NULL, NULL},
 {"Name", &DMWRITE, DMT_STRING, get_wan_ip_link_connection_name, set_wan_ip_link_connection_connection_name, NULL, NULL},
 {0}
 };
@@ -87,7 +87,7 @@ DMLEAF tWANPPPConnectionParam[] = {
 {"Enable", &DMWRITE, DMT_BOOL, get_interface_enable_wanproto, set_interface_enable_wanproto, NULL, NULL},
 {"ConnectionStatus", &DMREAD, DMT_STRING, get_wan_device_ppp_status, NULL, NULL, NULL},
 //{"ExternalIPAddress", &DMREAD, DMT_STRING, get_wan_device_ppp_interface_ip, NULL, &DMWANConnectionProtocolinform, NULL}, //TO CHECK
-{"MACAddress", &DMREAD, DMT_STRING, get_wan_device_mng_interface_mac, NULL, NULL, NULL},
+{"MACAddress", &DMWRITE, DMT_STRING, get_wan_device_mng_interface_mac, set_wan_device_mng_interface_mac, NULL, NULL},
 {"Username", &DMWRITE, DMT_STRING, get_wan_device_ppp_username, set_wan_device_username, NULL, NULL},
 {"Password", &DMWRITE, DMT_STRING, get_empty, set_wan_device_password, NULL, NULL},
 {"Name", &DMWRITE, DMT_STRING, get_wan_ip_link_connection_name, set_wan_ip_link_connection_connection_name, NULL, NULL},
@@ -1712,6 +1712,10 @@ int set_wan_ip_link_connection_dns_enabled(char *refparam, struct dmctx *ctx, vo
 	}
 }
 
+int set_wan_ip_link_connection_dns_override(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	return 0;
+}
 int get_wan_device_ppp_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *intf; 
@@ -1777,6 +1781,10 @@ int get_wan_device_mng_interface_mac(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+int set_wan_device_mng_interface_mac (char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	return 0;
+}
 int get_wan_device_ppp_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *intf;
@@ -2305,6 +2313,17 @@ char *get_wan_connection_device_perm(char *refparam, struct dmctx *dmctx, void *
 		return "1";
 }
 
+char *get_external_ip_perm(char *refparam, struct dmctx *dmctx, void *data, char *instance)
+{
+	struct wanargs *wancprotoarg = (struct wanargs *)data;
+	char *proto;
+	dmuci_get_value_by_section_string(wancprotoarg->wancprotosection, "proto", &proto);
+	if (strcmp(proto, "static") == 0)
+		return "1";
+	else
+		return "0";
+}
+
 unsigned char get_wan_protocol_connection_forced_inform(char *refparam, struct dmctx *dmctx, void *data, char *instance)
 {
 	struct wanargs *wancprotoarg = (struct wanargs *)data;
@@ -2580,5 +2599,6 @@ int browsewanprotocolconnectionpppInst(struct dmctx *dmctx, DMNODE *parent_node,
 }
 
 struct dm_permession_s DMWANConnectionDevice = {"0", &get_wan_connection_device_perm};
+struct dm_permession_s DMWANExternalIPPerm = {"0", &get_external_ip_perm};
 struct dm_notif_s DMWANConnectionDevicenotif = {NULL, &get_wan_connection_device_notif};
 struct dm_forced_inform_s DMWANConnectionProtocolinform = {1, get_wan_protocol_connection_forced_inform};

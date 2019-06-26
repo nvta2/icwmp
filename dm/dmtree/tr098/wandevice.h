@@ -30,6 +30,7 @@ struct wanargs
 };
 
 extern struct dm_permession_s DMWANConnectionDevice;
+extern struct dm_permession_s DMWANExternalIPPerm;
 extern struct dm_notif_s DMWANConnectionDevicenotif;
 extern struct dm_forced_inform_s DMWANConnectionProtocolinform;
 
@@ -81,9 +82,7 @@ int get_wan_ip_link_connection_igmp_enabled(char *refparam, struct dmctx *ctx, v
 int get_wan_ip_link_connection_dns_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wan_ip_link_connection_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wan_ppp_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_interface_enable_wanproto(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wan_device_ppp_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
-int get_wan_device_mng_interface_mac(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wan_device_ppp_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wan_link_connection_eth_bytes_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_wan_link_connection_eth_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
@@ -121,12 +120,14 @@ int set_wan_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *insta
 int set_wan_con_dev_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_interface_enable_wanproto(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_wan_device_mng_interface_mac (char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_link_connection_connection_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_link_connection_addressing_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_link_connection_nat_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_interface_firewall_enabled_wanproto(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_link_connection_igmp_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_link_connection_dns_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int set_wan_ip_link_connection_dns_override(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ip_link_connection_connection_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_wan_ppp_con_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int set_interface_enable_wanproto(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
