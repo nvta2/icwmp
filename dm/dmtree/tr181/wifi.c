@@ -37,6 +37,7 @@ DMLEAF tWifiParams[] = {
 {"RadioNumberOfEntries", &DMREAD, DMT_UNINT, get_WiFi_RadioNumberOfEntries, NULL, NULL, NULL},
 {"SSIDNumberOfEntries", &DMREAD, DMT_UNINT, get_WiFi_SSIDNumberOfEntries, NULL, NULL, NULL},
 {"AccessPointNumberOfEntries", &DMREAD, DMT_UNINT, get_WiFi_AccessPointNumberOfEntries, NULL, NULL, NULL},
+{"EndPointNumberOfEntries", &DMREAD, DMT_UNINT, get_WiFi_EndPointNumberOfEntries, NULL, NULL, NULL},
 {CUSTOM_PREFIX"Bandsteering_Enable", &DMWRITE, DMT_BOOL, get_wifi_bandsteering_enable, set_wifi_bandsteering_enable, NULL, NULL},
 {0}
 };
@@ -453,9 +454,28 @@ int get_WiFi_AccessPointNumberOfEntries(char *refparam, struct dmctx *ctx, void 
 {
 	struct uci_section *s;
 	int nbre= 0;
+	char *mode= NULL;
 
 	uci_foreach_sections("wireless", "wifi-iface", s) {
+		dmuci_get_value_by_section_string(s, "mode", &mode);
+		if((strlen(mode)>0 || mode[0] != '\0') && strcmp(mode, "ap") != 0)
+			continue;
 		nbre++;
+	}
+	dmasprintf(value, "%d", nbre);
+	return 0;
+}
+
+int get_WiFi_EndPointNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *s;
+	int nbre= 0;
+	char *mode= NULL;
+
+	uci_foreach_sections("wireless", "wifi-iface", s) {
+		dmuci_get_value_by_section_string(s, "mode", &mode);
+		if(strcmp(mode, "wet") == 0 || strcmp(mode, "sta") == 0)
+			nbre++;
 	}
 	dmasprintf(value, "%d", nbre);
 	return 0;
@@ -1623,7 +1643,12 @@ int set_WiFiAccessPoint_IsolationEnable(char *refparam, struct dmctx *ctx, void 
 
 int get_WiFiAccessPoint_AllowedMACAddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	dmuci_get_value_by_section_list(((struct wifi_acp_args *)data)->wifi_acp_sec, "maclist", value);
+	struct uci_list *val;
+	dmuci_get_value_by_section_list(((struct wifi_acp_args *)data)->wifi_acp_sec, "maclist", &val);
+	if (val)
+		*value = dmuci_list_to_string(val, " ");
+	else
+		*value = "";
 	return 0;
 }
 
@@ -2835,7 +2860,7 @@ int get_WiFiEndPointWPS_Status(char *refparam, struct dmctx *ctx, void *data, ch
 {
 	char *wps_status;
 	dmuci_get_value_by_section_string(((struct wifi_enp_args *)data)->wifi_enp_sec, "wps", &wps_status);
-	if(strcmp(wps_status, "0") == 0)
+	if(strcmp(wps_status, "0") == 0 || *value[0] == '\0')
 		*value= "Disabled";
 	else
 		*value= "Configured";
@@ -3100,7 +3125,7 @@ int add_wifi_ssid(char *refparam, struct dmctx *ctx, void *data, char **instance
 	check_create_dmmap_package("dmmap_wireless");
 	inst = get_last_instance_icwmpd("dmmap_wireless", "wifi-iface", "ssidinstance");
 	sprintf(ssid, "Iopsys_%d", inst ? (atoi(inst)+1) : 1);
-	dmuci_add_section_and_rename("wireless", "wifi-iface", &s, &value);
+	dmuci_add_section("wireless", "wifi-iface", &s, &value);
 	dmuci_set_value_by_section(s, "device", "wl0");
 	dmuci_set_value_by_section(s, "encryption", "none");
 	dmuci_set_value_by_section(s, "macfilter", "0");
@@ -3247,15 +3272,18 @@ int browseWifiSsidInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data
 
 int browseWifiAccessPointInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	char *wnum = NULL, *ssid_last = NULL, *ifname, *acpt_last = NULL;
+	char *wnum = NULL, *ssid_last = NULL, *ifname, *acpt_last = NULL, *mode= NULL;
 	struct uci_section *ss = NULL;
 	json_object *res;
 	struct wifi_acp_args curr_wifi_acp_args = {0};
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
 
-	synchronize_specific_config_sections_with_dmmap_eq("wireless", "wifi-iface", "dmmap_wireless", "mode", "ap", &dup_list);
+	synchronize_specific_config_sections_with_dmmap("wireless", "wifi-iface", "dmmap_wireless", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
+		dmuci_get_value_by_section_string(p->config_section, "mode", &mode);
+		if ((strlen(mode)>0 || mode[0] != '\0') &&strcmp(mode, "ap") != 0)
+			continue;
 		dmuci_get_value_by_section_string(p->config_section, "ifname", &ifname);
 		init_wifi_acp(&curr_wifi_acp_args, p->config_section, ifname);
 		wnum =  handle_update_instance(1, dmctx, &acpt_last, update_instance_alias, 3, p->dmmap_section, "accesspointinstance", "accesspointalias");
