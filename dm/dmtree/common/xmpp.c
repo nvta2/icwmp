@@ -133,6 +133,7 @@ int delete_xmpp_connection(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+/*#Device.XMPP.ConnectionNumberOfEntries!UCI:cwmp_xmpp/xmpp_connection/*/
 int get_xmpp_connection_nbr_entry(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
@@ -151,6 +152,7 @@ int get_xmpp_connection_supported_server_connect_algorithms(char *refparam, stru
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Enable!UCI:cwmp_xmpp/xmpp_connection,@i-1/enable*/
 int get_connection_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -177,6 +179,7 @@ int set_connection_enable(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Alias!UCI:cwmp_xmpp/xmpp_connection,@i-1/connection_alias*/
 int get_xmpp_connection_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -200,6 +203,7 @@ int set_xmpp_connection_alias(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Username!UCI:cwmp_xmpp/xmpp_connection,@i-1/username*/
 int get_xmpp_connection_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -223,6 +227,7 @@ int set_xmpp_connection_username(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Password!UCI:cwmp_xmpp/xmpp_connection,@i-1/password*/
 int get_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "";
@@ -244,6 +249,7 @@ int set_xmpp_connection_password(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Domain!UCI:cwmp_xmpp/xmpp_connection,@i-1/domain*/
 int get_xmpp_connection_domain(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -267,6 +273,7 @@ int set_xmpp_connection_domain(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Ressource!UCI:cwmp_xmpp/xmpp_connection,@i-1/resource*/
 int get_xmpp_connection_resource(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -290,6 +297,7 @@ int set_xmpp_connection_resource(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.ServerConnectAlgorithm!UCI:cwmp_xmpp/xmpp_connection,@i-1/serveralgorithm*/
 int get_xmpp_connection_server_connect_algorithm(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -314,6 +322,7 @@ int set_xmpp_connection_server_connect_algorithm(char *refparam, struct dmctx *c
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.KeepAliveInterval!UCI:cwmp_xmpp/xmpp_connection,@i-1/interval*/
 int get_xmpp_connection_keepalive_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -337,6 +346,7 @@ int set_xmpp_connection_keepalive_interval(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.ServerConnectAttempts!UCI:cwmp_xmpp/xmpp_connection,@i-1/attempt*/
 int get_xmpp_connection_server_attempts(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -360,6 +370,7 @@ int set_xmpp_connection_server_attempts(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.ServerRetryInitialInterval!UCI:cwmp_xmpp/xmpp_connection,@i-1/initial_retry_interval*/
 int get_xmpp_connection_retry_initial_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -383,6 +394,7 @@ int set_xmpp_connection_retry_initial_interval(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.ServerRetryIntervalMultiplier!UCI:cwmp_xmpp/xmpp_connection,@i-1/retry_interval_multiplier*/
 int get_xmpp_connection_retry_interval_multiplier(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -406,6 +418,7 @@ int set_xmpp_connection_retry_interval_multiplier(char *refparam, struct dmctx *
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.ServerRetryMaxInterval!UCI:cwmp_xmpp/xmpp_connection,@i-1/retry_max_interval*/
 int get_xmpp_connection_retry_max_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -429,6 +442,7 @@ int set_xmpp_connection_retry_max_interval(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.UseTLS!UCI:cwmp_xmpp/xmpp_connection,@i-1/usetls*/
 int get_xmpp_connection_server_usetls(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -470,6 +484,7 @@ int get_xmpp_connection_jabber_id(char *refparam, struct dmctx *ctx, void *data,
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Status!UCI:cwmp_xmpp/xmpp_connection,@i-1/enable*/
 int get_xmpp_connection_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -489,6 +504,7 @@ int get_xmpp_connection_server_number_of_entries(char *refparam, struct dmctx *c
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Server.{i}.Enable!UCI:cwmp_xmpp/xmpp_connection,@i-1/enable*/
 int get_xmpp_connection_server_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -515,6 +531,7 @@ int set_xmpp_connection_server_enable(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Server.{i}.Alias!UCI:cwmp_xmpp/xmpp_connection,@i-1/connection_server_alias*/
 int get_xmpp_connection_server_alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -538,6 +555,7 @@ int set_xmpp_connection_server_alias(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Server.{i}.ServerAddress!UCI:cwmp_xmpp/xmpp_connection,@i-1/server_address*/
 int get_xmpp_connection_server_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -560,6 +578,7 @@ int set_xmpp_connection_server_server_address(char *refparam, struct dmctx *ctx,
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.Server.{i}.Port!UCI:cwmp_xmpp/xmpp_connection,@i-1/port*/
 int get_xmpp_connection_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *connsection = (struct uci_section *)data;
@@ -603,6 +622,7 @@ int  get_xmpp_connection_linker(char *refparam, struct dmctx *dmctx, void *data,
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.XMPP.Connection.{i}.!UCI:cwmp_xmpp/xmpp_connection/dmmap_cwmp_xmpp*/
 int browsexmpp_connectionInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iconnection = NULL, *iconnection_last = NULL;
@@ -616,6 +636,7 @@ int browsexmpp_connectionInst(struct dmctx *dmctx, DMNODE *parent_node, void *pr
 	return 0;
 }
 
+/*#Device.XMPP.Connection.{i}.!UCI:cwmp_xmpp/xmpp_connection_server/dmmap_cwmp_xmpp*/
 int browsexmpp_connection_serverInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iconnectionserver = NULL, *iconnectionserver_last = NULL, *prev_connection_instance;

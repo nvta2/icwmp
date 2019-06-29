@@ -268,6 +268,7 @@ inline int init_dhcpv6_args(struct dhcpv6_args *args, struct uci_section *s, cha
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.!UCI:network/interface/dmmap_dhcpv6*/
 int browseDHCPv6ClientInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *s = NULL;
@@ -321,6 +322,7 @@ int browseDHCPv6ClientReceivedOptionInst(struct dmctx *dmctx, DMNODE *parent_nod
 	return 0;
 }
 
+/*#Device.DHCPv6.Server.Pool.{i}.!UCI:dhcp/dhcp/dmmap_dhcpv6*/
 int browseDHCPv6ServerPoolInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *s;
@@ -678,7 +680,6 @@ int delObjDHCPv6ServerPoolOption(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
-
 int get_DHCPv6_ClientNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -693,6 +694,7 @@ int get_DHCPv6_ClientNumberOfEntries(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.Enable!UCI:network/interface,@i-1/disabled*/
 int get_DHCPv6Client_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_client_args *dhcpv6_client_args = (struct dhcpv6_client_args*)data;
@@ -815,6 +817,7 @@ int set_DHCPv6Client_Interface(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.Status!UCI:network/interface,@i-1/disabled*/
 int get_DHCPv6Client_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_client_args *dhcpv6_client_args = (struct dhcpv6_client_args*)data;
@@ -836,6 +839,7 @@ int get_DHCPv6Client_Status(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.DUID!UBUS:network.interface/status/interface,@Name/data.passthru*/
 int get_DHCPv6Client_DUID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_client_args *dhcpv6_client_args = (struct dhcpv6_client_args*)data;
@@ -849,6 +853,7 @@ int get_DHCPv6Client_DUID(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.RequestAddresses!UCI:network/interface,@i-1/reqaddress*/
 int get_DHCPv6Client_RequestAddresses(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_client_args *dhcpv6_client_args = (struct dhcpv6_client_args*)data;
@@ -889,6 +894,7 @@ int set_DHCPv6Client_RequestAddresses(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.RequestPrefixes!UCI:network/interface,@i-1/reqprefix*/
 int get_DHCPv6Client_RequestPrefixes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_client_args *dhcpv6_client_args = (struct dhcpv6_client_args*)data;
@@ -1015,6 +1021,7 @@ int get_DHCPv6Client_SupportedOptions(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.DHCPv6.Client.{i}.RequestedOptions!UCI:network/interface,@i-1/reqopts*/
 int get_DHCPv6Client_RequestedOptions(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_client_args *dhcpv6_client_args = (struct dhcpv6_client_args*)data;
@@ -1215,6 +1222,7 @@ int get_DHCPv6Server_PoolNumberOfEntries(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
+/*#Device.DHCPv6.Server.Pool.{i}.Enable!UCI:dhcp/dhcp,@i-1/ignore*/
 int get_DHCPv6ServerPool_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {	struct uci_section *s = NULL;
 
@@ -1254,6 +1262,7 @@ int set_DHCPv6ServerPool_Enable(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
+/*#Device.DHCPv6.Server.Pool.{i}.Status!UCI:dhcp/dhcp,@i-1/ignore*/
 int get_DHCPv6ServerPool_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -1386,6 +1395,7 @@ int set_DHCPv6ServerPool_DUIDExclude(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.DHCPv6.Server.Pool.{i}.VendorClassID!UCI:dhcp/dhcp,@i-1/vendorclass*/
 int get_DHCPv6ServerPool_VendorClassID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_args *dhcpv6_client_args = (struct dhcpv6_args*)data;
@@ -1432,6 +1442,7 @@ int set_DHCPv6ServerPool_VendorClassIDExclude(char *refparam, struct dmctx *ctx,
 	return 0;
 }
 
+/*#Device.DHCPv6.Server.Pool.{i}.UserClassID!UCI:dhcp/dhcp,@i-1/userclass*/
 int get_DHCPv6ServerPool_UserClassID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dhcpv6_args *dhcpv6_client_args = (struct dhcpv6_args*)data;

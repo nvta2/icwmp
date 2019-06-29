@@ -117,13 +117,12 @@ int browseChainInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, c
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.!UCI:firewall/rule/dmmap_firewall*/
 int browseRuleInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *s = NULL;
 	char *instance, *instnbr = NULL;
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
-
 
 	synchronize_specific_config_sections_with_dmmap("firewall", "rule", "dmmap_firewall", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
@@ -306,6 +305,7 @@ int get_chain_creator(char *refparam, struct dmctx *ctx, void *data, char *insta
     return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.RuleNumberOfEntries!UCI:firewall/rule/*/
 int get_chain_rule_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -319,6 +319,7 @@ int get_chain_rule_number_of_entries(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.Enable!UCI:firewall/rule,@i-1/enabled*/
 int get_rule_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *v;
@@ -327,6 +328,7 @@ int get_rule_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.Status!UCI:firewall/rule,@i-1/enabled*/
 int get_rule_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *v;
@@ -351,6 +353,7 @@ int get_rule_description(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.Target!UCI:firewall/rule,@i-1/target*/
 int get_rule_target(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *v;
@@ -461,6 +464,7 @@ int get_rule_dest_interface(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.IPVersion!UCI:firewall/rule,@i-1/family*/
 int get_rule_i_p_version(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *ipversion;
@@ -477,6 +481,7 @@ int get_rule_i_p_version(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.DestIp!UCI:firewall/rule,@i-1/dest_ip*/
 int get_rule_dest_ip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char buf[64];
@@ -491,6 +496,7 @@ int get_rule_dest_ip(char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.DestMask!UCI:firewall/rule,@i-1/dest_ip*/
 int get_rule_dest_mask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *pch;
@@ -511,6 +517,7 @@ int get_rule_dest_mask(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.SourceIp!UCI:firewall/rule,@i-1/src_ip*/
 int get_rule_source_ip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char buf[64];
@@ -525,6 +532,7 @@ int get_rule_source_ip(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.SourceMask!UCI:firewall/rule,@i-1/src_ip*/
 int get_rule_source_mask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *pch;
@@ -545,6 +553,7 @@ int get_rule_source_mask(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.Protocol!UCI:firewall/rule,@i-1/proto*/
 int get_rule_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	FILE *fp;
@@ -578,6 +587,7 @@ int get_rule_protocol(char *refparam, struct dmctx *ctx, void *data, char *insta
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.DestPort!UCI:firewall/rule,@i-1/dest_port*/
 int get_rule_dest_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
@@ -597,6 +607,7 @@ int get_rule_dest_port(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.DestPortRangeMax!UCI:firewall/rule,@i-1/dest_port*/
 int get_rule_dest_port_range_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *rpch, *tmp;
@@ -609,6 +620,7 @@ int get_rule_dest_port_range_max(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.SourcePort!UCI:firewall/rule,@i-1/src_port*/
 int get_rule_source_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
@@ -628,6 +640,7 @@ int get_rule_source_port(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
+/*#Device.Firewall.Chain.{i}.Rule.{i}.SourcePortRangeMax!UCI:firewall/rule,@i-1/src_port*/
 int get_rule_source_port_range_max(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *rpch, *tmp;

@@ -412,9 +412,11 @@ def generatecfromobj(pobj, pdir):
 	except:
 		pass
 	try:
-		print >> dmfpc,  "/*************************************************************"
-		print >> dmfpc,  " * ENTRY METHOD"
-		print >> dmfpc,  "/*************************************************************/"
+		exists = os.path.isfile("./.objbrowse.c")
+		if exists:
+			print >> dmfpc,  "/*************************************************************"
+			print >> dmfpc,  " * ENTRY METHOD"
+			print >> dmfpc,  "/*************************************************************/"
 		tmpf = open("./.objbrowse.c", "r")
 		tmpd = tmpf.read()
 		tmpf.close()
@@ -430,9 +432,11 @@ def generatecfromobj(pobj, pdir):
 	except:
 		pass
 	try:
-		print >> dmfpc,  "/*************************************************************"
-		print >> dmfpc,  " * ADD & DEL OBJ"
-		print >> dmfpc,  "/*************************************************************/"
+		exists = os.path.isfile("./.objadddel.c")
+		if exists:
+			print >> dmfpc,  "/*************************************************************"
+			print >> dmfpc,  " * ADD & DEL OBJ"
+			print >> dmfpc,  "/*************************************************************/"
 		tmpf = open("./.objadddel.c", "r")
 		tmpd = tmpf.read()
 		tmpf.close()
@@ -448,9 +452,11 @@ def generatecfromobj(pobj, pdir):
 	except:
 		pass
 	try:
-		print >> dmfpc,  "/*************************************************************"
-		print >> dmfpc,  " * GET & SET PARAM"
-		print >> dmfpc,  "/*************************************************************/"
+		exists = os.path.isfile("./.getstevalue.c")
+		if exists:
+			print >> dmfpc,  "/*************************************************************"
+			print >> dmfpc,  " * GET & SET PARAM"
+			print >> dmfpc,  "/*************************************************************/"
 		tmpf = open("./.getstevalue.c", "r")
 		tmpd = tmpf.read()
 		tmpf.close()

@@ -402,6 +402,7 @@ int get_Max_Filter_Entries(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+/*#Device.Bridging.BridgeNumberOfEntries!UCI:network/interface/*/
 int get_Bridge_Number_Of_Entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -415,6 +416,7 @@ int get_Bridge_Number_Of_Entries(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Enable!UBUS:network.interface/status/interface,@Name/up*/
 int get_br_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -441,6 +443,7 @@ int set_br_enable(char *refparam, struct dmctx *ctx, void *data, char *instance,
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Status!UBUS:network.interface/status/interface,@Name/up*/
 int get_br_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -529,6 +532,7 @@ int set_br_associated_interfaces(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Enable!UBUS:network.device/status/name,@Name/speed*/
 int get_br_port_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -570,6 +574,7 @@ int set_br_port_enable(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Status!UBUS:network.device/status/name,@Name/speed*/
 int get_br_port_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	bool b;
@@ -588,6 +593,7 @@ int get_br_port_name(char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.LastChange!UBUS:network.interface/status/interface,@Name/uptime*/
 int get_br_port_last_change(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -809,36 +815,42 @@ inline int get_bridge_port_statistics(void *data, char *stat_mod, char **value)
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.tx_bytes*/
 int get_br_port_stats_tx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "tx_bytes", value);
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.rx_bytes*/
 int get_br_port_stats_rx_bytes(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "rx_bytes", value);
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.PacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_packets*/
 int get_br_port_stats_tx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "tx_packets", value);
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.PacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_packets*/
 int get_br_port_stats_rx_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "rx_packets", value);
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.ErrorsSent!UBUS:network.device/status/name,@Name/statistics.tx_errors*/
 int get_br_port_stats_tx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "tx_errors", value);
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.ErrorsReceived!UBUS:network.device/status/name,@Name/statistics.rx_errors*/
 int get_br_port_stats_rx_errors(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "rx_errors", value);
@@ -865,12 +877,14 @@ int get_br_port_stats_rx_unicast_packets(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.DiscardPacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_dropped*/
 int get_br_port_stats_tx_discard_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "tx_dropped", value);
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.DiscardPacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_dropped*/
 int get_br_port_stats_rx_discard_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "rx_dropped", value);
@@ -917,6 +931,7 @@ int get_br_port_stats_rx_broadcast_packets(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.Port.{i}.Stats.UnknownProtoPacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_over_errors*/
 int get_br_port_stats_rx_unknown_proto_packets(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	get_bridge_port_statistics(data, "rx_over_errors", value);
@@ -1658,6 +1673,7 @@ int set_br_vlan_untagged(char *refparam, struct dmctx *ctx, void *data, char *in
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.Bridging.Bridge.{i}.!UCI:network/interface/dmmap_network*/
 int browseBridgeInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *br_inst = NULL, *br_inst_last = NULL, *ifname;
@@ -1768,6 +1784,7 @@ end:
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.VLAN.!UCI:network/device/dmmap_network*/
 int browseBridgeVlanInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *vlan = NULL, *vlan_last = NULL, *type, *is_lan = NULL;
@@ -1798,6 +1815,7 @@ end:
 	return 0;
 }
 
+/*#Device.Bridging.Bridge.{i}.VLANPort.!UCI:network/device/dmmap_network*/
 int browseBridgeVlanPortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *vlan = NULL, *vlan_last = NULL, *type, *is_lan = NULL;

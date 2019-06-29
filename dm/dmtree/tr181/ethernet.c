@@ -237,6 +237,7 @@ static int dmmap_synchronizeEthernetLink(struct dmctx *dmctx, DMNODE *parent_nod
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.Ethernet.Interface.{i}.!UCI:ports/ethport/dmmap_ports*/
 int browseEthernetInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *int_num = NULL, *int_num_last = NULL, *ifname;
@@ -278,6 +279,7 @@ int browseEthernetLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.!UCI:network/device/dmmap_network*/
 int browseEthernetVLANTerminationInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *vlan_term = NULL, *vlan_term_last = NULL, *type= NULL, *vlan_method= NULL;
@@ -447,6 +449,7 @@ int delObjEthernetVLANTermination(char *refparam, struct dmctx *ctx, void *data,
 /*************************************************************
  * GET & SET PARAM
 /*************************************************************/
+/*#Device.Ethernet.InterfaceNumberOfEntries!UCI:ports/ethport/*/
 int get_Ethernet_InterfaceNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -474,6 +477,7 @@ int get_Ethernet_LinkNumberOfEntries(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTerminationNumberOfEntries!UCI:network/device/*/
 int get_Ethernet_VLANTerminationNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -492,6 +496,7 @@ int get_Ethernet_VLANTerminationNumberOfEntries(char *refparam, struct dmctx *ct
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Enable!UBUS:network.device/status/name,@Name/carrier*/
 int get_EthernetInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -533,6 +538,7 @@ int set_EthernetInterface_Enable(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Status!UBUS:network.device/status/name,@Name/carrier*/
 int get_EthernetInterface_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	bool b;
@@ -569,12 +575,14 @@ int set_EthernetInterface_Alias(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Name!UCI:ports/ethport,@i-1/name*/
 int get_EthernetInterface_Name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "name", value);
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.LastChange!UBUS:network.interface/status/interface,@Name/uptime*/
 int get_EthernetInterface_LastChange(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -624,6 +632,7 @@ int get_EthernetInterface_Upstream(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.MACAddress!UBUS:network.device/status/name,@Name/macaddr*/
 int get_EthernetInterface_MACAddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -634,6 +643,7 @@ int get_EthernetInterface_MACAddress(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.MaxBitRate!UCI:ports/ethport,@i-1/speed*/
 int get_EthernetInterface_MaxBitRate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *pch, *spch, *speed;
@@ -680,6 +690,7 @@ int set_EthernetInterface_MaxBitRate(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.CurrentBitRate!UBUS:network.device/status/name,@Name/speed*/
 int get_EthernetInterface_CurrentBitRate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -696,6 +707,7 @@ int get_EthernetInterface_CurrentBitRate(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.DuplexMode!UCI:ports/status/ethport,@i-1/speed*/
 int get_EthernetInterface_DuplexMode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct eth_port_args *)data)->eth_port_sec, "speed", value);
@@ -764,6 +776,7 @@ inline int get_ubus_ethernet_interface_stats(json_object *res, char **value, cha
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.tx_bytes*/
 int get_EthernetInterfaceStats_BytesSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -771,6 +784,7 @@ int get_EthernetInterfaceStats_BytesSent(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.BytesReceived!UBUS:network.device/status/name,@Name/statistics.rx_bytes*/
 int get_EthernetInterfaceStats_BytesReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -781,6 +795,7 @@ int get_EthernetInterfaceStats_BytesReceived(char *refparam, struct dmctx *ctx, 
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.PacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_packets*/
 int get_EthernetInterfaceStats_PacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -791,6 +806,7 @@ int get_EthernetInterfaceStats_PacketsSent(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.PacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_packets*/
 int get_EthernetInterfaceStats_PacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -801,6 +817,7 @@ int get_EthernetInterfaceStats_PacketsReceived(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.ErrorsSent!UBUS:network.device/status/name,@Name/statistics.tx_errors*/
 int get_EthernetInterfaceStats_ErrorsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -811,6 +828,7 @@ int get_EthernetInterfaceStats_ErrorsSent(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.ErrorsReceived!UBUS:network.device/status/name,@Name/statistics.rx_errors*/
 int get_EthernetInterfaceStats_ErrorsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -833,6 +851,7 @@ int get_EthernetInterfaceStats_UnicastPacketsReceived(char *refparam, struct dmc
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.DiscardPacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_dropped*/
 int get_EthernetInterfaceStats_DiscardPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -843,6 +862,7 @@ int get_EthernetInterfaceStats_DiscardPacketsSent(char *refparam, struct dmctx *
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.DiscardPacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_dropped*/
 int get_EthernetInterfaceStats_DiscardPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -877,6 +897,7 @@ int get_EthernetInterfaceStats_BroadcastPacketsReceived(char *refparam, struct d
 	return 0;
 }
 
+/*#Device.Ethernet.Interface.{i}.Stats.UnknownProtoPacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_over_errors*/
 int get_EthernetInterfaceStats_UnknownProtoPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1199,6 +1220,7 @@ int get_EthernetVLANTermination_Name(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.LastChange!UBUS:network.interface/status/interface,@Name/uptime*/
 int get_EthernetVLANTermination_LastChange(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1277,6 +1299,7 @@ int set_EthernetVLANTermination_LowerLayers(char *refparam, struct dmctx *ctx, v
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.LastChange!UCI:network/device,@i-1/vid*/
 int get_EthernetVLANTermination_VLANID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "0";
@@ -1310,6 +1333,7 @@ int set_EthernetVLANTermination_VLANID(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.TPID!UCI:network/device,@i-1/type*/
 int get_EthernetVLANTermination_TPID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *type;
@@ -1350,6 +1374,7 @@ inline int get_ubus_ethernet_vlan_termination_stats(json_object *res, char **val
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.tx_bytes*/
 int get_EthernetVLANTerminationStats_BytesSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1357,13 +1382,15 @@ int get_EthernetVLANTerminationStats_BytesSent(char *refparam, struct dmctx *ctx
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.BytesReceived!UBUS:network.device/status/name,@Name/statistics.rx_bytes*/
 int get_EthernetVLANTerminationStats_BytesReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
-	get_ubus_ethernet_vlan_termination_stats(res, value, "tx_bytes", data);
+	get_ubus_ethernet_vlan_termination_stats(res, value, "rx_bytes", data);
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.PacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_packets*/
 int get_EthernetVLANTerminationStats_PacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1371,6 +1398,7 @@ int get_EthernetVLANTerminationStats_PacketsSent(char *refparam, struct dmctx *c
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.PacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_packets*/
 int get_EthernetVLANTerminationStats_PacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1378,6 +1406,7 @@ int get_EthernetVLANTerminationStats_PacketsReceived(char *refparam, struct dmct
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.ErrorsSent!UBUS:network.device/status/name,@Name/statistics.tx_errors*/
 int get_EthernetVLANTerminationStats_ErrorsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1385,6 +1414,7 @@ int get_EthernetVLANTerminationStats_ErrorsSent(char *refparam, struct dmctx *ct
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.ErrorsReceived!UBUS:network.device/status/name,@Name/statistics.rx_errors*/
 int get_EthernetVLANTerminationStats_ErrorsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1412,6 +1442,7 @@ int get_EthernetVLANTerminationStats_UnicastPacketsReceived(char *refparam, stru
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.DiscardPacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_dropped*/
 int get_EthernetVLANTerminationStats_DiscardPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1419,6 +1450,7 @@ int get_EthernetVLANTerminationStats_DiscardPacketsSent(char *refparam, struct d
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.DiscardPacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_dropped*/
 int get_EthernetVLANTerminationStats_DiscardPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -1467,6 +1499,7 @@ int get_EthernetVLANTerminationStats_BroadcastPacketsReceived(char *refparam, st
 	return 0;
 }
 
+/*#Device.Ethernet.VLANTermination.{i}.Stats.UnknownProtoPacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_over_errors*/
 int get_EthernetVLANTerminationStats_UnknownProtoPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;

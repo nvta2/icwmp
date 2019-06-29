@@ -129,6 +129,7 @@ inline int init_ptm_link(struct ptm_args *args, struct uci_section *s, char *ifn
 /**************************************************************************
 * SET & GET DSL LINK PARAMETERS
 ***************************************************************************/
+/*#Device.ATM.Link.{i}.DestinationAddress!UCI:dsl/atm-device,@i-1/vpi*/
 int get_atm_destination_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *vpi, *vci;
@@ -168,18 +169,21 @@ int set_atm_destination_address(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
+/*#Device.ATM.Link.{i}.Name!UCI:dsl/atm-device,@i-1/name*/
 int get_atm_link_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct atm_args *)data)->atm_sec, "name", value);
 	return 0;
 }
 
+/*#Device.PTM.Link.{i}.Name!UCI:dsl/ptm-device,@i-1/name*/
 int get_ptm_link_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct ptm_args *)data)->ptm_sec, "name", value);
 	return 0;
 }
 
+/*#Device.ATM.Link.{i}.Encapsulation!UCI:dsl/atm-device,@i-1/encapsulation*/
 int get_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *encapsulation;
@@ -217,7 +221,7 @@ int set_atm_encapsulation(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
-
+/*#Device.ATM.Link.{i}.LinkType!UCI:dsl/atm-device,@i-1/link_type*/
 int get_atm_link_type(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = "";
@@ -265,6 +269,7 @@ inline int ubus_atm_stats(json_object *res, char **value, char *stat_mod, void *
 	return 0;
 }
 
+/*#Device.ATM.Link.{i}.Stats.BytesReceived!UBUS:network.device/status/name,@Name/statistics.rx_bytes*/
 int get_atm_stats_bytes_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -272,6 +277,7 @@ int get_atm_stats_bytes_received(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.ATM.Link.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.tx_bytes*/
 int get_atm_stats_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -279,6 +285,7 @@ int get_atm_stats_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char
 	return 0;
 }
 
+/*#Device.ATM.Link.{i}.Stats.PacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_packets*/
 int get_atm_stats_pack_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -286,6 +293,7 @@ int get_atm_stats_pack_received(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
+/*#Device.ATM.Link.{i}.Stats.PacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_packets*/
 int get_atm_stats_pack_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -302,6 +310,7 @@ inline int ubus_ptm_stats(json_object *res, char **value, char *stat_mod, void *
 	return 0;
 }
 
+/*#Device.PTM.Link.{i}.Stats.BytesReceived!UBUS:network.device/status/name,@Name/statistics.rx_bytes*/
 int get_ptm_stats_bytes_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -309,6 +318,7 @@ int get_ptm_stats_bytes_received(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.PTM.Link.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.tx_bytes*/
 int get_ptm_stats_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -316,6 +326,7 @@ int get_ptm_stats_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char
 	return 0;
 }
 
+/*#Device.PTM.Link.{i}.Stats.PacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_packets*/
 int get_ptm_stats_pack_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -323,6 +334,7 @@ int get_ptm_stats_pack_received(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
+/*#Device.PTM.Link.{i}.Stats.PacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_packets*/
 int get_ptm_stats_pack_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -554,6 +566,7 @@ int set_ptm_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.ATM.Link.{i}.!UCI:dsl/atm-device/dmmap_dsl*/
 int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *wnum = NULL, *channel_last = NULL, *ifname;
@@ -573,6 +586,7 @@ int browseAtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	return 0;
 }
 
+/*#Device.PTM.Link.{i}.!UCI:dsl/ptm-device/dmmap_dsl*/
 int browsePtmLinkInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *wnum = NULL, *channel_last = NULL, *ifname;

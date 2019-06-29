@@ -224,18 +224,21 @@ char *get_softwareversion()
 	return val;
 }
 
+/*#Device.DeviceInfo.Manufacturer!UCI:cwmp/cwmp,cpe/manufacturer*/
 int get_device_manufacturer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_manufacturer();
 	return 0;
 }
 
+/*#Device.DeviceInfo.ManufacturerOUI!UCI:cwmp/cwmp,cpe/override_oui*/
 int get_device_manufactureroui(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_manufactureroui();
 	return 0;
 }
 
+/*#Device.DeviceInfo.ProductClass!UCI:cwmp/cwmp,cpe/override_productclass*/
 int get_device_productclass(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = get_deviceid_productclass();
@@ -323,6 +326,7 @@ int get_device_specversion(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+/*#Device.DeviceInfo.ProvisioningCode!UCI:cwmp/cwmp,cpe/provisioning_code*/
 int get_device_provisioningcode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "provisioning_code", value);
@@ -341,7 +345,6 @@ int set_device_provisioningcode(char *refparam, struct dmctx *ctx, void *data, c
 	}
 	return 0;
 }
-
 
 int get_base_mac_addr(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {	
@@ -374,6 +377,7 @@ int set_device_memory_bank(char *refparam, struct dmctx *ctx, void *data, char *
 	}
 	return 0;
 }
+
 int get_catv_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *catv;
@@ -593,6 +597,7 @@ int get_vlf_persistent(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+/*#Device.DeviceInfo.MemoryStatus.Total!UBUS:router.system/info//memoryKB.total*/
 int get_memory_status_total(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	json_object *res;
 
@@ -601,6 +606,7 @@ int get_memory_status_total(char* refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.DeviceInfo.MemoryStatus.Free!UBUS:router.system/info//memoryKB.free*/
 int get_memory_status_free(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	json_object *res;
 
@@ -609,7 +615,7 @@ int get_memory_status_free(char* refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
-
+/*#Device.DeviceInfo.ProcessStatus.CPUUsage!UBUS:router.system/info//system.cpu_per*/
 int get_process_cpu_usage(char* refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	json_object *res;
 

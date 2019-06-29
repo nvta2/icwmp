@@ -112,6 +112,7 @@ int get_time_CurrentLocalTime(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
+/*#Device.Time.LocalTimeZone!UCI:system/system,@system[0]/timezone*/
 int get_time_LocalTimeZone(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("system", "@system[0]", "timezone", value);

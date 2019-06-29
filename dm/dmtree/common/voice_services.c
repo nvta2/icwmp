@@ -882,6 +882,7 @@ int get_voice_service_max_line()
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.Enable!UCI:voice_client/sip_service_provider,@i-1/enabled*/
 int get_voice_profile_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
@@ -932,6 +933,7 @@ int set_voice_profile_reset(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.Name!UCI:voice_client/sip_service_provider,@i-1/name*/
 int get_voice_profile_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -955,6 +957,8 @@ int set_voice_profile_signaling_protocol(char *refparam, struct dmctx *ctx, void
 	}
 	return 0;
 }
+
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.MaxSessions!UBUS:voice.asterisk/lines//num_lines*/
 int get_voice_profile_max_sessions(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -967,6 +971,7 @@ int get_voice_profile_max_sessions(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.NumberOfLines!UBUS:voice.asterisk/status//tel.@Name*/
 int get_voice_profile_number_of_lines(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	int num = 0;
@@ -987,6 +992,7 @@ int get_voice_profile_number_of_lines(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.ProxyServer!UCI:voice_client/sip_advanced,SIP/sip_proxy*/
 int get_voice_profile_sip_proxyserver(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("voice_client", "SIP", "sip_proxy", value);
@@ -1017,6 +1023,7 @@ int set_sip_proxy_server_port(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.ProxyServerTransport!UCI:voice_client/sip_service_provider,@i-1/transport*/
 int get_sip_proxy_server_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1039,6 +1046,7 @@ int set_sip_proxy_server_transport(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.RegistrarServer!UCI:voice_client/sip_service_provider,@i-1/host*/
 int get_voice_profile_sip_registerserver(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1061,6 +1069,7 @@ int set_voice_profile_sip_registerserver(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.RegistrarServerPort!UCI:voice_client/sip_service_provider,@i-1/port*/
 int get_voice_profile_sip_registerserverport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1083,6 +1092,7 @@ int set_voice_profile_sip_registerserverport(char *refparam, struct dmctx *ctx, 
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.RegistrarServerTransport!UCI:voice_client/sip_service_provider,@i-1/transport*/
 int get_sip_registrar_server_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1105,6 +1115,7 @@ int set_sip_registrar_server_transport(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.UserAgentDomain!UCI:voice_client/sip_service_provider,@i-1/domain*/
 int get_sip_user_agent_domain(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1127,6 +1138,7 @@ int set_sip_user_agent_domain(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.UserAgentPort!UCI:voice_client/sip_advanced,SIP/bindport*/
 int get_sip_user_agent_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("voice_client", "SIP", "bindport", value);
@@ -1145,6 +1157,7 @@ int set_sip_user_agent_port(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.UserAgentTransport!UCI:voice_client/sip_service_provider,@i-1/transport*/
 int get_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
@@ -1172,6 +1185,7 @@ int set_sip_user_agent_transport(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.OutboundProxy!UCI:voice_client/sip_service_provider,@i-1/outboundproxy*/
 int get_sip_outbound_proxy(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1194,6 +1208,7 @@ int set_sip_outbound_proxy(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.OutboundProxyPort!UCI:voice_client/sip_service_provider,@i-1/outboundproxyport*/
 int get_sip_outbound_proxy_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct sip_args *sipargs = (struct sip_args *)data;
@@ -1215,7 +1230,7 @@ int set_sip_outbound_proxy_port(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.RegistrationPeriod!UCI:voice_client/sip_advanced,SIP/defaultexpiry*/
 int get_sip_registration_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("voice_client", "SIP", "defaultexpiry", value);
@@ -1234,7 +1249,7 @@ int set_sip_registration_period(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
-
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.SIP.ReInviteExpires!UCI:voice_client/sip_advanced,SIP/registertimeout*/
 int get_sip_re_invite_expires(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("voice_client", "SIP", "registertimeout", value);
@@ -1277,6 +1292,7 @@ int set_sip_call_lines(char *refparam, struct dmctx *ctx, void *data, char *inst
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.DTMFMethod!UCI:voice_client/sip_advanced,SIP/dtmfmode*/
 int get_voice_profile_sip_dtmfmethod(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *tmp;
@@ -2372,6 +2388,7 @@ int browseCodecsInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, 
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.!UCI:voice_client/sip_service_provider/dmmap_voice_client*/
 int browseProfileInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *sip_section;
@@ -2391,6 +2408,7 @@ int browseProfileInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data,
 	return 0;
 }
 
+/*#Device.Services.VoiceService.{i}.VoiceProfile.{i}.Line.{i}.!UCI:voice_client/tel_line/dmmap_voice_client*/
 int browseLineInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	int maxLine, line_id = 0;

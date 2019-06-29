@@ -32,6 +32,7 @@ DMLEAF tUPnPDeviceParams[] = {
 {0}
 };
 
+/*#Device.UPnP.Device.Enable!UCI:upnpd/upnpd,config/enabled*/
 int get_upnp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("upnpd","config","enabled", value);

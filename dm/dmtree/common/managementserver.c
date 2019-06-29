@@ -62,6 +62,7 @@ DMLEAF tManagementServerParams[] = {
 {0}
 };
 
+/*#Device.ManagementServer.URL!UCI:cwmp/cwmp,acs/url*/
 int get_management_server_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	int i = 1;
@@ -99,6 +100,7 @@ int set_management_server_url(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
+/*#Device.ManagementServer.Username!UCI:cwmp/cwmp,acs/userid*/
 int get_management_server_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "userid", value);
@@ -118,6 +120,7 @@ int set_management_server_username(char *refparam, struct dmctx *ctx, void *data
 	return 0;	
 }
 
+/*#Device.ManagementServer.Password!UCI:cwmp/cwmp,acs/passwd*/
 int set_management_server_passwd(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
@@ -131,12 +134,14 @@ int set_management_server_passwd(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;	
 }
 
+/*#Device.ManagementServer.ParameterKey!UCI:cwmp/cwmp,acs/ParameterKey*/
 int get_management_server_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "ParameterKey", value);
 	return 0;	
 }
 
+/*#Device.ManagementServer.PeriodicInformEnable!UCI:cwmp/cwmp,acs/periodic_inform_enable*/
 int get_management_server_periodic_inform_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "periodic_inform_enable", value);
@@ -164,6 +169,7 @@ int set_management_server_periodic_inform_enable(char *refparam, struct dmctx *c
 	return 0;	
 }
 
+/*#Device.ManagementServer.PeriodicInformInterval!UCI:cwmp/cwmp,acs/periodic_inform_interval*/
 int get_management_server_periodic_inform_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "periodic_inform_interval", value);
@@ -183,6 +189,7 @@ int set_management_server_periodic_inform_interval(char *refparam, struct dmctx 
 	return 0;
 }
 
+/*#Device.ManagementServer.PeriodicInformTime!UCI:cwmp/cwmp,acs/periodic_inform_time*/
 int get_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	time_t time_value;
@@ -219,6 +226,7 @@ int set_management_server_periodic_inform_time(char *refparam, struct dmctx *ctx
 	return 0;	
 }
 
+/*#Device.ManagementServer.ConnectionRequestURL!UCI:cwmp/cwmp,cpe/port*/
 int get_management_server_connection_request_url(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *ip, *port, *iface;
@@ -235,6 +243,7 @@ int get_management_server_connection_request_url(char *refparam, struct dmctx *c
 	return 0;
 }
 
+/*#Device.ManagementServer.ConnectionRequestUsername!UCI:cwmp/cwmp,cpe/userid*/
 int get_management_server_connection_request_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "userid", value);
@@ -254,6 +263,7 @@ int set_management_server_connection_request_username(char *refparam, struct dmc
 	return 0;
 }
 
+/*#Device.ManagementServer.ConnectionRequestPassword!UCI:cwmp/cwmp,cpe/passwd*/
 int set_management_server_connection_request_passwd(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
@@ -273,6 +283,7 @@ int get_lwn_protocol_supported(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.ManagementServer.LightweightNotificationProtocolsUsed!UCI:cwmp/cwmp,lwn/enable*/
 int get_lwn_protocol_used(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	bool b;
@@ -306,6 +317,7 @@ int set_lwn_protocol_used(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
+/*#Device.ManagementServer.UDPLightweightNotificationHost!UCI:cwmp/cwmp,lwn/hostname*/
 int get_lwn_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {	
 	dmuci_get_option_value_string("cwmp", "lwn", "hostname", value);
@@ -325,6 +337,7 @@ int set_lwn_host(char *refparam, struct dmctx *ctx, void *data, char *instance, 
 	return 0;
 }
 
+/*#Device.ManagementServer.UDPLightweightNotificationPort!UCI:cwmp/cwmp,lwn/port*/
 int get_lwn_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "lwn", "port", value);
@@ -350,6 +363,7 @@ int get_management_server_http_compression_supportted(char *refparam, struct dmc
 	return 0;
 }
 
+/*#Device.ManagementServer.HTTPCompression!UCI:cwmp/cwmp,acs/compression*/
 int get_management_server_http_compression(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "compression", value);
@@ -372,6 +386,7 @@ int set_management_server_http_compression(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.ManagementServer.CWMPRetryMinimumWaitInterval!UCI:cwmp/cwmp,acs/retry_min_wait_interval*/
 int get_management_server_retry_min_wait_interval(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "retry_min_wait_interval", value);
@@ -396,6 +411,7 @@ int set_management_server_retry_min_wait_interval(char *refparam, struct dmctx *
 	return 0;
 }
 
+/*#Device.ManagementServer.CWMPRetryIntervalMultiplier!UCI:cwmp/cwmp,acs/retry_interval_multiplier*/
 int get_management_server_retry_interval_multiplier(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "acs", "retry_interval_multiplier", value);
@@ -420,6 +436,7 @@ int set_management_server_retry_interval_multiplier(char *refparam, struct dmctx
 	return 0;
 }
 
+/*#Device.ManagementServer.AliasBasedAddressing!UCI:cwmp/cwmp,cpe/amd_version*/
 int get_alias_based_addressing(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "amd_version", value);
@@ -432,6 +449,7 @@ int get_alias_based_addressing(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.ManagementServer.InstanceMode!UCI:cwmp/cwmp,cpe/instance_mode*/
 int get_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp", "cpe", "instance_mode", value);
@@ -457,7 +475,7 @@ int set_instance_mode(char *refparam, struct dmctx *ctx, void *data, char *insta
 /*
  * STUN parameters
  */
-
+/*#Device.ManagementServer.UDPConnectionRequestAddress!UCI:cwmp_stun/stun,stun/crudp_address*/
 int get_upd_cr_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_varstate_string("cwmp_stun", "stun", "crudp_address", value);
 	return 0;
@@ -492,6 +510,8 @@ int set_stun_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 	}
 	return 0;
 }
+
+/*#Device.ManagementServer.STUNServerAddress!UCI:cwmp_stun/stun,stun/server_address*/
 int get_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("cwmp_stun", "stun", "server_address", value);
 	return 0;
@@ -508,6 +528,7 @@ int set_stun_server_address(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.ManagementServer.STUNServerPort!UCI:cwmp_stun/stun,stun/server_port*/
 int get_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("cwmp_stun", "stun", "server_port", value);
 	return 0;
@@ -524,6 +545,7 @@ int set_stun_server_port(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
+/*#Device.ManagementServer.STUNUsername!UCI:cwmp_stun/stun,stun/username*/
 int get_stun_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("cwmp_stun", "stun", "username", value);
 	return 0;
@@ -540,6 +562,7 @@ int set_stun_username(char *refparam, struct dmctx *ctx, void *data, char *insta
 	return 0;
 }
 
+/*#Device.ManagementServer.STUNPassword!UCI:cwmp_stun/stun,stun/password*/
 int get_stun_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("cwmp_stun", "stun", "password", value);
 	return 0;
@@ -556,6 +579,7 @@ int set_stun_password(char *refparam, struct dmctx *ctx, void *data, char *insta
 	return 0;
 }
 
+/*#Device.ManagementServer.STUNMaximumKeepAlivePeriod!UCI:cwmp_stun/stun,stun/max_keepalive*/
 int get_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("cwmp_stun", "stun", "max_keepalive", value);
 	return 0;
@@ -572,6 +596,7 @@ int set_stun_maximum_keepalive_period(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.ManagementServer.STUNMinimumKeepAlivePeriod!UCI:cwmp_stun/stun,stun/min_keepalive*/
 int get_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	dmuci_get_option_value_string("cwmp_stun", "stun", "min_keepalive", value);
 	return 0;
@@ -588,6 +613,7 @@ int set_stun_minimum_keepalive_period(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.ManagementServer.NATDetected!UCI:cwmp_stun/stun,stun/nat_detected*/
 int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
 	char *path = "/etc/rc.d/*icwmp_stund";
 	char *v;
@@ -607,7 +633,7 @@ int get_nat_detected(char *refparam, struct dmctx *ctx, void *data, char *instan
 /*
  * XMPP parameters
  */
-
+/*#Device.ManagementServer.ConnReqAllowedJabberIDs!UCI:cwmp_xmpp/cwmp,xmpp/allowed_jid*/
 int get_management_server_conn_rep_allowed_jabber_id(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_option_value_string("cwmp_xmpp", "xmpp", "allowed_jid", value);
@@ -697,6 +723,6 @@ int set_management_server_conn_req_xmpp_connection(char *refparam, struct dmctx 
 
 int get_management_server_supported_conn_req_methods(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	*value = "HTTP, XMPP, STUN";
+	*value = "HTTP,XMPP,STUN";
 	return 0;
 }

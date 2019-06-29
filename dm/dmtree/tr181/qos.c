@@ -272,6 +272,7 @@ int get_linker_qos_queue(char *refparam, struct dmctx *dmctx, void *data, char *
 /**************************************************************************
 * Browse functions
 ***************************************************************************/
+/*#Device.QoS.Classification.{i}.!UCI:qos/classify/dmmap_qos*/
 int browseQoSClassificationInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *wnum = NULL, *wnum_last = NULL;
@@ -308,6 +309,7 @@ int browseQoSPolicerInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_da
 	return 0;
 }
 
+/*#Device.QoS.Queue.{i}.!UCI:qos/class/dmmap_qos*/
 int browseQoSQueueInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *wnum = NULL, *wnum_last = NULL;
@@ -659,6 +661,7 @@ int get_QoS_MaxClassificationEntries(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.QoS.ClassificationNumberOfEntries!UCI:qos/classify/*/
 int get_QoS_ClassificationNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
@@ -712,6 +715,7 @@ int get_QoS_MaxQueueEntries(char *refparam, struct dmctx *ctx, void *data, char 
 	return 0;
 }
 
+/*#Device.QoS.QueueNumberOfEntries!UCI:qos/class/*/
 int get_QoS_QueueNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
@@ -1054,6 +1058,7 @@ int set_QoSClassification_AllInterfaces(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.DestIP!UCI:qos/classify,@i-1/dsthost*/
 int get_QoSClassification_DestIP(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -1111,6 +1116,7 @@ int set_QoSClassification_DestIPExclude(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.SourceIP!UCI:qos/classify,@i-1/srchost*/
 int get_QoSClassification_SourceIP(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -1168,6 +1174,7 @@ int set_QoSClassification_SourceIPExclude(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.Protocol!UCI:qos/classify,@i-1/proto*/
 int get_QoSClassification_Protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -1206,6 +1213,7 @@ int set_QoSClassification_ProtocolExclude(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.DestPort!UCI:qos/classify,@i-1/dstports*/
 int get_QoSClassification_DestPort(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -1227,6 +1235,7 @@ int set_QoSClassification_DestPort(char *refparam, struct dmctx *ctx, void *data
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.DestPortRangeMax!UCI:qos/classify,@i-1/portrange*/
 int get_QoSClassification_DestPortRangeMax(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -1266,6 +1275,7 @@ int set_QoSClassification_DestPortExclude(char *refparam, struct dmctx *ctx, voi
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.SourcePort!UCI:qos/classify,@i-1/srcports*/
 int get_QoSClassification_SourcePort(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -2169,6 +2179,7 @@ int set_QoSClassification_DSCPExclude(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.QoS.Classification.{i}.DSCPMark!UCI:qos/classify,@i-1/dscp*/
 int get_QoSClassification_DSCPMark(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup *)data;
@@ -3258,6 +3269,7 @@ int get_QoSQueue_HardwareAssisted(char *refparam, struct dmctx *ctx, void *data,
 	return 0;
 }
 
+/*#Device.QoS.Queue.{i}.BufferLength!UCI:qos/class,@i-1/maxsize*/
 int get_QoSQueue_BufferLength(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;
@@ -3373,6 +3385,7 @@ int set_QoSQueue_SchedulerAlgorithm(char *refparam, struct dmctx *ctx, void *dat
 	return 0;
 }
 
+/*#Device.QoS.Queue.{i}.ShapingRate!UCI:qos/class,@i-1/limitrate*/
 int get_QoSQueue_ShapingRate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct dmmap_dup *p= (struct dmmap_dup*)data;

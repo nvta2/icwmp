@@ -545,6 +545,7 @@ int get_RoutingRouter_Status(char *refparam, struct dmctx *ctx, void *data, char
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv4ForwardingNumberOfEntries!UCI:network/route/*/
 int get_RoutingRouter_IPv4ForwardingNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
@@ -564,6 +565,7 @@ int get_RoutingRouter_IPv4ForwardingNumberOfEntries(char *refparam, struct dmctx
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv6ForwardingNumberOfEntries!UCI:network/route6/*/
 int get_RoutingRouter_IPv6ForwardingNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s;
@@ -633,6 +635,7 @@ int get_router_ipv4forwarding_status(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv4Forwarding.{i}.DestIPAddress!UCI:network/route,@i-1/target*/
 int get_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -658,6 +661,7 @@ int set_router_ipv4forwarding_destip(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv4Forwarding.{i}.DestSubnetMask!UCI:network/route,@i-1/netmask*/
 int get_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -710,6 +714,7 @@ int get_router_ipv4forwarding_origin(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv4Forwarding.{i}.GatewayIPAddress!UCI:network/route,@i-1/gateway*/
 int get_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -769,6 +774,7 @@ int set_router_ipv4forwarding_interface_linker_parameter(char *refparam, struct 
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv4Forwarding.{i}.ForwardingMetric!UCI:network/route,@i-1/metric*/
 int get_router_ipv4forwarding_metric(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -817,6 +823,7 @@ int get_RoutingRouterIPv6Forwarding_Status(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv6Forwarding.{i}.DestIPPrefix!UCI:network/route,@i-1/target*/
 int get_RoutingRouterIPv6Forwarding_DestIPPrefix(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -859,6 +866,7 @@ int set_RoutingRouterIPv6Forwarding_ForwardingPolicy(char *refparam, struct dmct
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv6Forwarding.{i}.NextHop!UCI:network/route,@i-1/gateway*/
 int get_RoutingRouterIPv6Forwarding_NextHop(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -927,6 +935,7 @@ int get_RoutingRouterIPv6Forwarding_Origin(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv6Forwarding.{i}.ForwardingMetric!UCI:network/route,@i-1/metric*/
 int get_RoutingRouterIPv6Forwarding_ForwardingMetric(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -1293,6 +1302,7 @@ int browseRouterInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, 
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv4Forwarding.{i}.!UCI:network/route/dmmap_route_forwarding*/
 int browseIPv4ForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iroute = NULL, *iroute_last = NULL;
@@ -1329,6 +1339,7 @@ end:
 	return 0;
 }
 
+/*#Device.Routing.Router.{i}.IPv6Forwarding.{i}.!UCI:network/route6/dmmap_route_forwarding*/
 int browseIPv6ForwardingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *iroute = NULL, *iroute_last = NULL;

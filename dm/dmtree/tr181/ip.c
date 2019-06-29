@@ -2760,6 +2760,7 @@ int get_IP_InterfaceNumberOfEntries(char *refparam, struct dmctx *ctx, void *dat
 /*
  * *** Device.IP.Interface. ***
  */
+/*#Device.IP.Interface.{i}.Enable!UCI:network/interface,@i-1/disabled*/
 int get_IPInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *v;
@@ -2784,6 +2785,7 @@ int set_IPInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.Status!UCI:network/interface,@i-1/disabled*/
 int get_IPInterface_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -2817,6 +2819,7 @@ int set_IPInterface_IPv4Enable(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.IPv6Enable!UCI:network/interface,@i-1/ipv6*/
 int get_IPInterface_IPv6Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *v;
@@ -2841,6 +2844,7 @@ int set_IPInterface_IPv6Enable(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.LastChange!UBUS:network.interface/status/interface,@Name/uptime*/
 int get_IPInterface_LastChange(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -2892,6 +2896,7 @@ int set_IPInterface_Reset(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.MaxMTUSize!UBUS:network.interface/status/interface,@Name/mtu*/
 int get_IPInterface_MaxMTUSize(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res, *diag;
@@ -3019,7 +3024,7 @@ int set_firewall_enabled(char *refparam, struct dmctx *ctx, void *data, char *in
 	return 0;
 }
 
-
+/*#Device.IP.Interface.{i}.IPv4Address.{i}.IPAddress!UCI:network/interface,@i-1/ipaddr*/
 int get_ipv4_address(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ((struct ip_args *)data)->ip_4address;
@@ -3041,6 +3046,7 @@ int set_ipv4_address(char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.IPv4Address.{i}.SubnetMask!UCI:network/interface,@i-1/netmask*/
 int get_ipv4_netmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res, *jobj;
@@ -3076,6 +3082,7 @@ int set_ipv4_netmask(char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.IPv4Address.{i}.AddressingType!UCI:network/interface,@i-1/proto*/
 int get_ipv4_addressing_type (char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct ip_args *)data)->ip_sec, "proto", value);
@@ -3167,6 +3174,7 @@ int set_IPInterface_LowerLayers(char *refparam, struct dmctx *ctx, void *data, c
 /*
  * *** Device.IP.Interface.{i}.IPv6Address.{i}. ***
  */
+/*#Device.IP.Interface.{i}.IPv6Address.{i}.IPAddress!UCI:network/interface,@i-1/ip6addr*/
 int get_IPInterfaceIPv6Address_IPAddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ((struct ipv6_args *)data)->ip_6address;
@@ -3264,6 +3272,7 @@ int set_IPInterfaceIPv6Address_Prefix(char *refparam, struct dmctx *ctx, void *d
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.IPv6Address.{i}.PreferredLifetime!UCI:network/interface,@i-1/adv_preferred_lifetime*/
 int get_IPInterfaceIPv6Address_PreferredLifetime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char local_time[32] = {0};
@@ -3295,6 +3304,7 @@ int set_IPInterfaceIPv6Address_PreferredLifetime(char *refparam, struct dmctx *c
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.IPv6Address.{i}.ValidLifetime!UCI:network/interface,@i-1/adv_valid_lifetime*/
 int get_IPInterfaceIPv6Address_ValidLifetime(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char local_time[32] = {0};
@@ -3361,6 +3371,7 @@ int get_IPInterfaceIPv6Prefix_PrefixStatus(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.IP.Interface.{i}.IPv6Prefix.{i}.Prefix!UCI:network/interface,@i-1/ip6prefix*/
 int get_IPInterfaceIPv6Prefix_Prefix(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	*value = ((struct ipv6prefix_args *)data)->ip_6prefixaddress;
@@ -4208,6 +4219,7 @@ int get_linker_ipv6_prefix(char *refparam, struct dmctx *dmctx, void *data, char
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.IP.Interface.{i}.!UCI:network/interface/dmmap_network*/
 int browseIPIfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *ip_int = NULL, *ip_int_last = NULL;

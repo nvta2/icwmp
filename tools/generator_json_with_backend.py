@@ -8,8 +8,6 @@
 #      Copyright (C) 2019 iopsys Software Solutions AB
 #		Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 
-#	Copyright (C) 2019 PIVA SOFTWARE <www.pivasoftware.com> - All Rights Reserved
-#		Author: Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 
 import os, sys, time, re, json
 import xml.etree.ElementTree as xml
@@ -117,6 +115,53 @@ def getparamvalues( dmparam ):
 			break
 	return hasvalues, values
 
+listmapping = []
+def generatelistfromfile(dmobject):
+	obj = dmobject.get('name').split(".")
+	if obj[1].lower() == "deviceinfo" or obj[1].lower() == "managementserver" or obj[1].lower() == "times" or obj[1].lower() == "upnp" or obj[1].lower() == "xmpp":
+		dmpath = "../dm/dmtree/common/"
+	else :
+		dmpath = "../dm/dmtree/tr181/"
+	pathfilename = dmpath + obj[1].lower() + ".c"
+	exists = os.path.isfile(pathfilename)
+	if exists:
+		filec = open(pathfilename, "r")
+		for linec in filec:
+			if "/*#" in linec:
+				listmapping.append(linec)
+	else:
+	    pass
+
+def getparammapping(dmobject, dmparam):
+	hasmapping = 0
+	mapping = ""
+	param = dmobject.get('name') + dmparam.get('name')
+	for value in listmapping:
+		if param in value:
+			hasmapping = 1
+			comment = value.split("!")
+			mapping = comment[1]
+			mapping = mapping.replace("*/\n", "")
+			break
+
+	return hasmapping, mapping
+
+def getobjmapping(dmobject):
+	hasmapping = 0
+	mapping = ""
+	obj = dmobject.get('name')
+	for value in listmapping:
+		comment = value.split("!")
+		mapping = comment[0]
+		mapping = mapping.replace("/*#", "")
+		if obj == mapping:
+			hasmapping = 1
+			mapping = comment[1]
+			mapping = mapping.replace("*/\n", "")
+			break
+
+	return hasmapping, mapping
+
 def objhaschild (parentname, level):
 	hasobj = 0
 	for c in model:
@@ -148,6 +193,81 @@ def printclosefile ():
 	fp = open('./.json_tmp', 'a')
 	print >> fp, "}"
 	fp.close()
+
+def printOBJMaPPING (mapping):
+	fp = open('./.json_tmp', 'a')
+	comment = mapping.split(":")
+	config = comment[1].split("/")
+	if comment[0] == "UCI":
+		type = "uci"
+	elif comment[0] == "UBUS":
+		type = "ubus"
+	else:
+		type = "cli"
+	print >> fp, "\"mapping\": {"
+	print >> fp, "\"type\": \"%s\"," % type
+	print >> fp, "\"%s\": {" % type
+	if comment[0] == "UCI":
+		print >> fp, "\"file\": \"%s\"," % config[0]
+		print >> fp, "\"section\": {"
+		print >> fp, "\"type\": \"%s\"" % config[1]
+		print >> fp, "},"
+		print >> fp, "\"dmmapfile\": \"%s\"" % config[2]
+	print >> fp, "}"
+	print >> fp, "}"
+	fp.close()
+
+def printPARAMMaPPING (mapping):
+	fp = open('./.json_tmp', 'a')
+	comment = mapping.split(":")
+	config = comment[1].split("/")
+	if comment[0] == "UCI":
+		type = "uci"
+	elif comment[0] == "UBUS":
+		type = "ubus"
+	else:
+		type = "cli"
+	
+	print >> fp, "\"mapping\": {"
+	print >> fp, "\"type\": \"%s\"," % type
+	print >> fp, "\"%s\": {" % type
+
+	if comment[0] == "UCI":
+		print >> fp, "\"file\": \"%s\"," % config[0]
+		print >> fp, "\"section\": {"
+		var = config[1].split(",")
+		if len(var) == 1:
+			print >> fp, "\"type\": \"%s\"" % var[0]
+		elif len(var) > 1 and "@i" in var[1]:
+			print >> fp, "\"type\": \"%s\"," % var[0]
+			print >> fp, "\"index\": \"%s\"" % var[1]
+		elif len(var) > 1:
+			print >> fp, "\"type\": \"%s\"," % var[0]
+			print >> fp, "\"name\": \"%s\"" % var[1]		
+		print >> fp, "}"
+		if len(var) > 1:
+			print >> fp, "\"option\": {"
+			print >> fp, "\"name\": \"%s\"" % config[2]
+			print >> fp, "}"
+	elif comment[0] == "UBUS":
+		print >> fp, "\"object\": \"%s\"," % config[0]
+		print >> fp, "\"method\": \"%s\"," % config[1]
+		print >> fp, "\"args\": {"
+		if config[2] != "":
+			args = config[2].split(",")
+			print >> fp, "\"%s\": \"%s\"" % (args[0], args[1])
+		print >> fp, "}"
+		print >> fp, "\"key\": \"%s\"" % config[3]
+
+	else:
+		print >> fp, "\"command\": \"%s\"," % config[0]
+		print >> fp, "\"args\": \"%s\"" % config[1]
+
+	print >> fp, "}"
+	print >> fp, "}"
+	print >> fp, "}"
+	fp.close()
+
 
 def removelastline ():
 	file = open("./.json_tmp")
@@ -183,6 +303,7 @@ def removetmpfiles():
 	removefile("./.json_tmp_1")
 
 def printOBJ( dmobject, hasobj, hasparam ):
+	hasmapping, mapping = getobjmapping(dmobject)
 	if (dmobject.get('name')).endswith(".{i}."):
 		fbrowse = "true"
 	else:
@@ -199,8 +320,11 @@ def printOBJ( dmobject, hasobj, hasparam ):
 	else:
 		print >> fp,  "\"array\" : \"%s\"" % fbrowse
 	fp.close()
+	if hasmapping:
+		printOBJMaPPING (mapping)
 
-def printPARAM( dmparam ):
+def printPARAM( dmparam, dmobject ):
+	hasmapping, mapping = getparammapping(dmobject, dmparam)
 	ptype = getparamtype(dmparam)
 	min, max = getparamrange(dmparam)
 	unit = getparamunit(dmparam)
@@ -229,13 +353,24 @@ def printPARAM( dmparam ):
 	if unit != "":
 		print >> fp,  "\"unit\" : \"%s\"," % unit
 	print >> fp,  "\"read\" : \"true\","
-	if hasvalues:
+	if hasvalues and hasmapping:
+		print >> fp,  "\"write\" : \"%s\"," % access
+		print >> fp,  "\"values\": [%s]," % values
+		fp.close()
+		printPARAMMaPPING(mapping)
+	elif hasvalues and hasmapping == 0:
 		print >> fp,  "\"write\" : \"%s\"," % access
 		print >> fp,  "\"values\": [%s]" % values
+		print >> fp,  "}"
+		fp.close()
+	elif hasvalues == 0 and hasmapping:
+		print >> fp,  "\"write\" : \"%s\"," % access
+		fp.close()
+		printPARAMMaPPING(mapping)
 	else:
 		print >> fp,  "\"write\" : \"%s\"" % access
-	print >> fp,  "}"
-	fp.close()
+		print >> fp,  "}"
+		fp.close()
 
 def printusage():
 	print "Usage: " + sys.argv[0] + " <xml data model> [Object path]...[Object path]"
@@ -258,7 +393,10 @@ def getobjectpointer( objname ):
 			break
 	return obj
 
-def object_parse_childs( dmobject, level):
+def object_parse_childs( dmobject, level, generatelist):
+	if generatelist == 0 and (dmobject.get('name')).count(".") == 2:
+		generatelistfromfile(dmobject)
+
 	hasobj = objhaschild(dmobject.get('name'), level)
 	hasparam = objhasparam(dmobject)
 
@@ -268,25 +406,31 @@ def object_parse_childs( dmobject, level):
 		for c in dmobject:
 			paramname = c.get('name')
 			if c.tag == "parameter":
-				printPARAM(c)
+				printPARAM(c, dmobject)
 
 	if hasobj:
 		for c in model:
 			objname = c.get('name')
 			if c.tag == "object" and dmobject.get('name') in objname and (objname.count('.') - objname.count('{i}')) == level:
 				printopenobject(c)
-				object_parse_childs(c, level+1)
+				object_parse_childs(c, level+1, 0)
 				printclosefile ()
 
 	return;
 
 def generatejsonfromobj(pobj, pdir):
+	generatelist = 0
 	securemkdir(pdir)
 	removetmpfiles()
 	dmlevel = (pobj.get('name')).count(".") - (pobj.get('name')).count("{i}.") + 1
+	if (pobj.get('name')).count(".") == 1:
+		generatelist = 0
+	else:
+		generatelistfromfile(pobj)
+		generatelist = 1
 	printopenfile ()
 	printopenobject(pobj)
-	object_parse_childs(pobj, dmlevel)
+	object_parse_childs(pobj, dmlevel, generatelist)
 	dmfp = open(pdir + "/" +  (getname(pobj.get('name'))).lower() + ".json", "a")
 	printclosefile ()
 	printclosefile ()

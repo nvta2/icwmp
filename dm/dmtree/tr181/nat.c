@@ -178,6 +178,7 @@ int delete_NAT_PortMapping(char *refparam, struct dmctx *ctx, void *data, char *
 /**************************************************************************
 * SET & GET VALUE
 ***************************************************************************/
+/*#Device.NAT.InterfaceSettingNumberOfEntries!UCI:firewall/zone/*/
 int get_nat_interface_setting_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -191,6 +192,7 @@ int get_nat_interface_setting_number_of_entries(char *refparam, struct dmctx *ct
 	return 0;
 }
 
+/*#Device.NAT.PortMappingNumberOfEntries!UCI:firewall/redirect/*/
 int get_nat_port_mapping_number_of_entries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *s = NULL;
@@ -204,6 +206,7 @@ int get_nat_port_mapping_number_of_entries(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
+/*#Device.NAT.InterfaceSetting.{i}.Enable!UCI:firewall/zone,@i-1/masq*/
 int get_nat_interface_setting_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *val;
@@ -228,6 +231,7 @@ int set_nat_interface_setting_enable(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.NAT.InterfaceSetting.{i}.Status!UCI:firewall/zone,@i-1/masq*/
 int get_nat_interface_setting_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *val;
@@ -304,6 +308,7 @@ int set_nat_interface_setting_interface(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.Enable!UCI:firewall/redirect,@i-1/enabled*/
 int get_nat_port_mapping_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *val;
@@ -328,6 +333,7 @@ int set_nat_port_mapping_enable(char *refparam, struct dmctx *ctx, void *data, c
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.Status!UCI:firewall/redirect,@i-1/enabled*/
 int get_nat_port_mapping_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *val;
@@ -457,6 +463,7 @@ int set_nat_port_mapping_lease_duration(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.RemoteHost!UCI:firewall/redirect,@i-1/src_dip*/
 int get_nat_port_mapping_remote_host(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string((struct uci_section *)data, "src_dip", value);
@@ -475,6 +482,7 @@ int set_nat_port_mapping_remote_host(char *refparam, struct dmctx *ctx, void *da
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.ExternalPort!UCI:firewall/redirect,@i-1/src_dport*/
 int get_nat_port_mapping_external_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *dport, *tmp;
@@ -509,6 +517,7 @@ int set_nat_port_mapping_external_port(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.ExternalPortEndRange!UCI:firewall/redirect,@i-1/src_dport*/
 int get_nat_port_mapping_external_port_end_range(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *dport, *tmp;
@@ -539,6 +548,7 @@ int set_nat_port_mapping_external_port_end_range(char *refparam, struct dmctx *c
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.InternalPort!UCI:firewall/redirect,@i-1/dest_port*/
 int get_nat_port_mapping_internal_port(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string((struct uci_section *)data, "dest_port", value);
@@ -557,6 +567,7 @@ int set_nat_port_mapping_internal_port(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.Protocol!UCI:firewall/redirect,@i-1/proto*/
 int get_nat_port_mapping_protocol(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *proto;
@@ -592,6 +603,7 @@ int set_nat_port_mapping_protocol(char *refparam, struct dmctx *ctx, void *data,
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.InternalClient!UCI:firewall/redirect,@i-1/dest_ip*/
 int get_nat_port_mapping_internal_client(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string((struct uci_section *)data, "dest_ip", value);
@@ -610,6 +622,7 @@ int set_nat_port_mapping_internal_client(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.Description!UCI:firewall/redirect,@i-1/name*/
 int get_nat_port_mapping_description(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string((struct uci_section *)data, "name", value);
@@ -631,6 +644,7 @@ int set_nat_port_mapping_description(char *refparam, struct dmctx *ctx, void *da
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.NAT.InterfaceSetting.{i}.!UCI:firewall/zone/dmmap_firewall*/
 int browseInterfaceSettingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *nati, *nati_last = NULL;
@@ -647,6 +661,7 @@ int browseInterfaceSettingInst(struct dmctx *dmctx, DMNODE *parent_node, void *p
 	return 0;
 }
 
+/*#Device.NAT.PortMapping.{i}.!UCI:firewall/redirect/dmmap_firewall*/
 int browsePortMappingInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	char *natp, *natp_last = NULL, *target;

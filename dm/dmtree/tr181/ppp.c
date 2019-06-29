@@ -83,6 +83,7 @@ int set_ppp_alias(char *refparam, struct dmctx *ctx, void *data, char *instance,
 /**************************************************************************
 * GET & SET PARAMETERS
 ***************************************************************************/
+/*#Device.PPP.Interface.{i}.Enable!UBUS:network.interface/status/interface,@Name/up*/
 int get_ppp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	return get_interface_enable_ubus(section_name(((struct uci_section *)data)), refparam, ctx, value);
@@ -99,6 +100,7 @@ int get_ppp_name(char *refparam, struct dmctx *ctx, void *data, char *instance, 
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Status!UBUS:network.interface/status/interface,@Name/up*/
 int get_ppp_status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *status = NULL;
@@ -129,6 +131,7 @@ int get_ppp_status(char *refparam, struct dmctx *ctx, void *data, char *instance
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Username!UCI:network/interface,@i-1/username*/
 int get_ppp_username(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	dmuci_get_value_by_section_string(((struct uci_section *)data), "username", value);
@@ -147,6 +150,7 @@ int set_ppp_username(char *refparam, struct dmctx *ctx, void *data, char *instan
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Password!UCI:network/interface,@i-1/password*/
 int set_ppp_password(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	switch (action) {
@@ -172,6 +176,7 @@ inline int ubus_get_wan_stats(void *data, char *instance, json_object *res, char
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Stats.BytesReceived!UBUS:network.device/status/name,@Name/statistics.rx_bytes*/
 int get_ppp_eth_bytes_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -179,6 +184,7 @@ int get_ppp_eth_bytes_received(char *refparam, struct dmctx *ctx, void *data, ch
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Stats.BytesSent!UBUS:network.device/status/name,@Name/statistics.tx_bytes*/
 int get_ppp_eth_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -186,6 +192,7 @@ int get_ppp_eth_bytes_sent(char *refparam, struct dmctx *ctx, void *data, char *
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Stats.PacketsReceived!UBUS:network.device/status/name,@Name/statistics.rx_packets*/
 int get_ppp_eth_pack_received(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -193,6 +200,7 @@ int get_ppp_eth_pack_received(char *refparam, struct dmctx *ctx, void *data, cha
 	return 0;
 }
 
+/*#Device.PPP.Interface.{i}.Stats.PacketsSent!UBUS:network.device/status/name,@Name/statistics.tx_packets*/
 int get_ppp_eth_pack_sent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	json_object *res;
@@ -313,6 +321,7 @@ int delete_ppp_interface(char *refparam, struct dmctx *ctx, void *data, char *in
 /*************************************************************
  * ENTRY METHOD
 /*************************************************************/
+/*#Device.PPP.Interface.{i}.!UCI:network/interface/dmmap_network*/
 int browseInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *net_sec = NULL;
