@@ -181,6 +181,10 @@ def cprinttopfile (fp, filename):
 	print >> fp, ""
 	print >> fp, "#include \"dmcwmp.h\""
 	print >> fp, "#include \"dmcommon.h\""
+	print >> fp, "#include \"dmuci.h\""
+	print >> fp, "#include \"dmubus.h\""
+	print >> fp, "#include \"dmjson.h\""
+	print >> fp, "#include \"dmentry.h\""
 	print >> fp, "#include \"%s.h\"" % filename.lower()
 	print >> fp, ""
 
