@@ -10,6 +10,9 @@
 
 #include "dmcwmp.h"
 #include "dmcommon.h"
+#include "dmcwmp.h"
+#include "dmentry.h"
+#include "dmuci.h"
 #include "qos.h"
 #include <regex.h>
 

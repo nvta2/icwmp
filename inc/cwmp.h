@@ -309,4 +309,5 @@ int run_session_end_func (struct session *session);
 int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *session);
 int cwmp_session_destructor (struct cwmp *cwmp, struct session *session);
 int cwmp_init(int argc, char** argv,struct cwmp *cwmp);
+int cwmp_exit(void);
 #endif /* _CWMP_H__ */

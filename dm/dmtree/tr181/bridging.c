@@ -18,6 +18,7 @@
 #include "dmcommon.h"
 #include "bridging.h"
 #include "dmjson.h"
+#include "dmentry.h"
 
 static char *wan_baseifname = NULL;
 

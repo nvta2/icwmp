@@ -657,7 +657,8 @@ void update_section_option_list(char *config, char *section, char *option, char 
 	}
 }
 
-void update_section_list_icwmpd(char *config, char *section, char *option, int number, char *filter, char *option1, char *val1,  char *option2, char *val2){
+void update_section_list_icwmpd(char *config, char *section, char *option, int number, char *filter, char *option1, char *val1,  char *option2, char *val2)
+{
 	char *add_value;
 	struct uci_section *s = NULL;
 	int i = 0;
@@ -1409,7 +1410,8 @@ void update_dmmap_sections(struct list_head *dup_list, char *instancename, char*
 	}
 }
 
-struct uci_section *is_dmmap_section_exist(char* package, char* section){
+struct uci_section *is_dmmap_section_exist(char* package, char* section)
+{
 	struct uci_section *s;
 
 	uci_path_foreach_sections(icwmpd, package, section, s) {
@@ -1418,7 +1420,8 @@ struct uci_section *is_dmmap_section_exist(char* package, char* section){
 	return NULL;
 }
 
-struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char* opt, char* value){
+struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char* opt, char* value)
+{
 	struct uci_section *s;
 
 	uci_path_foreach_option_eq(icwmpd, package, section, opt, value, s) {
@@ -1427,7 +1430,8 @@ struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char
 	return NULL;
 }
 
-unsigned char isdigit_str(char *str) {
+unsigned char isdigit_str(char *str)
+{
 	if (!(*str)) return 0;
 	while(isdigit(*str++));
 	return ((*(str-1)) ? 0 : 1);

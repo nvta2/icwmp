@@ -15,6 +15,8 @@
 #include "dmubus.h"
 #include "dmcwmp.h"
 #include "dmcommon.h"
+#include "dmentry.h"
+#include "dhcp.h"
 #include "dhcpv6.h"
 #include "dmjson.h"
 
@@ -1045,7 +1047,7 @@ int set_DHCPv6Client_RequestedOptions(char *refparam, struct dmctx *ctx, void *d
 		case VALUECHECK:
 			break;
 		case VALUESET:
-			dmuci_set_value_by_section(dhcpv6_client_args->dhcp_client_conf, "reqopts", *value);
+			dmuci_set_value_by_section(dhcpv6_client_args->dhcp_client_conf, "reqopts", value);
 			break;
 	}
 	return 0;
@@ -1189,7 +1191,7 @@ int get_DHCPv6Server_Enable(char *refparam, struct dmctx *ctx, void *data, char 
 
 int set_DHCPv6Server_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 
 	switch (action) {
 		case VALUECHECK:

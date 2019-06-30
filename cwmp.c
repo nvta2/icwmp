@@ -618,7 +618,7 @@ void *thread_exit_program (void *v)
 {
 	CWMP_LOG(INFO,"EXIT ICWMP");
 	pthread_mutex_lock(&mutex_backup_session);
-    	cwmp_exit();
+	cwmp_exit();
 	exit(EXIT_SUCCESS);
 }
 
@@ -628,7 +628,8 @@ void signal_handler(int signal_num)
     _exit(EXIT_SUCCESS);
 }
 
-int cwmp_exit() {
+int cwmp_exit(void)
+{
     struct cwmp *cwmp = &cwmp_main;
 
     FREE(cwmp->deviceid.manufacturer);

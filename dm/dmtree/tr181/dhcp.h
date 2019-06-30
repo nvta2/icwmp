@@ -145,6 +145,7 @@ int set_dhcp_staticaddress_yiaddr(char *refparam, struct dmctx *ctx, void *data,
 int set_dhcp_sever_pool_order(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 int get_dhcp_client_linker(char *refparam, struct dmctx *dmctx, void *data, char *instance, char **linker);
+int set_section_order(char *package, char *dmpackage, char* sect_type, struct uci_section *dmmap_sect, struct uci_section *conf, int set_force, char* order);
 
 int get_DHCPv4_ClientNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_DHCPv4Client_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);

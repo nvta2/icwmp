@@ -18,6 +18,7 @@
 #include "dmcommon.h"
 #include "hosts.h"
 #include "dmjson.h"
+#include "dmentry.h"
 
 /*** Hosts. ***/
 
@@ -65,14 +66,14 @@ inline int init_host_args(struct host_args *args, json_object *clients, char *ke
 int get_host_associateddevice(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct uci_section *ss;
-	char *macaddr_linker=dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
-	char *accesspointInstance= NULL, *wifiAssociativeDeviecPath;
+	char *macaddr_linker = dmjson_get_value(((struct host_args *)data)->client, 1, "macaddr");
+	char *accesspointInstance = NULL, *wifiAssociativeDeviecPath;
 
 	uci_path_foreach_sections(icwmpd, "dmmap_wireless", "wifi-iface", ss) {
 		dmuci_get_value_by_section_string(ss, "accesspointinstance", &accesspointInstance);
-		if(accesspointInstance[0]!='/0')
+		if(accesspointInstance[0] != '\0')
 			dmasprintf(&wifiAssociativeDeviecPath, "Device.WiFi.AccessPoint.%s.AssociatedDevice.", accesspointInstance);
-		accesspointInstance= NULL;
+		accesspointInstance = NULL;
 		adm_entry_get_linker_param(ctx, wifiAssociativeDeviecPath, macaddr_linker, value);
 		if(*value != NULL)
 			break;

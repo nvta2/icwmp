@@ -515,14 +515,18 @@ void dm_update_enabled_notify(struct dm_enabled_notify *p, char *new_value);
 int dm_update_file_enabled_notify(char *param, char *new_value);
 void dm_update_enabled_notify_byname(char *name, char *new_value);
 char *get_last_instance(char *package, char *section, char *opt_inst);
+char *get_last_instance_icwmpd_without_update(char *package, char *section, char *opt_inst);
 char *get_last_instance_icwmpd(char *package, char *section, char *opt_inst);
+char *get_vlan_last_instance_icwmpd(char *package, char *section, char *opt_inst, char *vlan_method);
 char *get_last_instance_lev2(char *package, char *section, char *opt_inst, char *opt_check, char *value_check);
+char *get_last_instance_lev2_icwmpd_dmmap_opt(char* dmmap_package, char *section,  char *opt_inst, char *opt_check, char *value_check);
 char *get_last_instance_lev2_icwmpd(char *package, char *section, char* dmmap_package, char *opt_inst, char *opt_check, char *value_check);
 char *handle_update_instance(int instance_ranck, struct dmctx *ctx, char **last_inst, char * (*up_instance)(int action, char **last_inst, void *argv[]), int argc, ...);
 int dm_add_end_session(struct dmctx *ctx, void(*function)(struct execute_end_session *), int action, void *data);
 int apply_end_session();
 void cwmp_set_end_session (unsigned int flag);
 char *dm_print_path(char *fpath, ...);
+void free_all_list_enabled_lwnotify();
 #ifdef UPNP_TR064
 void dm_upnp_apply_config(void);
 void add_list_upnp_param_track(struct dmctx *dmctx, struct list_head *pchead, char *param, char *key, char *value, unsigned int isobj);

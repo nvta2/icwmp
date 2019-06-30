@@ -12,6 +12,7 @@
 #include "dmcommon.h"
 #include "dmubus.h"
 #include "dmjson.h"
+#include "dmentry.h"
 #include "interfacestack.h"
 
 /* *** Device.InterfaceStack.{i}. *** */

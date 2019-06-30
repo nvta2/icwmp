@@ -33,6 +33,10 @@ struct xmpp_config cur_xmpp_conf = {0};
 struct xmpp_connection cur_xmpp_con = {0};
 int xmpp_mesode_log_level = XMPP_LEVEL_DEBUG;
 
+void xmpp_connecting(void);
+void xmpp_exit(xmpp_ctx_t *ctx, xmpp_conn_t *conn);
+void xmpp_con_exit(void);
+
 static int send_stanza_cr_response(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
 	xmpp_stanza_t *reply;
@@ -156,7 +160,7 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 	bool valid_ns = true, auth_status = false, service_available = false;
 
 	if(xmpp_stanza_get_child_by_name(stanza1, "connectionRequest")) {
-		from = xmpp_stanza_get_attribute(stanza1, "from");
+		from = (char *)xmpp_stanza_get_attribute(stanza1, "from");
 	}
 	else {
 		cwmp_xmpp_log(SDEBUG,"xmpp connection request handler does not contain an iq type");
@@ -172,7 +176,7 @@ static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, v
 	child = xmpp_stanza_get_child_by_name(stanza1, "connectionRequest");
 	if(child) {
 		service_available = true;
-		name_space = xmpp_stanza_get_attribute(child, "xmlns");
+		name_space = (char *)xmpp_stanza_get_attribute(child, "xmlns");
 		if(strcmp(name_space, XMPP_CR_NS) != 0)
 		{
 			valid_ns = false;

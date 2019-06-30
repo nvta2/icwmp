@@ -17,6 +17,7 @@
 #include "dmcwmp.h"
 #include "dmjson.h"
 #include "dmcommon.h"
+#include "dmentry.h"
 #include "ppp.h"
 
 /*** PPP. ***/

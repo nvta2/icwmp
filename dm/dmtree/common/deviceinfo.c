@@ -694,13 +694,13 @@ int browsePocessEntriesInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev
 	dmubus_call("router.system", "processes", UBUS_ARGS{{}}, 0, &res);
 	fields = json_object_object_get(res, "fields");
 	processes = json_object_object_get(res, "processes");
-	size_t nbre_process= json_object_array_length(processes);
-	pid_field= dmjson_get_value_in_array_idx(fields, 0, 0, NULL);
-	command_field= dmjson_get_value_in_array_idx(fields, 7, 0, NULL);
-	state_field= dmjson_get_value_in_array_idx(fields, 3, 0, NULL);
-	mem_size_field= dmjson_get_value_in_array_idx(fields, 4, 0, NULL);
-	priority_field= dmjson_get_value_in_array_idx(fields, 8, 0, NULL);
-	cpu_time_field= dmjson_get_value_in_array_idx(fields, 9, 0, NULL);
+	size_t nbre_process = json_object_array_length(processes);
+	pid_field = (char *)dmjson_get_value_in_array_idx(fields, 0, 0, NULL);
+	command_field = (char *)dmjson_get_value_in_array_idx(fields, 7, 0, NULL);
+	state_field = (char *)dmjson_get_value_in_array_idx(fields, 3, 0, NULL);
+	mem_size_field = (char *)dmjson_get_value_in_array_idx(fields, 4, 0, NULL);
+	priority_field = (char *)dmjson_get_value_in_array_idx(fields, 8, 0, NULL);
+	cpu_time_field = (char *)dmjson_get_value_in_array_idx(fields, 9, 0, NULL);
 
 	if(nbre_process>0){
 		for(i=0; i<nbre_process; i++){

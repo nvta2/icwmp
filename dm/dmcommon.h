@@ -149,6 +149,7 @@ struct uci_section *create_firewall_zone_config(char *fwl, char *iface, char *in
 int set_interface_firewall_enabled(char *iface, char *refparam, struct dmctx *ctx, int action, char *value);
 int dmcmd(char *cmd, int n, ...);
 int dmcmd_read(int pipe, char *buffer, int size);
+void dmcmd_read_alloc(int pipe, char **value);
 int dmcmd_no_wait(char *cmd, int n, ...);
 int ipcalc(char *ip_str, char *mask_str, char *start_str, char *end_str, char *ipstart_str, char *ipend_str);
 int ipcalc_rev_start(char *ip_str, char *mask_str, char *ipstart_str, char *start_str);
@@ -156,6 +157,7 @@ int ipcalc_rev_end(char *ip_str, char *mask_str, char *start_str, char *ipend_st
 int network_get_ipaddr(char **value, char *iface);
 void remove_vid_interfaces_from_ifname(char *vid, char *ifname, char *new_ifname);
 void update_section_option_list(char *config, char *section, char *option, char *option_2,char *val, char *val_2, char *name);
+void update_section_list_icwmpd(char *config, char *section, char *option, int number, char *filter, char *option1, char *val1,  char *option2, char *val2);
 void update_section_list(char *config, char *section, char *option, int number, char *filter, char *option1, char *val1,  char *option2, char *val2);
 char *get_nvram_wpakey();
 int reset_wlan(struct uci_section *s);
@@ -204,6 +206,7 @@ int get_shift_time_shift(char *local_time, char *shift);
 int get_stats_from_ifconfig_command(char *device, char *direction, char *option);
 int command_exec_output_to_array(char *cmd, char **output, int *length);
 char* int_period_to_date_time_format(int time);
+struct uci_section *is_dmmap_section_exist(char* package, char* section);
 struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char* opt, char* value);
 
 #endif

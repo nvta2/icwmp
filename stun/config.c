@@ -27,6 +27,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <unistd.h>
+#include <ctype.h>
 
 static struct uci_context *uci_ctx = NULL;
 static struct uci_context *uci_ctx_state = NULL;

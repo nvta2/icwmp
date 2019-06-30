@@ -41,7 +41,7 @@ enum xmpp_log_level_enum {
 	__MAX_SLOG
 };
 
-void xmpp_log(int priority, const char *format, ...);
+void cwmp_xmpp_log(int priority, const char *format, ...);
 void cwmp_xmpp_log_handler(void * const userdata,
 			 const xmpp_log_level_t level,
 			 const char * const area,

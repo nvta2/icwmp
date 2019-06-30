@@ -17,6 +17,7 @@
 #include "dmubus.h"
 #include "dmcwmp.h"
 #include "dmcommon.h"
+#include "dmentry.h"
 #include "nat.h"
 
 /*** NAT. ***/

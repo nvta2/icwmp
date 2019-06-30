@@ -9,6 +9,7 @@
 */
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -18,6 +19,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include "udpechoserver.h"
 #include "udpechoserverlog.h"
 #include "udpechoserveruci.h"

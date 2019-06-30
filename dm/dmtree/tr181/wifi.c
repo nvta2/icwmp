@@ -19,6 +19,8 @@
 #include "dmcommon.h"
 #include "wifi.h"
 #include "dmjson.h"
+#include "dmentry.h"
+#include "wepkey.h"
 #define DELIMITOR ","
 
 /*** WiFi. ***/

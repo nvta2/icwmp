@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <uci.h>
 #include "xmppuci.h"
 

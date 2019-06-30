@@ -65,7 +65,4 @@ struct xmpp_connection
 
 extern struct xmpp_config cur_xmpp_conf;
 
-void cwmp_xmpp_connect_client();
-void cwmp_xmpp_exit();
-
 #endif /* _XMPP_H__ */

@@ -30,6 +30,9 @@ struct stun_config {
 
 extern struct stun_config conf;
 
+int config_init(void);
+int config_fini(void);
+
 int suci_init(void);
 int suci_fini(void);
 void suci_print_list(struct uci_list *uh, char **val, char *delimiter);

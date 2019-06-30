@@ -16,6 +16,7 @@
 #include "dmcwmp.h"
 #include "dmcommon.h"
 #include "dmjson.h"
+#include "dmentry.h"
 #include "dsl.h"
 
 #define DELIMITOR ","

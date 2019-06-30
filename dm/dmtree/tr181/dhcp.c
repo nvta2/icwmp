@@ -13,12 +13,14 @@
 #include <uci.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcwmp.h"
 #include "dmcommon.h"
 #include "dhcp.h"
 #include "dmjson.h"
+#include "dmentry.h"
 #define DELIMITOR ","
 
 /*** DHCPv4. ***/
@@ -270,7 +272,8 @@ struct uci_section* exist_other_section_same_order(struct uci_section *dmmap_sec
 	return NULL;
 }
 
-int set_section_order(char *package, char *dmpackage, char* sect_type, struct uci_section *dmmap_sect, struct uci_section *conf, int set_force, char* order) {
+int set_section_order(char *package, char *dmpackage, char* sect_type, struct uci_section *dmmap_sect, struct uci_section *conf, int set_force, char* order)
+{
 	char *v= NULL, *sect_name, *incrorder;
 	struct uci_section *s, *dm;
 	dmuci_get_value_by_section_string(dmmap_sect, "order", &v);

@@ -8,9 +8,11 @@
  *
  *      Author: Omar Kallel <omar.kallel@pivasoftware.com>
  */
+
 #include "dmcwmp.h"
 #include "firewall.h"
 #include "dmcommon.h"
+#include "dmentry.h"
 
 DMOBJ tFirewallObj[] = {
 {"Level", &DMREAD, NULL, NULL, NULL, browseLevelInst, NULL, NULL, NULL, tLevelParams, NULL},
@@ -93,7 +95,7 @@ int browseLevelInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, c
 	char *v, *instance, *instnbr = NULL;
 
 	check_create_dmmap_package("dmmap_firewall");
-	s=is_dmmap_section_exist("dmmap_firewall", "level");
+	s = is_dmmap_section_exist("dmmap_firewall", "level");
 	if(!s)
 		dmuci_add_section_icwmpd("dmmap_firewall", "level", &s, &v);
 	instance =  handle_update_instance(1, dmctx, &instnbr, update_instance_alias, 3, s, "firewall_level_instance", "firewall_level_alias");
@@ -108,7 +110,7 @@ int browseChainInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, c
 	char *v, *instance, *instnbr = NULL;
 
 	check_create_dmmap_package("dmmap_firewall");
-	s=is_dmmap_section_exist("dmmap_firewall", "chain");
+	s = is_dmmap_section_exist("dmmap_firewall", "chain");
 	if(!s)
 		dmuci_add_section_icwmpd("dmmap_firewall", "chain", &s, &v);
 	instance =  handle_update_instance(1, dmctx, &instnbr, update_instance_alias, 3, s, "firewall_chain_instance", "firewall_chain_alias");
@@ -717,7 +719,7 @@ int get_time_span_stop_time(char *refparam, struct dmctx *ctx, void *data, char 
 
 int set_firewall_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -740,6 +742,7 @@ int set_firewall_config(char *refparam, struct dmctx *ctx, void *data, char *ins
 		case VALUECHECK:
 			if (strcasecmp(value, "Advanced") != 0)
 				return FAULT_9007;
+			break;
 		case VALUESET:
 			break;
 	}
@@ -787,7 +790,7 @@ int set_level_description(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int set_level_port_mapping_enabled(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	struct uci_section *s = NULL;
 	char *v, *v2;
 
@@ -822,7 +825,7 @@ int set_level_port_mapping_enabled(char *refparam, struct dmctx *ctx, void *data
 
 int set_level_default_log_policy(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	struct uci_section *s = NULL;
 
 	switch (action) {
@@ -851,7 +854,7 @@ int set_level_default_log_policy(char *refparam, struct dmctx *ctx, void *data, 
 
 int set_chain_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b) || !b)
@@ -879,7 +882,7 @@ int set_chain_name(char *refparam, struct dmctx *ctx, void *data, char *instance
 
 int set_rule_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 
 	switch (action) {
 		case VALUECHECK:

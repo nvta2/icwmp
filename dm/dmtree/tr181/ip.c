@@ -20,6 +20,7 @@
 #include "ip.h"
 #include "diagnostic.h"
 #include "dmjson.h"
+#include "dmentry.h"
 
 struct dm_forced_inform_s IPv4INFRM = {0, get_ipv4_finform};
 struct dm_forced_inform_s IPv6INFRM = {0, get_ipv6_finform};
@@ -2771,7 +2772,7 @@ int get_IPInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char *
 
 int set_IPInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -2830,7 +2831,7 @@ int get_IPInterface_IPv6Enable(char *refparam, struct dmctx *ctx, void *data, ch
 
 int set_IPInterface_IPv6Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	switch (action)	{
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -2879,7 +2880,7 @@ int get_IPInterface_Reset(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int set_IPInterface_Reset(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	switch (action) {
 		case VALUECHECK:
 			if (string_to_bool(value, &b))
@@ -3648,7 +3649,7 @@ int get_IPInterfaceTWAMPReflector_Enable(char *refparam, struct dmctx *ctx, void
 
 int set_IPInterfaceTWAMPReflector_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
-	unsigned char b;
+	bool b;
 	struct uci_section *s;
 	char *type, *interface, *device, *id, *ipv4addr = "";
 	json_object *res, *jobj;

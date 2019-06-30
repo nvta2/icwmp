@@ -11,6 +11,8 @@
 #ifndef _UDPECHOSERVERUCI_H__
 #define _UDPECHOSERVERUCI_H__
 
+#include <uci.h>
+
 #define VAR_STATE "/var/state"
 
 int dmuci_init(void);

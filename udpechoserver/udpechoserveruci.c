@@ -8,6 +8,8 @@
 *		Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 */
 
+#include <string.h>
+#include <ctype.h>
 #include <uci.h>
 #include "udpechoserveruci.h"
 

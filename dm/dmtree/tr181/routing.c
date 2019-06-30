@@ -13,12 +13,14 @@
 #include <uci.h>
 #include <ctype.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include "dmcwmp.h"
 #include "dmuci.h"
 #include "dmubus.h"
 #include "dmcommon.h"
 #include "routing.h"
 #include "dmjson.h"
+#include "dmentry.h"
 
 enum enum_route_type {
 	ROUTE_STATIC,

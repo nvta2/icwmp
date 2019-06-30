@@ -16,6 +16,7 @@
 #include "dmubus.h"
 #include "times.h"
 #include "dmcommon.h"
+#include "dmentry.h"
 
 
 /*** Time. ***/

@@ -8,6 +8,7 @@
 *		Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
 */
 
+#include <stdio.h>
 #include <time.h>
 #include <syslog.h>
 #include <stdarg.h>

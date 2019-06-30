@@ -541,9 +541,8 @@ char *update_instance_without_section(int action, char **last_inst, void *argv[]
 
 char *get_vlan_last_instance_icwmpd(char *package, char *section, char *opt_inst, char *vlan_method)
 {
-	struct uci_section *s;
-	char *inst = NULL;
-	char *last_inst = NULL, *type, *confsect, *sect_name;
+	struct uci_section *s, *confsect;
+	char *inst = NULL, *last_inst = NULL, *type, *sect_name;
 
 	uci_path_foreach_sections(icwmpd, package, section, s) {
 		dmuci_get_value_by_section_string(s, "section_name", &sect_name);

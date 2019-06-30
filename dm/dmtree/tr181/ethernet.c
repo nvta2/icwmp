@@ -401,18 +401,19 @@ int addObjEthernetVLANTermination(char *refparam, struct dmctx *ctx, void *data,
 int delObjEthernetVLANTermination(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	int found = 0;
-	struct uci_section *s = NULL, *ss = NULL, *dmmap_section = NULL, *vlan_method = NULL;
+	struct uci_section *s = NULL, *ss = NULL, *dmmap_section = NULL;
+	char *vlan_method = NULL;
 
 	switch (del_action) {
 	case DEL_INST:
 		dmuci_get_option_value_string("cwmp", "cpe", "vlan_method", &vlan_method);
-		if(is_section_unnamed(section_name(((struct dm_args *)data)->section))){
+		if(is_section_unnamed(section_name(((struct dm_args *)data)->section))) {
 			LIST_HEAD(dup_list);
-			if(strcmp(vlan_method, "2") == 0){
+			if(strcmp(vlan_method, "2") == 0) {
 				delete_sections_save_next_sections("dmmap_network", "device", "all_vlan_term_instance", section_name((struct uci_section *)data), atoi(instance), &dup_list);
 				update_dmmap_sections(&dup_list, "all_vlan_term_instance", "dmmap_network", "device");
 			}
-			else{
+			else {
 				delete_sections_save_next_sections("dmmap_network", "device", "only_tagged_vlan_term_instance", section_name((struct uci_section *)data), atoi(instance), &dup_list);
 				update_dmmap_sections(&dup_list, "only_tagged_vlan_term_instance", "dmmap_network", "device");
 			}

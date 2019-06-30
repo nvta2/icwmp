@@ -360,12 +360,14 @@ int set_x_iopsys_eu_owsd_listenobj_alias(char *refparam, struct dmctx *ctx, void
 	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	dmuci_get_option_value_string("owsd","ubusproxy","enable", value);
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -376,12 +378,14 @@ int set_x_iopsys_eu_owsd_ubus_proxy_enable(char *refparam, struct dmctx *ctx, vo
 	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	dmuci_get_option_value_string("owsd","ubusproxy","peer_cert", value);
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -389,16 +393,17 @@ int set_x_iopsys_eu_owsd_ubus_proxy_cert(char *refparam, struct dmctx *ctx, void
 			dmuci_set_value("owsd", "ubusproxy", "peer_cert", value);
 			return 0;
 	}
+	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	dmuci_get_option_value_string("owsd","ubusproxy","peer_key", value);
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
-	char *net_cur_mode= NULL;
-
+int set_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -409,14 +414,14 @@ int set_x_iopsys_eu_owsd_ubus_proxy_key(char *refparam, struct dmctx *ctx, void 
 	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	dmuci_get_option_value_string("owsd","ubusproxy","peer_ca", value);
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
-	char *net_cur_mode= NULL;
-
+int set_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	switch (action) {
 		case VALUECHECK:
 			return 0;
@@ -427,20 +432,22 @@ int set_x_iopsys_eu_owsd_ubus_proxy_ca(char *refparam, struct dmctx *ctx, void *
 	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
-	char *net_cur_mode= NULL;
+	char *net_cur_mode = NULL;
 	dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
 
-	if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")){
+	if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")) {
 		dmuci_get_value_by_section_string(owsd_listensection, "cert", value);
 	}
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
-	char *net_cur_mode= NULL;
+	char *net_cur_mode = NULL;
 
 	switch (action) {
 		case VALUECHECK:
@@ -449,45 +456,48 @@ int set_x_iopsys_eu_owsd_ubus_cert(char *refparam, struct dmctx *ctx, void *data
 			dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
 			if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")){
 				if(strcmp(section_name(owsd_listensection), "wan_https")== 0)
-					dmuci_set_value_by_section(owsd_listensection, "cert", *value);
+					dmuci_set_value_by_section(owsd_listensection, "cert", value);
 			}
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
 	char *net_cur_mode= NULL;
 
 	dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
-	if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")){
+	if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")) {
 		dmuci_get_value_by_section_string(owsd_listensection, "key", value);
 	}
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
-	char *net_cur_mode= NULL;
+	char *net_cur_mode = NULL;
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
 			dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
-			if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")){
+			if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")) {
 				if(strcmp(section_name(owsd_listensection), "wan_https")== 0)
-					dmuci_set_value_by_section(owsd_listensection, "key", *value);
+					dmuci_set_value_by_section(owsd_listensection, "key", value);
 			}
 			return 0;
 	}
 	return 0;
 }
 
-int get_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+int get_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
-	char *net_cur_mode= NULL;
+	char *net_cur_mode = NULL;
 
 	dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
 	if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")){
@@ -496,18 +506,19 @@ int get_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, 
 	return 0;
 }
 
-int set_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+int set_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
 	struct uci_section *owsd_listensection = (struct uci_section *)data;
-	char *net_cur_mode= NULL;
+	char *net_cur_mode = NULL;
 
 	switch (action) {
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
 			dmuci_get_option_value_string("netmode", "setup", "curmode", &net_cur_mode);
-			if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")){
+			if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")) {
 				if(strcmp(section_name(owsd_listensection), "wan_https")== 0)
-					dmuci_set_value_by_section(owsd_listensection, "ca", *value);
+					dmuci_set_value_by_section(owsd_listensection, "ca", value);
 			}
 			return 0;
 	}

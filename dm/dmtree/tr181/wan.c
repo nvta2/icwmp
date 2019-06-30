@@ -8,6 +8,7 @@
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
  *
  */
+
 #include <ctype.h>
 #include <uci.h>
 #include "dmcwmp.h"
@@ -16,6 +17,7 @@
 #include "dmcommon.h"
 #include "wan.h"
 #include "dmjson.h"
+#include "dmentry.h"
 
 /*** ATM. ***/
 DMOBJ tAtmObj[] = {
