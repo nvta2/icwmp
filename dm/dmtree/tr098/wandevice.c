@@ -2475,44 +2475,32 @@ end:
 int browsewanprotocolconnectionipInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *ss = NULL;
-	char *pack, *stype, *p, *iconp_ip_last = NULL, *iconp_ppp_last = NULL;
+	char *p, *iconp_ip_last = NULL, *iconp_ppp_last = NULL, *device = NULL;
 	char *iconp = NULL, *iconp_nil = NULL;
-	int proto;
+	int proto, is_br=0;
 	bool notif_permission = true;
 	bool forced_inform_eip = false;
 	int forced_notify = UNDEF;
 	struct wanargs *curr_wanargs = (struct wanargs *)prev_data;
 	char *lan_name;
 
-	char *wan_interface;
-	char* containsrepeater= NULL;
-	int repeatindex;
 	struct uci_section *s = NULL;
 	char *freq, **value;
 	json_object *res;
-	char *isrepeater;
 	struct dmmap_dup *dmdup;
 	LIST_HEAD(dup_list);
 
-	dmuci_get_option_value_string("netmode", "setup", "curmode", &isrepeater);
-	containsrepeater = strstr(isrepeater, "repeater");
-	if(containsrepeater){
-		repeatindex = (int)(containsrepeater - isrepeater);
-		if(repeatindex == 0){
-			uci_foreach_sections("wireless", "wifi-device", s) {
-				dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", s->e.name, String}}, 1, &res);
-				DM_ASSERT(res, *value = "");
-				freq = dmjson_get_value(res, 1, "frequency");
-				if(freq[0]=='5') dmasprintf(&wan_interface, "%s", s->e.name);
-			}
-		}else{
-			dmasprintf(&wan_interface, "%s", curr_wanargs->fwan);
-		}
-	}else{
-		dmasprintf(&wan_interface, "%s", curr_wanargs->fwan);
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", default_wan, String}}, 1, &res);
+	if (res) {
+		device = dmjson_get_value(res, 1, "device");
 	}
-
-	synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", wan_interface, &dup_list);
+	if(device == NULL)
+		return 0;
+	is_br = strstr(device, "br-");
+	if(is_br)
+		synchronize_specific_config_sections_with_dmmap_eq("network", "interface", "dmmap_network", "type", "bridge", &dup_list);
+	else
+		synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", device, &dup_list);
 	list_for_each_entry(dmdup, &dup_list, list) {
 		dmuci_get_value_by_section_string(dmdup->config_section, "proto", &p);
 		lan_name = section_name(dmdup->config_section);
@@ -2539,45 +2527,33 @@ int browsewanprotocolconnectionipInst(struct dmctx *dmctx, DMNODE *parent_node, 
 int browsewanprotocolconnectionpppInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
 	struct uci_section *ss = NULL;
-	char *pack, *stype, *p, *iconp_ip_last = NULL, *iconp_ppp_last = NULL;
+	char *p, *iconp_ip_last = NULL, *iconp_ppp_last = NULL, *device = NULL;
 	char *iconp = NULL, *iconp_nil = NULL;
-	int proto;
+	int proto, is_br=0;
 	bool notif_permission = true;
 	bool forced_inform_eip = false;
 	int forced_notify = UNDEF;
 	struct wanargs *curr_wanargs = (struct wanargs *)prev_data;
 	char *lan_name;
 
-	char *wan_interface;
-	char* containsrepeater= NULL;
-	int repeatindex;
 	struct uci_section *s = NULL;
 	char *freq, **value;
 	json_object *res;
-	char *isrepeater;
 
 	struct dmmap_dup *dmdup;
 	LIST_HEAD(dup_list);
 
-	dmuci_get_option_value_string("netmode", "setup", "curmode", &isrepeater);
-	containsrepeater = strstr(isrepeater, "repeater");
-	if(containsrepeater){
-		repeatindex = (int)(containsrepeater - isrepeater);
-		if(repeatindex == 0){
-			uci_foreach_sections("wireless", "wifi-device", s) {
-				dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", s->e.name, String}}, 1, &res);
-				DM_ASSERT(res, *value = "");
-				freq = dmjson_get_value(res, 1, "frequency");
-				if(freq[0]=='5') dmasprintf(&wan_interface, "%s", s->e.name);
-			}
-		}else{
-			dmasprintf(&wan_interface, "%s", curr_wanargs->fwan);
-		}
-	}else{
-		dmasprintf(&wan_interface, "%s", curr_wanargs->fwan);
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", default_wan, String}}, 1, &res);
+	if (res) {
+		device = dmjson_get_value(res, 1, "device");
 	}
-
-	synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", wan_interface, &dup_list);
+	if(device == NULL)
+		return 0;
+	is_br = strstr(device, "br-");
+	if(is_br)
+		synchronize_specific_config_sections_with_dmmap_eq("network", "interface", "dmmap_network", "type", "bridge", &dup_list);
+	else
+		synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", device, &dup_list);
 	list_for_each_entry(dmdup, &dup_list, list) {
 		dmuci_get_value_by_section_string(dmdup->config_section, "proto", &p);
 		lan_name = section_name(dmdup->config_section);
