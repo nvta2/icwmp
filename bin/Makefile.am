@@ -65,8 +65,10 @@ libdatamodel_la_SOURCES +=							\
 	../dm/dmtree/tr181/users.c						\
 	../dm/dmtree/tr181/dhcpv6.c						\
 	../dm/dmtree/tr181/dsl.c						\
-	../dm/dmtree/tr181/interfacestack.c					\	
-        ../dm/dmtree/tr181/qos.c
+	../dm/dmtree/tr181/interfacestack.c				\	
+    ../dm/dmtree/tr181/qos.c						\	
+    ../dm/dmtree/tr181/usb.c
+    
 
 if UPNP_TR064
 libdatamodel_la_SOURCES +=							\
@@ -96,7 +98,8 @@ libdatamodel_la_LIBADD =	\
 	$(LIBUBOX_LIBS)			\
 	$(LIBUBUS_LIBS)			\
 	$(LIBJSON_LIBS)			\
-	$(LBLOBMSG_LIBS)
+	$(LBLOBMSG_LIBS)     	\
+	-lusb-1.0
 
 libdatamodel_la_CFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
 libdatamodel_la_LDFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
@@ -196,7 +199,8 @@ icwmpd_LDADD =			\
 	$(LBLOBMSG_LIBS)	\
 	$(LIBZ_LIBS)		\
 	$(LIBM_LIBS)		\
-	-ldatamodel
+	-ldatamodel			\
+	-lusb-1.0
 
 icwmpd_CFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
 icwmpd_LDFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
