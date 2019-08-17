@@ -369,6 +369,7 @@ static void http_cr_new_client(int client, bool service_available)
 	char buffer[BUFSIZ];
 	int8_t auth_status = 0;
 
+	pthread_mutex_lock (&mutex_config_load);
 	fp = fdopen(client, "r+");
 
 	while (fgets(buffer, sizeof(buffer), fp)) {
@@ -421,6 +422,7 @@ static void http_cr_new_client(int client, bool service_available)
 
 	http_done:
 	fclose(fp);
+	pthread_mutex_unlock (&mutex_config_load);
 }
 
 void http_server_init(void)
