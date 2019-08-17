@@ -13,6 +13,7 @@
 #ifndef _CONFIG_H__
 #define _CONFIG_H__
 
+extern pthread_mutex_t  mutex_config_load;
 
 int uci_get_state_value(char *cmd,char **value);
 int uci_set_state_value(char *cmd);

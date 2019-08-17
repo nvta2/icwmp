@@ -10,7 +10,6 @@
  *
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,6 +27,8 @@
 #include "dmentry.h"
 #include "deviceinfo.h"
 #include "config.h"
+
+pthread_mutex_t  mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
 typedef enum uci_config_action {
     CMD_SET,
@@ -1131,15 +1132,19 @@ int global_conf_init (struct config *conf)
 {
     int error;
 
+    pthread_mutex_lock (&mutex_config_load);
     if (error = get_global_config(conf))
     {
+    	pthread_mutex_unlock (&mutex_config_load);
         return error;
     }
     if (error = check_global_config(conf))
     {
+    	pthread_mutex_unlock (&mutex_config_load);
         return error;
     }
     get_lwn_config(conf);
+    pthread_mutex_unlock (&mutex_config_load);
     return CWMP_OK;
 }
 
