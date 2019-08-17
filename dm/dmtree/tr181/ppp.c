@@ -21,6 +21,12 @@
 #include "ppp.h"
 
 /*** PPP. ***/
+DMLEAF tPPPParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"InterfaceNumberOfEntries", &DMREAD, DMT_UNINT, get_PPP_InterfaceNumberOfEntries, NULL, NULL, NULL},
+{0}
+};
+
 DMOBJ tpppObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
 {"Interface", &DMWRITE, add_ppp_interface, delete_ppp_interface, NULL, browseInterfaceInst, NULL, NULL, tpppInterfaceObj, tpppInterfaceParam, get_linker_ppp_interface},
@@ -30,13 +36,17 @@ DMOBJ tpppObj[] = {
 /*** PPP.Interface. ***/
 DMOBJ tpppInterfaceObj[] = {
 /* OBJ, permission, addobj, delobj, browseinstobj, finform, notification, nextobj, leaf*/
+{"PPPoE", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tPPPInterfacePPPoEParams, NULL},
 {"Stats", &DMREAD, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tStatsParam, NULL},
 {0}
 };
 
 DMLEAF tpppInterfaceParam[] = {
 {"Alias", &DMWRITE, DMT_STRING, get_ppp_alias, set_ppp_alias, NULL, NULL},
+{"Status", &DMREAD, DMT_STRING, get_PPPInterface_Status, NULL, NULL, NULL},
 {"Enable", &DMWRITE, DMT_BOOL, get_ppp_enable, set_ppp_enable, NULL, NULL},
+{"LastChange", &DMREAD, DMT_UNINT, get_PPPInterface_LastChange, NULL, NULL, NULL},
+{"Reset", &DMWRITE, DMT_BOOL, get_PPPInterface_Reset, set_PPPInterface_Reset, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_ppp_name, NULL, NULL, NULL},
 {"LowerLayers", &DMWRITE, DMT_STRING, get_ppp_lower_layer, set_ppp_lower_layer, NULL, NULL},
 {"ConnectionStatus", &DMREAD, DMT_STRING, get_ppp_status, NULL, NULL, NULL},
@@ -51,9 +61,27 @@ DMLEAF tStatsParam[] = {
 {"BytesSent", &DMREAD, DMT_UNINT, get_ppp_eth_bytes_sent, NULL, NULL, NULL},
 {"PacketsReceived", &DMREAD, DMT_UNINT, get_ppp_eth_pack_received, NULL, NULL, NULL},
 {"PacketsSent", &DMREAD, DMT_UNINT, get_ppp_eth_pack_sent, NULL, NULL, NULL},
+{"ErrorsSent", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_ErrorsSent, NULL, NULL, NULL},
+{"ErrorsReceived", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_ErrorsReceived, NULL, NULL, NULL},
+{"UnicastPacketsSent", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_UnicastPacketsSent, NULL, NULL, NULL},
+{"UnicastPacketsReceived", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_UnicastPacketsReceived, NULL, NULL, NULL},
+{"DiscardPacketsSent", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_DiscardPacketsSent, NULL, NULL, NULL},
+{"DiscardPacketsReceived", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_DiscardPacketsReceived, NULL, NULL, NULL},
+{"MulticastPacketsSent", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_MulticastPacketsSent, NULL, NULL, NULL},
+{"MulticastPacketsReceived", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_MulticastPacketsReceived, NULL, NULL, NULL},
+{"BroadcastPacketsSent", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_BroadcastPacketsSent, NULL, NULL, NULL},
+{"BroadcastPacketsReceived", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_BroadcastPacketsReceived, NULL, NULL, NULL},
+{"UnknownProtoPacketsReceived", &DMREAD, DMT_UNINT, get_PPPInterfaceStats_UnknownProtoPacketsReceived, NULL, NULL, NULL},
 {0}
 };
 
+DMLEAF tPPPInterfacePPPoEParams[] = {
+/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+{"SessionID", &DMREAD, DMT_UNINT, get_PPPInterfacePPPoE_SessionID, NULL, NULL, NULL},
+{"ACName", &DMWRITE, DMT_STRING, get_PPPInterfacePPPoE_ACName, set_PPPInterfacePPPoE_ACName, NULL, NULL},
+{"ServiceName", &DMWRITE, DMT_STRING, get_PPPInterfacePPPoE_ServiceName, set_PPPInterfacePPPoE_ServiceName, NULL, NULL},
+{0}
+};
 /*************************************************************
  * GET SET ALIAS
 /*************************************************************/
@@ -93,6 +121,53 @@ int get_ppp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance
 int set_ppp_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
 	return set_interface_enable_ubus(section_name(((struct uci_section *)data)), refparam, ctx, action, value);
+}
+
+
+int get_PPPInterface_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *status;
+	get_interface_enable_ubus(section_name(((struct uci_section *)data)), refparam, ctx, &status);
+	if(strcmp(status, "true") == 0)
+		*value= "Up";
+	else
+		*value= "Down";
+	return 0;
+}
+
+
+int get_PPPInterface_LastChange(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", section_name((struct uci_section *)data), String}}, 1, &res);
+	DM_ASSERT(res, *value = "");
+	*value = dmjson_get_value(res, 1, "uptime");
+	return 0;
+}
+
+int get_PPPInterface_Reset(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "false";
+	return 0;
+}
+
+int set_PPPInterface_Reset(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	unsigned char b;
+	switch (action) {
+		case VALUECHECK:
+			if (string_to_bool(value, &b))
+				return FAULT_9007;
+			break;
+		case VALUESET:
+			string_to_bool(value, &b);
+			if(b) {
+				set_interface_enable_ubus(section_name((struct uci_section *)data), refparam, ctx, action, "0");
+				set_interface_enable_ubus(section_name((struct uci_section *)data), refparam, ctx, action, "1");
+			}
+			break;
+	}
+	return 0;
 }
 
 int get_ppp_name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
@@ -209,6 +284,96 @@ int get_ppp_eth_pack_sent(char *refparam, struct dmctx *ctx, void *data, char *i
 	return 0;
 }
 
+
+int get_PPPInterfaceStats_ErrorsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	ubus_get_wan_stats(data, instance, res, value, "tx_errors");
+	return 0;
+}
+
+int get_PPPInterfaceStats_ErrorsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	ubus_get_wan_stats(data, instance, res, value, "rx_errors");
+	return 0;
+}
+
+int get_PPPInterfaceStats_UnicastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name((struct uci_section *)data));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "TX", "unicast"));
+	return 0;
+}
+
+int get_PPPInterfaceStats_UnicastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name((struct uci_section *)data));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "RX", "unicast"));
+	return 0;
+}
+
+int get_PPPInterfaceStats_DiscardPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	ubus_get_wan_stats(data, instance, res, value, "tx_dropped");
+	return 0;
+}
+
+int get_PPPInterfaceStats_DiscardPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	ubus_get_wan_stats(data, instance, res, value, "rx_dropped");
+	return 0;
+}
+
+int get_PPPInterfaceStats_MulticastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name((struct uci_section *)data));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "TX", "multicast"));
+	return 0;
+}
+
+int get_PPPInterfaceStats_MulticastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name((struct uci_section *)data));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "RX", "multicast"));
+	return 0;
+}
+
+int get_PPPInterfaceStats_BroadcastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name((struct uci_section *)data));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "TX", "broadcast"));
+	return 0;
+}
+
+int get_PPPInterfaceStats_BroadcastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	*value = "0";
+	char *device = get_device(section_name((struct uci_section *)data));
+	if(device[0] != '\0')
+		dmasprintf(value, "%d", get_stats_from_ifconfig_command(device, "RX", "broadcast"));
+	return 0;
+}
+
+int get_PPPInterfaceStats_UnknownProtoPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	json_object *res;
+	ubus_get_wan_stats(data, instance, res, value, "rx_over_errors");
+	return 0;
+}
+
 int get_ppp_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	char *linker;
@@ -248,6 +413,87 @@ int set_ppp_lower_layer(char *refparam, struct dmctx *ctx, void *data, char *ins
 	return 0;
 }
 
+int get_PPP_InterfaceNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	struct uci_section *s;
+	char *proto;
+	int nbre= 0;
+
+	uci_foreach_sections("network", "interface", s) {
+		dmuci_get_value_by_section_string(s, "proto", &proto);
+		if (!strstr(proto, "ppp"))
+			continue;
+		nbre++;
+	}
+	dmasprintf(value, "%d", nbre);
+	return 0;
+}
+
+int get_PPPInterfacePPPoE_SessionID(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	//TODO
+	return 0;
+}
+
+int get_PPPInterfacePPPoE_ACName(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *proto;
+	dmuci_get_value_by_section_string(((struct uci_section *)data), "proto", &proto);
+	if (strcmp(proto, "pppoe") == 0) {
+		dmuci_get_value_by_section_string(((struct uci_section *)data), "ac", value);
+		return 0;
+	}
+	*value= "";
+	return 0;
+}
+
+int set_PPPInterfacePPPoE_ACName(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	char *proto;
+
+	switch (action)	{
+		case VALUECHECK:
+			dmuci_get_value_by_section_string(((struct uci_section *)data), "proto", &proto);
+			if (strcmp(proto, "pppoe") == 0)
+				return 0;
+			return FAULT_9001;
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section(((struct uci_section *)data), "ac", value);
+			break;
+	}
+	return 0;
+}
+
+int get_PPPInterfacePPPoE_ServiceName(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
+{
+	char *proto;
+	dmuci_get_value_by_section_string(((struct uci_section *)data), "proto", &proto);
+	if (strcmp(proto, "pppoe") == 0) {
+		dmuci_get_value_by_section_string(((struct uci_section *)data), "service", value);
+		return 0;
+	}
+	*value= "";
+	return 0;
+}
+
+int set_PPPInterfacePPPoE_ServiceName(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	char *proto;
+
+	switch (action)	{
+		case VALUECHECK:
+			dmuci_get_value_by_section_string(((struct uci_section *)data), "proto", &proto);
+			if (strcmp(proto, "pppoe") == 0)
+				return 0;
+			return FAULT_9001;
+			break;
+		case VALUESET:
+			dmuci_set_value_by_section(((struct uci_section *)data), "service", value);
+			break;
+	}
+	return 0;
+}
 /**************************************************************************
 * LINKER
 ***************************************************************************/
