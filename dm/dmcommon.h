@@ -75,6 +75,11 @@ do { \
 #define SERVERSELECTION_PATH "/usr/share/icwmp/functions/serverselection_launch"
 #define SERVERSELECTION_STOP DMCMD("/bin/sh", 2, SERVERSELECTION_PATH, "stop");
 
+#define sysfs_foreach_file(path,dir,ent) \
+        if ((dir = opendir(path)) == NULL) return 0; \
+        while ((ent = readdir (dir)) != NULL) \
+
+
 enum notification_enum {
 	notification_none,
 	notification_passive,
@@ -135,6 +140,13 @@ struct dm_args
 	char *name;
 };
 
+struct sysfs_dmsection {
+	struct list_head list;
+	char *sysfs_folder_path;
+	char *sysfs_folder_name;
+	struct uci_section *dm;
+};
+
 void compress_spaces(char *str);
 char *cut_fx(char *str, char *delimiter, int occurence);
 pid_t get_pid(char *pname);
@@ -184,6 +196,7 @@ void synchronize_specific_config_sections_with_dmmap_eq_no_delete(char *package,
 void synchronize_specific_config_sections_with_dmmap_cont(char *package, char *section_type, char *dmmap_package,char* option_name, char* option_value, struct list_head *dup_list);
 bool synchronize_multi_config_sections_with_dmmap_eq(char *package, char *section_type, char *dmmap_package, char* dmmap_section, char* option_name, char* option_value, void* additional_attribute, struct list_head *dup_list);
 bool synchronize_multi_config_sections_with_dmmap_eq_diff(char *package, char *section_type, char *dmmap_package, char* dmmap_section, char* option_name, char* option_value, char* opt_diff_name, char* opt_diff_value, void* additional_attribute, struct list_head *dup_list);
+void synchronize_system_folders_with_dmmap_opt(char *sysfsrep, char *dmmap_package, char *dmmap_section, char *opt_name, char* inst_opt, struct list_head *dup_list);
 void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section);
 void get_dmmap_section_of_config_section_eq(char* dmmap_package, char* section_type, char *opt, char* value, struct uci_section **dmmap_section);
 void get_config_section_of_dmmap_section(char* package, char* section_type, char *section_name, struct uci_section **config_section);
@@ -208,5 +221,6 @@ int command_exec_output_to_array(char *cmd, char **output, int *length);
 char* int_period_to_date_time_format(int time);
 struct uci_section *is_dmmap_section_exist(char* package, char* section);
 struct uci_section *is_dmmap_section_exist_eq(char* package, char* section, char* opt, char* value);
-
+int isfileexist(char *filepath);
+char* readFileContent(char *filepath);
 #endif

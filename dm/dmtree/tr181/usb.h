@@ -12,6 +12,7 @@
 #define __USB_H
 
 #include <libusb-1.0/libusb.h>
+#include <regex.h>
 
 extern DMOBJ tUSBObj[];
 extern DMLEAF tUSBParams[];
@@ -29,6 +30,9 @@ extern DMOBJ tUSBUSBHostsHostDeviceConfigurationObj[];
 extern DMLEAF tUSBUSBHostsHostDeviceConfigurationParams[];
 extern DMLEAF tUSBUSBHostsHostDeviceConfigurationInterfaceParams[];
 
+#define SYSFS_USB_DEVICES_PATH "/sys/bus/usb/devices"
+
+regex_t regex1, regex2;
 struct usbPort {
 	struct uci_section *dm_usb;
 	libusb_device *dev;
@@ -36,6 +40,20 @@ struct usbPort {
 	struct libusb_config_descriptor *config;
 	const struct libusb_interface_descriptor *interface;
 	char *name;
+};
+
+struct usb_port {
+	struct uci_section *dm_usb_port;
+	char *folder_name;
+	char *folder_path;
+};
+
+struct usb_interface {
+	struct uci_section *dm_usb_iface;
+	char *iface_name;
+	char *iface_path;
+	char *statistics_path;
+	char *portlink;
 };
 
 int browseUSBInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);

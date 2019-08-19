@@ -12,6 +12,7 @@
 #include "dmcommon.h"
 #include "usb.h"
 #include <libusb-1.0/libusb.h>
+#include <dirent.h>
 
 /* *** Device.USB. *** */
 DMOBJ tUSBObj[] = {
@@ -74,14 +75,14 @@ DMLEAF tUSBInterfaceStatsParams[] = {
 
 /* *** Device.USB.Port.{i}. *** */
 DMLEAF tUSBPortParams[] = {
-/* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
+///* PARAM, permission, type, getvlue, setvalue, forced_inform, notification*/
 {"Alias", &DMWRITE, DMT_STRING, get_USBPort_Alias, set_USBPort_Alias, NULL, NULL},
 {"Name", &DMREAD, DMT_STRING, get_USBPort_Name, NULL, NULL, NULL},
 {"Standard", &DMREAD, DMT_STRING, get_USBPort_Standard, NULL, NULL, NULL},
 {"Type", &DMREAD, DMT_STRING, get_USBPort_Type, NULL, NULL, NULL},
-{"Receptacle", &DMREAD, DMT_STRING, get_USBPort_Receptacle, NULL, NULL, NULL},
-{"Rate", &DMREAD, DMT_STRING, get_USBPort_Rate, NULL, NULL, NULL},
-{"Power", &DMREAD, DMT_STRING, get_USBPort_Power, NULL, NULL, NULL},
+//{"Receptacle", &DMREAD, DMT_STRING, get_USBPort_Receptacle, NULL, NULL, NULL},
+//{"Rate", &DMREAD, DMT_STRING, get_USBPort_Rate, NULL, NULL, NULL},
+//{"Power", &DMREAD, DMT_STRING, get_USBPort_Power, NULL, NULL, NULL},
 {0}
 };
 
@@ -182,6 +183,32 @@ void init_usb_port(struct uci_section *dm, struct libusb_device_descriptor desc,
 	port->interface= interface;
 }
 
+/*void init_usb_port(struct uci_section *dm, char *folder_name, char *folder_path, struct usb_port *port){
+	port->dm_usb_port= dm;
+	port->folder_name= dmstrdup(folder_name);
+	port->folder_path= dmstrdup(folder_path);
+}*/
+
+void init_usb_interface(struct uci_section *dm, char *iface_name, char *iface_path, char *statistics_path, char *portlink, struct usb_interface *iface){
+	iface->dm_usb_iface= dm;
+	iface->iface_name= dmstrdup(iface_name);
+	iface->iface_path= dmstrdup(iface_path);
+	iface->portlink= dmstrdup(portlink);
+	iface->statistics_path= dmstrdup(statistics_path);
+}
+
+void add_sysfs_sectons_list_paramameter(struct list_head *dup_list, struct uci_section *dmmap_section, char *file_name, char* filepath)
+{
+	struct sysfs_dmsection *dmmap_sysfs;
+	struct list_head *ilist;
+
+	dmmap_sysfs = dmcalloc(1, sizeof(struct sysfs_dmsection));
+	list_add_tail(&dmmap_sysfs->list, dup_list);
+	dmmap_sysfs->dm = dmmap_section;
+	dmmap_sysfs->sysfs_folder_name= dmstrdup(file_name);
+	dmmap_sysfs->sysfs_folder_path= dmstrdup(filepath);
+}
+
 libusb_device *get_libusb_device_grand_parent_host(libusb_device *dev){
 	if(libusb_get_parent(dev) == NULL)
 		return dev;
@@ -190,8 +217,43 @@ libusb_device *get_libusb_device_grand_parent_host(libusb_device *dev){
 
 int browseUSBInterfaceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	//TODO
-	return 0;
+	DIR *dir;
+	struct dirent *ent;
+    char *netfolderpath, *iface_name, *iface_path, *statistics_path, *port_link, *v, *instnbr, *instance;
+    size_t length;
+    char **foldersplit;
+    struct uci_section *s;
+    struct usb_interface iface= {};
+    LIST_HEAD(dup_list);
+    struct sysfs_dmsection *p;
+    //SYSFS_USB_DEVICES_PATH
+    synchronize_system_folders_with_dmmap_opt(SYSFS_USB_DEVICES_PATH, "dmmap_usb", "dmmap_interface", "port_link", "usb_iface_instance", &dup_list);
+
+    list_for_each_entry(p, &dup_list, list) {
+		dmasprintf(&netfolderpath, "%s/%s/net", SYSFS_USB_DEVICES_PATH, p->sysfs_folder_name);
+		if(!isfolderexist(netfolderpath)){
+			//dmuci_delete_by_section_unnamed_icwmpd(p->dm, NULL, NULL);
+			continue;
+		}
+		if(p->dm){
+			foldersplit= strsplit(p->sysfs_folder_name, ":", &length);
+			dmasprintf(&port_link, "%s", foldersplit[0]);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, p->dm, "port_link", port_link);
+		}
+		sysfs_foreach_file(netfolderpath, dir, ent){
+			if(strcmp(ent->d_name, ".")==0 || strcmp(ent->d_name, "..")==0)
+				continue;
+			dmasprintf(&iface_name, "%s", ent->d_name);
+			break;
+		}
+		dmasprintf(&iface_path, "%s/%s", netfolderpath, iface_name);
+		dmasprintf(&statistics_path, "%s/statistics", iface_path);
+		init_usb_interface(p->dm, iface_name, iface_path, statistics_path, port_link, &iface);
+		instance =  handle_update_instance(1, dmctx, &instnbr, update_instance_alias, 3, p->dm, "usb_iface_instance", "usb_iface_alias");
+		if (DM_LINK_INST_OBJ(dmctx, parent_node, &iface, instance) == DM_STOP)
+			return 0;
+    }
+
 }
 
 int browseUSBPortInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
@@ -406,7 +468,18 @@ int browseUSBUSBHostsHostDeviceConfigurationInterfaceInst(struct dmctx *dmctx, D
 
 int get_USB_InterfaceNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	DIR *dir;
+	struct dirent *ent;
+	char *netfolderpath;
+	int nbre= 0;
+
+	sysfs_foreach_file(SYSFS_USB_DEVICES_PATH, dir, ent){
+		dmasprintf(&netfolderpath, "%s/%s/net", SYSFS_USB_DEVICES_PATH, ent->d_name);
+		if(strcmp(ent->d_name, ".")==0 || strcmp(ent->d_name, "..")==0 || !isfolderexist(netfolderpath))
+			continue;
+		nbre++;
+	}
+	dmasprintf(value, "%d", nbre);
 	return 0;
 }
 
@@ -435,7 +508,15 @@ int get_USB_PortNumberOfEntries(char *refparam, struct dmctx *ctx, void *data, c
 
 int get_USBInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL, *carrier;
+	dmasprintf(&filepath, "%s/carrier", usbiface->iface_path);
+	if(!isfileexist(filepath)){
+		*value= "0";
+		return 0;
+	}
+	carrier= readFileContent(filepath);
+	*value= carrier[0]=='0'?"0":"1";
 	return 0;
 }
 
@@ -453,23 +534,29 @@ int set_USBInterface_Enable(char *refparam, struct dmctx *ctx, void *data, char 
 
 int get_USBInterface_Status(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL, *carrier;
+	dmasprintf(&filepath, "%s/carrier", usbiface->iface_path);
+	carrier= readFileContent(filepath);
+	*value= carrier[0]=='0'?"Down":"Up";
 	return 0;
 }
 
 int get_USBInterface_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmuci_get_value_by_section_string(usbiface->dm_usb_iface, "usb_iface_alias", value);
 	return 0;
 }
 
 int set_USBInterface_Alias(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
 {
+	struct usb_interface *usbiface= (struct usb_interface *)data;
 	switch (action)	{
 		case VALUECHECK:
 			break;
 		case VALUESET:
-			//TODO
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, usbiface->dm_usb_iface, "usb_iface_alias", value);
 			break;
 	}
 	return 0;
@@ -477,7 +564,8 @@ int set_USBInterface_Alias(char *refparam, struct dmctx *ctx, void *data, char *
 
 int get_USBInterface_Name(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%s", usbiface->iface_name);
 	return 0;
 }
 
@@ -513,13 +601,19 @@ int get_USBInterface_Upstream(char *refparam, struct dmctx *ctx, void *data, cha
 
 int get_USBInterface_MACAddress(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/address", usbiface->iface_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterface_MaxBitRate(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/queues/tx-0/tx_maxrate", usbiface->iface_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
@@ -531,85 +625,115 @@ int get_USBInterface_Port(char *refparam, struct dmctx *ctx, void *data, char *i
 
 int get_USBInterfaceStats_BytesSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/tx_bytes", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_BytesReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/rx_bytes", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_PacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/tx_packets", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_PacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/rx_packets", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_ErrorsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/tx_errors", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_ErrorsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/rx_errors", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_UnicastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%d", get_stats_from_ifconfig_command(usbiface->iface_name, "TX", "unicast"));
 	return 0;
 }
 
 int get_USBInterfaceStats_UnicastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%d", get_stats_from_ifconfig_command(usbiface->iface_name, "RX", "unicast"));
 	return 0;
 }
 
 int get_USBInterfaceStats_DiscardPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/tx_dropped", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_DiscardPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	char *filepath= NULL;
+	dmasprintf(&filepath, "%s/rx_dropped", usbiface->statistics_path);
+	*value= readFileContent(filepath);
 	return 0;
 }
 
 int get_USBInterfaceStats_MulticastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%d", get_stats_from_ifconfig_command(usbiface->iface_name, "TX", "multicast"));
 	return 0;
 }
 
 int get_USBInterfaceStats_MulticastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%d", get_stats_from_ifconfig_command(usbiface->iface_name, "RX", "multicast"));
 	return 0;
 }
 
 int get_USBInterfaceStats_BroadcastPacketsSent(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%d", get_stats_from_ifconfig_command(usbiface->iface_name, "TX", "broadcast"));
 	return 0;
 }
 
 int get_USBInterfaceStats_BroadcastPacketsReceived(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
-	//TODO
+	struct usb_interface *usbiface= (struct usb_interface *)data;
+	dmasprintf(value, "%d", get_stats_from_ifconfig_command(usbiface->iface_name, "RX", "broadcast"));
 	return 0;
 }
 

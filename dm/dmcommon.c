@@ -1024,6 +1024,18 @@ struct uci_section *get_dup_section_in_dmmap(char *dmmap_package, char *section_
 	return NULL;
 }
 
+struct uci_section *get_dup_section_in_dmmap_opt(char *dmmap_package, char *section_type, char *opt_name, char *opt_value)
+{
+	struct uci_section *s;
+
+	uci_path_foreach_option_eq(icwmpd, dmmap_package, section_type, opt_name, opt_value, s)
+	{
+		return s;
+	}
+
+	return NULL;
+}
+
 struct uci_section *get_dup_section_in_dmmap_eq(char *dmmap_package, char* section_type, char*sect_name, char *opt_name, char* opt_value){
 	struct uci_section *s;
 	char *v;
@@ -1294,6 +1306,67 @@ bool synchronize_multi_config_sections_with_dmmap_eq_diff(char *package, char *s
 
 	return found;
 }
+
+void synchronize_system_folders_with_dmmap_opt(char *sysfsrep, char *dmmap_package, char *dmmap_section, char *opt_name, char* inst_opt, struct list_head *dup_list)
+{
+	struct uci_section *s, *stmp, *dmmap_sect;
+	FILE *fp;
+	DIR *dir;
+	struct dirent *ent;
+	char *v, *dmmap_file_path, *sysfs_rep_path, *instance= NULL;
+	struct sysfs_dmsection *p;
+	LIST_HEAD(dup_list_no_inst);
+
+	dmasprintf(&dmmap_file_path, "/etc/icwmpd/%s", dmmap_package);
+	if (access(dmmap_file_path, F_OK)) {
+		/*
+		 *File does not exist
+		 **/
+		fp = fopen(dmmap_file_path, "w"); // new empty file
+		fclose(fp);
+	}
+
+	sysfs_foreach_file(sysfsrep, dir, ent) {
+		if(strcmp(ent->d_name, ".")==0 || strcmp(ent->d_name, "..")==0)
+			continue;
+
+		/*
+		 * create/update corresponding dmmap section that have same config_section link and using param_value_array
+		 */
+		dmasprintf(&sysfs_rep_path, "%s/%s", sysfsrep, ent->d_name);
+		if ((dmmap_sect = get_dup_section_in_dmmap_opt(dmmap_package, dmmap_section, opt_name, sysfs_rep_path)) == NULL) {
+			dmuci_add_section_icwmpd(dmmap_package, dmmap_section, &dmmap_sect, &v);
+			DMUCI_SET_VALUE_BY_SECTION(icwmpd, dmmap_sect, opt_name, sysfs_rep_path);
+		}
+
+		dmuci_get_value_by_section_string(dmmap_sect, inst_opt, &instance);
+
+		/*
+		 * Add system and dmmap sections to the list
+		 */
+
+		if(instance == NULL || strlen(instance) <= 0)
+			add_sysfs_sectons_list_paramameter(&dup_list_no_inst, dmmap_sect, ent->d_name, sysfs_rep_path);
+		else
+			add_sysfs_sectons_list_paramameter(dup_list, dmmap_sect, ent->d_name, sysfs_rep_path);
+	}
+	/*
+	 * fusion two lists
+	 */
+	list_for_each_entry(p, &dup_list_no_inst, list) {
+		add_sysfs_sectons_list_paramameter(dup_list, p->dm, p->sysfs_folder_name, p->sysfs_folder_path);
+	}
+	/*
+	 * Delete unused dmmap sections
+	 */
+	uci_path_foreach_sections_safe(icwmpd, dmmap_package, dmmap_section, stmp, s) {
+		dmuci_get_value_by_section_string(s, opt_name, &v);
+		if(isfolderexist(v) == 0){
+			dmuci_delete_by_section_unnamed_icwmpd(s, NULL, NULL);
+		}
+	}
+}
+
 void get_dmmap_section_of_config_section(char* dmmap_package, char* section_type, char *section_name, struct uci_section **dmmap_section){
 	struct uci_section* s;
 
@@ -1677,3 +1750,46 @@ char* int_period_to_date_time_format(int time){
     dmasprintf(&datetime, "%dT%d:%d:%d", days, hours, minutes, seconds);
 	return datetime;
 }
+
+int isfileexist(char *filepath){
+	if( access( filepath, F_OK ) != -1 )
+	    return 1;
+	else
+		return 0;
+}
+
+int isfolderexist(char *folderpath){
+	DIR* dir = opendir(folderpath);
+	if (dir) {
+	    closedir(dir);
+	    return 1;
+	} else
+		return 0;
+}
+
+char* readFileContent(char *filepath){
+	FILE *f = fopen(filepath, "rb");
+	if(f==NULL)
+		return "";
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+	char *filecontent = malloc(fsize + 1);
+	fread(filecontent, 1, fsize, f);
+	fclose(f);
+
+	filecontent[fsize] = 0;
+	return filecontent;
+}
+
+void writeFileContent(const char *filepath, const char *data)
+{
+    FILE *fp = fopen(filepath, "ab");
+    if (fp != NULL)
+    {
+        fputs(data, fp);
+        fclose(fp);
+    }
+}
+
