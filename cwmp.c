@@ -22,11 +22,13 @@
 #include "xml.h"
 #include "log.h"
 #include "external.h"
-#include "dmentry.h"
 #include "ubus.h"
 #include "diagnostic.h"
 #include "config.h"
 #include <unistd.h>
+#include <libbbfdm/dmentry.h>
+#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/dmdiagnostics.h>
  
 struct cwmp         	cwmp_main = {0};
 
@@ -669,6 +671,7 @@ int main(int argc, char **argv)
     pthread_t                       http_cr_server_thread;
     struct sigaction                act = {0};
 
+    bbfdatamodel_type = BBFDM_CWMP; // To show only CWMP parameters
     if (error = cwmp_init(argc, argv, cwmp))
     {
         return error;

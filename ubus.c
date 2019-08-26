@@ -19,8 +19,8 @@
 #include "external.h"
 #include "xml.h"
 #include "log.h"
-#include "wepkey.h"
-#include "dmentry.h"
+#include <libbbfdm/wepkey.h>
+#include <libbbfdm/dmentry.h>
 #include "netlink.h"
 
 static struct ubus_context *ctx = NULL;

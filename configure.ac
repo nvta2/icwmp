@@ -10,12 +10,6 @@ AC_ARG_ENABLE(acs, [AS_HELP_STRING([--enable-acs],
 	[specify which ACS is going to be used; there are some optimizations available for HDM and Fusion ACS (default --enable-acs=multi]))],,
 	[AC_DEFINE(ACS_MULTI)])
 
-AC_ARG_ENABLE(upnptr064, [AS_HELP_STRING([--enable-upnptr064], [enable tr064 upnp feature])], AC_DEFINE(UPNP_TR064),)
-AM_CONDITIONAL([UPNP_TR064],[test "x$enable_upnptr064" = "xyes"])
-
-AC_ARG_ENABLE(xmpp, [AS_HELP_STRING([--enable-xmpp], [enable xmpp feature])], AC_DEFINE(XMPP_ENABLE),)
-AM_CONDITIONAL([XMPP_ENABLE],[test "x$enable_xmpp" = "xyes"])
-
 AS_IF([test "x$enable_acs" = "xhdm"], [AC_DEFINE(ACS_HDM)])
 AS_IF([test "x$enable_acs" = "xfusion"], [AC_DEFINE(ACS_FUSION)])
 AS_IF([test "x$enable_acs" = "xmulti"], [AC_DEFINE(ACS_MULTI)])
@@ -66,9 +60,6 @@ AC_SUBST([LIBUCI_LDFLAGS])
 
 LIBUCI_LIBS='-luci'
 AC_SUBST([LIBUCI_LIBS])
-
-LIBTRACE_LIBS='-ltrace'
-AC_SUBST([LIBTRACE_LIBS])
 
 AC_ARG_WITH([libubox-include-path],
   [AS_HELP_STRING([--with-libubox-include-path],

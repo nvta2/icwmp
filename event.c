@@ -23,11 +23,12 @@
 #include "log.h"
 #include "jshn.h"
 #include "external.h"
-#include "dmcwmp.h"
-#include "dmentry.h"
-#include "deviceinfo.h"
 #include "config.h"
-#include "dmjson.h"
+#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/dmcommon.h>
+#include <libbbfdm/dmentry.h>
+#include <libbbfdm/deviceinfo.h>
+#include <libbbfdm/dmjson.h>
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
@@ -277,30 +278,6 @@ void cwmp_lwnotification()
 	//freeaddrinfo(servaddr); //To check
 	FREE(msg);
 	FREE(msg_out);
-}
-
-int copy_temporary_file_to_original_file(char *f1, char *f2)
-{
-	FILE *fp, *ftmp;
-	char buf[512];
-
-	ftmp = fopen(f2, "r");
-	if (ftmp == NULL)
-		return 0;
-
-	fp = fopen(f1, "w");
-	if (fp == NULL) {
-	  fclose(ftmp);
-	  return 0;
-	}
-
-	while( fgets(buf, 512, ftmp) !=NULL )
-	{
-		fprintf(fp, "%s", buf);
-	}
-	fclose(ftmp);
-	fclose(fp);
-	return 1;
 }
 
 void send_active_value_change(void)
@@ -800,7 +777,6 @@ void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *
 		pthread_mutex_unlock (&(cwmp->mutex_session_queue));
 	}
 }
-
 
 void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 {

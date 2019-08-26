@@ -24,8 +24,8 @@
 #include "backupSession.h"
 #include "xml.h"
 #include "log.h"
-#include "dmentry.h"
-#include "deviceinfo.h"
+#include <libbbfdm/dmentry.h>
+#include <libbbfdm/deviceinfo.h>
 #include "config.h"
 
 pthread_mutex_t  mutex_config_load = PTHREAD_MUTEX_INITIALIZER;

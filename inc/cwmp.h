@@ -19,7 +19,7 @@
 #include <pthread.h>
 #include <microxml.h>
 #include <libubox/list.h>
-#include "dmcwmp.h"
+#include <libbbfdm/dmcwmp.h>
 
 #define MAX_EVENTS							64
 #define MAX_INT32							2147483646

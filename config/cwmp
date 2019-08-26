@@ -36,9 +36,6 @@ config cwmp 'cpe'
 	# compression possible configs: InstanceNumber, InstanceAlias
 	option instance_mode 'InstanceAlias'
 	option session_timeout '60'
-	# datamodel: tr098 (Default)
-	# datamodel possible configs: tr098, tr181
-	option datamodel 'tr181'
 	option notification '1'
 	#vlan_method: 1: only tagged vlantermination 2: all vlanterminations (tagged and untagged)
 	option vlan_method '1'

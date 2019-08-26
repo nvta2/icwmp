@@ -23,10 +23,10 @@
 #include "backupSession.h"
 #include "log.h"
 #include "jshn.h"
-#include "dmentry.h"
-#include "deviceinfo.h"
-#include "dmcwmp.h"
-#include "softwaremodules.h"
+#include <libbbfdm/dmentry.h>
+#include <libbbfdm/deviceinfo.h>
+#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/softwaremodules.h>
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
