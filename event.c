@@ -24,7 +24,7 @@
 #include "jshn.h"
 #include "external.h"
 #include "config.h"
-#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/dmbbf.h>
 #include <libbbfdm/dmcommon.h>
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>

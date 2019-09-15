@@ -27,7 +27,7 @@
 #include "config.h"
 #include <unistd.h>
 #include <libbbfdm/dmentry.h>
-#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/dmbbf.h>
 #include <libbbfdm/dmdiagnostics.h>
  
 struct cwmp         	cwmp_main = {0};

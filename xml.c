@@ -25,7 +25,7 @@
 #include "jshn.h"
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
-#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/dmbbf.h>
 #include <libbbfdm/softwaremodules.h>
 
 LIST_HEAD(list_download);

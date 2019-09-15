@@ -31,7 +31,7 @@
 #include "cwmp.h"
 #include "xml.h"
 #include "log.h"
-#include <libbbfdm/dmcwmp.h>
+#include <libbbfdm/dmbbf.h>
 
 #include <stdarg.h>
 static int pid;
