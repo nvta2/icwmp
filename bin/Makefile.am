@@ -52,8 +52,15 @@ icwmpd_LDADD =			\
 	$(LIBJSON_LIBS)		\
 	$(LBLOBMSG_LIBS)	\
 	$(LIBZ_LIBS)		\
-	$(LIBM_LIBS)		\
+	$(LIBM_LIBS)
+	
+if TR098
+icwmpd_LDADD += \
+	-ltr098
+else
+icwmpd_LDADD += \
 	-lbbfdm
+endif		
 
 icwmpd_CFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
 icwmpd_LDFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"

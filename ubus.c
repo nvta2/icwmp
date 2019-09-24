@@ -19,8 +19,13 @@
 #include "external.h"
 #include "xml.h"
 #include "log.h"
+#ifdef TR098
+#include <libtr098/wepkey.h>
+#include <libtr098/dmentry.h>
+#else
 #include <libbbfdm/wepkey.h>
 #include <libbbfdm/dmentry.h>
+#endif
 #include "netlink.h"
 
 static struct ubus_context *ctx = NULL;

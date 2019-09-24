@@ -26,9 +26,14 @@
 #include "diagnostic.h"
 #include "config.h"
 #include <unistd.h>
+#ifdef TR098
+#include <libtr098/dmentry.h>
+#include <libtr098/dmcwmp.h>
+#else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/dmbbf.h>
 #include <libbbfdm/dmdiagnostics.h>
+#endif
  
 struct cwmp         	cwmp_main = {0};
 
@@ -522,7 +527,7 @@ int run_session_end_func (struct session *session)
 		CWMP_LOG (INFO,"Executing ippingdiagnostic: end session request");
 		cwmp_ip_ping_diagnostic();        		
 	}
-	
+#ifndef TR098
 	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC)
 	{
 		CWMP_LOG (INFO,"Executing download diagnostic: end session request");
@@ -534,6 +539,7 @@ int run_session_end_func (struct session *session)
 		CWMP_LOG (INFO,"Executing upload diagnostic: end session request");
 		cwmp_start_diagnostic(UPLOAD_DIAGNOSTIC);
 	}
+#endif
 	if (end_session_flag & END_SESSION_REBOOT)
 	{
 		CWMP_LOG (INFO,"Executing Reboot: end session request");
@@ -671,7 +677,10 @@ int main(int argc, char **argv)
     pthread_t                       http_cr_server_thread;
     struct sigaction                act = {0};
 
+#ifndef TR098
     bbfdatamodel_type = BBFDM_CWMP; // To show only CWMP parameters
+#endif
+
     if (error = cwmp_init(argc, argv, cwmp))
     {
         return error;

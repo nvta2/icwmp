@@ -23,11 +23,17 @@
 #include "backupSession.h"
 #include "log.h"
 #include "jshn.h"
+#ifdef TR098
+#include <libtr098/dmentry.h>
+#include <libtr098/deviceinfo.h>
+#include <libtr098/dmcwmp.h>
+#include <libtr098/softwaremodules.h>
+#else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
 #include <libbbfdm/dmbbf.h>
 #include <libbbfdm/softwaremodules.h>
-
+#endif
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
 LIST_HEAD(list_schedule_download);

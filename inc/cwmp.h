@@ -19,7 +19,11 @@
 #include <pthread.h>
 #include <microxml.h>
 #include <libubox/list.h>
+#ifdef TR098
+#include <libtr098/dmcwmp.h>
+#else
 #include <libbbfdm/dmbbf.h>
+#endif
 
 #define MAX_EVENTS							64
 #define MAX_INT32							2147483646

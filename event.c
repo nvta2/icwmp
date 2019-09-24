@@ -24,12 +24,19 @@
 #include "jshn.h"
 #include "external.h"
 #include "config.h"
+#ifdef TR098
+#include <libtr098/dmcwmp.h>
+#include <libtr098/dmcommon.h>
+#include <libtr098/dmentry.h>
+#include <libtr098/deviceinfo.h>
+#include <libtr098/dmjson.h>
+#else
 #include <libbbfdm/dmbbf.h>
 #include <libbbfdm/dmcommon.h>
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
 #include <libbbfdm/dmjson.h>
-
+#endif
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
 pthread_mutex_t mutex_value_change = PTHREAD_MUTEX_INITIALIZER;

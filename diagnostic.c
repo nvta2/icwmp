@@ -24,6 +24,10 @@
 #include "ubus.h"
 #include "diagnostic.h"
 #include "config.h"
+#ifdef TR098
+#include <libtr098/dmentry.h>
+#include <libtr098/dmcommon.h>
+#else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/dmcommon.h>
 #include <libbbfdm/dmdiagnostics.h>
@@ -109,6 +113,7 @@ int cwmp_start_diagnostic(int diagnostic_type)
 	free(interface);
 	return 0;
 }
+#endif
 
 int cwmp_ip_ping_diagnostic()
 {

@@ -24,8 +24,13 @@
 #include "backupSession.h"
 #include "xml.h"
 #include "log.h"
+#ifdef TR098
+#include <libtr098/dmentry.h>
+#include <libtr098/deviceinfo.h>
+#else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
+#endif
 #include "config.h"
 
 pthread_mutex_t  mutex_config_load = PTHREAD_MUTEX_INITIALIZER;

@@ -31,8 +31,11 @@
 #include "cwmp.h"
 #include "xml.h"
 #include "log.h"
+#ifdef TR098
+#include <libtr098/dmcwmp.h>
+#else
 #include <libbbfdm/dmbbf.h>
-
+#endif
 #include <stdarg.h>
 static int pid;
 static json_object *json_obj_in;

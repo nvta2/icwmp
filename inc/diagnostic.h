@@ -13,7 +13,9 @@
 #define __DIAGNOSTIC__H
 
 int cwmp_ip_ping_diagnostic();
+#ifndef TR098
 int cwmp_start_diagnostic(int diagnostic_type);
+#endif
 int cwmp_nslookup_diagnostic();
 int cwmp_traceroute_diagnostic();
 int cwmp_udp_echo_diagnostic();
