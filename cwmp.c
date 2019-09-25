@@ -28,7 +28,7 @@
 #include <unistd.h>
 #ifdef TR098
 #include <libtr098/dmentry.h>
-#include <libtr098/dmcwmp.h>
+#include <libtr098/dmtr098.h>
 #else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/dmbbf.h>

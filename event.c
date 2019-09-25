@@ -25,7 +25,7 @@
 #include "external.h"
 #include "config.h"
 #ifdef TR098
-#include <libtr098/dmcwmp.h>
+#include <libtr098/dmtr098.h>
 #include <libtr098/dmcommon.h>
 #include <libtr098/dmentry.h>
 #include <libtr098/deviceinfo.h>

@@ -26,7 +26,7 @@
 #ifdef TR098
 #include <libtr098/dmentry.h>
 #include <libtr098/deviceinfo.h>
-#include <libtr098/dmcwmp.h>
+#include <libtr098/dmtr098.h>
 #include <libtr098/softwaremodules.h>
 #else
 #include <libbbfdm/dmentry.h>

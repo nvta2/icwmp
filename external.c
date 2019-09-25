@@ -32,7 +32,7 @@
 #include "xml.h"
 #include "log.h"
 #ifdef TR098
-#include <libtr098/dmcwmp.h>
+#include <libtr098/dmtr098.h>
 #else
 #include <libbbfdm/dmbbf.h>
 #endif
