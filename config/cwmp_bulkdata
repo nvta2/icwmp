@@ -1,0 +1,42 @@
+config bulkdata 'bulkdata'
+	option enable '0'
+	#Log levels: Critical=0, Warning=1, Notice=2, Info=3, Debug=4
+	option log_level '3'
+
+config profile
+	option profile_id '1'
+	option enable '0'
+	option alias ''
+	option name ''
+	option nbre_of_retained_failed_reports '0'
+	option protocol 'http'
+	option encoding_type ''
+	option reporting_interval '86400'
+	option time_reference '0'
+	option csv_encoding_field_separator ','
+	option csv_encoding_row_separator '&#10;'
+	option csv_encoding_escape_character '&quot;'
+	option csv_encoding_report_format 'column'
+	option csv_encoding_row_time_stamp 'unix'
+	option json_encoding_report_format 'objecthierarchy'
+	option json_encoding_report_time_stamp 'unix'
+	option http_url ''
+	option http_username ''
+	option http_password ''
+	option http_compression 'none'
+	option http_method 'post'
+	option http_use_date_header '1'
+	option http_retry_enable '0'
+	option http_retry_minimum_wait_interval '5'
+	option http_retry_interval_multiplier '2000'
+	option http_persist_across_reboot '0'
+
+config profile_parameter
+	option profile_id '1'
+	option name ''
+	option reference ''
+
+config profile_http_request_uri_parameter
+	option profile_id '1'
+	option name ''
+	option reference ''

@@ -177,3 +177,50 @@ icwmp_twampd_LDFLAGS =			\
 icwmp_twampd_LDADD =			\
 	$(AM_LIBS)					\
 	$(LIBUCI_LIBS)
+
+bin_PROGRAMS += icwmp_bulkdatad
+
+icwmp_bulkdatad_SOURCES =		\
+	../bulkdata/bulkdata.c			\
+	../bulkdata/bulkdata.h			\
+	../bulkdata/config.c 			\
+	../bulkdata/config.h 			\
+	../bulkdata/common.c 			\
+	../bulkdata/common.h 			\
+	../bulkdata/http.c 				\
+	../bulkdata/http.h 				\
+	../bulkdata/log.c				\
+	../bulkdata/log.h				\
+	../bulkdata/times.c 				\
+	../bulkdata/times.h 				\
+	../bulkdata/buci.c 				\
+	../bulkdata/buci.h				\
+	../bulkdata/report.c			\
+	../bulkdata/report.h	
+
+icwmp_bulkdatad_CFLAGS =			\
+	$(AM_CFLAGS)				\
+	$(LIBUCI_CFLAGS)			\
+	$(LIBUBUS_CFLAGS)			\
+	$(LIBUBOX_CFLAGS)			\
+	$(LIBCURL_CFLAGS)
+
+icwmp_bulkdatad_LDFLAGS =			\
+	$(AM_LDFLAGS)				\
+	$(LIBUCI_LDFLAGS)			\
+	$(LIBUBUS_LDFLAGS)			\
+	$(LIBUBOX_LDFLAGS)			\
+	$(LIBJSONC_LDFLAGS)			\
+	$(LIBCURL_LDFLAGS)		
+
+icwmp_bulkdatad_LDADD =				\
+	$(AM_LIBS)					\
+	$(LIBUCI_LIBS)				\
+	$(LIBUBOX_LIBS)				\
+	$(LIBJSON_LIBS)			    \
+	$(LBLOBMSG_LIBS)			\
+	$(LIBUBUS_LIBS)				\
+	$(LCRYPTO_LIBS)				\
+	$(LIBCURL_LIBS) 			\
+	-lbbfdm
+
