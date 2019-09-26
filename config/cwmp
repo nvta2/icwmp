@@ -39,9 +39,9 @@ config cwmp 'cpe'
 	option notification '1'
 	#vlan_method: 1: only tagged vlantermination 2: all vlanterminations (tagged and untagged)
 	option vlan_method '1'
+	option datamodel 'tr181'
 
 config cwmp 'lwn'
 	option enable '1'
 	option hostname ''
 	option port ''
-

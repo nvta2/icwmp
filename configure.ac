@@ -29,6 +29,9 @@ AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy m
 AC_ARG_ENABLE(tr098, [AS_HELP_STRING([--enable-tr098], [enable tr098])], AC_DEFINE(TR098),)
 AM_CONDITIONAL([TR098],[test "x$enable_tr098" = "xyes"])
 
+AC_ARG_ENABLE(tr181, [AS_HELP_STRING([--enable-tr181], [enable tr181])], AC_DEFINE(TR181),)
+AM_CONDITIONAL([TR181],[test "x$enable_tr181" = "xyes"])
+
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
