@@ -40,7 +40,8 @@ config cwmp 'cpe'
 	#vlan_method: 1: only tagged vlantermination 2: all vlanterminations (tagged and untagged)
 	option vlan_method '1'
 	option datamodel 'tr181'
-
+	option exec_download '0'
+	
 config cwmp 'lwn'
 	option enable '1'
 	option hostname ''

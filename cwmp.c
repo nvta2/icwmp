@@ -165,6 +165,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
     int                                 t,error = CWMP_OK;
     static struct timespec              time_to_wait = {0, 0};
     bool                                retry = false;
+    char *exec_download= NULL;
 
     cwmp->cwmp_cr_event = 0;
     while (1)
@@ -195,6 +196,11 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         cwmp->session_status.last_status = SESSION_RUNNING;
         cwmp->session_status.next_retry = 0;
         CWMP_LOG (INFO,"Start session");
+        uci_get_value(UCI_CPE_EXEC_DOWNLOAD, &exec_download);
+        if(strcmp(exec_download, "1") == 0){
+        	CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
+        	uci_set_value("cwmp.cpe.exec_download=0");
+        }
         error = cwmp_schedule_rpc (cwmp,session);
         CWMP_LOG (INFO,"End session");
         if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )

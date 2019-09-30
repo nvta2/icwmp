@@ -2529,6 +2529,8 @@ void *thread_cwmp_rpc_cpe_download (void *v)
                         if((error == FAULT_CPE_NO_FAULT) &&
                             (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6'))
                         {
+                        	if(pdownload->file_type[0] == '3')
+                        		CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
                             exit(EXIT_SUCCESS);
                         }
                         bkp_session_delete_transfer_complete(ptransfer_complete);

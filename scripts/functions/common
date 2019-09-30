@@ -92,7 +92,7 @@ icwmp_apply_firmware()
 	local fault_code="9000"
 	
 	sync
-	killall dropbear uhttpd; sleep 1; /sbin/sysupgrade /tmp/firmware_upgrade_image_last_valid
+	killall dropbear uhttpd; sleep 1; uci set cwmp.cpe.exec_download=1; uci commit; sleep 1; /sbin/sysupgrade /tmp/firmware_upgrade_image_last_valid
 	if [ "$?" != "0" ];then
 		let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
 		icwmp_fault_output "" "$fault_code"

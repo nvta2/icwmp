@@ -380,6 +380,10 @@ int external_apply(char *action, char *arg, time_t c)
 
 	json_object_put(json_obj_out);
 
+	if(id) {
+		free(id);
+		id= NULL;
+	}
 	return 0;
 }
 

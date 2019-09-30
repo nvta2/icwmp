@@ -73,6 +73,7 @@
 #define UCI_CPE_AMD_VERSION					"cwmp.cpe.amd_version"
 #define UCI_CPE_INSTANCE_MODE				"cwmp.cpe.instance_mode"
 #define UCI_CPE_SESSION_TIMEOUT				"cwmp.cpe.session_timeout"
+#define UCI_CPE_EXEC_DOWNLOAD				"cwmp.cpe.exec_download"
 #define DM_SOFTWARE_VERSION_PATH			"InternetGatewayDevice.DeviceInfo.SoftwareVersion"
 #define LW_NOTIFICATION_ENABLE              "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME            "cwmp.lwn.hostname"
