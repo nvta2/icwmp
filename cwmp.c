@@ -775,5 +775,6 @@ int main(int argc, char **argv)
 
     CWMP_LOG(INFO,"EXIT ICWMP");
     cwmp_exit();
+    free_json_dynamic_arrays();
     return CWMP_OK;
 }
