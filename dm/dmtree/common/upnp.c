@@ -37,7 +37,13 @@ int get_upnp_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 {
 	dmuci_get_option_value_string("upnpd","config","enabled", value);
 	if ((*value)[0] == '\0') {
-		*value = "1";
+		pid_t pid = get_pid("miniupnpd");
+		if (pid < 0) {
+			*value = "0";
+		}
+		else {
+			*value = "1";
+		}
 	}
 	return 0;
 }
@@ -53,11 +59,15 @@ int set_upnp_enable(char *refparam, struct dmctx *ctx, void *data, char *instanc
 			return 0;
 		case VALUESET:
 			string_to_bool(value, &b);
-			if(b)
-				dmuci_set_value("upnpd", "config", "enabled", "");
-			else 
+			if(b){
+				dmuci_set_value("upnpd", "config", "enabled", "1");
+				dmuci_set_value("upnpd", "config", "enable_upnp", "1");
+				dmubus_call_set("uci", "commit", UBUS_ARGS{{"config", "upnpd", String}}, 1);
+			} else {
 				dmuci_set_value("upnpd", "config", "enabled", "0");
-			return 0;
+				dmuci_set_value("upnpd", "config", "enable_upnp", "0");
+				dmubus_call_set("uci", "commit", UBUS_ARGS{{"config", "upnpd", String}}, 1);
+			}
 	}
 	return 0;
 }
