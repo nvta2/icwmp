@@ -596,6 +596,7 @@ int add_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, 
 	char *value, *instance, *tmp;
 	struct uci_section *s = NULL;
 	struct uci_section *poolargs = (struct uci_section *)data;
+	char *dhcp_section = NULL;
 
 	instance = get_last_instance(DMMAP, section_name(poolargs), "optioninst");
 	DMUCI_ADD_SECTION(icwmpd, "dmmap", section_name(poolargs), &s, &value);
@@ -605,16 +606,27 @@ int add_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, 
 	DMUCI_SET_VALUE_BY_SECTION(icwmpd, s, "value", val);
 	sprintf(val, "0,vendorclass%s", *instancepara);
 	dmuci_add_list_value_by_section( poolargs, "dhcp_option", val);
+	dmuci_get_value_by_section_string(poolargs, "dhcp", &dhcp_section);
+	if(dhcp_section){
+		uci_foreach_sections("dhcp", "dhcp", s) {
+			if(strcmp (section_name(s), dhcp_section) == 0){
+				dmuci_add_list_value_by_section( s, "dhcp_option", val);
+				break;
+			}
+		}
+	}
 	return 0;
 }
 
 int delete_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
-	char *value, *tag, *bufopt;
+	char *value, *tag, *bufopt, *dhcp_section;
 	struct uci_list *val;
 	struct uci_section *dmmap_s = NULL, *dhcp_sec;
 	struct uci_section *dmmap_ss = NULL;
+	struct uci_section *s = NULL;
 	struct uci_element *e = NULL, *tmp;
+	char * str = NULL;
 	int dmmap = 0;
 	struct dhcppooloptionargs *pooloptionargs = (struct dhcppooloptionargs *)data;
 
@@ -628,7 +640,17 @@ int delete_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *dat
 				uci_foreach_element_safe(val, e, tmp)
 				{
 					if (strcmp(tmp->name, bufopt) == 0) {
+						str = dmstrdup (tmp->name);
 						dmuci_del_list_value_by_section(pooloptionargs->dhcppoolsection, "dhcp_option", tmp->name); //TODO test it
+						dmuci_get_value_by_section_string(pooloptionargs->dhcppoolsection, "dhcp", &dhcp_section);
+						if(dhcp_section){
+							uci_foreach_sections("dhcp", "dhcp", s) {
+								if(strcmp (section_name(s), dhcp_section) == 0){
+									dmuci_del_list_value_by_section(s, "dhcp_option", str);
+									break;
+								}
+							}
+						}
 						break;
 					}
 				}
@@ -651,7 +673,17 @@ int delete_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *dat
 			if (val) {
 				uci_foreach_element_safe(val, e, tmp)
 				{
+					str = dmstrdup (tmp->name);
 					dmuci_del_list_value_by_section(dhcp_sec, "dhcp_option", tmp->name); //TODO test it
+					dmuci_get_value_by_section_string(dhcp_sec, "dhcp", &dhcp_section);
+					if(dhcp_section){
+						uci_foreach_sections("dhcp", "dhcp", s) {
+							if(strcmp (section_name(s), dhcp_section) == 0){
+								dmuci_del_list_value_by_section(s, "dhcp_option", str);
+								break;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -661,7 +693,7 @@ int delete_dhcp_serving_pool_option(char *refparam, struct dmctx *ctx, void *dat
 
 int add_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void *data, char **instancepara)
 {
-	char *value, *v;
+	char *value, *v, *vendor_id;
 	char *instance;
 	struct uci_section *s = NULL;
 	struct uci_section *dmmap_serving_pool=NULL;
@@ -669,12 +701,11 @@ int add_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void *d
 	check_create_dmmap_package("dmmap_dhcp");
 	instance = get_last_instance_icwmpd("dmmap_dhcp", "vendorclass", "poulinstance");
 	dmuci_add_section_and_rename("dhcp", "vendorclass", &s, &value);
-	dmuci_set_value_by_section(s, "dhcp_option", "");
-	*instancepara = update_instance(s, instance, "poulinstance");
-
 	dmuci_add_section_icwmpd("dmmap_dhcp", "vendorclass", &dmmap_serving_pool, &v);
-	dmuci_set_value_by_section(dmmap_serving_pool, "section_name", section_name(s));
 	*instancepara = update_instance_icwmpd(dmmap_serving_pool, instance, "poulinstance");
+	dmasprintf(&vendor_id, "vendor_%s", *instancepara);
+	dmuci_rename_section_by_section(s, vendor_id);
+	dmuci_set_value_by_section(dmmap_serving_pool, "section_name", vendor_id);
 	return 0;
 }
 
@@ -686,10 +717,25 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 	struct uci_section *s = NULL;
 	struct uci_section *ss = NULL;
 	struct uci_section *dmmap_s = NULL;
-	struct uci_section *dmmap_ss = NULL, *dmmap_section= NULL;
-
+	struct uci_section *dmmap_ss = NULL, *dmmap_section= NULL, *dhcp_section=NULL;
+	struct uci_list *val;
+	struct uci_element *e = NULL, *tmp;
+	char *dhcp_name;
 	switch (del_action) {
 		case DEL_INST:
+			dmuci_get_value_by_section_string(poolargs, "dhcp", &dhcp_name);
+			uci_foreach_sections("dhcp", "dhcp", dhcp_section){
+				if(strcmp(dhcp_name, section_name(dhcp_section)) != 0)
+					continue;
+				dmuci_get_value_by_section_list(dhcp_section, "dhcp_option", &val);
+				if (val) {
+					uci_foreach_element_safe(val, e, tmp)
+					{
+						dmuci_del_list_value_by_section(dhcp_section, "dhcp_option", tmp->name);
+					}
+					break;
+				}
+			}
 			uci_path_foreach_sections(icwmpd, "dmmap", section_name(poolargs), dmmap_s)
 			{
 				if (dmmap)
@@ -706,6 +752,15 @@ int delete_dhcp_conditional_serving_pool(char *refparam, struct dmctx *ctx, void
 			dmuci_delete_by_section(poolargs, NULL, NULL);
 			return 0;
 		case DEL_ALL:
+			uci_foreach_sections("dhcp", "dhcp", dhcp_section){
+				dmuci_get_value_by_section_list(dhcp_section, "dhcp_option", &val);
+				if (val) {
+					uci_foreach_element_safe(val, e, tmp)
+					{
+						dmuci_del_list_value_by_section(dhcp_section, "dhcp_option", tmp->name);
+					}
+				}
+			}
 			uci_foreach_sections("dhcp", "vendorclass", s) {
 				if (found != 0)
 				{
@@ -3721,7 +3776,18 @@ int set_dhcp_conditional_servingpool_alias(char *refparam, struct dmctx *ctx, vo
 
 int get_dhcp_conditional_servingpool_enable(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
+	bool b;
 	dmuci_get_value_by_section_string((struct uci_section *)data, "enable", value);
+	if(strlen(*value)<1){
+		*value = "1";
+	}
+	else {
+		string_to_bool(*value, &b);
+		if (!b)
+			*value = "0";
+		else
+			*value = "1";
+	}
 	return 0;
 }
 
@@ -4105,11 +4171,53 @@ int browselandevice_hostInst(struct dmctx *dmctx, DMNODE *parent_node, void *pre
 
 int browselandevice_lanhostconfigmanagement_dhcpconditionalservingpool_instance(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance)
 {
-	struct uci_section *s = NULL;
-	char *icondpool = NULL, *icondpool_last = NULL;
+	struct uci_section *s = NULL, *vcl_section=NULL, *new_section=NULL;
+	char *icondpool = NULL, *icondpool_last = NULL, *value = NULL, *dhcp_name = NULL, *str, *vendor_id;
 	struct dmmap_dup *p;
 	LIST_HEAD(dup_list);
-
+	struct uci_list *val, *vcl_val;
+	int found = 0;
+	int isdhcp = 0;
+	struct uci_element *e = NULL, *tmp = NULL, *vcl_e = NULL, *vcl_tmp = NULL;
+	
+	uci_foreach_sections("dhcp", "dhcp", s){
+		if(s)
+			dmuci_get_value_by_section_list(s, "dhcp_option", &val);
+		if (val) {
+			uci_foreach_element_safe(val, e, tmp)
+			{
+				uci_foreach_sections("dhcp", "vendorclass", vcl_section){
+					found = 0;
+					dmuci_get_value_by_section_string(vcl_section, "dhcp", &str);
+					if(str && strcmp(str, section_name(s)) != 0){
+						vcl_section == NULL;
+						continue;
+					}
+					dmuci_get_value_by_section_list(vcl_section, "dhcp_option", &vcl_val);
+					if (vcl_val) {
+						uci_foreach_element_safe(vcl_val, vcl_e, vcl_tmp) {
+							if (strcmp(vcl_tmp->name, tmp->name) == 0){
+								found = 1;
+								break;
+							}
+						}
+						if(!found) {
+							dmuci_add_list_value_by_section(vcl_section, "dhcp_option", tmp->name);
+							dmuci_set_value_by_section(vcl_section, "dhcp", section_name(s));
+						}
+						break;
+					}
+				}
+				if(!vcl_section){
+					dmuci_add_section_and_rename("dhcp", "vendorclass", &vcl_section, &value);
+					dmasprintf(&vendor_id, "vendor_%s", section_name(s));
+					dmuci_rename_section_by_section(vcl_section, vendor_id);
+					dmuci_add_list_value_by_section(vcl_section, "dhcp_option", tmp->name);
+					dmuci_set_value_by_section(vcl_section, "dhcp", section_name(s));
+				}
+			}
+		}
+	}
 	synchronize_specific_config_sections_with_dmmap("dhcp", "vendorclass", "dmmap_dhcp", &dup_list);
 	list_for_each_entry(p, &dup_list, list) {
 		icondpool =  handle_update_instance(1, dmctx, &icondpool_last, update_instance_alias, 3, p->dmmap_section, "poulinstance", "poulalias");

@@ -519,19 +519,21 @@ int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char 
 	struct wanargs *wandcdevargs = (struct wanargs *)data;
 	char sname[16] = {0};
 	char ifname[16] = {0};
-	char *instance, *v, *vid, layer2_ifname;
+	char *instance, *v, *vid, *layer2_ifname, *wan_interface;
 	struct uci_section *dmmap_wanip, *layer2_sec;
 	int id = 900;
-	
+
+	get_wan_interface(wandcdevargs->fwan, &wan_interface);
+
 	check_create_dmmap_package("dmmap_network");
-	instance = get_last_instance_proto("dmmap_network", "network", "interface", "conipinstance", "ifname", wandcdevargs->fwan, "proto", WAN_PROTO_IP);
+	instance = get_last_instance_proto("dmmap_network", "network", "interface", "conipinstance", "ifname", wan_interface, "proto", WAN_PROTO_IP);
 	dmasprintf(instancepara, "%d", instance ? atoi(instance) + 1 : 1); //MEM WILL BE FREED IN DMMEMCLEAN
 	sprintf(sname,"wan_%d_%s_%d_%s", atoi(wan_devices[wandcdevargs->instance].instance) - 1, wandcdevargs->iwan, WAN_IP_CONNECTION, *instancepara);
 	dmasprintf(&vid, "%d", atoi(*instancepara) + id);
-	if(strchr(wandcdevargs->fwan, '.')== NULL)
-		sprintf(ifname, "%s.%s", wandcdevargs->fwan, vid);
+	if(strchr(wan_interface, '.')== NULL)
+		sprintf(ifname, "%s.%s", wan_interface, vid);
 	else
-		sprintf(ifname, "%s", wandcdevargs->fwan);
+		sprintf(ifname, "%s", wan_interface);
 
 	dmuci_set_value("network", sname, NULL, "interface");
 	dmuci_set_value("network", sname, "ifname", ifname);
@@ -543,7 +545,7 @@ int add_wan_wanipconnection(char *refparam, struct dmctx *ctx, void *data, char 
 		break;
 	}
 	if(!layer2_sec){
-		add_wvlan(wandcdevargs->fwan, ifname, vid, "0", sname);
+		add_wvlan(wan_interface, ifname, vid, "0", sname);
 	}
 	dmuci_add_section_icwmpd("dmmap_network", "interface", &dmmap_wanip, &v);
 	dmuci_set_value_by_section(dmmap_wanip, "section_name", sname);
@@ -2522,33 +2524,22 @@ int browsewanprotocolconnectionipInst(struct dmctx *dmctx, DMNODE *parent_node, 
 	bool forced_inform_eip = false;
 	int forced_notify = UNDEF;
 	struct wanargs *curr_wanargs = (struct wanargs *)prev_data;
-	char *lan_name;
+	char *wan_name;
 
-	struct uci_section *s = NULL;
-	char *freq, **value;
-	json_object *res;
 	struct dmmap_dup *dmdup;
 	LIST_HEAD(dup_list);
 
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", default_wan, String}}, 1, &res);
-	if (res) {
-		device = dmjson_get_value(res, 1, "device");
-	}
-	if(device == NULL)
-		return 0;
-	is_br = strstr(device, "br-");
-	if(is_br)
-		synchronize_specific_config_sections_with_dmmap_eq("network", "interface", "dmmap_network", "type", "bridge", &dup_list);
-	else
-		synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", device, &dup_list);
+	char *wan_interface, *sname;
+	get_wan_interface(curr_wanargs->fwan, &wan_interface);
+	synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", wan_interface, &dup_list);
 	list_for_each_entry(dmdup, &dup_list, list) {
+		wan_name = section_name(dmdup->config_section);
 		dmuci_get_value_by_section_string(dmdup->config_section, "proto", &p);
-		lan_name = section_name(dmdup->config_section);
 		if (strcmp(p, "dhcp") == 0 || strcmp(p, "static") == 0)
 			proto = WAN_PROTO_IP;
 		else
 			return 0;
-		if (strcmp(lan_name, default_wan) == 0) {
+		if (strcmp(wan_name, default_wan) == 0) {
 			forced_inform_eip = true;
 			forced_notify = 2;
 			notif_permission = false;
@@ -2574,35 +2565,23 @@ int browsewanprotocolconnectionpppInst(struct dmctx *dmctx, DMNODE *parent_node,
 	bool forced_inform_eip = false;
 	int forced_notify = UNDEF;
 	struct wanargs *curr_wanargs = (struct wanargs *)prev_data;
-	char *lan_name;
-
-	struct uci_section *s = NULL;
-	char *freq, **value;
-	json_object *res;
+	char *wan_name;
 
 	struct dmmap_dup *dmdup;
 	LIST_HEAD(dup_list);
+	char *wan_interface, *sname;
 
-	dmubus_call("network.interface", "status", UBUS_ARGS{{"interface", default_wan, String}}, 1, &res);
-	if (res) {
-		device = dmjson_get_value(res, 1, "device");
-	}
-	if(device == NULL)
-		return 0;
-	is_br = strstr(device, "br-");
-	if(is_br)
-		synchronize_specific_config_sections_with_dmmap_eq("network", "interface", "dmmap_network", "type", "bridge", &dup_list);
-	else
-		synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", device, &dup_list);
+	get_wan_interface(curr_wanargs->fwan, &wan_interface);
+	synchronize_specific_config_sections_with_dmmap_cont("network", "interface", "dmmap_network", "ifname", wan_interface, &dup_list);
 	list_for_each_entry(dmdup, &dup_list, list) {
 		dmuci_get_value_by_section_string(dmdup->config_section, "proto", &p);
-		lan_name = section_name(dmdup->config_section);
+		wan_name = section_name(dmdup->config_section);
 		if (strstr(p, "ppp"))
 			proto = WAN_PROTO_PPP;
 		else
 			continue;
 
-		if (strcmp(lan_name, default_wan) == 0) {
+		if (strcmp(wan_name, default_wan) == 0) {
 			forced_inform_eip = true;
 			forced_notify = 2;
 			notif_permission = false;
@@ -2619,6 +2598,37 @@ int browsewanprotocolconnectionpppInst(struct dmctx *dmctx, DMNODE *parent_node,
 	return 0;
 }
 
+int get_wan_interface (char *fwan, char **wan_interface)
+{
+	struct uci_section *s;
+	int repeatindex;
+	char *containsrepeater= NULL, *isrepeater, *band=NULL, *freq, *value;
+	json_object *res;
+	char f="";
+	dmuci_get_option_value_string("netmode", "setup", "curmode", &isrepeater);
+	containsrepeater = strstr(isrepeater, "repeater");
+	if(containsrepeater){
+		repeatindex = (int)(containsrepeater - isrepeater);
+		if(repeatindex == 0){
+			dmuci_get_option_value_string("netmode", isrepeater, "uplink_band", &band);
+			if (band[0] == 'a')
+				f = '5';
+			else
+				f = '2';
+			uci_foreach_sections("wireless", "wifi-device", s) {
+				dmubus_call("router.wireless", "status", UBUS_ARGS{{"vif", s->e.name, String}}, 1, &res);
+				DM_ASSERT(res, value = "");
+				freq = dmjson_get_value(res, 1, "frequency");
+				if(freq[0]==f) dmasprintf(wan_interface, "%s", s->e.name);
+			}
+		}else{
+			dmasprintf(wan_interface, "%s", fwan);
+		}
+	}else{
+		dmasprintf(wan_interface, "%s", fwan);
+	}
+	return 0;
+}
 struct dm_permession_s DMWANConnectionDevice = {"0", &get_wan_connection_device_perm};
 struct dm_permession_s DMWANExternalIPPerm = {"0", &get_external_ip_perm};
 struct dm_notif_s DMWANConnectionDevicenotif = {NULL, &get_wan_connection_device_notif};

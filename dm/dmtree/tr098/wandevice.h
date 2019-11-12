@@ -51,6 +51,7 @@ extern DMOBJ tWANEthernetInterfaceConfigObj[];
 extern DMLEAF tWANEthernetInterfaceConfigParam[];
 extern DMLEAF tWANEthernetInterfaceConfigStatsParam[];
 
+int get_wan_interface (char *fwan, char **wan_interface);
 int browsewandeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
 unsigned char get_wan_protocol_connection_forced_inform(char *refparam, struct dmctx *dmctx, void *data, char *instance);
 int browsewanconnectiondeviceInst(struct dmctx *dmctx, DMNODE *parent_node, void *prev_data, char *prev_instance);
