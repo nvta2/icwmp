@@ -360,7 +360,7 @@ int get_device_memory_bank(char *refparam, struct dmctx *ctx, void *data, char *
 {
 	json_object *res;
 
-	dmubus_call("router.system", "memory_bank", UBUS_ARGS{{}}, 0, &res);
+	dmubus_call("router.system", "bank", UBUS_ARGS{{}}, 0, &res);
 	DM_ASSERT(res, *value = "");
 	*value = dm_ubus_get_value(res, 1, "code");
 	return 0;
@@ -372,7 +372,7 @@ int set_device_memory_bank(char *refparam, struct dmctx *ctx, void *data, char *
 		case VALUECHECK:
 			return 0;
 		case VALUESET:
-			dmubus_call_set("router.system", "memory_bank", UBUS_ARGS{{"bank", value, Integer}}, 1);
+			dmubus_call_set("router.system", "bank", UBUS_ARGS{{"bank", value, Integer}}, 1);
 			return 0;
 	}
 	return 0;
