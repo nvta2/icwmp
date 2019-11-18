@@ -634,11 +634,12 @@ int add_ipacccfg_rule(char *refparam, struct dmctx *ctx, void *data, char **inst
 	dmuci_set_value_by_section(rule, "type", "generic");
 	dmuci_set_value_by_section(rule, "name", "new_rule");
 	dmuci_set_value_by_section(rule, "proto", "all");
-	dmuci_set_value_by_section(rule, "target", "ACCPET");
+	dmuci_set_value_by_section(rule, "target", "ACCEPT");
 	dmuci_set_value_by_section(rule, "family", "ipv4");
 	dmuci_set_value_by_section(rule, "enabled", "1");
 	dmuci_set_value_by_section(rule, "hidden", "1");
 	dmuci_set_value_by_section(rule, "parental", "0");
+	dmuci_set_value_by_section(rule, "src", "wan");
 
 	dmuci_add_section_icwmpd("dmmap_firewall", "rule", &dmmap_rule, &v);
 	dmuci_set_value_by_section(dmmap_rule, "section_name", section_name(rule));
