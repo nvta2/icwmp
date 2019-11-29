@@ -1,7 +1,6 @@
 CWMP_VERSION = 3.0.0
 bin_PROGRAMS = icwmpd
 
-if LIB_BBFDM
 icwmpd_SOURCES =			\
 	../backupSession.c		\
 	../config.c				\
@@ -61,9 +60,7 @@ icwmpd_LDFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
 CWMP_BKP_FILE=/etc/icwmpd/.icwmpd_backup_session.xml
 icwmpd_CFLAGS+=-DCWMP_BKP_FILE=\"$(CWMP_BKP_FILE)\"
 icwmpd_CFLAGS+=-I../inc
-endif
 
-if LIB_TR098
 bin_PROGRAMS += icwmp_tr098d
 
 icwmp_tr098d_SOURCES =			\
@@ -126,7 +123,6 @@ icwmp_tr098d_LDFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
 CWMP_BKP_FILE=/etc/icwmpd/.icwmpd_backup_session.xml
 icwmp_tr098d_CFLAGS+=-DCWMP_BKP_FILE=\"$(CWMP_BKP_FILE)\"
 icwmp_tr098d_CFLAGS+=-I../inc
-endif
 
 bin_PROGRAMS += icwmp_stund
 

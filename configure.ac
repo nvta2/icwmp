@@ -26,12 +26,6 @@ AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging message
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(WITH_DEV_DEBUG),)
 AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy mode])], AC_DEFINE(DUMMY_MODE),)
 
-AC_ARG_ENABLE(tr098, [AS_HELP_STRING([--enable-tr098], [enable tr098])], AC_DEFINE(LIB_TR098),)
-AM_CONDITIONAL([LIB_TR098],[test "x$enable_tr098" = "xyes"])
-
-AC_ARG_ENABLE(tr181, [AS_HELP_STRING([--enable-tr181], [enable tr181])], AC_DEFINE(LIB_BBFDM),)
-AM_CONDITIONAL([LIB_BBFDM],[test "x$enable_tr181" = "xyes"])
-
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
