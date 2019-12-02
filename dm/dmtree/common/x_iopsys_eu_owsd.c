@@ -56,6 +56,7 @@ DMLEAF X_IOPSYS_EU_ListenObjParams[] = {
 {"UbusCert", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_cert, set_x_iopsys_eu_owsd_ubus_cert, NULL, NULL},
 {"UbusKey", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_key, set_x_iopsys_eu_owsd_ubus_key, NULL, NULL},
 {"UbusCa", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_ubus_ca, set_x_iopsys_eu_owsd_ubus_ca, NULL, NULL},
+{"UserSupport", &DMWRITE, DMT_STRING, get_x_iopsys_eu_owsd_user_support, set_x_iopsys_eu_owsd_user_support, NULL, NULL},
 {0}
 };
 
@@ -519,6 +520,36 @@ int set_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, 
 			if(strstr(net_cur_mode, "repeater") || strstr(net_cur_mode, "extender")) {
 				if(strcmp(section_name(owsd_listensection), "wan_https")== 0)
 					dmuci_set_value_by_section(owsd_listensection, "ca", value);
+			}
+			return 0;
+	}
+	return 0;
+}
+
+int get_x_iopsys_eu_owsd_user_support(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value){
+	struct uci_section *owsd_listensection = (struct uci_section *)data;
+	struct uci_list *val;
+
+	dmuci_get_value_by_section_list(owsd_listensection, "user", &val);
+	if (val)
+		*value = dmuci_list_to_string(val, " ");
+	else
+		*value = "";
+	return 0;
+}
+
+int set_x_iopsys_eu_owsd_user_support(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action){
+	struct uci_section *owsd_listensection = (struct uci_section *)data;
+	char *pch=NULL, *spch=NULL;
+	switch (action) {
+		case VALUECHECK:
+			return 0;
+		case VALUESET:
+			dmuci_delete_by_section(owsd_listensection, "user", NULL);
+			pch = strtok_r(value, " ", &spch);
+			while (pch != NULL) {
+				dmuci_add_list_value_by_section(owsd_listensection, "user", pch);
+				pch = strtok_r(NULL, " ", &spch);
 			}
 			return 0;
 	}
