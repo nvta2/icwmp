@@ -60,22 +60,28 @@ int http_client_init(struct cwmp *cwmp)
 #ifdef HTTP_CURL
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
-		if (asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
-			free(acs_var_stat);
-			free(dhcp_dis);
-			return -1;
+		if(acs_var_stat){
+			if (asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
+				free(acs_var_stat);
+				free(dhcp_dis);
+				return -1;
+			}
+		}else {
+			if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
+				free(dhcp_dis);
+				return -1;
+			}
 		}
 	} else {
 		if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
-			free(acs_var_stat);
-			free(dhcp_dis);
+			if(dhcp_dis)
+				free(dhcp_dis);
 			return -1;
 		}
 	}
-	free(acs_var_stat);
-	free(dhcp_dis);
 #endif
-
+	if(dhcp_dis)
+		free(dhcp_dis);
 #ifdef HTTP_ZSTREAM
 	char *add = strstr(cwmp->conf.acsurl,"://");
 	if(!add) return -1;
