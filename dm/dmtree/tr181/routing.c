@@ -62,11 +62,11 @@ DMLEAF tRouterInstParam[] = {
 DMLEAF tIPv4ForwardingParam[] = {
 {"Enable", &DMRouting, DMT_BOOL, get_router_ipv4forwarding_enable, set_router_ipv4forwarding_enable, NULL, NULL},
 {"Status", &DMREAD, DMT_STRING, get_router_ipv4forwarding_status, NULL, NULL, NULL},
-{"Alias", &DMWRITE, DMT_STRING, get_router_ipv4forwarding_alias, set_router_ipv4forwarding_alias, NULL, NULL},
+{"Alias", &DMRouting, DMT_STRING, get_router_ipv4forwarding_alias, set_router_ipv4forwarding_alias, NULL, NULL},
 {"StaticRoute", &DMREAD, DMT_BOOL, get_router_ipv4forwarding_static_route, NULL, NULL, NULL},
 {"DestIPAddress", &DMRouting, DMT_STRING, get_router_ipv4forwarding_destip, set_router_ipv4forwarding_destip, NULL, NULL},
 {"DestSubnetMask", &DMRouting, DMT_STRING, get_router_ipv4forwarding_destmask, set_router_ipv4forwarding_destmask, NULL, NULL},
-{"ForwardingPolicy", &DMREAD, DMT_INT, get_router_ipv4forwarding_forwarding_policy, NULL, NULL, NULL},
+{"ForwardingPolicy", &DMRouting, DMT_INT, get_router_ipv4forwarding_forwarding_policy, set_router_ipv4forwarding_forwarding_policy, NULL, NULL},
 {"GatewayIPAddress", &DMRouting, DMT_STRING, get_router_ipv4forwarding_gatewayip, set_router_ipv4forwarding_gatewayip, NULL, NULL},
 {"Interface", &DMRouting, DMT_STRING, get_router_ipv4forwarding_interface_linker_parameter, set_router_ipv4forwarding_interface_linker_parameter, NULL, NULL},
 {"Origin", &DMREAD, DMT_STRING, get_router_ipv4forwarding_origin, NULL, NULL, NULL},
@@ -707,6 +707,20 @@ int get_router_ipv4forwarding_forwarding_policy(char *refparam, struct dmctx *ct
 	return 0;
 }
 
+int set_router_ipv4forwarding_forwarding_policy(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action)
+{
+	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
+	switch (action) {
+		case VALUECHECK:
+			if (routeargs->type == ROUTE_DYNAMIC)
+				return FAULT_9001;
+			return 0;
+		case VALUESET:
+			return 0;
+	}
+	return 0;
+}
+
 int get_router_ipv4forwarding_origin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
@@ -1209,25 +1223,27 @@ int add_ipv4forwarding(char *refparam, struct dmctx *ctx, void *data, char **ins
 	struct uci_section *s = NULL;
 	struct uci_section *dmmap_route = NULL;
 	int last_inst;
+	char route_name[32];
 
 	check_create_dmmap_package("dmmap_route_forwarding");
 	last_inst = get_forwarding_last_inst();
 	sprintf(instance, "%d", last_inst);
 	dmuci_add_section_and_rename("network", "route", &s, &value);
-	dmuci_set_value_by_section(s, "metric", "0");
-	dmuci_set_value_by_section(s, "interface", "lan");
-
 	dmuci_add_section_icwmpd("dmmap_route_forwarding", "route", &dmmap_route, &v);
-	dmuci_set_value_by_section(dmmap_route, "section_name", section_name(s));
 	*instancepara = update_instance_icwmpd(dmmap_route, instance, "routeinstance");
+	snprintf(route_name, sizeof(route_name), "route_%s", *instancepara);
+	dmuci_rename_section_by_section(s, route_name);
+	// Add route withh metric != 0 to be static
+	dmuci_set_value_by_section(s, "metric", *instancepara);
+	dmuci_set_value_by_section(dmmap_route, "section_name", section_name(s));
 	return 0;
 }
 
 int delete_ipv4forwarding(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action)
 {
 	struct routingfwdargs *routeargs = (struct routingfwdargs *)data;
-	struct uci_section *dmmap_section= NULL;
-
+	struct uci_section *dmmap_section= NULL, *s=NULL, *ss=NULL;
+	int found = 0;
 	switch (del_action) {
 		case DEL_INST:
 			get_dmmap_section_of_config_section("dmmap_route_forwarding", "route", section_name(routeargs->routefwdsection), &dmmap_section);
@@ -1240,10 +1256,48 @@ int delete_ipv4forwarding(char *refparam, struct dmctx *ctx, void *data, char *i
 			if(dmmap_section != NULL) {
 				dmuci_delete_by_section(dmmap_section, NULL, NULL);
 				dmuci_delete_by_section(routeargs->routefwdsection, NULL, NULL);
+				break;
+			}
+			get_dmmap_section_of_config_section_eq("dmmap_route_forwarding", "route_dynamic", "routeinstance", instance, &dmmap_section);
+			if(dmmap_section != NULL) {
+				return FAULT_9001;
 			}
 			break;
 		case DEL_ALL:
-			return FAULT_9005;
+			uci_foreach_sections("network", "route_disabled", s) {
+				if(found != 0) {
+					get_dmmap_section_of_config_section("dmmap_route_forwarding", "route_disabled", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = s;
+				found++;
+			}
+			if(ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_route_forwarding", "route", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+			found = 0;
+			uci_foreach_sections("network", "route", s) {
+				if(found != 0) {
+					get_dmmap_section_of_config_section("dmmap_route_forwarding", "route", section_name(ss), &dmmap_section);
+					if(dmmap_section != NULL)
+						dmuci_delete_by_section(dmmap_section, NULL, NULL);
+					dmuci_delete_by_section(ss, NULL, NULL);
+				}
+				ss = s;
+				found++;
+			}
+			if(ss != NULL){
+				get_dmmap_section_of_config_section("dmmap_route_forwarding", "route", section_name(ss), &dmmap_section);
+				if(dmmap_section != NULL)
+					dmuci_delete_by_section(dmmap_section, NULL, NULL);
+				dmuci_delete_by_section(ss, NULL, NULL);
+			}
+			break;
 		}
 	return 0;
 }
@@ -1254,17 +1308,17 @@ int add_ipv6Forwarding(char *refparam, struct dmctx *ctx, void *data, char **ins
 	struct uci_section *s = NULL;
 	struct uci_section *dmmap_route = NULL;
 	int last_inst;
-
+	char *route_name[32];
 	check_create_dmmap_package("dmmap_route_forwarding");
 	last_inst = get_forwarding6_last_inst();
 	sprintf(instance, "%d", last_inst);
 	dmuci_add_section_and_rename("network", "route6", &s, &value);
-	dmuci_set_value_by_section(s, "metric", "0");
-	dmuci_set_value_by_section(s, "interface", "lan");
-
 	dmuci_add_section_icwmpd("dmmap_route_forwarding", "route6", &dmmap_route, &v);
-	dmuci_set_value_by_section(dmmap_route, "section_name", section_name(s));
 	*instancepara = update_instance_icwmpd(dmmap_route, instance, "route6instance");
+	snprintf(route_name, sizeof(route_name), "route6_%s", *instancepara);
+	dmuci_rename_section_by_section(s, route_name);
+	dmuci_set_value_by_section(s, "metric", *instancepara);
+	dmuci_set_value_by_section(dmmap_route, "section_name", section_name(s));
 	return 0;
 }
 

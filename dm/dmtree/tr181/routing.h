@@ -56,6 +56,7 @@ int get_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *
 int set_router_ipv4forwarding_destmask(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int get_router_ipv4forwarding_static_route(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_router_ipv4forwarding_forwarding_policy(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_router_ipv4forwarding_forwarding_policy (char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int get_router_ipv4forwarding_origin(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int get_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_router_ipv4forwarding_gatewayip(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
