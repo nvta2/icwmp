@@ -68,20 +68,20 @@ int http_client_init(struct cwmp *cwmp)
 			}
 		}else {
 			if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
-				free(acs_var_stat);
 				free(dhcp_dis);
 				return -1;
 			}
 		}
-		free(acs_var_stat);
 	} else {
 		if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
-			free(dhcp_dis);
+			if(dhcp_dis)
+				free(dhcp_dis);
 			return -1;
 		}
 	}
 #endif
-	free(dhcp_dis);
+	if(dhcp_dis)
+		free(dhcp_dis);
 #ifdef HTTP_ZSTREAM
 	char *add = strstr(cwmp->conf.acsurl,"://");
 	if(!add) return -1;
