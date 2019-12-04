@@ -35,6 +35,8 @@ int get_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data,
 int set_x_iopsys_eu_owsd_ubus_key(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 int get_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
 int set_x_iopsys_eu_owsd_ubus_ca(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
+int get_x_iopsys_eu_owsd_user_support(char *refparam, struct dmctx *ctx, void *data, char *instance, char **value);
+int set_x_iopsys_eu_owsd_user_support(char *refparam, struct dmctx *ctx, void *data, char *instance, char *value, int action);
 
 int add_owsd_listen(char *refparam, struct dmctx *ctx, void *data, char **instancepara);
 int delete_owsd_listen_instance(char *refparam, struct dmctx *ctx, void *data, char *instance, unsigned char del_action);
