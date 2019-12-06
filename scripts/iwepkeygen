@@ -1,6 +1,6 @@
 #!/usr/sbin/bash
-# Copyright (C) 2013-2015 Inteno Broadband Technology AB
-#  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
+# Copyright (C) 2013-2019 iopsys Software Solutions AB
+# Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 usage()
 {
 	echo "Usage: $0 <strength> <passphrase>"

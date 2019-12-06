@@ -1,19 +1,11 @@
 /*
-    kcwmp.c
-
-    cwmp service client in C
-
---------------------------------------------------------------------------------
-cwmp service client
-Copyright (C) 2011-2012, Inteno, Inc. All Rights Reserved.
-
-Any distribution, dissemination, modification, conversion, integral or partial
-reproduction, can not be made without the prior written permission of Inteno.
---------------------------------------------------------------------------------
-Author contact information:
-
---------------------------------------------------------------------------------
-*/
+ * Copyright (C) 2019 iopsys Software Solutions AB. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ *
+ */
 
 #include <linux/module.h>
 #include <net/sock.h>
@@ -36,7 +28,7 @@ typedef struct kernel_cwmp_input {
 static struct sock *nl_sk = NULL;
 static struct kernel_cwmp_input kernel_cwmp_input;
 
-MODULE_LICENSE("INTENO");
+MODULE_LICENSE("IOPSYS");
 
 static void kernel_api_cwmp_value_change_listener(struct sk_buff *skb)
 {

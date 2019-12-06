@@ -4,7 +4,7 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2013 Inteno Broadband Technology AB
+ *	Copyright (C) 2013-2019 iopsys Software Solutions AB
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
@@ -192,7 +192,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 	char *ip = NULL;
 	char errbuf[CURL_ERROR_SIZE];
 	http_c.header_list = NULL;
-	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: inteno-cwmp");
+	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: iopsys-cwmp");
 	if (!http_c.header_list) return -1;
 	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/xml");
 	if (!http_c.header_list) return -1;

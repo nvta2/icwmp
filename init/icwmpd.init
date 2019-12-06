@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2015-2018 Inteno Broadband Technology AB
+# Copyright (C) 2015-2019 iopsys Software Solutions AB
 
 . /lib/functions.sh
 include /lib/network
