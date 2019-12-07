@@ -21,7 +21,7 @@ static char *fc_script = "./ext/openwrt/scripts/icwmp.sh";
 static char *fc_script = "/usr/sbin/icwmp";
 #endif
 
-void external_du_change_stateFaultResp (char *fault_code, char *version, char *name);
+void external_du_change_stateFaultResp (char *fault_code, char *version, char *name, char *uuid, char *env);
 void external_downloadFaultResp (char *fault_code);
 void external_fetch_downloadFaultResp (char **fault_code);
 void external_uploadFaultResp (char *fault_code);
@@ -32,9 +32,10 @@ int external_simple(char *command, char *arg, int c);
 int external_download(char *url, char *size, char *type, char *user, char *pass,time_t c);
 int external_upload(char *url, char *type, char *user, char *pass, char *name);
 int external_apply(char *action, char *arg,time_t c);
-int external_change_du_state_uninstall(char *package_name);
-void external_fetch_du_change_stateFaultResp (char **fault, char **version, char **name);
-int external_change_du_state_download(char *url, char *user, char *pass);
+void external_fetch_du_change_stateFaultResp(char **fault, char **version, char **name, char **uuid, char **env);
+int external_change_du_state_install(char *url, char *uuid, char *user, char *pass, char *env);
+int external_change_du_state_update(char *uuid, char *url, char *version, char *user, char *pass);
+int external_change_du_state_uninstall(char *name, char *env);
 int external_handle_action(int (*external_handler)(char *msg));
 void external_add_list_paramameter(char *param_name, char *param_data, char *param_type, char *fault_code);
 void external_free_list_parameter();

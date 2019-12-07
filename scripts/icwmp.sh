@@ -72,11 +72,26 @@ case "$1" in
 		__arg5="$6"
 		action="download"
 		;;
-	du_download)
+	du_install)
 		__arg1="$2"
 		__arg2="$3"
 		__arg3="$4"
-		action="du_download"
+		__arg4="$5"
+		__arg5="$6"
+		action="du_install"
+		;;
+	du_update)
+		__arg1="$2"
+		__arg2="$3"
+		__arg3="$4"
+		__arg4="$5"
+		__arg5="$6"
+		action="du_update"
+		;;
+	du_uninstall)
+		__arg1="$2"
+		__arg2="$3"
+		action="du_uninstall"
 		;;
 	upload)
 		__arg1="$2"
@@ -206,36 +221,73 @@ handle_action() {
 		/usr/sbin/icwmpd -m 1 "inform"
 	fi
 
-	if [ "$action" = "du_download" ]; then
+	if [ "$action" = "du_install" ]; then
 		local fault_code="9000"
-		if [ "$__arg2" = "" -o "$__arg3" = "" ];then
-			wget -O /tmp/icwmp_du_download "$__arg1" 2> /dev/null
-			if [ "$?" != "0" ];then
-				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
+		ubus_args=`echo {\"url\":\"$__arg1\",\"uuid\":\"$__arg2\",\"username\":\"$__arg3\",\"password\":\"$__arg4\",\"environment\":\"$__arg5\"}`
+		output=`ubus -t 3 call softwaremanagement du_install $ubus_args`
+		if [ "$output" != "" ];then
+			json_init
+			json_load "$output"
+			json_get_var status status
+			if [ "$status" == "0" ];then
+				json_get_var error error
+				if [ "$error" == "Download" ];then
+					let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
+				else
+					let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
+				fi
 				icwmp_fault_output "" "$fault_code"
 				return 1
-			fi
-		else
-			local url="http://$__arg2:$__arg3@`echo $__arg1|sed 's/http:\/\///g'`"
-			wget -O /tmp/icwmp_du_download "$url" 2> /dev/null
-			if [ "$?" != "0" ];then
-				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
-				icwmp_fault_output "" "$fault_code"
-				return 1
+			else
+				json_get_var name name
+				json_get_var uuid uuid
+				json_get_var version version
+				json_get_var environment environment
+				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT" "$name" "$version" "$uuid" "$environment"
 			fi
 		fi
-		mv /tmp/icwmp_du_download /tmp/du_change_state.ipk 2> /dev/null
-		icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"			
 	fi
+	
+	if [ "$action" = "du_update" ]; then
+		local fault_code="9000"
+		ubus_args=`echo {\"uuid\":\"$__arg1\",\"url\":\"$__arg2\",\"version\":\"$__arg3\",\"username\":\"$__arg4\",\"password\":\"$__arg5\"}`
+		output=`ubus -t 3 call softwaremanagement du_update $ubus_args`
+		if [ "$output" != "" ];then
+			json_init
+			json_load "$output"
+			json_get_var status status
+			if [ "$status" == "0" ];then
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
+				icwmp_fault_output "" "$fault_code"
+				return 1
+			else
+				json_get_var name name
+				json_get_var uuid uuid
+				json_get_var version version
+				json_get_var environment environment
+				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT" "$name" "$version" "$uuid" "$environment"
+			fi
+		fi
+	fi
+	
 	if [ "$action" = "du_uninstall" ]; then
-		/bin/opkg remove "$__arg1" 2> /dev/null
-		if [ "$?" != "0" ];then
-			let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
-			icwmp_fault_output "" "$fault_code"
-			return 1
+		local fault_code="9000"
+		ubus_args=`echo {\"name\":\"$__arg1\",\"environment\":\"$__arg2\"}`
+		output=`ubus -t 3 call softwaremanagement du_uninstall $ubus_args`
+		if [ "$output" != "" ];then
+			json_init
+			json_load "$output"
+			json_get_var status status
+			if [ "$status" == "0" ];then
+				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
+				icwmp_fault_output "" "$fault_code"
+				return 1
+			else
+				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
+			fi
 		fi
-		icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"			
 	fi
+	
 	if [ "$action" = "download" ]; then
 		local fault_code="9000"
 		if [ "$__arg4" = "" -o "$__arg5" = "" ];then
@@ -331,6 +383,7 @@ handle_action() {
 			fi
 		fi
 	fi
+	
 	if [ "$action" = "upload" ]; then
 		local fault_code="9000"
 		local flname=""
@@ -419,6 +472,7 @@ handle_action() {
 			;;
 		esac
 	fi
+	
 	if [ "$action" = "apply_download" ]; then
 		case "$__arg1" in
 			1) icwmp_apply_firmware ;;
@@ -440,12 +494,6 @@ handle_action() {
 		esac
 	fi
 
-	if [ "$action" = "apply_du_download" ]; then
-		case "$__arg1" in
-			install)	icwmp_install_package ;;
-			update)		icwmp_update_package ;;
-		esac
-	fi
 	if [ "$action" = "factory_reset" ]; then
 		/sbin/defaultreset
 	fi
@@ -530,11 +578,26 @@ handle_action() {
 					json_get_var __arg7 cert_path
 					action="download"
 					;;
-				du_download)
+				du_install)
 					json_get_var __arg1 url
-					json_get_var __arg2 user
-					json_get_var __arg3 pass
-					action="du_download"
+					json_get_var __arg2 uuid
+					json_get_var __arg3 user
+					json_get_var __arg4 pass
+					json_get_var __arg5 env
+					action="du_install"
+					;;
+				du_update)
+					json_get_var __arg1 uuid
+					json_get_var __arg2 url
+					json_get_var __arg3 version
+					json_get_var __arg4 user
+					json_get_var __arg5 pass
+					action="du_update"
+					;;
+				du_uninstall)
+					json_get_var __arg1 name
+					json_get_var __arg2 env
+					action="du_uninstall"
 					;;
 				upload)
 					json_get_var __arg1 url
@@ -563,9 +626,6 @@ handle_action() {
 						json_get_var __arg1 arg
 						json_get_var __arg2 ids
 						action="apply_download"
-					elif [ "$action" = "du_download" ]; then
-						json_get_var __arg1 arg
-						action="apply_du_download"
 					else
 						json_get_var __arg1 arg
 						action="apply_value"

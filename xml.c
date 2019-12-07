@@ -129,12 +129,14 @@ const struct rpc_cpe_method rpc_cpe_methods[] = {
 const struct rpc_acs_method rpc_acs_methods[] = {
 	[RPC_ACS_INFORM] 			= {"Inform", cwmp_rpc_acs_prepare_message_inform, cwmp_rpc_acs_parse_response_inform, cwmp_rpc_acs_destroy_data_inform},
 	[RPC_ACS_GET_RPC_METHODS] 	= {"GetRPCMethods", cwmp_rpc_acs_prepare_get_rpc_methods, NULL, NULL},
-	[RPC_ACS_TRANSFER_COMPLETE] = {"TransferComplete", cwmp_rpc_acs_prepare_transfer_complete,	NULL, cwmp_rpc_acs_destroy_data_transfer_complete},
-	[RPC_ACS_DU_STATE_CHANGE_COMPLETE] = {"DUStateChangeComplete", cwmp_rpc_acs_prepare_du_state_change_complete,	NULL, cwmp_rpc_acs_destroy_data_du_state_change_complete}
+	[RPC_ACS_TRANSFER_COMPLETE] = {"TransferComplete", cwmp_rpc_acs_prepare_transfer_complete, NULL, cwmp_rpc_acs_destroy_data_transfer_complete},
+	[RPC_ACS_DU_STATE_CHANGE_COMPLETE] = {"DUStateChangeComplete", cwmp_rpc_acs_prepare_du_state_change_complete, NULL, cwmp_rpc_acs_destroy_data_du_state_change_complete}
 
 };
+int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass, char *env, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete);
+int cwmp_launch_du_update(char *uuid, char *url, char *version, char *user, char *pass, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete);
+int cwmp_launch_du_uninstall(char *package_name, char *package_env, struct opresult **pchange_du_state_complete);
 int cwmp_free_change_du_state_request(struct change_du_state *change_du_state);
-int cwmp_launch_uninstall_du_state(char *package_name, struct opresult **pchange_du_state_complete);
 
 static int xml_recreate_namespace(mxml_node_t *tree)
 {
@@ -1020,16 +1022,18 @@ int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session, struct 
 
 int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct session *session, struct rpc *rpc)
 {
-	mxml_node_t *tree, *n;
+	mxml_node_t *tree, *n, *b, *t;
 	struct du_state_change_complete *p;
+	struct opresult *q;
+	char *c;
 
 	p = (struct du_state_change_complete *)rpc->extra_data;
 	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_NO_CALLBACK);
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
-	if(!n) { goto error;}
+	if(!n) goto error;
+
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(cwmp->conf.amd_version)-1]);
-	n = mxmlFindElement(tree, tree, "soap_env:Body",
-					NULL, NULL, MXML_DESCEND);
+	n = mxmlFindElement(tree, tree, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
 
 	n = mxmlNewElement(n, "cwmp:DUStateChangeComplete");
@@ -1044,43 +1048,66 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 	n = mxmlNewElement(n, "Results");
 	if (!n) goto error;
 	
-	mxml_node_t *b, *t;
-	char *c;
-	struct opresult *q;
 	list_for_each_entry(q, &(p->list_opresult), list) {
 		t = mxmlNewElement(n, "OpResultStruct");		
 		if (!t) goto error;
+
 		b = mxmlNewElement(t, "UUID");
 		if (!b) goto error;
+
 		c = q->uuid ? strdup(q->uuid) : strdup("");
 		b = mxmlNewText(b, 0, c);
 		FREE(c);
 		if (!b) goto error;
+
 		b = mxmlNewElement(t, "DeploymentUnitRef");
 		if (!b) goto error;
+
 		c = q->du_ref ? strdup(q->du_ref) : strdup("");
 		b = mxmlNewText(b, 0, c);
 		FREE(c);
 		if (!b) goto error;
+
 		b = mxmlNewElement(t, "Version");
 		if (!b) goto error;
+
 		c = q->version ? strdup(q->version) : strdup("");
 		b = mxmlNewText(b, 0, c);
 		FREE(c);
+		if (!b) goto error;
+
 		b = mxmlNewElement(t, "CurrentState");
 		if (!b) goto error;
+
 		c = q->current_state ? strdup(q->current_state) : strdup("");
 		b = mxmlNewText(b, 0, c);
-		FREE(c);		
+		FREE(c);
 		if (!b) goto error;
+
+		b = mxmlNewElement(t, "StartTime");
+		if (!b) goto error;
+
+		c = q->start_time ? strdup(q->start_time) : strdup("");
+		b = mxmlNewText(b, 0, c);
+		FREE(c);
+		if (!b) goto error;
+
+		b = mxmlNewElement(t, "CompleteTime");
+		if (!b) goto error;
+
+		c = q->complete_time ? strdup(q->complete_time) : strdup("");
+		b = mxmlNewText(b, 0, c);
+		FREE(c);
+		if (!b) goto error;
+
 		b = mxmlNewElement(t, "FaultStruct");
 		if (!b) goto error;
 
 		b = mxmlNewElement(b, "FaultCode");
-		if (!n) goto error;
+		if (!b) goto error;
 
 		b = mxmlNewText(b, 0, q->fault?FAULT_CPE_ARRAY[q->fault].CODE:"0");
-		if (!n) goto error;
+		if (!b) goto error;
 
 		b = b->parent->parent;
 		b = mxmlNewElement(b, "FaultString");
@@ -1088,10 +1115,8 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 
 		b= mxmlNewText(b, 0, q->fault?FAULT_CPE_ARRAY [q->fault].DESCRIPTION:"");
 		if (!b) goto error;
-		
 	}
 	session->tree_out = tree;
-
 	return 0;
 
 error:
@@ -1104,7 +1129,7 @@ int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session, 
 	if(rpc->extra_data != NULL)
 	{
 		p = (struct du_state_change_complete *)rpc->extra_data;
-		bkp_session_delete_du_state_change_complete (p);
+		bkp_session_delete_du_state_change_complete(p);
 		bkp_session_save();
 		FREE(p->command_key);
 	}
@@ -3033,18 +3058,20 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
     struct change_du_state          			*pchange_du_state;
     struct timespec                 			download_timeout = {50, 0};
     time_t                          			current_time, stime;
-    int											i,error = FAULT_CPE_NO_FAULT;
+    int											i, error = FAULT_CPE_NO_FAULT;
     struct du_state_change_complete				*pdu_state_change_complete;
-    long int									time_of_grace = 216000,timeout;
+    long int									time_of_grace = 216000, timeout;
     char										*fault_code;
 	char										*package_version;
 	char										*package_name;
+	char										*package_uuid;
+	char										*package_env;
 	struct operations							*p, *q;
 	struct opresult								*res;
 	char 										*operation_endTime;
 	char 										*du_instance;
 	struct dmctx dmctx = {0};
-	char du_ref[16];
+	char *du_ref = NULL;
 	char *cur_uuid = NULL;
 	char *cur_url = NULL;
 	char *cur_user = NULL;
@@ -3052,22 +3079,21 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 	char *cur_instance = NULL;
 	char *cur_name = NULL;
 	char *cur_version = NULL;
+	char *cur_env = NULL;
 	int uuid;
     
-    for(;;)
+    for (;;)
     {
-        if (list_change_du_state.next!=&(list_change_du_state)) {
+        if (list_change_du_state.next != &(list_change_du_state)) {
             pchange_du_state = list_entry(list_change_du_state.next,struct change_du_state, list);
-			
             stime = pchange_du_state->timeout;
-            current_time    = time(NULL);
+            current_time = time(NULL);
             timeout = current_time - pchange_du_state->timeout;
-            if((timeout >= 0)&&(timeout > time_of_grace))
+            if ((timeout >= 0) && (timeout > time_of_grace))
             {
                 pthread_mutex_lock (&mutex_change_du_state);
-				pdu_state_change_complete = calloc (1,sizeof(struct du_state_change_complete));
-				if (pdu_state_change_complete != NULL)
-				{
+				pdu_state_change_complete = calloc (1, sizeof(struct du_state_change_complete));
+				if (pdu_state_change_complete != NULL) {
 					error = FAULT_CPE_DOWNLOAD_FAILURE; //TO UPDATE
 					INIT_LIST_HEAD(&(pdu_state_change_complete->list_opresult));
 					pdu_state_change_complete->command_key = strdup(pchange_du_state->command_key);
@@ -3080,275 +3106,163 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
 						res->current_state = strdup("Failed");
 						res->start_time = strdup(mix_get_time());
 						res->complete_time = strdup(res->start_time);
-						res->fault		= error;					
-					}				
+						res->fault = error;
+					}
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
-					cwmp_root_cause_dustatechangeComplete (cwmp,pdu_state_change_complete);
+					cwmp_root_cause_dustatechangeComplete(cwmp, pdu_state_change_complete);
 				}
-				list_del (&(pchange_du_state->list));				
+				list_del(&(pchange_du_state->list));
 				cwmp_free_change_du_state_request(pchange_du_state);
 				pthread_mutex_unlock (&mutex_change_du_state);
 				continue;
 			}
-            if((timeout >= 0)&&(timeout <= time_of_grace))
+            if((timeout >= 0) && (timeout <= time_of_grace))
             {
                 pthread_mutex_lock (&(cwmp->mutex_session_send));
-				pdu_state_change_complete = calloc (1,sizeof(struct du_state_change_complete));
-				if (pdu_state_change_complete != NULL)
-				{
-					error = FAULT_CPE_DOWNLOAD_FAILURE; //TO UPDATE
+				pdu_state_change_complete = calloc (1, sizeof(struct du_state_change_complete));
+				if (pdu_state_change_complete != NULL) {
+					error = FAULT_CPE_NO_FAULT; //TO UPDATE
 					INIT_LIST_HEAD(&(pdu_state_change_complete->list_opresult));
 					pdu_state_change_complete->command_key = strdup(pchange_du_state->command_key);
 					pdu_state_change_complete->timeout = pchange_du_state->timeout;
 					list_for_each_entry_safe(p, q, &pchange_du_state->list_operation, list) {
 						res = calloc(1, sizeof(struct opresult)); //IF RES IS NULL
-						list_add_tail(&(res->list), &(pdu_state_change_complete->list_opresult));					
+						list_add_tail(&(res->list), &(pdu_state_change_complete->list_opresult));
 						external_init();						
 						switch (p->type)
 				        {
 				            case DU_INSTALL:
-								error = cwmp_launch_change_du_state_download(p,&res);
-								if(error != FAULT_CPE_NO_FAULT)
-				                {
-									res->uuid = strdup(p->uuid);
-									res->du_ref = strdup("");
-									res->version = strdup("");
-									res->current_state = strdup("Failed");
-									res->resolved = 0;									
-									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
-									res->fault = error;
-									break;
-								}
-								external_apply("du_download", "install", 0);
-								external_handle_action(cwmp_handle_dustate_changeFault);
-								external_fetch_du_change_stateFaultResp(&fault_code, &package_version, &package_name);
-								if(fault_code != NULL)
-								{
-									if(fault_code[0]=='9')
-									{
-										for(i=1;i<__FAULT_CPE_MAX;i++)
-										{
-											if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0)
-											{
-												error = i;
-												break;
-											}
-										}
+				            	error = cwmp_launch_du_install(p->url, p->uuid, p->username, p->password, p->executionenvref, &package_version, &package_name, &package_uuid, &package_env, &res);
+				            	if( error == FAULT_CPE_NO_FAULT) {
+									if (package_name && package_env) {
+										cwmp_dm_ctx_init(cwmp, &dmctx);
+										du_ref = get_deployment_unit_reference(&dmctx, package_name, package_env);
+										if (du_ref) res->du_ref = strdup(du_ref);
+										cwmp_dm_ctx_clean(cwmp, &dmctx);
 									}
-								}
-								free(fault_code);
-								if( error == FAULT_CPE_NO_FAULT)
-								{
-									cwmp_dm_ctx_init(cwmp, &dmctx);
-									du_instance = strdup(add_softwaremodules_deploymentunit(p->uuid, p->url, p->username, p->password, package_name, package_version));
-									dmuci_commit();
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
-									sprintf(du_ref,"%sSoftwareModules.%s.", dmroot, du_instance);
-									res->uuid = strdup(p->uuid);
-									res->du_ref = strdup(du_ref);
+									if (package_uuid) res->uuid = strdup(package_uuid);
 									res->current_state = strdup("Installed");
 									res->resolved = 1;
-									res->version = strdup(package_version);
-									operation_endTime = mix_get_time();
-									res->complete_time = strdup(operation_endTime);
-									res->fault = error;									
-								}
-								else
-								{									
+									if (package_version) res->version = strdup(package_version);
+									res->complete_time = strdup(mix_get_time());
+									res->fault = error;
+								} else {
 									res->uuid = strdup(p->uuid);
 									res->current_state = strdup("Failed");
-									res->resolved = 0;									
-									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
-									res->fault = error;								
+									res->resolved = 0;
+									res->complete_time = strdup(mix_get_time());
+									res->fault = error;
 								}
 								break;
 							case DU_UNINSTALL:
 								cwmp_dm_ctx_init(cwmp, &dmctx);
-								cur_name = strdup(get_softwaremodules_name(p->uuid));
-								if (!cur_name || cur_name[0] == '\0') {
+								get_deployment_unit_name_version(p->uuid, &package_name, &package_version, &package_env);
+								if (!package_name || package_name[0] == '\0' || !package_version || package_version[0] == '\0' || !package_env || package_env[0] == '\0') {
 									error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
 									res->fault = error;
 									cwmp_dm_ctx_clean(cwmp, &dmctx);
-									break;												
+									break;
+								}
+								if (package_name) cur_name = strdup(package_name);
+								if (package_version) cur_version = strdup(package_version);
+								if (package_env) cur_env = strdup(package_env);
+								if (cur_name && cur_env) {
+									cwmp_dm_ctx_init(cwmp, &dmctx);
+									du_ref = get_deployment_unit_reference(&dmctx, cur_name, cur_env);
+									if (du_ref) res->du_ref = strdup(du_ref);
+									cwmp_dm_ctx_clean(cwmp, &dmctx);
 								}
 								if((p->version)[0] == '\0') {
-									error = cwmp_launch_uninstall_du_state(cur_name, &res);																
-								}
-								else {
-									cur_version = strdup(get_softwaremodules_version(p->uuid));
+									error = cwmp_launch_du_uninstall(cur_name, cur_env, &res);
+								} else {
 									if(strcmp(cur_version, p->version) == 0)
-										error = cwmp_launch_uninstall_du_state(cur_name, &res);
-									else {
+										error = cwmp_launch_du_uninstall(cur_name, cur_env, &res);
+									else
 										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
-										cwmp_dm_ctx_clean(cwmp, &dmctx);
-										break;
-									}
 								}
-								if( error == FAULT_CPE_NO_FAULT)
-								{
-									cwmp_dm_ctx_init(cwmp, &dmctx);
-									du_instance = get_softwaremodules_instance(p->uuid);
-									sprintf(du_ref,"%sSoftwareModules.%s.", dmroot, du_instance);
+
+								if( error == FAULT_CPE_NO_FAULT) {
 									res->uuid = strdup(p->uuid);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->version = strdup(p->version);
+									if (cur_version) res->version = strdup(cur_version);
 									res->current_state = strdup("Uninstalled");
 									res->resolved = 1;
-									operation_endTime = mix_get_time();
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = strdup(mix_get_time());
 									res->fault = error;
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
-								}
-								else
-								{
+								} else {
 									res->uuid = strdup(p->uuid);
-									du_instance = get_softwaremodules_instance(p->uuid);
-									sprintf(du_ref,"%sSoftwareModules.%s.", dmroot, du_instance);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->version = strdup(p->version);
+									if (cur_version) res->version = strdup(cur_version);
 									res->current_state = strdup("Installed");
 									res->resolved = 1;
-									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
+									res->complete_time = strdup(mix_get_time());
 									res->fault = error;
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
 								}
+								FREE(cur_name);
+								FREE(cur_version);
+								FREE(cur_env);
 								break;
 							case DU_UPDATE:
-								if ((p->url)[0] != '\0' && (p->uuid)[0] != '\0') {
+								if ((p->url)[0] != '\0' && (p->uuid)[0] == '\0') {
 									cwmp_dm_ctx_init(cwmp, &dmctx);
-									uuid = update_softwaremodules_url(p->uuid, p->url);
-									if(uuid == 0) {
-										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
-										cwmp_dm_ctx_clean(cwmp, &dmctx);
-										break;
-									}
-									cur_instance = strdup(get_softwaremodules_instance(p->uuid));
-									dmuci_commit();
+									cur_uuid = strdup(get_softwaremodules_uuid(p->url));
 									cwmp_dm_ctx_clean(cwmp, &dmctx);
-								}
-								else if ((p->url)[0] != '\0' && (p->uuid)[0] == '\0') {
-									cwmp_dm_ctx_init(cwmp, &dmctx);
-									cur_uuid = get_softwaremodules_uuid(p->url);
-									if (!cur_uuid || cur_uuid[0] == '\0')
-									{
+									if (cur_uuid == NULL || cur_uuid[0] == '\0') {
 										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
-										cwmp_dm_ctx_clean(cwmp, &dmctx);
 										break;
 									}
-									cur_instance = strdup(get_softwaremodules_instance(p->uuid));
-									
-								}
-								else if ((p->url)[0] == '\0' && (p->uuid)[0] != '\0') {
+								} else if ((p->url)[0] == '\0' && (p->uuid)[0] != '\0') {
 									cwmp_dm_ctx_init(cwmp, &dmctx);
 									cur_url = strdup(get_softwaremodules_url(p->uuid));
-									if (cur_url == NULL || cur_url[0] == '\0')
-									{
+									cwmp_dm_ctx_clean(cwmp, &dmctx);
+									if (cur_url == NULL || cur_url[0] == '\0') {
 										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
-										cwmp_dm_ctx_clean(cwmp, &dmctx);
 										break;
 									}
-									cur_user = strdup(get_softwaremodules_username(p->uuid));
-									cur_pass = strdup(get_softwaremodules_pass(p->uuid));
+								}
+								error = cwmp_launch_du_update((cur_uuid && cur_uuid[0] != '\0')?cur_uuid:p->uuid, (cur_url && cur_url[0] != '\0')?cur_url:p->url, p->version, p->username, p->password, &package_version, &package_name, &package_uuid, &package_env, &res);
+								if (package_name && package_env) {
+									cwmp_dm_ctx_init(cwmp, &dmctx);
+									du_ref = get_deployment_unit_reference(&dmctx, package_name, package_env);
+									if (du_ref) res->du_ref = strdup(du_ref);
 									cwmp_dm_ctx_clean(cwmp, &dmctx);
-								}								
-								error = cwmp_launch_update_du_state_download((cur_url && cur_url[0]!='\0' )?cur_url:p->url, p->username, p->password, &res);
-								if(error != FAULT_CPE_NO_FAULT)
-				                {
-									if (p->uuid == NULL || (p->uuid)[0] == '\0') {
-										res->uuid = strdup(cur_uuid);
-										FREE(cur_uuid);
-									}
-									else
-										res->uuid = strdup(p->uuid);
-									sprintf(du_ref,"%sSoftwareModules.%s.", dmroot, du_instance);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
+								}
+								if( error == FAULT_CPE_NO_FAULT) {
+									if (package_uuid) res->uuid = strdup(package_uuid);
+									if (package_version) res->version = strdup(package_version);
 									res->current_state = strdup("Installed");
-									res->complete_time = strdup("0001-01-01T00:00:00+00:00");//TO CHECK
+									res->resolved = 1;
+									res->complete_time = strdup(mix_get_time());
 									res->fault = error;
-									// FREE(cur_user); FREE(cur_pass); 
-									break;
-								}						
-								if(error != FAULT_CPE_NO_FAULT)
-				                {
-									if (p->uuid == NULL || (p->uuid)[0] == '\0') {
-										res->uuid = strdup(cur_uuid);
-										FREE(cur_uuid);
-									}
-									else
-										res->uuid = strdup(p->uuid);
-									sprintf(du_ref,"%sSoftwareModules.%s.", dmroot, du_instance);
-									res->du_ref = strdup(du_ref);
-									FREE(du_instance);
-									res->current_state = strdup("Failed");
-									operation_endTime = mix_get_time(); //TO CHECK
-									res->complete_time = strdup(operation_endTime);
-									res->fault = error;
-									// FREE(cur_user); FREE(cur_pass); 
-									break;
-									break;
-								}
-								external_apply("du_download", "update", 0);
-								external_handle_action(cwmp_handle_dustate_changeFault);
-								external_fetch_du_change_stateFaultResp(&fault_code, &package_version, &package_name);
-								if(fault_code != NULL)
-								{
-									if(fault_code[0]=='9')
-									{
-										for(i=1;i<__FAULT_CPE_MAX;i++)
-										{
-											if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0)
-											{
-												error = i;
-												break;
-											}
-										}
-									}
-								}
-								free(fault_code);
-								sprintf(du_ref,"%sSoftwareModules.%s.", dmroot, du_instance);
-								if (p->uuid == NULL || (p->uuid)[0] == '\0') {
-									res->uuid = strdup(cur_url);
-									FREE(cur_url);
-								}
-								else
+								} else {
 									res->uuid = strdup(p->uuid);
-								res->du_ref = strdup(du_ref);
-								FREE(du_instance);
-								res->current_state = strdup("Installed");
-								res->resolved = 1; //TO CHECK
-								operation_endTime = mix_get_time();
-								res->complete_time = strdup(operation_endTime);
-								res->fault = error;
+									res->version = strdup(p->version);
+									res->current_state = strdup("Failed");
+									res->resolved = 0;
+									res->complete_time = strdup(mix_get_time());
+									res->fault = error;
+								}
+								FREE(cur_uuid);
+								FREE(cur_url);
 								break;
-						}												
+						}
 					}
 					external_exit();
 					bkp_session_delete_change_du_state(pchange_du_state);
 					bkp_session_save();
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_dustatechangeComplete (cwmp,pdu_state_change_complete);
-					//bkp_session_delete_du_state_change_complete(pdu_state_change_complete); //TO CHECK
-					//bkp_session_save(); //TO CHECK
+					cwmp_root_cause_dustatechangeComplete(cwmp,pdu_state_change_complete);
 				}
 			}
             pthread_mutex_lock (&mutex_change_du_state);
 		    pthread_cond_timedwait(&threshold_change_du_state, &mutex_change_du_state, &download_timeout);
-
 		    pthread_mutex_unlock (&mutex_change_du_state);
 			pthread_mutex_unlock (&(cwmp->mutex_session_send));
-                pthread_cond_signal (&(cwmp->threshold_session_send));
-                pthread_mutex_lock (&mutex_change_du_state);
-                list_del (&(pchange_du_state->list));
-                cwmp_free_change_du_state_request(pchange_du_state);
-                pthread_mutex_unlock (&mutex_change_du_state);
-                continue;
+			pthread_cond_signal (&(cwmp->threshold_session_send));
+			pthread_mutex_lock (&mutex_change_du_state);
+			list_del(&(pchange_du_state->list));
+			cwmp_free_change_du_state_request(pchange_du_state);
+			pthread_mutex_unlock (&mutex_change_du_state);
+			continue;
 		} else {
 			pthread_mutex_lock (&mutex_change_du_state);
 			pthread_cond_wait(&threshold_change_du_state, &mutex_change_du_state);
@@ -3358,24 +3272,65 @@ void *thread_cwmp_rpc_cpe_change_du_state (void *v)
     return NULL;
 }
 
-int cwmp_launch_uninstall_du_state(char *package_name, struct opresult **pchange_du_state_complete) {
-	
-	int							i, error = FAULT_CPE_NO_FAULT;
-    char						*uninstall_startTime;
-   char						*fault_code;
-	
-	uninstall_startTime = mix_get_time();
-	external_change_du_state_uninstall(package_name);
+int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass, char *env, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete)
+{
+	int	i, error = FAULT_CPE_NO_FAULT;
+    char *fault_code;
+
+    (*pchange_du_state_complete)->start_time = strdup(mix_get_time());
+    external_change_du_state_install(url, uuid, user, pass, env);
+	external_handle_action(cwmp_handle_dustate_changeFault);
+	external_fetch_du_change_stateFaultResp(&fault_code, package_version, package_name, package_uuid, package_env);
+	if(fault_code != NULL) {
+		if(fault_code[0] == '9') {
+			for(i = 1; i < __FAULT_CPE_MAX; i++) {
+				if(strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
+					error = i;
+					break;
+				}
+			}
+		}
+		free(fault_code);
+	}
+	return error;
+}
+
+int cwmp_launch_du_update(char *uuid, char *url, char *version, char *user, char *pass, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete)
+{
+	int	i, error = FAULT_CPE_NO_FAULT;
+    char *fault_code;
+
+    (*pchange_du_state_complete)->start_time = strdup(mix_get_time());
+	external_change_du_state_update(uuid, url, version, user, pass);
+	external_handle_action(cwmp_handle_dustate_changeFault);
+	external_fetch_du_change_stateFaultResp(&fault_code, package_version, package_name, package_uuid, package_env);
+	if(fault_code != NULL) {
+		if(fault_code[0]=='9') {
+			for(i=1;i<__FAULT_CPE_MAX;i++) {
+				if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0) {
+					error = i;
+					break;
+				}
+			}
+		}
+		free(fault_code);
+	}
+	return error;
+}
+
+int cwmp_launch_du_uninstall(char *package_name, char *package_env, struct opresult **pchange_du_state_complete)
+{
+	int	i, error = FAULT_CPE_NO_FAULT;
+	char *fault_code;
+
+	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
+	external_change_du_state_uninstall(package_name, package_env);
 	external_handle_action(cwmp_handle_uninstallFault);
 	external_fetch_uninstallFaultResp(&fault_code);
-	if(fault_code != NULL)
-	{
-		if(fault_code[0]=='9')
-		{
-			for(i=1;i<__FAULT_CPE_MAX;i++)
-			{
-				if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0)
-				{
+	if(fault_code != NULL) {
+		if(fault_code[0]=='9') {
+			for(i = 1 ; i < __FAULT_CPE_MAX; i++) {
+				if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0) {
 					error = i;
 					break;
 				}
@@ -3383,80 +3338,7 @@ int cwmp_launch_uninstall_du_state(char *package_name, struct opresult **pchange
 		}
 		free(fault_code);
 	}
-	(*pchange_du_state_complete)->start_time = strdup(uninstall_startTime);
 	return error;
-}
-
-int cwmp_launch_update_du_state_download(char *url, char *user, char *pass, struct opresult **pchange_du_state_complete) {
-	
-	int							i, error = FAULT_CPE_NO_FAULT;
-    char						*update_startTime;
-    char						*fault_code;
-	char						*package_version;
-	char						*package_name;
-
-	update_startTime = mix_get_time();
-	external_change_du_state_download(url, user, pass);
-	external_handle_action(cwmp_handle_dustate_changeFault);
-	external_fetch_du_change_stateFaultResp(&fault_code, &package_version, &package_name);
-	if(fault_code != NULL)
-	{
-		if(fault_code[0]=='9')
-		{
-			for(i=1;i<__FAULT_CPE_MAX;i++)
-			{
-				if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0)
-				{
-					error = i;
-					break;
-				}
-			}
-		}
-		free(fault_code);
-	}
-	(*pchange_du_state_complete)->start_time = strdup(update_startTime);
-	return error;
-}
-
-
-int cwmp_launch_change_du_state_download(struct operations *poperations, struct opresult **pchange_du_state_complete)
-{
-    int							i, error = FAULT_CPE_NO_FAULT;
-    char						*download_startTime;
-    struct opresult				*p = NULL;
-    char						*fault_code;
-	char						*package_version;
-	char						*package_name;
-
-    download_startTime = mix_get_time();
-
-	external_change_du_state_download(poperations->url, poperations->username, poperations->password);
-	external_handle_action(cwmp_handle_dustate_changeFault);
-	external_fetch_du_change_stateFaultResp(&fault_code, &package_version, &package_name);
-	if(fault_code != NULL)
-	{
-		if(fault_code[0]=='9')
-		{
-			for(i=1;i<__FAULT_CPE_MAX;i++)
-			{
-				if(strcmp(FAULT_CPE_ARRAY[i].CODE,fault_code) == 0)
-				{
-					error = i;
-					break;
-				}
-			}
-		}
-		free(fault_code);
-	}
-	p->start_time = strdup(download_startTime);
-	if(error != FAULT_CPE_NO_FAULT)
-	{
-		p->fault 		= error;
-	}
-
-	(*pchange_du_state_complete)->start_time = strdup(download_startTime);
-
-    return error;
 }
 
 void *thread_cwmp_rpc_cpe_upload (void *v)
@@ -3651,42 +3533,23 @@ int cwmp_free_change_du_state_request(struct change_du_state *change_du_state)
 {
 	struct list_head *ilist, *q;
 	struct operations *operation;
-	if(change_du_state != NULL)
-	{
-		if(change_du_state->command_key != NULL)
-		{
-			free(change_du_state->command_key);
-		}
+
+	if (change_du_state != NULL) {
+		if (change_du_state->command_key != NULL)
+			FREE(change_du_state->command_key);
+
 		list_for_each_safe(ilist, q, &(change_du_state->list_operation)) {
 			operation = list_entry(ilist, struct operations, list);	
-			if(operation->url != NULL)
-			{
-				free(operation->url);
-			}
-			if(operation->uuid != NULL)
-			{
-				free(operation->uuid);
-			}
-			if(operation->username != NULL)
-			{
-				free(operation->username);
-			}
-			if(operation->password != NULL)
-			{
-				free(operation->password);
-			}
-			if(operation->version != NULL)
-			{
-				free(operation->version);
-			}
-			if(operation->executionenvref != NULL)
-			{
-				free(operation->executionenvref);
-			}
+			if (operation->url != NULL) FREE(operation->url);
+			if (operation->uuid != NULL) FREE(operation->uuid);
+			if (operation->username != NULL) FREE(operation->username);
+			if (operation->password != NULL) FREE(operation->password);
+			if (operation->version != NULL) FREE(operation->version);
+			if (operation->executionenvref != NULL) FREE(operation->executionenvref);
 			list_del(&(operation->list));
-        	free (operation);
+        	FREE(operation);
 		}
-		free(change_du_state);
+		FREE(change_du_state);
 	}
 	return CWMP_OK;
 }
@@ -3848,27 +3711,16 @@ error:
 
 int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc)
 {
-	mxml_node_t 				*tmp1, *n, *t, *b = session->body_in;
-	pthread_t           			change_du_state_thread;
-	char 						*c, *tmp, *file_type = NULL;
-	int							error = FAULT_CPE_NO_FAULT;
-	struct change_du_state 			*change_du_state = NULL,*ichange_du_state;
-	struct transfer_complete 	*ptransfer_complete;
-	struct list_head    		*ilist, *ilist1;
-	time_t             			scheduled_time;
-	time_t 						download_delay;
-	bool                		cond_signal = false;
-	int 				i = 0;
+	mxml_node_t *n, *t, *b = session->body_in;
+	struct change_du_state *change_du_state = NULL;
 	struct operations *elem = NULL;
-	struct installop *p;
-	struct uninstallop *q;
-	struct updateop *r;
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ChangeDUState") == -1)
-	{
+	int	error = FAULT_CPE_NO_FAULT;
+	char *c;
+
+	if (asprintf(&c, "%s:%s", ns.cwmp, "ChangeDUState") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
-
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
 	FREE(c);
 
@@ -3876,168 +3728,120 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 	b = n;
 
 	change_du_state = calloc (1,sizeof(struct change_du_state));
-	if (change_du_state == NULL)
-	{
+	if (change_du_state == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
+
 	INIT_LIST_HEAD(&(change_du_state->list_operation));
 	change_du_state->timeout = time(NULL);
+
 	while (b != NULL) {
 		t = b;
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
-			b->parent->type == MXML_ELEMENT &&
-			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			change_du_state->command_key = strdup(b->value.text.string);
-		}
-		if (b && b->type == MXML_ELEMENT &&
-			0 == strcmp(b->parent->value.element.name, "Operations")) {
-			if (!strcmp(b->value.element.name, "InstallOpStruct")) {
-				elem = (operations*)calloc(1, sizeof(operations));
+		if (b && b->type == MXML_ELEMENT && strcmp(b->value.element.name, "Operations") == 0) {
+			char *operation = (char *) mxmlElementGetAttrValue(b, "xsi:type");
+			if (!strcmp(operation, "cwmp:InstallOpStruct")) {
+				elem = (operations *) calloc(1, sizeof(operations));
 				elem->type = DU_INSTALL;
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));
-			}
-			if (!strcmp(b->value.element.name, "UninstallOpStruct")) {
-				elem = (operations*)calloc(1,sizeof(operations));
-				elem->type = DU_UNINSTALL ;
-				list_add_tail(&(elem->list), &(change_du_state->list_operation));									
-			}
-			if (!strcmp(b->value.element.name, "UpdateOpStruct")) {
-				elem = (operations*)calloc(1,sizeof(operations));
-				elem->type = DU_UPDATE;
-				list_add_tail(&(elem->list), &(change_du_state->list_operation));		
-				
-			}
-			t = mxmlWalkNext(t, b, MXML_DESCEND);
-			while (t) {
-				tmp1 = t;	
-				if (t && t->type == MXML_ELEMENT &&
-				!strcmp(t->parent->value.element.name, "InstallOpStruct")) {
-					tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);
-					while (tmp1) {
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "URL")) {
-							elem->url = strdup(tmp1->value.text.string);
-						}						
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "UUID")) {
-							elem->uuid = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "Username")) {
-							elem->username = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "Password")) {
-							elem->password = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "ExecutionEnvRef")) {
-							elem->executionenvref = strdup(tmp1->value.text.string);
-						}
-						tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);
-								
-					}													
-				}
-				else if (t && t->type == MXML_ELEMENT &&
-				!strcmp(t->parent->value.element.name, "UpdateOpStruct")) {
-					tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);
-					while (tmp1) {
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "UUID")) {
-							elem->uuid = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "Version")) {
-							elem->version = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "URL")) {
-							elem->url = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "Username")) {
-							elem->username = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "Password")) {
-							elem->password = strdup(tmp1->value.text.string);
-						}
-						tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);			
-					}								
-				}
-				else if (t && t->type == MXML_ELEMENT &&
-				!strcmp(t->parent->value.element.name, "UninstallOpStruct")) {
-					tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);
-					while (tmp1) {
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "UUID")) {
-							elem->uuid = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "Version")) {
-							elem->version = strdup(tmp1->value.text.string);
-						}
-						if (tmp1 && tmp1->type == MXML_TEXT &&
-						tmp1->value.text.string &&
-						tmp1->parent->type == MXML_ELEMENT &&
-						!strcmp(tmp1->parent->value.element.name, "ExecutionEnvRef")) {
-							elem->executionenvref = strdup(tmp1->value.text.string);
-						}
-						tmp1 = mxmlWalkNext(tmp1, t, MXML_DESCEND);			
+				t = mxmlWalkNext(t, b, MXML_DESCEND);
+				while (t) {
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "URL")) {
+						elem->url = strdup(t->value.text.string);
 					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "UUID")) {
+						elem->uuid = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Username")) {
+						elem->username = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Password")) {
+						elem->password = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "ExecutionEnvRef")) {
+						elem->executionenvref = strdup(t->value.text.string);
+					}
+					t = mxmlWalkNext(t, b, MXML_DESCEND);
 				}
-				t = mxmlWalkNext(t, b, MXML_DESCEND);		
+			} else if (!strcmp(operation, "cwmp:UpdateOpStruct")) {
+				elem = (operations *) calloc(1,sizeof(operations));
+				elem->type = DU_UPDATE;
+				list_add_tail(&(elem->list), &(change_du_state->list_operation));
+				t = mxmlWalkNext(t, b, MXML_DESCEND);
+				while (t) {
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "UUID")) {
+						elem->uuid = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Version")) {
+						elem->version = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "URL")) {
+						elem->url = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Username")) {
+						elem->username = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Password")) {
+						elem->password = strdup(t->value.text.string);
+					}
+					t = mxmlWalkNext(t, b, MXML_DESCEND);
+				}
+			} else if (!strcmp(operation, "cwmp:UninstallOpStruct")) {
+				elem = (operations *) calloc(1,sizeof(operations));
+				elem->type = DU_UNINSTALL ;
+				list_add_tail(&(elem->list), &(change_du_state->list_operation));
+				t = mxmlWalkNext(t, b, MXML_DESCEND);
+				while (t) {
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "UUID")) {
+						elem->uuid = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Version")) {
+						elem->version = strdup(t->value.text.string);
+					}
+					if (t && t->type == MXML_TEXT && t->value.text.string &&
+						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "ExecutionEnvRef")) {
+						elem->executionenvref = strdup(t->value.text.string);
+					}
+					t = mxmlWalkNext(t, b, MXML_DESCEND);
+				}
 			}
-		
+		}
+		if (b && b->type == MXML_TEXT && b->value.text.string &&
+			b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "CommandKey")) {
+			change_du_state->command_key = strdup(b->value.text.string);
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
-	}	
+	}
 	t = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!t) goto fault;
 
 	t = mxmlNewElement(t, "cwmp:ChangeDUStateResponse");
 	if (!t) goto fault;
 
-	
-	if(error == FAULT_CPE_NO_FAULT)
-	{
+	if (error == FAULT_CPE_NO_FAULT) {
 		pthread_mutex_lock (&mutex_change_du_state);
-		list_add_tail (&(change_du_state->list), &(list_change_du_state));
-		bkp_session_insert_change_du_state(change_du_state);	
+		list_add_tail(&(change_du_state->list), &(list_change_du_state));
+		bkp_session_insert_change_du_state(change_du_state);
 		bkp_session_save();
 		pthread_mutex_unlock (&mutex_change_du_state);
 		pthread_cond_signal(&threshold_change_du_state);
-	}	
+	}
 	return 0;
 
 fault:
-	cwmp_free_change_du_state_request(change_du_state);    
+	cwmp_free_change_du_state_request(change_du_state);
 	if (cwmp_create_fault_message(session, rpc, error))
 		goto error;
 	return 0;

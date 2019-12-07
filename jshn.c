@@ -117,13 +117,17 @@ enum dustatechange_fault {
 	DUState_Change_FAULT,
 	DUState_Change_VERSION,
 	DUState_Change_NAME,
+	DUState_Change_UUID,
+	DUState_Change_ENV,
 	__DUSTATE_MAX
 };
 
 char *dustatechange_fault_policy[] = {
 	[DUState_Change_FAULT] 		= "fault_code",
 	[DUState_Change_VERSION] 	= "package_version",
-	[DUState_Change_NAME] 		= "package_name"
+	[DUState_Change_NAME] 		= "package_name",
+	[DUState_Change_UUID] 		= "package_uuid",
+	[DUState_Change_ENV] 		= "package_env"
 };
 
 int
@@ -137,9 +141,9 @@ cwmp_handle_dustate_changeFault(char *msg)
 	if (!tb[DUState_Change_FAULT])
 		goto error;
 
-	DD(INFO,"triggered handle dustate_change fault %s", tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME]);
+	DD(INFO,"triggered handle dustate_change fault:%s version:%s name:%s", tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME], tb[DUState_Change_UUID], tb[DUState_Change_ENV]);
 
-	external_du_change_stateFaultResp (tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME]);
+	external_du_change_stateFaultResp (tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME], tb[DUState_Change_UUID], tb[DUState_Change_ENV]);
 
 	jshn_message_delete();
 	return 0;

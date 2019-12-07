@@ -452,40 +452,36 @@ void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *
 
 void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state)
 {
-	struct search_keywords	keys[7];
-	char 					schedule_time[128];
-	char 					file_size[128];
-	mxml_node_t 			*b, *n, *t;
-	int i;
-	pthread_mutex_lock (&mutex_backup_session);	
-	
-	sprintf(schedule_time,"%ld",pchange_du_state->timeout);
-	b = bkp_session_insert(bkp_tree,"change_du_state",NULL);
-	bkp_session_insert(b,"command_key",pchange_du_state->command_key);		
-	bkp_session_insert(b,"time",schedule_time);
 	struct operations *p;
+	char schedule_time[128];
+	mxml_node_t *b, *n;
+
+	pthread_mutex_lock (&mutex_backup_session);	
+	sprintf(schedule_time, "%ld", pchange_du_state->timeout);
+	b = bkp_session_insert(bkp_tree, "change_du_state", NULL);
+	bkp_session_insert(b, "command_key", pchange_du_state->command_key);
+	bkp_session_insert(b, "time", schedule_time);
+
   	list_for_each_entry(p, &(pchange_du_state->list_operation), list) {
 		if (p->type == DU_INSTALL ) {
-			n =	bkp_session_insert(b,"install",NULL);
-			bkp_session_insert(n,"url",p->url);
-			bkp_session_insert(n,"uuid",p->uuid);
-			bkp_session_insert(n,"username",p->username);
-			bkp_session_insert(n,"password",p->password);				
-			bkp_session_insert(n,"executionenvref",p->executionenvref);				
-		}
-		else if (p->type == DU_UNINSTALL) {
-			n =	bkp_session_insert(b,"uninstall",NULL);				
-			bkp_session_insert(n,"uuid",p->uuid);
-			bkp_session_insert(n,"version",p->version);
-			bkp_session_insert(n,"executionenvref",p->executionenvref);
-		}
-		else if (p->type == DU_UPDATE) {
-			n =	bkp_session_insert(b,"upgrade",NULL);
-			bkp_session_insert(n,"url",p->url);
-			bkp_session_insert(n,"uuid",p->uuid);
-			bkp_session_insert(n,"username",p->username);
-			bkp_session_insert(n,"password",p->password);				
-			bkp_session_insert(n,"version",p->version);
+			n =	bkp_session_insert(b, "install", NULL);
+			bkp_session_insert(n, "url", p->url);
+			bkp_session_insert(n, "uuid", p->uuid);
+			bkp_session_insert(n, "username", p->username);
+			bkp_session_insert(n, "password", p->password);
+			bkp_session_insert(n, "executionenvref", p->executionenvref);
+		} else if (p->type == DU_UPDATE) {
+			n =	bkp_session_insert(b, "upgrade", NULL);
+			bkp_session_insert(n, "uuid", p->uuid);
+			bkp_session_insert(n, "version", p->version);
+			bkp_session_insert(n, "url", p->url);
+			bkp_session_insert(n, "username", p->username);
+			bkp_session_insert(n, "password", p->password);
+		} else if (p->type == DU_UNINSTALL) {
+			n =	bkp_session_insert(b, "uninstall", NULL);
+			bkp_session_insert(n, "uuid", p->uuid);
+			bkp_session_insert(n, "version", p->version);
+			bkp_session_insert(n, "executionenvref", p->executionenvref);
 		}
 	}
 	pthread_mutex_unlock (&mutex_backup_session);
@@ -494,7 +490,7 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 void bkp_session_delete_change_du_state(struct change_du_state *pchange_du_state) 
 {
 	struct search_keywords keys[2];
-	char 					schedule_time[128];
+	char schedule_time[128];
 	mxml_node_t *b;
 
 	pthread_mutex_lock (&mutex_backup_session);	
@@ -654,46 +650,44 @@ void bkp_session_delete_upload(struct upload *pupload)
 	pthread_mutex_unlock (&mutex_backup_session);
 }
 
-void bkp_session_insert_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete) {
-	char 					schedule_time[128];
-	char 					resolved[8];
-	char 					fault_code[8];
-	mxml_node_t 			*b, *n, *t;
-	int i;
-	pthread_mutex_lock (&mutex_backup_session);	
-	sprintf(schedule_time,"%ld",pdu_state_change_complete->timeout);
-	
-	b = bkp_session_insert(bkp_tree,"du_state_change_complete",NULL);
-	bkp_session_insert(b,"command_key",pdu_state_change_complete->command_key);		
-	bkp_session_insert(b,"time",schedule_time);
+void bkp_session_insert_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete)
+{
+	char schedule_time[128], resolved[8], fault_code[8];
 	struct opresult *p;
-	list_for_each_entry(p, &(pdu_state_change_complete->list_opresult), list) {			
-		n =	bkp_session_insert(b,"opresult",NULL);
-		sprintf(resolved,"%d",p->resolved);
-		sprintf(fault_code,"%d",p->fault);
-		bkp_session_insert(n,"uuid",p->uuid);
-		bkp_session_insert(n,"du_ref",p->du_ref);
-		bkp_session_insert(n,"version",p->version);				
-		bkp_session_insert(n,"current_state",p->current_state);
-		bkp_session_insert(n,"resolved",resolved);
-		bkp_session_insert(n,"execution_unit_ref",p->execution_unit_ref);
-		bkp_session_insert(n,"start_time",p->start_time);
-		bkp_session_insert(n,"complete_time",p->complete_time);	
-		bkp_session_insert(n,"fault",fault_code);		
+	mxml_node_t *b, *n;
+
+	pthread_mutex_lock (&mutex_backup_session);
+	sprintf(schedule_time, "%ld", pdu_state_change_complete->timeout);
+	b = bkp_session_insert(bkp_tree, "du_state_change_complete", NULL);
+	bkp_session_insert(b, "command_key", pdu_state_change_complete->command_key);
+	bkp_session_insert(b, "time", schedule_time);
+	list_for_each_entry(p, &(pdu_state_change_complete->list_opresult), list) {
+		n =	bkp_session_insert(b, "opresult", NULL);
+		sprintf(resolved, "%d", p->resolved);
+		sprintf(fault_code, "%d", p->fault);
+		bkp_session_insert(n, "uuid", p->uuid);
+		bkp_session_insert(n, "du_ref", p->du_ref);
+		bkp_session_insert(n, "version", p->version);
+		bkp_session_insert(n, "current_state", p->current_state);
+		bkp_session_insert(n, "resolved", resolved);
+		bkp_session_insert(n, "execution_unit_ref", p->execution_unit_ref);
+		bkp_session_insert(n, "start_time", p->start_time);
+		bkp_session_insert(n, "complete_time", p->complete_time);
+		bkp_session_insert(n, "fault", fault_code);
 	}		
 	pthread_mutex_unlock (&mutex_backup_session);
 }
 
-void bkp_session_delete_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete) {
-	struct search_keywords	keys[2];
-	mxml_node_t 			*b;
-	char 					schedule_time[128];
+void bkp_session_delete_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete)
+{
+	struct search_keywords keys[2];
+	mxml_node_t *b;
+	char schedule_time[128];
 	
 	pthread_mutex_lock (&mutex_backup_session);	
 	keys[0].name = "command_key";
 	keys[0].value = pdu_state_change_complete->command_key;
 	sprintf(schedule_time,"%ld",pdu_state_change_complete->timeout);
-
 	keys[1].name = "time";
 	keys[1].value = schedule_time;
 	b = bkp_session_node_found(bkp_tree, "du_state_change_complete", keys, 2);

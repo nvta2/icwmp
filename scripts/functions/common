@@ -4,42 +4,38 @@
 #  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
 #  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 
-icwmp_fault_output() {
-
+icwmp_fault_output()
+{
         local MSG=""
         local fault_code="$2"
-        if [ "$action" = "apply_du_download" ]
-        then
-                local package_name="$3"
-                local package_version="$4"
+        if ([ "$action" = "du_install" ] || [ "$action" = "du_update" ]);then
+			local package_name="$3"
+			local package_version="$4"
+			local package_uuid="$5"
+			local package_env="$6"
         fi
         case "$action" in
-                *download)
-                json_init
-                json_add_string "fault_code" "$fault_code"
-                if [ "$#" = "4" ]
-                then
-                        json_add_string "package_name" "$package_name"
-                        json_add_string "package_version" "$package_version"
-                fi
-                json_close_object
-                MSG=`json_dump`
-                ;;
-                *upload)
-                json_init
-                json_add_string "fault_code" "$fault_code"
-                if [ "$#" = "4" ]
-                then
-                        json_add_string "package_name" "$package_name"
-                        json_add_string "package_version" "$package_version"
-                fi
-                json_close_object
-                MSG=`json_dump`
-                ;;
+        	du_install|du_update)
+				json_init
+				json_add_string "fault_code" "$fault_code"
+				if [ "$#" = "6" ];then
+					json_add_string "package_name" "$package_name"
+					json_add_string "package_version" "$package_version"
+					json_add_string "package_uuid" "$package_uuid"
+					json_add_string "package_env" "$package_env"
+				fi
+				json_close_object
+				MSG=`json_dump`
+				;;
+			*download|*upload)
+				json_init
+				json_add_string "fault_code" "$fault_code"
+				json_close_object
+				MSG=`json_dump`
+				;;
         esac
         echo "$MSG"
 }
-
 
 icwmp_check_image()
 {
@@ -111,38 +107,7 @@ icwmp_apply_web_content()
 		rm /tmp/web_content.ipk 2> /dev/null
 		let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
 		icwmp_fault_output "" "$fault_code"
-   else
-		icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
-	fi
-}
-
-icwmp_install_package()
-{
-	local fault_code="9000"
-	
-	var=`/bin/opkg install /tmp/du_change_state.ipk`
-
-	if [ "$?" != "0" ];then
-		rm /tmp/du_change_state.ipk 2> /dev/null
-		let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
-		icwmp_fault_output "" "$fault_code"
-   else
-   		name="`expr "$var" : 'Installing \([^(]*\)'`"
-		version="`expr "$var" : 'Installing [^(]*(\(.*\))'`"
-		icwmp_fault_output "" "$FAULT_CPE_NO_FAULT" "$name" "$version"
-	fi
-}
-
-icwmp_update_package()
-{
-	local fault_code="9000"
-	
-	/bin/opkg install /tmp/du_change_state.ipk
-	if [ "$?" != "0" ];then
-		rm /tmp/du_change_state.ipk 2> /dev/null
-		let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
-		icwmp_fault_output "" "$fault_code"
-   else
+	else
 		icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 	fi
 }

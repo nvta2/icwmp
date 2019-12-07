@@ -311,8 +311,6 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v);
 void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v);
 void *thread_cwmp_rpc_cpe_change_du_state (void *v);
 
-int cwmp_launch_change_du_state_download(struct operations *poperation, struct opresult **pchange_du_state_complete);
-int cwmp_launch_update_du_state_download(char *user, char *pass, char *url, struct opresult **pchange_du_state_complete);
 const char *whitespace_cb(mxml_node_t *node, int where);
 
 int cwmp_root_cause_TransferComplete (struct cwmp *cwmp, struct transfer_complete *p);

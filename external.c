@@ -22,9 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
 #include <libubox/uloop.h>
-
 #include <json-c/json.h>
 
 #include "external.h"
@@ -37,6 +35,7 @@
 #include <libbbfdm/dmbbf.h>
 #endif
 #include <stdarg.h>
+
 static int pid;
 static json_object *json_obj_in;
 static int pfds_in[2], pfds_out[2];
@@ -44,6 +43,8 @@ static FILE *fpipe;
 char *external_MethodFault = NULL;
 char *external_MethodName = NULL;
 char *external_MethodVersion = NULL;
+char *external_MethodUUID = NULL;
+char *external_MethodENV = NULL;
 
 void external_downloadFaultResp (char *fault_code)
 {
@@ -81,17 +82,21 @@ void external_fetch_uninstallFaultResp (char **fault)
 	external_MethodFault = NULL;
 }
 
-void external_du_change_stateFaultResp (char *fault_code, char *version, char *name)
+void external_du_change_stateFaultResp (char *fault_code, char *version, char *name, char *uuid, char *env)
 {
 	FREE(external_MethodFault);
 	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
 	FREE(external_MethodVersion);
 	external_MethodVersion = version ? strdup(version) : NULL;
 	FREE(external_MethodName);
-	external_MethodName = name ? strdup(name) : NULL;	
+	external_MethodName = name ? strdup(name) : NULL;
+	FREE(external_MethodUUID);
+	external_MethodUUID = uuid ? strdup(uuid) : NULL;
+	FREE(external_MethodENV);
+	external_MethodENV = env ? strdup(env) : NULL;
 }
 
-void external_fetch_du_change_stateFaultResp (char **fault, char **version, char **name)
+void external_fetch_du_change_stateFaultResp(char **fault, char **version, char **name, char **uuid, char **env)
 {
 	*fault = external_MethodFault;
 	external_MethodFault = NULL;
@@ -99,6 +104,10 @@ void external_fetch_du_change_stateFaultResp (char **fault, char **version, char
 	external_MethodVersion = NULL;
 	*name = external_MethodName;
 	external_MethodName = NULL;
+	*uuid = external_MethodUUID;
+	external_MethodUUID = NULL;
+	*env = external_MethodENV;
+	external_MethodENV = NULL;
 }
 static void external_read_pipe_input(int (*external_handler)(char *msg))
 {
@@ -299,26 +308,6 @@ int external_download(char *url, char *size, char *type, char *user, char *pass,
 	return 0;
 }
 
-int external_change_du_state_download(char *url, char *user, char *pass)
-{
-	DD(INFO,"executing DU download url '%s'", url);
-	json_object *json_obj_out;
-
-	/* send data to the script */
-	json_obj_out = json_object_new_object();
-
-	json_obj_out_add(json_obj_out, "command", "du_download");
-	json_obj_out_add(json_obj_out, "url", url);
-	if(user) json_obj_out_add(json_obj_out, "user", user);
-	if(pass) json_obj_out_add(json_obj_out, "pass", pass);
-
-	external_write_pipe_output(json_object_to_json_string(json_obj_out));
-
-	json_object_put(json_obj_out);
-
-	return 0;
-}
-
 int external_upload(char *url, char *type, char *user, char *pass, char *name)
 {
 	DD(INFO,"executing download url '%s'", url);
@@ -342,15 +331,61 @@ int external_upload(char *url, char *type, char *user, char *pass, char *name)
 	return 0;
 }
 
-int external_change_du_state_uninstall(char *package_name)
+int external_change_du_state_install(char *url, char *uuid, char *user, char *pass, char *env)
 {
+	DD(INFO,"executing DU install");
+	json_object *json_obj_out;
+
+	/* send data to the script */
+	json_obj_out = json_object_new_object();
+
+	json_obj_out_add(json_obj_out, "command", "du_install");
+	json_obj_out_add(json_obj_out, "url", url);
+	if (uuid) json_obj_out_add(json_obj_out, "uuid", uuid);
+	if (user) json_obj_out_add(json_obj_out, "user", user);
+	if (pass) json_obj_out_add(json_obj_out, "pass", pass);
+	if (env) json_obj_out_add(json_obj_out, "env", env);
+
+	external_write_pipe_output(json_object_to_json_string(json_obj_out));
+
+	json_object_put(json_obj_out);
+
+	return 0;
+}
+
+int external_change_du_state_update(char *uuid, char *url, char *version, char *user, char *pass)
+{
+	DD(INFO,"executing DU update");
+	json_object *json_obj_out;
+
+	/* send data to the script */
+	json_obj_out = json_object_new_object();
+
+	json_obj_out_add(json_obj_out, "command", "du_update");
+	json_obj_out_add(json_obj_out, "uuid", uuid);
+	json_obj_out_add(json_obj_out, "url", url);
+	if (version) json_obj_out_add(json_obj_out, "version", version);
+	if (user) json_obj_out_add(json_obj_out, "user", user);
+	if (pass) json_obj_out_add(json_obj_out, "pass", pass);
+
+	external_write_pipe_output(json_object_to_json_string(json_obj_out));
+
+	json_object_put(json_obj_out);
+
+	return 0;
+}
+
+int external_change_du_state_uninstall(char *name, char *env)
+{
+	DD(INFO,"executing DU uninstall");
 	json_object *json_obj_out;
 
 	/* send data to the script */
 	json_obj_out = json_object_new_object();
 
 	json_obj_out_add(json_obj_out, "command", "du_uninstall");
-	json_obj_out_add(json_obj_out, "package_name", package_name);
+	json_obj_out_add(json_obj_out, "name", name);
+	if(env) json_obj_out_add(json_obj_out, "env", env);
 
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
