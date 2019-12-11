@@ -182,7 +182,7 @@ void add_list_value_change(char *param_name, char *param_data, char *param_type)
 	pthread_mutex_unlock(&(mutex_value_change));
 }
 
-inline void add_lw_list_value_change(char *param_name, char *param_data, char *param_type)
+void add_lw_list_value_change(char *param_name, char *param_data, char *param_type)
 {
 	add_dm_parameter_tolist(&list_lw_value_change, param_name, param_data, param_type);
 	
