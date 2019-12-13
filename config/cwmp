@@ -9,9 +9,9 @@ config cwmp 'acs'
 	option dhcp_discovery 'enable'
 	# compression possible configs: GZIP, Deflate, Disabled
 	option compression 'Disabled'
-	#­ possible configs interval :[1:65535]
+	#- possible configs interval :[1:65535]
 	option retry_min_wait_interval '5'
-	#­ possible configs interval :[1000:65535]
+	#- possible configs interval :[1000:65535]
 	option retry_interval_multiplier '2000'
 	option https_ssl_capath ''
 	option ipv6_enable '0'
