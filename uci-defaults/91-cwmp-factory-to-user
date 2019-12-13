@@ -1,0 +1,38 @@
+
+# Copy defaults by the factory to the UCI user
+# section, where the user can modify it.
+
+
+[ -s "/etc/device_info" ] || exit 0
+source "/etc/device_info"
+
+# Get factory base MAC.
+baseMac=$(db -q get hw.board.BaseMacAddr)
+
+# Erase colon and space characters.
+baseMac=${baseMac//:/}
+baseMac=${baseMac// /}
+
+# Get factory serial number.
+serial=$(db get hw.board.serialNumber)
+
+
+# Create user IDs in OUI-SERIAL format.
+for section in acs cpe; do
+	if uci -q get cwmp.${section} >/dev/null; then
+		userid=$(uci -q get cwmp.${section}.userid)
+	
+		# We are compatible with both Iopsys 4 and 5 here, which
+		# enforce extra sanity checks before writing to UCI. Is
+		# the variable missing or containing '$'?
+		if echo "$userid" | grep -qE "^$|\\$"; then
+			doSet="$doSet"$'\n'"set cwmp.${section}.userid=${baseMac:0:6}-${serial}"
+		fi
+	fi
+done
+
+# Commit the above.
+if [ -n "${doSet}" ]; then
+	echo -e "${doSet}\ncommit cwmp" | uci -q batch
+fi
+
