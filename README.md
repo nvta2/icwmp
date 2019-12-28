@@ -25,10 +25,10 @@ The package is composed of the following components:
 
 The icwmp client is :
 * tested with several ACS such as **Axiros**, **AVSytem**, **GenieACS**, **OpenACS**, etc...
-* supports all required TR069 RPCs.
+* supports all required **TR069 RPCs**.
 * supports all DataModel of TR family such as **TR-181**, **TR-104**, **TR-143**, **TR-157**, **TR-098**, etc...
 * supports all types of connection requests such as **HTTP**, **XMPP**, **STUN**.
-* supports integrated file transfer sudo as **HTTP**, **HTTPS**, **FTP**.
+* supports integrated file transfer such as **HTTP**, **HTTPS**, **FTP**.
 
 ## Configuration File ##
 
@@ -70,7 +70,7 @@ It defines **acs configuration** (like acs url, acs username, etc...). The possi
 | `periodic_inform_time`      | integer | An absolute time reference to determine when the CPE will initiate the periodic Inform method calls. |
 | `ParameterKey`              | string  | Provides the ACS a reliable and extensible means to track changes made by the ACS. |
 | `dhcp_discovery`            | string  | if set to **enable**, the CPE will get the url of ACS from DHCP server Option 43. |
-| `compression`               | boolean | if set to **1**, the CPE must use the HTTP Compression when communicating with the ACS . |
+| `compression`               | boolean | if set to **1**, the CPE must use the HTTP Compression when communicating with the ACS. |
 | `retry_min_wait_interval`   | integer | The min wait interval of rerty session (in seconds) as described in the standard. |
 | `retry_interval_multiplier` | integer | The retry interval mulpilier of rerty session as described in the standard. |
 | `https_ssl_capath`          | string  | The path of ssl certicafications files. the ssl certification is for Upload and Downlod methods. |
@@ -202,7 +202,7 @@ root@iopsys:~#
 
 Each object registered with the `'tr069'` namespace has a specific functionality.
 
-To get the status of cwmp client, use the `status` ubus method:
+- To get the status of cwmp client, use the `status` ubus method:
 
 ```
 root@iopsys:~# ubus call tr069 status
@@ -231,7 +231,7 @@ root@iopsys:~# ubus call tr069 status
 root@iopsys:~#
 ```
 
-To trigger a new session of notify when a parameter is changed, then use the `notify` ubus method:
+- To trigger a new session of notify when a parameter is changed, then use the `notify` ubus method:
 
 ```
 root@iopsys:~# ubus call tr069 notify
@@ -241,7 +241,7 @@ root@iopsys:~# ubus call tr069 notify
 root@iopsys:~#
 ```
 
-To trigger a new session to ACS with the event `'6 CONNECTION REQUEST'` or `'8 DIAGNOSTICS COMPLETE'`, etc.., use the `inform` ubus method with the appropriate `event` argument:
+- To trigger a new session to ACS with the event `'6 CONNECTION REQUEST'` or `'8 DIAGNOSTICS COMPLETE'`, etc.., use the `inform` ubus method with the appropriate `event` argument:
 
 ```
 root@iopsys:~# ubus call tr069 inform '{"event":"6 CONNECTION REQUEST"}'
@@ -264,7 +264,7 @@ root@iopsys:~# ubus call tr069 inform '{"GetRPCMethods":"1"}'
 root@iopsys:~#
 ```
 
-To reload the icwmp config, use the `command` ubus method with `reload` argument:
+- To reload the icwmp config, use the `command` ubus method with `reload` argument:
 
 ```
 root@iopsys:~# ubus call tr069 command '{"command":"reload"}'
@@ -274,7 +274,7 @@ root@iopsys:~# ubus call tr069 command '{"command":"reload"}'
 }
 root@iopsys:~# 
 ```
-To exit the icwmpd daemod, use the `command` ubus method with `exit` argument:
+- To exit the icwmpd daemod, use the `command` ubus method with `exit` argument:
 
 ```
 root@iopsys:~# ubus call tr069 command '{"command":"exit"}'

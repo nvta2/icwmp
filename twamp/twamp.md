@@ -5,7 +5,7 @@ icwmp_twampd is an implementation of the Two-Way Active Measurement Protocol (TW
 
 ## Configuration File ##
 
-The icwmp_twampd UCI configuration is located in **'/etc/config/cwmp\_twamp'**, and contains 2 sections the **twam** and the **twamp\_reflector**.
+The icwmp_twampd UCI configuration is located in **'/etc/config/cwmp\_twamp'**, and contains 2 sections the **twamp** and the **twamp\_reflector**.
 
 ```
 config cwmp 'twamp'
@@ -30,8 +30,8 @@ It defines **the twamp configuration**: id, log_level. The possible options for 
 
 | Name      |  Type   | Description                                 |
 | --------- | ------- | ------------------------------------------- |
-| id        | integer | Specifies the id of TWAMP reflector to use. |
-| log_level | integer | Specifies the log type to use, by default **'INFO'**. The possible types are **'EMERG', 'ALERT', 'CRITIC' ,'ERROR', 'WARNING', 'NOTICE', 'INFO' and 'DEBUG'**. |
+| `id`        | integer | Specifies the id of TWAMP reflector to use. |
+| `log_level` | integer | Specifies the log type to use, by default **'INFO'**. The possible types are **'EMERG', 'ALERT', 'CRITIC' ,'ERROR', 'WARNING', 'NOTICE', 'INFO' and 'DEBUG'**. |
 
 ### twamp_reflector section ###
 
@@ -39,13 +39,13 @@ It describes **the twamp reflector configuration**: id, ip\_version, etc... The 
 
 | Name       |  Type   | Description                    |
 | ---------- | ------- | ------------------------------ |
-| id         | integer | Specifies the TWAMP id to use. |
-| enable     | boolean | If set to **1**, it enables the TWAMP reflector. |
-| ip_version | integer | Specifies the IP version to use, 4 by default. The possible versions are 4 and 6. |
-| port       | integer | Specifies the port to listen on. |
-| max_ttl    | integer | Specifies the maximum TTL of a received packet, that the TWAMP reflector will reflect to the TWAMP controller. |
-| ip_list    | string  | Specifies the allowed source IP addresses and subnets to handle test packets. |
-| port_list  | string  | Specifies the range of source ports allowed to use for twamp\_reflector tests. |
+| `id`         | integer | Specifies the TWAMP id to use. |
+| `enable`     | boolean | If set to **1**, it enables the TWAMP reflector. |
+| `ip_version` | integer | Specifies the IP version to use, **4** by default. The possible versions are **4** and **6**. |
+| `port`       | integer | Specifies the port to listen on. |
+| `max_ttl`    | integer | Specifies the maximum TTL of a received packet, that the TWAMP reflector will reflect to the TWAMP controller. |
+| `ip_list`    | string  | Specifies the allowed source IP addresses and subnets to handle test packets. |
+| `port_list`  | string  | Specifies the range of source ports allowed to use for twamp\_reflector tests. |
 
 ## Dependencies ##
 

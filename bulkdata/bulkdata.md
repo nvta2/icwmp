@@ -36,7 +36,7 @@ It defines **bulkdata configuration**: enable and log\_level.
 
 | Name        |  Type   | Description                                                                                     |
 | ----------- | ------- | ----------------------------------------------------------------------------------------------- |
-| `enable`    | boolean | Enables the BulkData feature if set to "1".                                                     |
+| `enable`    | boolean | Enables the BulkData feature if set to **1**.                                                     |
 | `log_level` | integer | Specifies the log type to use, by default **'INFO'**. The possible types are **'EMERG', 'ALERT', 'CRITIC' ,'ERROR', 'WARNING', 'NOTICE', 'INFO' and 'DEBUG'**. |
 
 ### profile section ###

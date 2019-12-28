@@ -26,7 +26,7 @@ It defines **the udpechoserver configuration** such as enable, interface, addres
 | `interface`   | string  | Specifies the interface on which the CPE MUST listen and receive UDP echo requests. |
 | `address`     | string  | Specifies the source IP address which can make an UDP echo requests. |
 | `server_port` | integer | The UDP port on which the UDP Echo server MUST listen and respond to UDP echo requests. |
-| `plus`        | boolean | If set to 1, the CPE will perform necessary packet processing for UDP Echo Plus packets. |
+| `plus`        | boolean | If set to **1**, the CPE will perform necessary packet processing for UDP Echo Plus packets. |
 | `log_level`   | integer | Specifies the log type to use, by default it is set to **'INFO'**. The possible types are **'EMERG', 'ALERT', 'CRITIC' ,'ERROR', 'WARNING', 'NOTICE', 'INFO' and 'DEBUG'**. |
 
 
