@@ -264,13 +264,13 @@ root@iopsys:~# ubus call tr069 inform '{"GetRPCMethods":"1"}'
 root@iopsys:~#
 ```
 
-- To reload the icwmp config, use the `command` ubus method with `reload` argument:
+- To reload the icwmpd config, use the `command` ubus method with `reload` argument:
 
 ```
 root@iopsys:~# ubus call tr069 command '{"command":"reload"}'
 {
 	"status": 1,
-	"info": "cwmp config reloaded"
+	"info": "icwmpd config reloaded"
 }
 root@iopsys:~# 
 ```

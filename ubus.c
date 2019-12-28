@@ -95,7 +95,7 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
 		cwmp_set_end_session(END_SESSION_RELOAD);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "freecwmpd config will reload at the end of the session") == -1)
+		if (asprintf(&info, "icwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
@@ -109,20 +109,20 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 			cwmp_apply_acs_changes();
 			pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 			blobmsg_add_u32(&b, "status", 0);
-			if (asprintf(&info, "freecwmp config reloaded") == -1)
+			if (asprintf(&info, "icwmpd config reloaded") == -1)
 				return -1;
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
 		cwmp_set_end_session(END_SESSION_REBOOT);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "freecwmp will reboot at the end of the session") == -1)
+		if (asprintf(&info, "icwmpd will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "freecwmp will execute the scheduled action commands at the end of the session") == -1)
+		if (asprintf(&info, "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("exit", cmd)) {
 		pthread_t exit_thread;
@@ -136,7 +136,7 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 			CWMP_LOG(ERROR, "%s", piderr);
 		}
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "cwmpd daemon stopped") == -1)
+		if (asprintf(&info, "icwmpd daemon stopped") == -1)
 			return -1;
 		blobmsg_add_string(&b, "info", info);
 		free(info);
