@@ -224,7 +224,7 @@ xmpp_end:
 	} else {
 		cwmp_xmpp_log(SINFO,"XMPP Authorized");
 		send_stanza_cr_response(conn, stanza1, userdata);
-		XMPP_CMD(7, "ubus", "-t", "3", "call", "tr069", "inform", "{\"event\" : \"connection request\"}");
+		XMPP_CMD(7, "ubus", "-t", "3", "call", "tr069", "inform", "{\"event\" : \"6 connection request\"}");
 		return 1;
 	}
 	return 1;

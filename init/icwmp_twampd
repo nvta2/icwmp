@@ -11,7 +11,7 @@ PROG="/usr/sbin/icwmp_twampd"
 
 start_service() {
 	local id=`uci -q get cwmp_twamp.twamp.id`
-	local connection=`uci show cwmp_twamp | grep "cwmp_twamp.@twamp_refector.*id=\'$id\'" | cut -d "." -f 2`
+	local connection=`uci show cwmp_twamp | grep "cwmp_twamp.@twamp_reflector.*id=\'$id\'" | cut -d "." -f 2`
 	local enable=`uci -q get cwmp_twamp.$connection.enable`
 	local interface=`uci -q get cwmp_twamp.$connection.interface`
 	local port=`uci -q get cwmp_twamp.$connection.port`

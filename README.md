@@ -101,7 +101,7 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `provisioning_code`     | string  | Specifies the primary service provider and other provisioning information, which may be used by the ACS to determine service provider-specific customization and provisioning parameters. |
 | `amd_version`           | integer | Specifies the amendment version to use. The default amendment version is **'2'**. |
 | `instance_mode`         | string  | Specifies the instance mode to use, by default **'InstanceNumber'**. Two instance modes are supported: **'InstanceNumber' and 'InstanceNumber'**. |
-| `session_timeout`       | integer | |
+| `session_timeout`       | integer | Represents the number of seconds that should be used by the ACS as the amount of time to wait before timing out a CWMP session due to the CPE not responding, by default **60**.|
 | `notification`          | boolean | If set to **1**, it enables the notification feature. |
 | `vlan_method`           | integer | Specifies the vlan method to use, by default **'1'**. Two vlan methods are supported: **'1' and '2'** (1: only tagged vlan termination, 2: all vlan terminations tagged and untagged). |
 | `datamodel`             | string  | Specifies the data model to use, by default **'tr181'**. Two data models are supported: **'tr181' and 'tr098'**. |
@@ -244,13 +244,13 @@ root@iopsys:~#
 - To trigger a new session to ACS with the event `'6 CONNECTION REQUEST'` or `'8 DIAGNOSTICS COMPLETE'`, etc.., use the `inform` ubus method with the appropriate `event` argument:
 
 ```
-root@iopsys:~# ubus call tr069 inform '{"event":"6 CONNECTION REQUEST"}'
+root@iopsys:~# ubus call tr069 inform '{"event":"6 connection request"}'
 {
 	"status": 1,
 	"info": "Session started"
 }
 root@iopsys:~#
-root@iopsys:~# ubus call tr069 inform '{"event":"8 DIAGNOSTICS COMPLETE"}'
+root@iopsys:~# ubus call tr069 inform '{"event":"8 diagnostics complete"}'
 {
 	"status": 1,
 	"info": "Session started"

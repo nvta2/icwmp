@@ -9,7 +9,7 @@ case "$1" in
 	call)
 		case "$2" in
 			connection_request)
-				ubus call tr069 inform '{"event" : "connection request"}'				
+				ubus call tr069 inform '{"event" : "6 connection request"}'				
 			;;
 		esac
 	;;

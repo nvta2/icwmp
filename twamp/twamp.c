@@ -783,11 +783,11 @@ int twamp_connect(void)
     return 0;
 }
 
-char *get_twamp_refector_option(char *instance, char *option)
+char *get_twamp_reflector_option(char *instance, char *option)
 {
 	struct uci_section *s;
 	char *v, *twamp_id, *curr_interface;
-	dmuci_foreach_section("cwmp_twamp", "twamp_refector", s) {
+	dmuci_foreach_section("cwmp_twamp", "twamp_reflector", s) {
 		twamp_id = dmuci_get_value_bysection(s, "id");
 		if(strcmp(twamp_id, instance) == 0)
 		{
@@ -814,14 +814,14 @@ int twamp_init(void)
 	twamp_log(SDEBUG,"TWAMP Reflector Log Level:%d", cur_twamp_conf.loglevel);
 
 	id = dmuci_get_value("cwmp_twamp", "twamp", "id");
-	cur_twamp_conf.enable = atoi(get_twamp_refector_option(id, "enable"));
-	cur_twamp_conf.interface = strdup(get_twamp_refector_option(id, "interface"));
-	cur_twamp_conf.device = strdup(get_twamp_refector_option(id, "device"));
-	cur_twamp_conf.ip_version = atoi(get_twamp_refector_option(id, "ip_version"));
-	cur_twamp_conf.port = atoi(get_twamp_refector_option(id, "port"));
-	cur_twamp_conf.max_ttl = atoi(get_twamp_refector_option(id, "max_ttl"));
-	cur_twamp_conf.ip_list = strdup(get_twamp_refector_option(id, "ip_list"));
-	cur_twamp_conf.port_list = strdup(get_twamp_refector_option(id, "port_list"));
+	cur_twamp_conf.enable = atoi(get_twamp_reflector_option(id, "enable"));
+	cur_twamp_conf.interface = strdup(get_twamp_reflector_option(id, "interface"));
+	cur_twamp_conf.device = strdup(get_twamp_reflector_option(id, "device"));
+	cur_twamp_conf.ip_version = atoi(get_twamp_reflector_option(id, "ip_version"));
+	cur_twamp_conf.port = atoi(get_twamp_reflector_option(id, "port"));
+	cur_twamp_conf.max_ttl = atoi(get_twamp_reflector_option(id, "max_ttl"));
+	cur_twamp_conf.ip_list = strdup(get_twamp_reflector_option(id, "ip_list"));
+	cur_twamp_conf.port_list = strdup(get_twamp_reflector_option(id, "port_list"));
 
 	twamp_log(SDEBUG,"TWAMP Reflector Enable: %d", cur_twamp_conf.enable);
 	twamp_log(SDEBUG,"TWAMP Reflector Interface: %s", cur_twamp_conf.interface);
