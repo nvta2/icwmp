@@ -176,18 +176,15 @@ icwmp_xmppd_SOURCES =		    \
 
 icwmp_xmppd_CFLAGS =			\
 	$(AM_CFLAGS)				\
-	$(LIBUCI_CFLAGS)			\
-	$(LIBUBOX_CFLAGS)
+	$(LIBUCI_CFLAGS)
 
 icwmp_xmppd_LDFLAGS =			\
 	$(AM_LDFLAGS)				\
-	$(LIBUCI_LDFLAGS)			\
-	$(LIBUBOX_LDFLAGS)
+	$(LIBUCI_LDFLAGS)
 	
 icwmp_xmppd_LDADD =				\
 	$(AM_LIBS)					\
 	$(LIBUCI_LIBS)				\
-	$(LIBUBOX_LIBS)				\
 	$(LIBSTROPHE_LIBS)
 
 bin_PROGRAMS += icwmp_udpechoserverd

@@ -34,7 +34,7 @@ config cwmp 'cpe'
 	option provisioning_code ''
 	option amd_version '2'
 	# compression possible configs: InstanceNumber, InstanceAlias
-	option instance_mode 'InstanceAlias'
+	option instance_mode 'InstanceNumber'
 	option session_timeout '60'
 	option notification '1'
 	#vlan_method: 1: only tagged vlantermination 2: all vlanterminations (tagged and untagged)
