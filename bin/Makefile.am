@@ -124,6 +124,7 @@ icwmp_tr098d_CFLAGS+=-DCWMP_BKP_FILE=\"$(CWMP_BKP_FILE)\"
 icwmp_tr098d_CFLAGS+=-I../inc
 endif
 
+if ICWMP_STUN
 bin_PROGRAMS += icwmp_stund
 
 icwmp_stund_SOURCES =		\
@@ -157,7 +158,9 @@ icwmp_stund_LDADD =				\
 	$(LBLOBMSG_LIBS)			\
 	$(LIBUBUS_LIBS)				\
 	$(LCRYPTO_LIBS)
+endif
 
+if ICWMP_XMPP
 bin_PROGRAMS += icwmp_xmppd
 
 icwmp_xmppd_SOURCES =		    \
@@ -184,7 +187,9 @@ icwmp_xmppd_LDADD =				\
 	$(AM_LIBS)					\
 	$(LIBUCI_LIBS)				\
 	$(LIBSTROPHE_LIBS)
+endif
 
+if ICWMP_UDPECHOSERVER
 bin_PROGRAMS += icwmp_udpechoserverd
 
 icwmp_udpechoserverd_SOURCES =		    		\
@@ -206,7 +211,9 @@ icwmp_udpechoserverd_LDFLAGS =			\
 icwmp_udpechoserverd_LDADD =				\
 	$(AM_LIBS)					\
 	$(LIBUCI_LIBS)
+endif
 
+if ICWMP_TWAMP
 bin_PROGRAMS += icwmp_twampd
 
 icwmp_twampd_SOURCES =		    \
@@ -229,7 +236,9 @@ icwmp_twampd_LDFLAGS =			\
 icwmp_twampd_LDADD =			\
 	$(AM_LIBS)					\
 	$(LIBUCI_LIBS)
+endif
 
+if ICWMP_BULKDATA
 bin_PROGRAMS += icwmp_bulkdatad
 
 icwmp_bulkdatad_SOURCES =		\
@@ -275,3 +284,4 @@ icwmp_bulkdatad_LDADD =				\
 	$(LCRYPTO_LIBS)				\
 	$(LIBCURL_LIBS) 			\
 	-lbbfdm
+endif

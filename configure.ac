@@ -29,6 +29,21 @@ AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy m
 AC_ARG_ENABLE(icwmp_tr098, [AS_HELP_STRING([--enable-icwmp_tr098], [enable icwmp tr098])], AC_DEFINE(ICWMP_TR098),)
 AM_CONDITIONAL([ICWMP_TR098],[test "x$enable_icwmp_tr098" = "xyes"])
 
+AC_ARG_ENABLE(icwmp_xmpp, [AS_HELP_STRING([--enable-icwmp_xmpp], [enable icwmp xmpp])], AC_DEFINE(ICWMP_XMPP),)
+AM_CONDITIONAL([ICWMP_XMPP],[test "x$enable_icwmp_xmpp" = "xyes"])
+
+AC_ARG_ENABLE(icwmp_stun, [AS_HELP_STRING([--enable-icwmp_stun], [enable icwmp stun])], AC_DEFINE(ICWMP_STUN),)
+AM_CONDITIONAL([ICWMP_STUN],[test "x$enable_icwmp_stun" = "xyes"])
+
+AC_ARG_ENABLE(icwmp_udpechoserver, [AS_HELP_STRING([--enable-icwmp_udpechoserver], [enable icwmp udpechoserver])], AC_DEFINE(ICWMP_UDPECHOSERVER),)
+AM_CONDITIONAL([ICWMP_UDPECHOSERVER],[test "x$enable_icwmp_udpechoserver" = "xyes"])
+
+AC_ARG_ENABLE(icwmp_twamp, [AS_HELP_STRING([--enable-icwmp_twamp], [enable icwmp twamp])], AC_DEFINE(ICWMP_TWAMP),)
+AM_CONDITIONAL([ICWMP_TWAMP],[test "x$enable_icwmp_twamp" = "xyes"])
+
+AC_ARG_ENABLE(icwmp_bulkdata, [AS_HELP_STRING([--enable-icwmp_bulkdata], [enable icwmp bulkdata])], AC_DEFINE(ICWMP_BULKDATA),)
+AM_CONDITIONAL([ICWMP_BULKDATA],[test "x$enable_icwmp_bulkdata" = "xyes"])
+
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
