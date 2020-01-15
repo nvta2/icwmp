@@ -11,7 +11,6 @@ icwmpd_SOURCES =			\
 	../http.c				\
 	../jshn.c				\
 	../log.c				\
-	../md5.c				\
 	../netlink.c			\
 	../time.c				\
 	../ubus.c				\
@@ -74,7 +73,6 @@ icwmp_tr098d_SOURCES =			\
 	../http.c				\
 	../jshn.c				\
 	../log.c				\
-	../md5.c				\
 	../netlink.c			\
 	../time.c				\
 	../ubus.c				\
