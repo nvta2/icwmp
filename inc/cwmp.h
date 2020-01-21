@@ -15,14 +15,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <time.h>
 #include <pthread.h>
 #include <microxml.h>
 #include <libubox/list.h>
 #ifdef TR098
+#include <libtr098/dmentry.h>
 #include <libtr098/dmtr098.h>
 #else
-#include <libbbfdm/dmbbf.h>
+#include <libbbfdm/dmentry.h>
+#include <libbbfdm/dmbbfcommon.h>
+#include <libbbfdm/dmdiagnostics.h>
 #endif
 
 #define MAX_EVENTS							64

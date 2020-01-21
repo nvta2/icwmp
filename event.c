@@ -31,12 +31,10 @@
 #include <libtr098/deviceinfo.h>
 #include <libtr098/dmjson.h>
 #else
-#include <libbbfdm/dmbbf.h>
-#include <libbbfdm/dmcommon.h>
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
-#include <libbbfdm/dmjson.h>
 #endif
+
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
 pthread_mutex_t mutex_value_change = PTHREAD_MUTEX_INITIALIZER;
@@ -339,6 +337,7 @@ void cwmp_add_notification(void)
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
+#ifdef TR098
 		dmjson_parse_init(buf);
 		dmjson_get_var("parameter", &jval);
 		parameter = strdup(jval);
@@ -347,12 +346,28 @@ void cwmp_add_notification(void)
 		dmjson_get_var("notification", &jval);
 		notification = strdup(jval);
 		dmjson_parse_fini();
+#else
+		bbfdmjson_parse_init(buf);
+		bbfdmjson_get_var("parameter", &jval);
+		parameter = strdup(jval);
+		bbfdmjson_get_var("value", &jval);
+		value = strdup(jval);
+		bbfdmjson_get_var("notification", &jval);
+		notification = strdup(jval);
+		bbfdmjson_parse_fini();
+#endif
 		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 			if (strcmp(dm_parameter->data, value) != 0) {
+#ifdef TR098
 				dm_update_file_enabled_notify(parameter, dm_parameter->data);
 				iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
+
+#else
+				bbfdm_update_file_enabled_notify(parameter, dm_parameter->data);
+				iscopy = dm_copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
+#endif
 				if(iscopy)
 					remove(DM_ENABLED_NOTIFY_TEMPORARY);
 				if (notification[0] == '1' || notification[0] == '2' || notification[0] == '4' || notification[0] == '6' )
@@ -367,7 +382,12 @@ void cwmp_add_notification(void)
 	}
 	fclose(fp);
 
+#ifdef TR098
 	list_for_each_entry(p, &list_enabled_lw_notify, list) {
+#else
+	struct list_head bbf_list_enabled_lw_notify = get_bbf_list_enabled_lw_notify();
+	list_for_each_entry(p, &bbf_list_enabled_lw_notify, list) {
+#endif
 		if (!initiate || i != 0)		
 			dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 		i++;
@@ -377,11 +397,13 @@ void cwmp_add_notification(void)
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 			if (strcmp(dm_parameter->data, p->value) != 0) {
+#ifdef TR098
 				dm_update_enabled_notify(p, dm_parameter->data);
-				if (p->notification[0] >= '3' )
-					add_lw_list_value_change(p->name, dm_parameter->data, dm_parameter->type);
-				if (p->notification[0] == '5' || p->notification[0] == '6')
-					lw_isactive = true;
+#else
+				bbfdm_update_enabled_notify(p, dm_parameter->data);
+#endif
+				if (p->notification[0] >= '3' ) add_lw_list_value_change(p->name, dm_parameter->data, dm_parameter->type);
+				if (p->notification[0] == '5' || p->notification[0] == '6') lw_isactive = true;
 			}
 		}
 		dm_ctx_clean_sub(&dmctx);
@@ -481,7 +503,6 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
     int                     error,cmp=0;
     struct event_container  *event_container;
     struct session          *session;
-    char buf[64] = "";
 
     error   = cwmp_load_saved_session(cwmp, &acsurl, ACS);
 
@@ -525,9 +546,12 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-        sprintf(buf, "%sManagementServer.URL", dmroot);
-        add_dm_parameter_tolist(&(event_container->head_dm_parameter),
-        		buf, NULL, NULL);
+#ifdef TR098
+        char buf[64] = "InternetGatewayDevice.ManagementServer.URL";
+#else
+        char buf[64] = "Device.ManagementServer.URL";
+#endif
+        add_dm_parameter_tolist(&(event_container->head_dm_parameter), buf, NULL, NULL);
         cwmp_save_event_container (cwmp,event_container);
         save_acs_bkp_config(cwmp);
         cwmp_scheduleInform_remove_all();

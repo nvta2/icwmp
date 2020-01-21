@@ -132,7 +132,11 @@ if (cwmp->conf.ipv6_enable) {
 	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
 	curl_easy_perform(curl);
 	int tmp = inet_pton(AF_INET, ip, buf);
+#ifdef TR098
 	ip_version = (tmp == 1) ? 4 : 6;
+#else
+	bbf_set_ip_version((tmp == 1) ? 4 : 6);
+#endif
 }
 	return 0;
 }

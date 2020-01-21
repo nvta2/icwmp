@@ -38,6 +38,31 @@ int bulkdata_dm_ctx_clean(struct dmctx *ctx)
 	return 0;
 }
 
+static char **str_split(const char* str, const char* delim, size_t* numtokens)
+{
+	char *s = strdup(str);
+	size_t tokens_alloc = 1;
+	size_t tokens_used = 0;
+	char **tokens = calloc(tokens_alloc, sizeof(char*));
+	char *token, *strtok_ctx;
+	for (token = strtok_r(s, delim, &strtok_ctx); token != NULL; token = strtok_r(NULL, delim, &strtok_ctx)) {
+		if (tokens_used == tokens_alloc) {
+			tokens_alloc *= 2;
+			tokens = realloc(tokens, tokens_alloc * sizeof(char*));
+		}
+		tokens[tokens_used++] = strdup(token);
+	}
+	// cleanup
+	if (tokens_used == 0) {
+		FREE(tokens);
+	} else {
+		tokens = realloc(tokens, tokens_used * sizeof(char*));
+	}
+	*numtokens = tokens_used;
+	FREE(s);
+	return tokens;
+}
+
 static bool match(const char *string, const char *pattern)
 {
 	regex_t re;
@@ -333,7 +358,7 @@ char *get_bulkdata_profile_parameter_name(char *paramref, char *paramname, char 
 
 	if(paramname == NULL || strlen(paramname) <= 0)
 		return strdup(param);
-	paramarr = strsplit(paramref, "*", &length);
+	paramarr = str_split(paramref, "*", &length);
 	res = strdup(paramname);
 	for(i = 0; i < length; i++) {
 		if(i == length - 1)

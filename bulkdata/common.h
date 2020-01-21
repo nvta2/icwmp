@@ -23,10 +23,8 @@
 #include <libubox/utils.h>
 #include <libubus.h>
 
-#include <libbbfdm/dmubus.h>
-#include <libbbfdm/dmcommon.h>
 #include <libbbfdm/dmentry.h>
-#include <libbbfdm/dmjson.h>
+#include <libbbfdm/dmbbfcommon.h>
 
 #include "config.h"
 #include "log.h"

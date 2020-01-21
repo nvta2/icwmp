@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -29,12 +30,6 @@
 #include "cwmp.h"
 #include "xml.h"
 #include "log.h"
-#ifdef TR098
-#include <libtr098/dmtr098.h>
-#else
-#include <libbbfdm/dmbbf.h>
-#endif
-#include <stdarg.h>
 
 static int pid;
 static json_object *json_obj_in;
@@ -45,6 +40,8 @@ char *external_MethodName = NULL;
 char *external_MethodVersion = NULL;
 char *external_MethodUUID = NULL;
 char *external_MethodENV = NULL;
+
+#define ICWMP_PROMPT "icwmp>"
 
 void external_downloadFaultResp (char *fault_code)
 {
@@ -131,7 +128,7 @@ static void external_read_pipe_input(int (*external_handler)(char *msg))
 			value = c;
         } else {
         	if (!value) continue;
-        	if (strcmp(value, DM_PROMPT)==0) {
+        	if (strcmp(value, ICWMP_PROMPT)==0) {
         	    FREE(value);
         	    break;
         	}

@@ -1,4 +1,4 @@
-	config cwmp 'xmpp'
+config cwmp 'xmpp'
 	option enable '0'
 	option id '0'
 	option allowed_jid ''

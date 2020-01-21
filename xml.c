@@ -30,8 +30,8 @@
 #include <libtr098/softwaremodules.h>
 #else
 #include <libbbfdm/dmentry.h>
+#include <libbbfdm/dmbbfcommon.h>
 #include <libbbfdm/deviceinfo.h>
-#include <libbbfdm/dmbbf.h>
 #include <libbbfdm/softwaremodules.h>
 #endif
 LIST_HEAD(list_download);
@@ -793,7 +793,12 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
     	dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
     	if (xml_prepare_parameters_inform(&dmctx, dm_parameter, parameter_list, &size))
     		goto error;
+
+#ifdef TR098
     	del_list_parameter(dm_parameter);
+#else
+    	bbf_del_list_parameter(dm_parameter);
+#endif
     }
 
     if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
@@ -1215,7 +1220,11 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 
 		counter++;
 
+#ifdef TR098
 		del_list_parameter(dm_parameter);
+#else
+		bbf_del_list_parameter(dm_parameter);
+#endif
 	}
 #ifdef ACS_MULTI
 	b = mxmlFindElement(session->tree_out, session->tree_out, "ParameterList",
@@ -1322,7 +1331,11 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 
 		counter++;
 
+#ifdef TR098
 		del_list_parameter(dm_parameter);
+#else
+		bbf_del_list_parameter(dm_parameter);
+#endif
 	}
 
 #ifdef ACS_MULTI
@@ -1432,7 +1445,11 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 
 		counter++;
 
+#ifdef TR098
 		del_list_parameter(dm_parameter);
+#else
+		bbf_del_list_parameter(dm_parameter);
+#endif
 	}
 #ifdef ACS_MULTI
 	b = mxmlFindElement(session->tree_out, session->tree_out, "ParameterList",
@@ -1925,7 +1942,11 @@ int cwmp_handle_rpc_cpe_factory_reset(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(b, "cwmp:FactoryResetResponse");
 	if (!b) goto fault;
 
+#ifndef TR098
+	bbf_cwmp_set_end_session(END_SESSION_FACTORY_RESET);
+#else
 	cwmp_set_end_session(END_SESSION_FACTORY_RESET);
+#endif
 
 	return 0;
 
@@ -1951,7 +1972,11 @@ int cwmp_handle_rpc_cpe_x_factory_reset_soft(struct session *session, struct rpc
 	b = mxmlNewElement(b, "cwmp:X_FactoryResetSoftResponse");
 	if (!b) goto fault;
 
+#ifndef TR098
+	bbf_cwmp_set_end_session(END_SESSION_X_FACTORY_RESET_SOFT);
+#else
 	cwmp_set_end_session(END_SESSION_X_FACTORY_RESET_SOFT);
+#endif
 
 	return 0;
 
@@ -2083,7 +2108,11 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(b, "cwmp:RebootResponse");
 	if (!b) goto fault;
 
+#ifndef TR098
+	bbf_cwmp_set_end_session(END_SESSION_REBOOT);
+#else
 	cwmp_set_end_session(END_SESSION_REBOOT);
+#endif
 
 	return 0;
 
@@ -4568,7 +4597,11 @@ int cwmp_handle_rpc_cpe_fault(struct session *session, struct rpc *rpc)
 				u = mxmlNewText(u, 0, FAULT_CPE_ARRAY[idx].DESCRIPTION);
 				if (!u) return -1;
 			}
+#ifdef TR098
 			del_list_fault_param(param_fault);
+#else
+			bbf_del_list_fault_param(param_fault);
+#endif
 		}
 	}
 

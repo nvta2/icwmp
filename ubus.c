@@ -93,14 +93,22 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (!strcmp("reload_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
+#ifndef TR098
+		bbf_cwmp_set_end_session(END_SESSION_RELOAD);
+#else
 		cwmp_set_end_session(END_SESSION_RELOAD);
+#endif
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "icwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
+#ifndef TR098
+			bbf_cwmp_set_end_session(END_SESSION_RELOAD);
+#else
 			cwmp_set_end_session(END_SESSION_RELOAD);
+#endif
 			blobmsg_add_u32(&b, "status", 0);
 			blobmsg_add_string(&b, "info", "Session running, reload at the end of the session");
 		}
@@ -114,13 +122,21 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
+#ifndef TR098
+		bbf_cwmp_set_end_session(END_SESSION_REBOOT);
+#else
 		cwmp_set_end_session(END_SESSION_REBOOT);
+#endif
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "icwmpd will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
+#ifndef TR098
+		bbf_cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
+#else
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
+#endif
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
@@ -283,11 +299,6 @@ cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
 	}
 	else {
 		int event_code = cwmp_get_int_event_code(event);
-		if (event_code == 6)
-		{
-			CWMP_LOG(INFO,"Receive Connection Request: success authentication");
-			CWMP_LOG(INFO,"Connection Request thread: add connection request event in the queue");
-		}
 		pthread_mutex_lock (&(cwmp_main.mutex_session_queue));
 		cwmp_add_event_container (&cwmp_main, event_code, "");
 		pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));

@@ -57,7 +57,7 @@ static void create_json_bulkdata_report_object_hierarchy(struct profile *profile
 			strcpy(buf, param_name);
 			for (pch = strtok_r(buf, ".", &pchr); pch != NULL; pch = strtok_r(NULL, ".", &pchr)) {
 				argv[j] = pch;
-				json_obj1 = dmjson_select_obj(json_obj, argv);
+				json_obj1 = (json_object *)bbfdmjson_select_obj(json_obj, argv);
 				if (json_obj1)
 					json_obj2 = json_obj1;
 				else {
