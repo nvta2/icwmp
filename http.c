@@ -307,7 +307,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 
 	/* TODO add check for 301, 302 and 307 HTTP Redirect*/
 
-	curl_easy_reset_no_auth(curl);
+	curl_easy_reset(curl);
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;
