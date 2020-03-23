@@ -185,7 +185,7 @@ int http_send_message(struct profile *profile, char *msg_out, int msg_out_len, c
 	if (http_code != 200 && http_code != 204)
 		goto error;
 
-	curl_easy_reset_no_auth(curl);
+	curl_easy_reset(curl);
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;

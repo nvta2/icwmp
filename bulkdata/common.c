@@ -63,7 +63,7 @@ static char **str_split(const char* str, const char* delim, size_t* numtokens)
 	return tokens;
 }
 
-static bool match(const char *string, const char *pattern)
+static bool bulkdata_match(const char *string, const char *pattern)
 {
 	regex_t re;
 	if (regcomp(&re, pattern, REG_EXTENDED) != 0) return 0;
@@ -77,7 +77,7 @@ static bool is_res_required(char *str, int *start, int *len)
 {
 	char temp_char[NAME_MAX] = {'\0'};
 
-	if (match(str, GLOB_CHAR)) {
+	if (bulkdata_match(str, GLOB_CHAR)) {
 		int s_len = strlen(str);
 		int b_len = s_len, p_len = s_len;
 
@@ -90,7 +90,7 @@ static bool is_res_required(char *str, int *start, int *len)
 
 		strncpy(temp_char, str+*start, *len);
 
-		if(match(temp_char, "[*+]+"))
+		if (bulkdata_match(temp_char, "[*+]+"))
 			return true;
 	}
 	*start = strlen(str);
