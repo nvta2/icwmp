@@ -10,10 +10,6 @@
 *
 */
 
-#include <json-c/json.h>
-
-#include "common.h"
-#include "times.h"
 #include "report.h"
 
 static void add_new_json_obj(json_object *json_obj, char *name, char *data, char *type)
@@ -202,7 +198,7 @@ int create_csv_bulkdata_report(struct profile *profile, char **report)
 	 */
 	int i;
 	struct resultsnode *p;
-	char *str1 = NULL, *str2 = NULL, *str = NULL, *paramprofilename, *timestamp = NULL, *type = NULL, rowseparator, separator;
+	char *str1 = NULL, *str2 = NULL, *str = NULL, *paramprofilename, *timestamp = NULL, *type = NULL, rowseparator = '\0', separator = '\0';
 
 	if(strcmp(profile->csv_encoding_row_separator, "&#10;") == 0)
 		rowseparator = '\n';
@@ -300,7 +296,7 @@ static void create_json_failed_report(struct profile *profile, char **report)
 
 static void create_csv_failed_report(struct profile *profile, char **report)
 {
-	char rowseparator, separator, *timestamp;
+	char rowseparator = '\0', separator = '\0', *timestamp = NULL;
 
 	if(strcmp(profile->csv_encoding_row_separator, "&#10;") == 0) {
 		rowseparator = '\n';

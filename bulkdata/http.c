@@ -9,16 +9,7 @@
 *				Omar Kallel <omar.kallel@pivasoftware.com>
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <curl/curl.h>
-
 #include "http.h"
-#include "log.h"
-#include "times.h"
-#include "common.h"
 
 static struct http_client http_c;
 static CURL *curl;

@@ -264,7 +264,8 @@ icwmp_bulkdatad_CFLAGS =			\
 	$(LIBUCI_CFLAGS)			\
 	$(LIBUBUS_CFLAGS)			\
 	$(LIBUBOX_CFLAGS)			\
-	$(LIBCURL_CFLAGS)
+	$(LIBCURL_CFLAGS) 			\
+	-Wall -Werror
 
 icwmp_bulkdatad_LDFLAGS =			\
 	$(AM_LDFLAGS)				\

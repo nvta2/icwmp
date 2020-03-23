@@ -14,17 +14,6 @@
 static pathnode *head = NULL;
 static pathnode *temphead = NULL;
 
-void add_list_value_change(char *param_name, char *param_data, char *param_type)
-{
-	bulkdata_log(SDEBUG,"Dummy funtion");
-	if(param_name && param_data && param_type){}
-}
-
-void send_active_value_change(void)
-{
-	bulkdata_log(SDEBUG,"Dummy funtion");
-}
-
 int bulkdata_dm_ctx_init(struct dmctx *ctx)
 {
 	struct bulkdata *bulkdata = &bulkdata_main;
@@ -115,14 +104,14 @@ static void insert(char *data, bool active)
 	}
 }
 
-static void swap_heads()
+static void swap_heads(void)
 {
 	pathnode *temp = head;
 	head = temphead;
 	temphead = temp;
 }
 
-static void deleteList()
+static void deleteList(void)
 {
 	pathnode *ptr = head, *temp;
 	while(ptr != NULL) {
@@ -239,7 +228,7 @@ bool bulkdata_get_name(char *path)
 	return ret;
 }
 
-static void fill_node_path()
+static void fill_node_path(void)
 {
 	pathnode *p=head;
 	while(p!=NULL) {
@@ -389,7 +378,7 @@ char *get_bulkdata_profile_parameter_name(char *paramref, char *paramname, char 
 
 void append_string_to_string(char *strappend, char **target)
 {
-	char *tmp = NULL, *str = NULL;
+	char *tmp = NULL;
 
 	if(strappend == NULL || strlen(strappend) <= 0)
 		return;

@@ -12,6 +12,13 @@
 #ifndef __BUCI_H
 #define __BUCI_H
 
+#include <strings.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <errno.h>
+#include <unistd.h>
+#include <ctype.h>
 #include <uci.h>
 
 int buci_init(void);

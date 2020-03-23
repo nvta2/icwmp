@@ -13,6 +13,9 @@
 #ifndef __REPORT_H_
 #define __REPORT_H_
 
+#include <json-c/json.h>
+#include "common.h"
+#include "times.h"
 #include "config.h"
 
 void create_encoding_bulkdata_report(struct profile *profile, char **report);

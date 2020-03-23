@@ -9,4 +9,3 @@ config stun 'stun'
 #if client_port option is not set or < 0 then use a random port for connection request source port 
 #Log levels: Critical=0, Warning=1, Notice=2, Info=3, Debug=4
 	option log_level '3'
-

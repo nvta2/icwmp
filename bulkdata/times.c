@@ -9,8 +9,7 @@
 *
 */
 
-#include <string.h>
-#include <time.h>
+#include "times.h"
 
 char *bulkdata_get_time(void)
 {

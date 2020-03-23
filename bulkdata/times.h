@@ -12,6 +12,10 @@
 #ifndef __TIMES_H
 #define __TIMES_H
 
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
 char *bulkdata_get_time(void);
 void get_time_stamp(char *format, char **timestamp);
 unsigned int get_next_period(time_t time_reference, int reporting_interval);

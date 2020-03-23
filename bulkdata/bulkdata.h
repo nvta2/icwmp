@@ -15,7 +15,4 @@
 extern struct bulkdata bulkdata_main;
 extern int profiles_number;
 
-
-
-
 #endif /* __BULKDATA_H */

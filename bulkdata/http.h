@@ -12,8 +12,15 @@
 #ifndef __HTTP_H
 #define __HTTP_H
 
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 #include <curl/curl.h>
 #include "config.h"
+#include "log.h"
+#include "times.h"
+#include "common.h"
 
 #define HTTP_TIMEOUT 30
 
