@@ -32,7 +32,6 @@ static int pfds[2];
 int xmpp_cmd(unsigned char dowait, int argc, ...)
 {
 	int pid;
-	char *c = NULL;
 	va_list arg;
 
 	if (pipe(pfds) < 0)

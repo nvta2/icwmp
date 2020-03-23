@@ -50,7 +50,6 @@ static const char* log_str[] = {
 void cwmp_xmpp_log(int priority, const char *format, ...)
 {
 	va_list vl;
-	char *log;
 
 	if (priority <= cur_xmpp_conf.xmpp_loglevel) {
 #ifdef DEBUG

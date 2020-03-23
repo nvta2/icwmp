@@ -67,9 +67,6 @@ static bool dmuci_validate_section(const char *str)
 
 static int dmuci_init_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value)
 {
-	char *last = NULL;
-	char *tmp;
-
 	memset(ptr, 0, sizeof(struct uci_ptr));
 
 	/* value */
@@ -135,8 +132,7 @@ struct uci_section *dmuci_walk_section(char *package, char *section_type, struct
 		}
 	}
 	else {
-		struct uci_list *ul, *u = NULL;
-		struct uci_list *shead = NULL;
+		struct uci_list *ul, *shead = NULL;
 
 		if (prev_section) {
 			ul = &prev_section->e.list;
@@ -168,8 +164,6 @@ void dmuci_print_list(struct uci_list *uh, char **val, char *delimiter)
 {
 	struct uci_element *e;
 	static char buffer[512];
-	int dlen = strlen(delimiter);
-	int olen = 0;
 	char *buf = buffer;
 	*buf = '\0';
 

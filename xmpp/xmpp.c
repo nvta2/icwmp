@@ -61,7 +61,7 @@ static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const 
 {
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	xmpp_stanza_t *cr_stanza, *child, *child1, *child2, *child3, *child4, *child5, *stext, *stext2, *mech;
-	char *username, *password;
+	char *username = NULL, *password = NULL;
 
 	cr_stanza = xmpp_stanza_new(ctx);
 	if (!cr_stanza) {
@@ -120,8 +120,8 @@ static int send_stanza_cr_error(xmpp_conn_t * const conn, xmpp_stanza_t * const 
 	xmpp_stanza_release(child);
 	xmpp_send(conn, cr_stanza);
 	xmpp_stanza_release(cr_stanza);
-	free(username);
-	free(password);
+	if (username) free(username);
+	if (password) free(password);
 	return 0;
 }
 
@@ -154,7 +154,6 @@ int check_xmpp_authorized(char *from)
 
 static int cr_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza1, void * const userdata)
 {
-	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	char *name_space, *text, *from, *username, *password;
 	xmpp_stanza_t *child, *mech;
 	bool valid_ns = true, auth_status = false, service_available = false;

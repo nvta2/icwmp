@@ -177,7 +177,8 @@ icwmp_xmppd_SOURCES =		    \
 
 icwmp_xmppd_CFLAGS =			\
 	$(AM_CFLAGS)				\
-	$(LIBUCI_CFLAGS)
+	$(LIBUCI_CFLAGS) 			\
+	-Wall -Werror
 
 icwmp_xmppd_LDFLAGS =			\
 	$(AM_LDFLAGS)				\
