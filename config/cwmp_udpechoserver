@@ -2,7 +2,7 @@ config udpechoserver 'udpechoserver'
 	option enable '0'
 	option interface ''
 	option address ''
-	option server_port ''
+	option server_port '0'
 	option plus '0'
 #Log levels: Critical=0, Warning=1, Notice=2, Info=3, Debug=4
 	option log_level '3'

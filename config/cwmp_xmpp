@@ -16,9 +16,9 @@ config xmpp_connection
 	option usetls '0'
 	option interval '30'
 	option attempt '16'
-	option initial_retry_interval ''
-	option retry_interval_multiplier ''
-	option retry_max_interval ''
+	option initial_retry_interval '1'
+	option retry_interval_multiplier '1000'
+	option retry_max_interval '1'
 	option serveralgorithm 'DNS-SRV'
 	
 config xmpp_connection_server
@@ -28,3 +28,4 @@ config xmpp_connection_server
 	option connection_server_alias ''
 	option port '5222'
 	option server_address ''
+	
