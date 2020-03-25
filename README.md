@@ -46,7 +46,6 @@ config cwmp 'cpe'
 	option interface 'eth0.1'
 	option default_wan_interface 'wan'
 	option userid 'iopsys'
-	option vlan_method '1'
 	option datamodel 'tr181'
 	option exec_download '0'
 	
@@ -103,7 +102,6 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `instance_mode`         | string  | Specifies the instance mode to use, by default **'InstanceNumber'**. Two instance modes are supported: **'InstanceNumber' and 'InstanceNumber'**. |
 | `session_timeout`       | integer | Represents the number of seconds that should be used by the ACS as the amount of time to wait before timing out a CWMP session due to the CPE not responding, by default **60**.|
 | `notification`          | boolean | If set to **1**, it enables the notification feature. |
-| `vlan_method`           | integer | Specifies the vlan method to use, by default **'1'**. Two vlan methods are supported: **'1' and '2'** (1: only tagged vlan termination, 2: all vlan terminations tagged and untagged). |
 | `datamodel`             | string  | Specifies the data model to use, by default **'tr181'**. Two data models are supported: **'tr181' and 'tr098'**. |
 | `exec_download`         | boolean | If set to **1**, Specifies if Download method is executed. |
 

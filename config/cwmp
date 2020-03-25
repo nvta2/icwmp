@@ -37,8 +37,6 @@ config cwmp 'cpe'
 	option instance_mode 'InstanceNumber'
 	option session_timeout '60'
 	option notification '1'
-	#vlan_method: 1: only tagged vlantermination 2: all vlanterminations (tagged and untagged)
-	option vlan_method '1'
 	option datamodel 'tr181'
 	option exec_download '0'
 	
