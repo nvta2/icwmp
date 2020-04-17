@@ -43,7 +43,7 @@
 #define DEFAULT_RETRY_INITIAL_INTERVAL		60
 #define DEFAULT_RETRY_INTERVAL_MULTIPLIER	2000
 #define DEFAULT_RETRY_MAX_INTERVAL			60
-#define DEFAULT_AMD_VERSION                 2
+#define DEFAULT_AMD_VERSION                 5
 #define DEFAULT_INSTANCE_MODE               0
 #define DEFAULT_SESSION_TIMEOUT				60
 #define DEFAULT_ACSURL						"http://192.168.1.1:8080/openacs/acs"
