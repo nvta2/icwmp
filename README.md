@@ -35,21 +35,21 @@ The icwmp client is :
 The icwmp UCI configuration is located in **'/etc/config/cwmp'**, and contains 3 sections: **'acs'**, **'cpe'** and **'lwn'**.
 
 ```
-config cwmp 'acs'
+config acs 'acs'
 	option userid 'iopsys'
 	option dhcp_discovery 'enable'
 	option compression 'Disabled'
 	option retry_min_wait_interval '5'
 	option retry_interval_multiplier '2000'
 
-config cwmp 'cpe'
+config cpe 'cpe'
 	option interface 'eth0.1'
 	option default_wan_interface 'wan'
 	option userid 'iopsys'
 	option datamodel 'tr181'
 	option exec_download '0'
 	
-config cwmp 'lwn'
+config lwn 'lwn'
 	option enable '1'
 	option hostname ''
 	option port ''
