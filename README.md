@@ -87,7 +87,6 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | ----------------------- | ------- | ------------------------------------------------------------ |
 | `interface`             | string  | Specifies the device interface to use for connecting to ACS. |
 | `default_wan_interface` | string  | Specifies the default wan interface of the device. |
-| `manufacturer`          | string  | Specifies the manafacturer of the device. |
 | `log_to_console`        | string  | If set to **1**, the log messages will be shown in the console. |
 | `log_to_file`           | string  | If set to **1**, the log messages will be saved in the log file. |
 | `log_severity`          | string  | Specifies the log type to use, by default **'INFO'**. The possible types are **'EMERG', 'ALERT', 'CRITIC' ,'ERROR', 'WARNING', 'NOTICE', 'INFO' and 'DEBUG'**. |
@@ -104,6 +103,10 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `notification`          | boolean | If set to **1**, it enables the notification feature. |
 | `datamodel`             | string  | Specifies the data model to use, by default **'tr181'**. Two data models are supported: **'tr181' and 'tr098'**. |
 | `exec_download`         | boolean | If set to **1**, Specifies if Download method is executed. |
+| `manufacturer`         | string  | Specifies the manafacturer of the device, by default **iopsys**. If set, its value will be the value of Device.DeviceInfo.Manufacturer parameter. |
+| `manufacturer_oui`     | string  | Default empty. If set, its value will be the value of Device.DeviceInfo.ManufacturerOUI parameter. |
+| `model_name`            | string  | Default empty. If set, its value will be the value of Device.DeviceInfo.ModelName parameter. |
+| `product_class`         | string  | Default empty. If set, its value will be the value of Device.DeviceInfo.ProductClass parameter. |
 
 ### cwmp lwn section ###
 
