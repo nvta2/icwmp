@@ -97,16 +97,16 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `port`                  | integer | The port used for connection request. |
 | `ubus_socket`           | string  | Specifies the path of the ubus socket file, by default **'/var/run/ubus.sock'**. |
 | `provisioning_code`     | string  | Specifies the primary service provider and other provisioning information, which may be used by the ACS to determine service provider-specific customization and provisioning parameters. |
-| `amd_version`           | integer | Specifies the amendment version to use. The default amendment version is **'2'**. |
+| `amd_version`           | integer | Specifies the amendment version to use. The default amendment version is **'5'**. |
 | `instance_mode`         | string  | Specifies the instance mode to use, by default **'InstanceNumber'**. Two instance modes are supported: **'InstanceNumber' and 'InstanceNumber'**. |
 | `session_timeout`       | integer | Represents the number of seconds that should be used by the ACS as the amount of time to wait before timing out a CWMP session due to the CPE not responding, by default **60**.|
 | `notification`          | boolean | If set to **1**, it enables the notification feature. |
 | `datamodel`             | string  | Specifies the data model to use, by default **'tr181'**. Two data models are supported: **'tr181' and 'tr098'**. |
 | `exec_download`         | boolean | If set to **1**, Specifies if Download method is executed. |
-| `manufacturer`         | string  | Specifies the manafacturer of the device, by default **iopsys**. If set, its value will be the value of **Device.DeviceInfo.Manufacturer parameter**. |
-| `manufacturer_oui`     | string  | Specifies the manafacturer oui of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ManufacturerOUI parameter**. |
-| `model_name`            | string  | Specifies the model name of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ModelName parameter**. |
-| `product_class`         | string  | Specifies the product class of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ProductClass parameter**. |
+| `manufacturer`         | string  | Specifies the manafacturer of the device, by default **iopsys**. If set, its value will be the value of **Device.DeviceInfo.Manufacturer** parameter. |
+| `manufacturer_oui`     | string  | Specifies the manafacturer oui of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ManufacturerOUI** parameter. |
+| `model_name`            | string  | Specifies the model name of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ModelName** parameter. |
+| `product_class`         | string  | Specifies the product class of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ProductClass** parameter. |
 
 ### cwmp lwn section ###
 
