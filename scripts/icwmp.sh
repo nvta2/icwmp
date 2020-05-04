@@ -224,7 +224,7 @@ handle_action() {
 	if [ "$action" = "du_install" ]; then
 		local fault_code="9000"
 		ubus_args=`echo {\"url\":\"$__arg1\",\"uuid\":\"$__arg2\",\"username\":\"$__arg3\",\"password\":\"$__arg4\",\"environment\":\"$__arg5\"}`
-		output=`ubus -t 3 call softwaremanagement du_install $ubus_args`
+		output=`ubus -t 3 call swmodules du_install $ubus_args`
 		if [ "$output" != "" ];then
 			json_init
 			json_load "$output"
@@ -251,7 +251,7 @@ handle_action() {
 	if [ "$action" = "du_update" ]; then
 		local fault_code="9000"
 		ubus_args=`echo {\"uuid\":\"$__arg1\",\"url\":\"$__arg2\",\"version\":\"$__arg3\",\"username\":\"$__arg4\",\"password\":\"$__arg5\"}`
-		output=`ubus -t 3 call softwaremanagement du_update $ubus_args`
+		output=`ubus -t 3 call swmodules du_update $ubus_args`
 		if [ "$output" != "" ];then
 			json_init
 			json_load "$output"
@@ -273,7 +273,7 @@ handle_action() {
 	if [ "$action" = "du_uninstall" ]; then
 		local fault_code="9000"
 		ubus_args=`echo {\"name\":\"$__arg1\",\"environment\":\"$__arg2\"}`
-		output=`ubus -t 3 call softwaremanagement du_uninstall $ubus_args`
+		output=`ubus -t 3 call swmodules du_uninstall $ubus_args`
 		if [ "$output" != "" ];then
 			json_init
 			json_load "$output"
