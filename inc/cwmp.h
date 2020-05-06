@@ -27,6 +27,7 @@
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/dmbbfcommon.h>
 #include <libbbfdm/dmdiagnostics.h>
+#include <libbbf_api/dmbbf.h>
 #endif
 
 #define MAX_EVENTS							64
