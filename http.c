@@ -195,6 +195,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 	static char ip_acs[128] = {0};
 	char *ip = NULL;
 	char errbuf[CURL_ERROR_SIZE];
+
 	http_c.header_list = NULL;
 	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: iopsys-cwmp");
 	if (!http_c.header_list) return -1;
@@ -307,7 +308,6 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 
 	/* TODO add check for 301, 302 and 307 HTTP Redirect*/
 
-	curl_easy_reset_no_auth(curl);
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;
