@@ -93,14 +93,22 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (!strcmp("reload_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
+#ifndef TR098
+		bbf_cwmp_set_end_session(END_SESSION_RELOAD);
+#else
 		cwmp_set_end_session(END_SESSION_RELOAD);
+#endif
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "icwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
+#ifndef TR098
+			bbf_cwmp_set_end_session(END_SESSION_RELOAD);
+#else
 			cwmp_set_end_session(END_SESSION_RELOAD);
+#endif
 			blobmsg_add_u32(&b, "status", 0);
 			blobmsg_add_string(&b, "info", "Session running, reload at the end of the session");
 		}
@@ -114,13 +122,21 @@ cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
+#ifndef TR098
+		bbf_cwmp_set_end_session(END_SESSION_REBOOT);
+#else
 		cwmp_set_end_session(END_SESSION_REBOOT);
+#endif
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "icwmpd will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
+#ifndef TR098
+		bbf_cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
+#else
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
+#endif
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
