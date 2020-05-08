@@ -109,7 +109,6 @@ case "$1" in
 		;;
 	reboot)
 		action="reboot"
-		commandKey=$2
 		;;
 	apply)
 		if [ "$2" = "notification" ]; then
@@ -506,6 +505,7 @@ handle_action() {
 	if [ "$action" = "reboot" ]; then
 		sync
 		uci set cwmp.acs.ParameterKey=$commandKey
+		uci commit
 		reboot
 	fi
 
@@ -537,6 +537,7 @@ handle_action() {
 			json_load "$CMD"
 			json_get_var command command
 			json_get_var action action
+			json_get_var arg arg
 			case "$command" in
 				set)
 					if [ "$action" = "notification" ]; then
@@ -617,6 +618,7 @@ handle_action() {
 					;;
 				reboot)
 					action="reboot"
+					commandKey=$arg
 					;;
 				apply)
 					if [ "$action" = "notification" ]; then
