@@ -27,6 +27,7 @@
 #include "config.h"
 
 struct cwmp         	cwmp_main = {0};
+char *commandKey = NULL;
 
 int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx)
 {
@@ -562,7 +563,9 @@ int run_session_end_func (struct session *session)
 	{
 		CWMP_LOG (INFO,"Executing Reboot: end session request");
 		external_init();
-		external_simple("reboot", NULL, 0);
+		external_simple("reboot", commandKey, 0);
+		if(commandKey)
+			free(commandKey);
 		external_exit();
 		exit(EXIT_SUCCESS);
 	}

@@ -277,6 +277,7 @@ typedef struct rpc {
 } rpc;
 
 extern int ip_version;
+extern char *commandKey;
 #define ARRAYSIZEOF(a)  (sizeof(a) / sizeof((a)[0]))
 #ifndef FREE
 #define FREE(x) do { free(x); x = NULL; } while (0)

@@ -2088,6 +2088,7 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
 			command_key = b->value.text.string;
+			commandKey = strdup(b->value.text.string);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
