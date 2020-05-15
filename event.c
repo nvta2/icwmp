@@ -33,6 +33,7 @@
 #else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
+#include <libbbf_api/dmbbf.h>
 #endif
 
 LIST_HEAD(list_value_change);
@@ -382,12 +383,7 @@ void cwmp_add_notification(void)
 	}
 	fclose(fp);
 
-#ifdef TR098
 	list_for_each_entry(p, &list_enabled_lw_notify, list) {
-#else
-	struct list_head bbf_list_enabled_lw_notify = get_bbf_list_enabled_lw_notify();
-	list_for_each_entry(p, &bbf_list_enabled_lw_notify, list) {
-#endif
 		if (!initiate || i != 0)		
 			dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 		i++;
