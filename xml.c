@@ -1970,11 +1970,7 @@ int cwmp_handle_rpc_cpe_factory_reset(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(b, "cwmp:FactoryResetResponse");
 	if (!b) goto fault;
 
-#ifndef TR098
-	bbf_cwmp_set_end_session(END_SESSION_FACTORY_RESET);
-#else
 	cwmp_set_end_session(END_SESSION_FACTORY_RESET);
-#endif
 
 	return 0;
 
@@ -2000,11 +1996,8 @@ int cwmp_handle_rpc_cpe_x_factory_reset_soft(struct session *session, struct rpc
 	b = mxmlNewElement(b, "cwmp:X_FactoryResetSoftResponse");
 	if (!b) goto fault;
 
-#ifndef TR098
-	bbf_cwmp_set_end_session(END_SESSION_X_FACTORY_RESET_SOFT);
-#else
+
 	cwmp_set_end_session(END_SESSION_X_FACTORY_RESET_SOFT);
-#endif
 
 	return 0;
 
@@ -2137,11 +2130,7 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(b, "cwmp:RebootResponse");
 	if (!b) goto fault;
 
-#ifndef TR098
-	bbf_cwmp_set_end_session(END_SESSION_REBOOT);
-#else
 	cwmp_set_end_session(END_SESSION_REBOOT);
-#endif
 
 	return 0;
 

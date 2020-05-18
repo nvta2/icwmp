@@ -511,11 +511,7 @@ int run_session_end_func (struct session *session)
 	apply_end_session();
 #endif
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_EXTERNAL_ACTION))
-#else
 	if (end_session_flag & END_SESSION_EXTERNAL_ACTION)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing external commands: end session request");
 		external_init();
@@ -523,11 +519,7 @@ int run_session_end_func (struct session *session)
 		external_exit();
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_FACTORY_RESET))
-#else
 	if (end_session_flag & END_SESSION_FACTORY_RESET)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing factory reset: end session request");
 		external_init();
@@ -536,34 +528,28 @@ int run_session_end_func (struct session *session)
 		exit(EXIT_SUCCESS);
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_IPPING_DIAGNOSTIC))
-#else
+
 	if (end_session_flag & END_SESSION_IPPING_DIAGNOSTIC)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing ippingdiagnostic: end session request");
 		cwmp_ip_ping_diagnostic();        		
 	}
 #ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_DOWNLOAD_DIAGNOSTIC))
+	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC)
 	{
 		CWMP_LOG (INFO,"Executing download diagnostic: end session request");
 		cwmp_start_diagnostic(DOWNLOAD_DIAGNOSTIC);
 	}
 
-	if (set_bbf_end_session_flag(END_SESSION_UPLOAD_DIAGNOSTIC))
+	if (end_session_flag & END_SESSION_UPLOAD_DIAGNOSTIC)
 	{
 		CWMP_LOG (INFO,"Executing upload diagnostic: end session request");
 		cwmp_start_diagnostic(UPLOAD_DIAGNOSTIC);
 	}
 #endif
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_REBOOT))
-#else
+
 	if (end_session_flag & END_SESSION_REBOOT)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing Reboot: end session request");
 		external_init();
@@ -574,21 +560,14 @@ int run_session_end_func (struct session *session)
 		exit(EXIT_SUCCESS);
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_RELOAD))
-#else
+
 	if (end_session_flag & END_SESSION_RELOAD)
-#endif
 	{
 		CWMP_LOG (INFO,"Config reload: end session request");
 		cwmp_apply_acs_changes();
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_X_FACTORY_RESET_SOFT))
-#else
 	if (end_session_flag & END_SESSION_X_FACTORY_RESET_SOFT)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing factory reset soft: end session request");
 		external_init();
@@ -597,41 +576,27 @@ int run_session_end_func (struct session *session)
 		exit(EXIT_SUCCESS);
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_NSLOOKUP_DIAGNOSTIC))
-#else
 	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing nslookupdiagnostic: end session request");
 		cwmp_nslookup_diagnostic();
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_TRACEROUTE_DIAGNOSTIC))
-#else
 	if (end_session_flag & END_SESSION_TRACEROUTE_DIAGNOSTIC)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing traceroutediagnostic: end session request");
 		cwmp_traceroute_diagnostic();
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_UDPECHO_DIAGNOSTIC))
-#else
+
 	if (end_session_flag & END_SESSION_UDPECHO_DIAGNOSTIC)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing udpechodiagnostic: end session request");
 		cwmp_udp_echo_diagnostic();
 	}
 
-#ifndef TR098
-	if (set_bbf_end_session_flag(END_SESSION_SERVERSELECTION_DIAGNOSTIC))
-#else
+
 	if (end_session_flag & END_SESSION_SERVERSELECTION_DIAGNOSTIC)
-#endif
 	{
 		CWMP_LOG (INFO,"Executing serverselectiondiagnostic: end session request");
 		cwmp_serverselection_diagnostic();
@@ -639,11 +604,8 @@ int run_session_end_func (struct session *session)
 
 	dm_entry_restart_services();
 
-#ifndef TR098
-	reset_bbf_end_session_flag();
-#else
+
 	end_session_flag = 0;
-#endif
 
 	return CWMP_OK;
 }
