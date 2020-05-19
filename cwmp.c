@@ -505,11 +505,7 @@ struct session *cwmp_add_queue_session (struct cwmp *cwmp)
 
 int run_session_end_func (struct session *session)
 {
-#ifndef TR098
-	bbf_apply_end_session();
-#else
 	apply_end_session();
-#endif
 
 	if (end_session_flag & END_SESSION_EXTERNAL_ACTION)
 	{

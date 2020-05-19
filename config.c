@@ -1062,32 +1062,16 @@ int global_env_init (int argc, char** argv, struct env *env)
 		case 'u':
 			upnpuser = optarg;
 			if (strcmp(upnpuser, "public") == 0) {
-#ifdef TR098
 				upnp_in_user_mask = DM_PUBLIC_MASK;
-#else
-				set_upnp_in_user_mask(DM_PUBLIC_MASK);
-#endif
 			}
 			else if (strcmp(upnpuser, "basic") == 0) {
-#ifdef TR098
 				upnp_in_user_mask = DM_BASIC_MASK;
-#else
-				set_upnp_in_user_mask(DM_BASIC_MASK);
-#endif
 			}
 			else if (strcmp(upnpuser, "xxxadmin") == 0) {
-#ifdef TR098
 				upnp_in_user_mask = DM_XXXADMIN_MASK;
-#else
-				set_upnp_in_user_mask(DM_XXXADMIN_MASK);
-#endif
 			}
 			else if (strcmp(upnpuser, "superadmin") == 0) {
-#ifdef TR098
 				upnp_in_user_mask = DM_SUPERADMIN_MASK;
-#else
-				set_upnp_in_user_mask(DM_SUPERADMIN_MASK);
-#endif
 			}
 			break;
 

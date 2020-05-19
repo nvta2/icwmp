@@ -822,11 +822,7 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
     	if (xml_prepare_parameters_inform(&dmctx, dm_parameter, parameter_list, &size))
     		goto error;
 
-#ifdef TR098
     	del_list_parameter(dm_parameter);
-#else
-    	bbf_del_list_parameter(dm_parameter);
-#endif
     }
 
     if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
@@ -1248,11 +1244,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 
 		counter++;
 
-#ifdef TR098
 		del_list_parameter(dm_parameter);
-#else
-		bbf_del_list_parameter(dm_parameter);
-#endif
 	}
 #ifdef ACS_MULTI
 	b = mxmlFindElement(session->tree_out, session->tree_out, "ParameterList",
@@ -1359,11 +1351,7 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 
 		counter++;
 
-#ifdef TR098
 		del_list_parameter(dm_parameter);
-#else
-		bbf_del_list_parameter(dm_parameter);
-#endif
 	}
 
 #ifdef ACS_MULTI
@@ -1473,11 +1461,7 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 
 		counter++;
 
-#ifdef TR098
 		del_list_parameter(dm_parameter);
-#else
-		bbf_del_list_parameter(dm_parameter);
-#endif
 	}
 #ifdef ACS_MULTI
 	b = mxmlFindElement(session->tree_out, session->tree_out, "ParameterList",
