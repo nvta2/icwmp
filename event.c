@@ -380,7 +380,6 @@ void cwmp_add_notification(void)
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
-#ifdef TR098
 		dmjson_parse_init(buf);
 		dmjson_get_var("parameter", &jval);
 		parameter = strdup(jval);
@@ -389,16 +388,7 @@ void cwmp_add_notification(void)
 		dmjson_get_var("notification", &jval);
 		notification = strdup(jval);
 		dmjson_parse_fini();
-#else
-		bbfdmjson_parse_init(buf);
-		bbfdmjson_get_var("parameter", &jval);
-		parameter = strdup(jval);
-		bbfdmjson_get_var("value", &jval);
-		value = strdup(jval);
-		bbfdmjson_get_var("notification", &jval);
-		notification = strdup(jval);
-		bbfdmjson_parse_fini();
-#endif
+
 		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
