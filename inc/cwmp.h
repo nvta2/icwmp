@@ -319,4 +319,6 @@ int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *sessi
 int cwmp_session_destructor (struct cwmp *cwmp, struct session *session);
 int cwmp_init(int argc, char** argv,struct cwmp *cwmp);
 int cwmp_exit(void);
+void add_list_value_change(char *param_name, char *param_data, char *param_type);
+void send_active_value_change(void);
 #endif /* _CWMP_H__ */

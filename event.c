@@ -174,13 +174,6 @@ void free_dm_parameter_all_fromlist(struct list_head *list)
 	}
 }
 
-void add_list_value_change(char *param_name, char *param_data, char *param_type)
-{
-	pthread_mutex_lock(&(mutex_value_change));
-	add_dm_parameter_tolist(&list_value_change, param_name, param_data, param_type);
-	pthread_mutex_unlock(&(mutex_value_change));
-}
-
 void add_lw_list_value_change(char *param_name, char *param_data, char *param_type)
 {
 	add_dm_parameter_tolist(&list_lw_value_change, param_name, param_data, param_type);
@@ -284,24 +277,6 @@ void cwmp_lwnotification()
 	//freeaddrinfo(servaddr); //To check
 	FREE(msg);
 	FREE(msg_out);
-}
-
-void send_active_value_change(void)
-{
-	struct cwmp   *cwmp = &cwmp_main;
-	struct event_container   *event_container;
-
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-	if (event_container == NULL)
-	{
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-		return;
-	}
-	cwmp_save_event_container(cwmp,event_container);
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-	pthread_cond_signal(&(cwmp->threshold_session_send));
-	return;
 }
 
 void cwmp_add_notification(void)
