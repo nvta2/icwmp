@@ -504,7 +504,7 @@ handle_action() {
 	
 	if [ "$action" = "reboot" ]; then
 		sync
-		uci set cwmp.acs.ParameterKey=$commandKey
+		uci set cwmp.acs.ParameterKey="$commandKey"
 		uci commit
 		reboot
 	fi
@@ -618,7 +618,7 @@ handle_action() {
 					;;
 				reboot)
 					action="reboot"
-					commandKey=$arg
+					commandKey="$arg"
 					;;
 				apply)
 					if [ "$action" = "notification" ]; then
