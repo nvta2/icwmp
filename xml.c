@@ -138,6 +138,34 @@ int cwmp_launch_du_update(char *uuid, char *url, char *version, char *user, char
 int cwmp_launch_du_uninstall(char *package_name, char *package_env, struct opresult **pchange_du_state_complete);
 int cwmp_free_change_du_state_request(struct change_du_state *change_du_state);
 
+static mxml_node_t *				/* O - Element node or NULL */
+mxmlFindElementOpaque(mxml_node_t *node,	/* I - Current node */
+						mxml_node_t *top,	/* I - Top node */
+						const char *text,	/* I - Element text, if NULL return NULL */
+						int descend)		/* I - Descend into tree - MXML_DESCEND, MXML_NO_DESCEND, or MXML_DESCEND_FIRST */
+{
+	if (!node || !top || !text)
+		return (NULL);
+
+	node = mxmlWalkNext(node, top, descend);
+
+	while (node != NULL)
+	{
+		if (node->type == MXML_OPAQUE &&
+			node->value.opaque &&
+			(!text || !strcmp(node->value.opaque, text)))
+		{
+			return (node);
+		}
+
+		if (descend == MXML_DESCEND)
+			node = mxmlWalkNext(node, top, MXML_DESCEND);
+		else
+			node = node->next;
+	}
+	return (NULL);
+}
+
 static int xml_recreate_namespace(mxml_node_t *tree)
 {
 	const char *cwmp_urn;
@@ -259,7 +287,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 		}
 	}
 
-	session->tree_in = mxmlLoadString(NULL, msg_in, MXML_NO_CALLBACK);
+	session->tree_in = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
 	if (!session->tree_in) goto error;
 
 	xml_recreate_namespace(session->tree_in);
@@ -272,8 +300,8 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 	FREE(c);
 	if (b) {
 		b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
-		if (b && b->type == MXML_TEXT  && b->value.text.string)
-			session->hold_request = atoi(b->value.text.string);
+		if (b && b->type == MXML_OPAQUE  && b->value.opaque)
+			session->hold_request = atoi(b->value.opaque);
 	} else {
 		if (asprintf(&c, "%s:%s", ns.cwmp, "HoldRequests") == -1)
 			goto error;
@@ -282,8 +310,8 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 		FREE(c);
 		if (b) {
 			b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
-			if (b && b->type == MXML_TEXT && b->value.text.string)
-				session->hold_request = atoi(b->value.text.string);
+			if (b && b->type == MXML_OPAQUE && b->value.opaque)
+				session->hold_request = atoi(b->value.opaque);
 		}
 	}
 
@@ -307,10 +335,10 @@ int xml_prepare_msg_out(struct session *session)
 #ifdef DUMMY_MODE
 	FILE *fp;
 	fp = fopen("./ext/soap_msg_templates/cwmp_response_message.xml", "r");
-	session->tree_out = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
+	session->tree_out = mxmlLoadFile(NULL, fp, MXML_OPAQUE_CALLBACK);
 	fclose(fp);
 #else
-	session->tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_NO_CALLBACK);
+	session->tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if(!n) { return -1;}
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(conf->amd_version)-1]);
@@ -332,7 +360,7 @@ int xml_set_cwmp_id(struct session *session)
     b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
     if (!b) return -1;
 
-    b = mxmlNewText(b, 0, c);
+    b = mxmlNewOpaque(b, c);
     FREE(c);
     if (!b) return -1;
 
@@ -355,13 +383,13 @@ int xml_set_cwmp_id_rpc_cpe(struct session *session)
 	if (b) {
 	    /* ACS send ID parameter */
 		b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
-		if (!b || b->type != MXML_TEXT || !b->value.text.string) return 0;
-		c = strdup(b->value.text.string);
+		if (!b || b->type != MXML_OPAQUE || !b->value.opaque) return 0;
+		c = strdup(b->value.opaque);
 
 		b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 		if (!b) return -1;
 
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) return -1;
 	} else {
@@ -502,12 +530,12 @@ static int xml_prepare_events_inform(struct session *session, mxml_node_t *tree)
 		if (!node) goto error;
 		b2 = mxmlNewElement (node, "EventCode");
 		if (!b2) goto error;
-		b2 = mxmlNewText(b2, 0, EVENT_CONST[event_container->code].CODE);
+		b2 = mxmlNewOpaque(b2, EVENT_CONST[event_container->code].CODE);
 		if (!b2) goto error;
 		b2 = mxmlNewElement (node, "CommandKey");
 		if (!b2) goto error;
 		if (event_container->command_key) {
-			b2 = mxmlNewText(b2, 0, event_container->command_key);
+			b2 = mxmlNewOpaque(b2, event_container->command_key);
 			if (!b2) goto error;
 		}
 		mxmlAdd(b1, MXML_ADD_AFTER, MXML_ADD_TO_PARENT, node);
@@ -531,13 +559,13 @@ static int xml_prepare_parameters_inform(struct dmctx *dmctx, struct dm_paramete
 	mxml_node_t *node, *b;
 	int found;
 
-	b = mxmlFindElementText(parameter_list, parameter_list, dm_parameter->name, MXML_DESCEND);
+	b = mxmlFindElementOpaque(parameter_list, parameter_list, dm_parameter->name, MXML_DESCEND);
 	if(b && dm_parameter->data != NULL)
 	{
 		node = b->parent->parent;
 		b = mxmlFindElement(node, node, "Value", NULL, NULL, MXML_DESCEND_FIRST);
 		if(!b) return 0;
-		if (b->child && strcmp(dm_parameter->data, b->child->value.text.string)==0)
+		if (b->child && strcmp(dm_parameter->data, b->child->value.opaque)==0)
 			return 0;
 		mxmlDelete(b);
 		(*size)--;
@@ -559,7 +587,7 @@ static int xml_prepare_parameters_inform(struct dmctx *dmctx, struct dm_paramete
 	b = mxmlNewElement(node, "Name");
 	if (!b) return -1;
 
-	b = mxmlNewText(b, 0, dm_parameter->name);
+	b = mxmlNewOpaque(b, dm_parameter->name);
 	if (!b) return -1;
 
 create_value:
@@ -569,7 +597,7 @@ create_value:
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(b, "xsi:type", (dm_parameter->type && dm_parameter->type[0] != '\0')? dm_parameter->type : "xsd:string");
 #endif
-	b = mxmlNewText(b, 0, dm_parameter->data);
+	b = mxmlNewOpaque(b, dm_parameter->data);
 	if (!b) return -1;
 
 	(*size)++;
@@ -591,7 +619,7 @@ static int xml_prepare_lwnotifications(mxml_node_t *parameter_list)
 		b = mxmlNewElement(n, "Name");
 		if (!b) goto error;
 
-		b = mxmlNewText(b, 0, lw_notification->name);
+		b = mxmlNewOpaque(b, lw_notification->name);
 		if (!b) goto error;
 		
 		b = mxmlNewElement(n, "Value");
@@ -599,7 +627,7 @@ static int xml_prepare_lwnotifications(mxml_node_t *parameter_list)
 		#ifdef ACS_MULTI
 				mxmlElementSetAttr(b, "xsi:type", lw_notification->type);
 		#endif
-		b = mxmlNewText(b, 0, lw_notification->data);
+		b = mxmlNewOpaque(b, lw_notification->data);
 		if (!b) goto error;		
 	}
 	return 0;
@@ -618,7 +646,7 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	char *c = NULL;
 	int counter = 0;
 
-	tree = mxmlLoadString(NULL, CWMP_LWNOTIFICATION_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_LWNOTIFICATION_MESSAGE, MXML_OPAQUE_CALLBACK);
 	if (!tree) goto error;
 
 	b = mxmlFindElement(tree, tree, "TS", NULL, NULL, MXML_DESCEND);
@@ -626,40 +654,40 @@ int xml_prepare_lwnotification_message(char **msg_out)
 
 	if (asprintf(&c, "%ld", time(NULL)) == -1)
 		goto error;
-	b = mxmlNewText(b, 0,c);
+	b = mxmlNewOpaque(b, c);
 	free(c);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "UN", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, conf->acs_userid);
+	b = mxmlNewOpaque(b, conf->acs_userid);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "CN", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
 	c = (char*)calculate_lwnotification_cnonce();
-	b = mxmlNewText(b, 0,c);
+	b = mxmlNewOpaque(b, c);
 	free(c);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "OUI", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.oui);
+	b = mxmlNewOpaque(b, cwmp->deviceid.oui);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "ProductClass", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
+	b = mxmlNewOpaque(b, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "SerialNumber", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
+	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
 	if (!b) goto error;
 
 	parameter_list = mxmlFindElement(tree, tree, "Notification", NULL, NULL, MXML_DESCEND);
@@ -713,10 +741,10 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 #ifdef DUMMY_MODE
 	FILE *fp;
 	fp = fopen("./ext/soap_msg_templates/cwmp_inform_message.xml", "r");
-	tree = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
+	tree = mxmlLoadFile(NULL, fp, MXML_OPAQUE_CALLBACK);
 	fclose(fp);
 #else
-	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_OPAQUE_CALLBACK);
 #endif
 	if (!tree) goto error;
 	b = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
@@ -735,7 +763,7 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 		node = mxmlNewElement(b, "cwmp:SupportedCWMPVersions");
 		if (!node) goto error;
 		mxmlElementSetAttr(node, "soap_env:mustUnderstand", "0");
-		node = mxmlNewText(node, 0,  xml_get_cwmp_version(cwmp->conf.supported_amd_version)); 
+		node = mxmlNewOpaque(node,  xml_get_cwmp_version(cwmp->conf.supported_amd_version));
 		if (!node) goto error;
 	} 
 	b = mxmlFindElement(tree, tree, "RetryCount", NULL, NULL, MXML_DESCEND);
@@ -750,7 +778,7 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	b = mxmlFindElement(tree, tree, "CurrentTime", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, mix_get_time());
+	b = mxmlNewOpaque(b, mix_get_time());
 	if (!b) goto error;
 
 	parameter_list = mxmlFindElement(tree, tree, "ParameterList", NULL, NULL, MXML_DESCEND);
@@ -769,22 +797,22 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 
     b = mxmlFindElement(tree, tree, "OUI", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, cwmp->deviceid.oui ? cwmp->deviceid.oui : "");
+	b = mxmlNewOpaque(b, cwmp->deviceid.oui ? cwmp->deviceid.oui : "");
 	if (!b) goto error;
 
     b = mxmlFindElement(tree, tree, "Manufacturer", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, cwmp->deviceid.manufacturer ? cwmp->deviceid.manufacturer : "");
+	b = mxmlNewOpaque(b, cwmp->deviceid.manufacturer ? cwmp->deviceid.manufacturer : "");
 	if (!b) goto error;
 
     b = mxmlFindElement(tree, tree, "ProductClass", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
+	b = mxmlNewOpaque(b, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
 	if (!b) goto error;
 
     b = mxmlFindElement(tree, tree, "SerialNumber", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
+	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
 	if (!b) goto error;
 
     dm_entry_param_method(&dmctx, CMD_INFORM, NULL, NULL, NULL);
@@ -830,7 +858,7 @@ int cwmp_rpc_acs_parse_response_inform (struct cwmp *cwmp, struct session *sessi
 	b = mxmlFindElement(tree, tree, "MaxEnvelopes", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 	b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
-	if (!b || b->type != MXML_TEXT || !b->value.text.string)
+	if (!b || b->type != MXML_OPAQUE || !b->value.opaque)
 		goto error;
 	if(cwmp->conf.supported_amd_version == 1) {
 		cwmp->conf.amd_version = 1;
@@ -839,9 +867,9 @@ int cwmp_rpc_acs_parse_response_inform (struct cwmp *cwmp, struct session *sessi
 	b = mxmlFindElement(tree, tree, "UseCWMPVersion", NULL, NULL, MXML_DESCEND);
 	if (b && cwmp->conf.supported_amd_version >= 5) { //IF supported version !=5 acs response dosen't contain UseCWMPVersion
 		b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
-		if (!b || b->type != MXML_TEXT || !b->value.text.string)
+		if (!b || b->type != MXML_OPAQUE || !b->value.opaque)
 			goto error;
-		c = (char *)(b->value.text.string);
+		c = (char *)(b->value.opaque);
 		if (c && *(c + 1) == '.') {
 			c+=2;
 			cwmp->conf.amd_version = atoi(c) + 1;
@@ -903,7 +931,7 @@ int cwmp_rpc_acs_prepare_get_rpc_methods(struct cwmp *cwmp, struct session *sess
 {
 	mxml_node_t *tree, *n;
 
-	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if(!n) { return -1;}
@@ -929,7 +957,7 @@ int cwmp_rpc_acs_parse_response_get_rpc_methods (struct cwmp *cwmp, struct sessi
 	b = mxmlFindElement(tree, tree, "MethodList", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 	b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
-	if (!b || b->type != MXML_TEXT || !b->value.text.string)
+	if (!b || b->type != MXML_OPAQUE || !b->value.opaque)
 		goto error;
 	return 0;
 
@@ -947,7 +975,7 @@ int cwmp_rpc_acs_prepare_transfer_complete(struct cwmp *cwmp, struct session *se
 	struct transfer_complete *p;
 
 	p = (struct transfer_complete *)rpc->extra_data;
-	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if(!n) { goto error;}
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(cwmp->conf.amd_version)-1]);
@@ -962,21 +990,21 @@ int cwmp_rpc_acs_prepare_transfer_complete(struct cwmp *cwmp, struct session *se
 	n = mxmlNewElement(n, "CommandKey");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, p->command_key?p->command_key:"");
+	n = mxmlNewOpaque(n, p->command_key?p->command_key:"");
 	if (!n) goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "StartTime");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, p->start_time);
+	n = mxmlNewOpaque(n, p->start_time);
 	if (!n) goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "CompleteTime");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, mix_get_time());
+	n = mxmlNewOpaque(n, mix_get_time());
 	if (!n) goto error;
 
 	n = n->parent->parent;
@@ -986,14 +1014,14 @@ int cwmp_rpc_acs_prepare_transfer_complete(struct cwmp *cwmp, struct session *se
 	n = mxmlNewElement(n, "FaultCode");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, p->fault_code?FAULT_CPE_ARRAY[p->fault_code].CODE:"0");
+	n = mxmlNewOpaque(n, p->fault_code?FAULT_CPE_ARRAY[p->fault_code].CODE:"0");
 	if (!n) goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "FaultString");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, p->fault_code?FAULT_CPE_ARRAY [p->fault_code].DESCRIPTION:"");
+	n = mxmlNewOpaque(n, p->fault_code?FAULT_CPE_ARRAY [p->fault_code].DESCRIPTION:"");
 	if (!n) goto error;
 
 	session->tree_out = tree;
@@ -1033,7 +1061,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 	char *c;
 
 	p = (struct du_state_change_complete *)rpc->extra_data;
-	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if(!n) goto error;
 
@@ -1047,7 +1075,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 	n = mxmlNewElement(n, "CommandKey");
 	if (!n) goto error;
 
-	n = mxmlNewText(n, 0, p->command_key);
+	n = mxmlNewOpaque(n, p->command_key);
 	if (!n) goto error;
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "Results");
@@ -1061,7 +1089,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!b) goto error;
 
 		c = q->uuid ? strdup(q->uuid) : strdup("");
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) goto error;
 
@@ -1069,7 +1097,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!b) goto error;
 
 		c = q->du_ref ? strdup(q->du_ref) : strdup("");
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) goto error;
 
@@ -1077,7 +1105,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!b) goto error;
 
 		c = q->version ? strdup(q->version) : strdup("");
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) goto error;
 
@@ -1085,7 +1113,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!b) goto error;
 
 		c = q->current_state ? strdup(q->current_state) : strdup("");
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) goto error;
 
@@ -1093,7 +1121,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!b) goto error;
 
 		c = q->start_time ? strdup(q->start_time) : strdup("");
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) goto error;
 
@@ -1101,7 +1129,7 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		if (!b) goto error;
 
 		c = q->complete_time ? strdup(q->complete_time) : strdup("");
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		FREE(c);
 		if (!b) goto error;
 
@@ -1111,14 +1139,14 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 		b = mxmlNewElement(b, "FaultCode");
 		if (!b) goto error;
 
-		b = mxmlNewText(b, 0, q->fault?FAULT_CPE_ARRAY[q->fault].CODE:"0");
+		b = mxmlNewOpaque(b, q->fault?FAULT_CPE_ARRAY[q->fault].CODE:"0");
 		if (!b) goto error;
 
 		b = b->parent->parent;
 		b = mxmlNewElement(b, "FaultString");
 		if (!b) goto error;
 
-		b= mxmlNewText(b, 0, q->fault?FAULT_CPE_ARRAY [q->fault].DESCRIPTION:"");
+		b= mxmlNewOpaque(b, q->fault?FAULT_CPE_ARRAY [q->fault].DESCRIPTION:"");
 		if (!b) goto error;
 	}
 	session->tree_out = tree;
@@ -1174,11 +1202,11 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 #endif
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-		    b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+		    b->value.opaque &&
 		    b->parent->type == MXML_ELEMENT &&
 		    !strcmp(b->parent->value.element.name, "string")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT && /* added in order to support GetParameterValues with empty string*/
 			!strcmp(b->value.element.name, "string") &&
@@ -1205,7 +1233,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 		n = mxmlNewElement(n, "Name");
 		if (!n) goto fault;
 
-		n = mxmlNewText(n, 0, dm_parameter->name);
+		n = mxmlNewOpaque(n, dm_parameter->name);
 		if (!n) goto fault;
 
 		n = n->parent->parent;
@@ -1215,7 +1243,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 #ifdef ACS_MULTI
 		mxmlElementSetAttr(n, "xsi:type", dm_parameter->type);
 #endif
-		n = mxmlNewText(n, 0, dm_parameter->data? dm_parameter->data : "");
+		n = mxmlNewOpaque(n, dm_parameter->data? dm_parameter->data : "");
 		if (!n) goto fault;
 
 		counter++;
@@ -1283,22 +1311,22 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 #endif
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterPath")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "ParameterPath") &&
 			!b->child) {
 			parameter_name = "";
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "NextLevel")) {
-			NextLevel = b->value.text.string;
+			NextLevel = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -1319,14 +1347,14 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 		n = mxmlNewElement(n, "Name");
 		if (!n) goto fault;
 
-		n = mxmlNewText(n, 0, dm_parameter->name);
+		n = mxmlNewOpaque(n, dm_parameter->name);
 		if (!n) goto fault;
 
 		n = n->parent->parent;
 		n = mxmlNewElement(n, "Writable");
 		if (!n) goto fault;
 
-		n = mxmlNewText(n, 0, dm_parameter->data);
+		n = mxmlNewOpaque(n, dm_parameter->data);
 		if (!n) goto fault;
 
 		counter++;
@@ -1395,11 +1423,11 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 #endif
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "string")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "string") &&
@@ -1426,21 +1454,21 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 		n = mxmlNewElement(n, "Name");
 		if (!n) goto fault;
 
-		n = mxmlNewText(n, 0, dm_parameter->name);
+		n = mxmlNewOpaque(n, dm_parameter->name);
 		if (!n) goto fault;
 
 		n = n->parent->parent;
 		n = mxmlNewElement(n, "Notification");
 		if (!n) goto fault;
 
-		n = mxmlNewText(n, 0, dm_parameter->data);
+		n = mxmlNewOpaque(n, dm_parameter->data);
 		if (!n) goto fault;
 
 		n = n->parent->parent;
 		n = mxmlNewElement(n, "AccessList");
 		if (!n) goto fault;
 
-		n = mxmlNewText(n, 0, "");
+		n = mxmlNewOpaque(n, "");
 		if (!n) goto fault;
 
 		counter++;
@@ -1485,11 +1513,11 @@ static int is_duplicated_parameter(mxml_node_t *param_node, struct session *sess
 {
 	mxml_node_t *b = param_node;
 	while(b = mxmlWalkNext(b, session->body_in, MXML_DESCEND)) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Name")) {
-			if(strcmp(b->value.text.string, param_node->value.text.string)==0)
+			if(strcmp(b->value.opaque, param_node->value.opaque)==0)
 				return -1;
 		}
 	}
@@ -1517,11 +1545,11 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	}
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Name")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 			if (is_duplicated_parameter(b,session)) {
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 				goto fault;
@@ -1535,8 +1563,8 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			parameter_name = "";
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Value")) {
 			int whitespace;
@@ -1579,8 +1607,8 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	}
 
 	b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
-	if (b && b->type == MXML_TEXT && b->value.text.string)
-		parameter_key = b->value.text.string;
+	if (b && b->type == MXML_OPAQUE && b->value.opaque)
+		parameter_key = b->value.opaque;
 
 	int f = dm_entry_apply(&dmctx, CMD_SET_VALUE, parameter_key ? parameter_key : "", NULL);
 	if (f) {
@@ -1598,7 +1626,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	b = mxmlNewElement(b, "Status");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "1");
+	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
 success:
@@ -1647,33 +1675,33 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 			parameter_name = NULL;
 			parameter_notification = NULL;
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Name")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Name") &&
 			!b->child) {
 			parameter_name = "";
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "NotificationChange")) {
-			attr_notification_update = b->value.text.string;
+			attr_notification_update = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "NotificationChange") &&
 			!b->child) {
 			attr_notification_update = "";
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Notification")) {
-			parameter_notification = b->value.text.string;
+			parameter_notification = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Notification") &&
@@ -1738,17 +1766,17 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 
 	b = session->body_in;
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ObjectName")) {
-			object_name = b->value.text.string;
+			object_name = b->value.opaque;
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
-			parameter_key = b->value.text.string;
+			parameter_key = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -1774,14 +1802,14 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(b, "InstanceNumber");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, dmctx.addobj_instance);
+	b = mxmlNewOpaque(b, dmctx.addobj_instance);
 	if (!b) goto fault;
 
 	b = b->parent->parent;
 	b = mxmlNewElement(b, "Status");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "1");
+	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
 success:
@@ -1816,17 +1844,17 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 
 	b = session->body_in;
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ObjectName")) {
-			object_name = b->value.text.string;
+			object_name = b->value.opaque;
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
-			parameter_key = b->value.text.string;
+			parameter_key = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -1853,7 +1881,7 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(b, "Status");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "1");
+	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
 success:
@@ -1898,7 +1926,7 @@ int cwmp_handle_rpc_cpe_get_rpc_methods(struct session *session, struct rpc *rpc
 			n = mxmlNewElement(method_list, "string");
 			if (!n) goto fault;
 
-			n = mxmlNewText(n, 0, rpc_cpe_methods[i].name);
+			n = mxmlNewOpaque(n, rpc_cpe_methods[i].name);
 			if (!n) goto fault;
 
 			counter++;
@@ -2000,11 +2028,11 @@ int cwmp_handle_rpc_cpe_cancel_transfer(struct session *session, struct rpc *rpc
 
 	b = session->body_in;
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-		b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+		b->value.opaque &&
 		b->parent->type == MXML_ELEMENT &&
 		!strcmp(b->parent->value.element.name, "CommandKey")) {
-			command_key = b->value.text.string;
+			command_key = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -2083,12 +2111,12 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 	b = session->body_in;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			command_key = b->value.text.string;
-			commandKey = strdup(b->value.text.string);
+			command_key = b->value.opaque;
+			commandKey = strdup(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -2245,18 +2273,18 @@ int cwmp_handle_rpc_cpe_schedule_inform(struct session *session, struct rpc *rpc
     pthread_mutex_lock (&mutex_schedule_inform);
 
     while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			command_key = b->value.text.string;
+			command_key = b->value.opaque;
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
-			delay_seconds = atoi(b->value.text.string);
+			delay_seconds = atoi(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
@@ -3776,25 +3804,25 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));
 				t = mxmlWalkNext(t, b, MXML_DESCEND);
 				while (t) {
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "URL")) {
-						elem->url = strdup(t->value.text.string);
+						elem->url = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "UUID")) {
-						elem->uuid = strdup(t->value.text.string);
+						elem->uuid = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Username")) {
-						elem->username = strdup(t->value.text.string);
+						elem->username = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Password")) {
-						elem->password = strdup(t->value.text.string);
+						elem->password = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "ExecutionEnvRef")) {
-						elem->executionenvref = strdup(t->value.text.string);
+						elem->executionenvref = strdup(t->value.opaque);
 					}
 					t = mxmlWalkNext(t, b, MXML_DESCEND);
 				}
@@ -3804,25 +3832,25 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));
 				t = mxmlWalkNext(t, b, MXML_DESCEND);
 				while (t) {
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "UUID")) {
-						elem->uuid = strdup(t->value.text.string);
+						elem->uuid = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Version")) {
-						elem->version = strdup(t->value.text.string);
+						elem->version = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "URL")) {
-						elem->url = strdup(t->value.text.string);
+						elem->url = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Username")) {
-						elem->username = strdup(t->value.text.string);
+						elem->username = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Password")) {
-						elem->password = strdup(t->value.text.string);
+						elem->password = strdup(t->value.opaque);
 					}
 					t = mxmlWalkNext(t, b, MXML_DESCEND);
 				}
@@ -3832,25 +3860,25 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 				list_add_tail(&(elem->list), &(change_du_state->list_operation));
 				t = mxmlWalkNext(t, b, MXML_DESCEND);
 				while (t) {
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "UUID")) {
-						elem->uuid = strdup(t->value.text.string);
+						elem->uuid = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "Version")) {
-						elem->version = strdup(t->value.text.string);
+						elem->version = strdup(t->value.opaque);
 					}
-					if (t && t->type == MXML_TEXT && t->value.text.string &&
+					if (t && t->type == MXML_OPAQUE && t->value.opaque &&
 						t->parent->type == MXML_ELEMENT && !strcmp(t->parent->value.element.name, "ExecutionEnvRef")) {
-						elem->executionenvref = strdup(t->value.text.string);
+						elem->executionenvref = strdup(t->value.opaque);
 					}
 					t = mxmlWalkNext(t, b, MXML_DESCEND);
 				}
 			}
 		}
-		if (b && b->type == MXML_TEXT && b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE && b->value.opaque &&
 			b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "CommandKey")) {
-			change_du_state->command_key = strdup(b->value.text.string);
+			change_du_state->command_key = strdup(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
@@ -3913,25 +3941,25 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	}
 
 	while (b != NULL) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			download->command_key = strdup(b->value.text.string);
+			download->command_key = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			if(download->file_type == NULL)
 			{
-				download->file_type = strdup(b->value.text.string);
-				file_type = strdup(b->value.text.string);
+				download->file_type = strdup(b->value.opaque);
+				file_type = strdup(b->value.opaque);
 			}
 			else
 			{
 				tmp = file_type;
-				if (asprintf(&file_type,"%s %s",tmp, b->value.text.string) == -1)
+				if (asprintf(&file_type,"%s %s",tmp, b->value.opaque) == -1)
 				{
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
@@ -3939,35 +3967,35 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 				FREE(tmp);
 			}
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			download->url = strdup(b->value.text.string);
+			download->url = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			download->username = strdup(b->value.text.string);
+			download->username = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			download->password = strdup(b->value.text.string);
+			download->password = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileSize")) {
-			download->file_size = atoi(b->value.text.string);
+			download->file_size = atoi(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
-			download_delay = atol(b->value.text.string);
+			download_delay = atol(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
@@ -4011,21 +4039,21 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(t, "Status");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "1");
+	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
 	b = b->parent->parent;
 	b = mxmlNewElement(t, "StartTime");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "0001-01-01T00:00:00+00:00");
+	b = mxmlNewOpaque(b, "0001-01-01T00:00:00+00:00");
 	if (!b) goto fault;
 
 	b = b->parent->parent;
 	b = mxmlNewElement(t, "CompleteTime");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "0001-01-01T00:00:00+00:00");
+	b = mxmlNewOpaque(b, "0001-01-01T00:00:00+00:00");
 	if (!b) goto fault;
 
 	if(error == FAULT_CPE_NO_FAULT)
@@ -4113,25 +4141,25 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 
 	while (b != NULL) {
 		t = b;
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			schedule_download->command_key = strdup(b->value.text.string);			
+			schedule_download->command_key = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			if(schedule_download->file_type == NULL)
 			{
-				schedule_download->file_type = strdup(b->value.text.string);
-				file_type = strdup(b->value.text.string);				
+				schedule_download->file_type = strdup(b->value.opaque);
+				file_type = strdup(b->value.opaque);
 			}
 			else
 			{
 				tmp = file_type;
-				if (asprintf(&file_type,"%s %s",tmp, b->value.text.string) == -1)
+				if (asprintf(&file_type,"%s %s",tmp, b->value.opaque) == -1)
 				{
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
@@ -4139,29 +4167,29 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 				FREE(tmp);
 			}
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			schedule_download->url = strdup(b->value.text.string);
+			schedule_download->url = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			schedule_download->username = strdup(b->value.text.string);
+			schedule_download->username = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			schedule_download->password = strdup(b->value.text.string);
+			schedule_download->password = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileSize")) {
-			schedule_download->file_size = atoi(b->value.text.string);
+			schedule_download->file_size = atoi(b->value.opaque);
 		}
 		
 		if (b && b->type == MXML_ELEMENT &&
@@ -4169,38 +4197,38 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 			if (!t) return -1; //TO CHECK*/
 			t = mxmlWalkNext(t, b, MXML_DESCEND);
 			while (t) {
-				if (t && t->type == MXML_TEXT &&
-					t->value.text.string &&
+				if (t && t->type == MXML_OPAQUE &&
+					t->value.opaque &&
 					t->parent->type == MXML_ELEMENT &&
 					!strcmp(t->parent->value.element.name, "WindowStart")) {
-					schedule_download_delay[j] = atol(t->value.text.string);
+					schedule_download_delay[j] = atol(t->value.opaque);
 					j++;						
 				}					
-				if (t && t->type == MXML_TEXT &&
-					t->value.text.string &&
+				if (t && t->type == MXML_OPAQUE &&
+					t->value.opaque &&
 					t->parent->type == MXML_ELEMENT &&
 					!strcmp(t->parent->value.element.name, "WindowEnd")) {
-					schedule_download_delay[j] = atol(t->value.text.string);
+					schedule_download_delay[j] = atol(t->value.opaque);
 					j++;
 				}
-				if (t && t->type == MXML_TEXT &&
-					t->value.text.string &&
+				if (t && t->type == MXML_OPAQUE &&
+					t->value.opaque &&
 					t->parent->type == MXML_ELEMENT &&
 					!strcmp(t->parent->value.element.name, "WindowMode")) {
 					
 					if(schedule_download->timewindowstruct[i].windowmode == NULL)
 					{
-						schedule_download->timewindowstruct[i].windowmode = strdup(t->value.text.string);
+						schedule_download->timewindowstruct[i].windowmode = strdup(t->value.opaque);
 						if (i == 0)
-							windowmode0 = strdup(t->value.text.string);
+							windowmode0 = strdup(t->value.opaque);
 						else
-							windowmode1 = strdup(t->value.text.string);
+							windowmode1 = strdup(t->value.opaque);
 					}
 					else if (i == 0)
 					{
 						
 						tmp = windowmode0;
-						if (asprintf(&windowmode0,"%s %s",tmp, t->value.text.string) == -1)
+						if (asprintf(&windowmode0,"%s %s",tmp, t->value.opaque) == -1)
 						{
 							error = FAULT_CPE_INTERNAL_ERROR;
 							goto fault;
@@ -4210,7 +4238,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 					else if (i == 1)
 					{
 						tmp = windowmode1;
-						if (asprintf(&windowmode1,"%s %s",tmp, t->value.text.string) == -1)
+						if (asprintf(&windowmode1,"%s %s",tmp, t->value.opaque) == -1)
 						{
 							error = FAULT_CPE_INTERNAL_ERROR;
 							goto fault;
@@ -4219,17 +4247,17 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 					}
 				}
 				
-				if (t && t->type == MXML_TEXT &&
-					t->value.text.string &&
+				if (t && t->type == MXML_OPAQUE &&
+					t->value.opaque &&
 					t->parent->type == MXML_ELEMENT &&
 					!strcmp(t->parent->value.element.name, "UserMessage")) {
-					schedule_download->timewindowstruct[i].usermessage = strdup(t->value.text.string);
+					schedule_download->timewindowstruct[i].usermessage = strdup(t->value.opaque);
 				}	
-				if (t && t->type == MXML_TEXT &&
-					t->value.text.string &&
+				if (t && t->type == MXML_OPAQUE &&
+					t->value.opaque &&
 					t->parent->type == MXML_ELEMENT &&
 					!strcmp(t->parent->value.element.name, "MaxRetries")) {
-					schedule_download->timewindowstruct[i].maxretries = atoi(t->value.text.string);
+					schedule_download->timewindowstruct[i].maxretries = atoi(t->value.opaque);
 				}				
 				t = mxmlWalkNext(t, b, MXML_DESCEND);
 			}
@@ -4367,58 +4395,58 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	}
 	upload->f_instance = strdup("");
 	while (b != NULL) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			upload->command_key = strdup(b->value.text.string);
+			upload->command_key = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			if(upload->file_type == NULL)
 			{
-				upload->file_type = strdup(b->value.text.string);
-				file_type = strdup(b->value.text.string);
+				upload->file_type = strdup(b->value.opaque);
+				file_type = strdup(b->value.opaque);
 			}
 			else
 			{
 				tmp = file_type;
-				if (asprintf(&file_type,"%s %s",tmp, b->value.text.string) == -1)
+				if (asprintf(&file_type,"%s %s",tmp, b->value.opaque) == -1)
 				{
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
-				if (isdigit(b->value.text.string[0])) {
-					upload->f_instance = strdup(b->value.text.string);
+				if (isdigit(b->value.opaque[0])) {
+					upload->f_instance = strdup(b->value.opaque);
 				}
 				FREE(tmp);
 			}
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			upload->url = strdup(b->value.text.string);
+			upload->url = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			upload->username = strdup(b->value.text.string);
+			upload->username = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			upload->password = strdup(b->value.text.string);
+			upload->password = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
-			upload_delay = atol(b->value.text.string);
+			upload_delay = atol(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
@@ -4461,21 +4489,21 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	b = mxmlNewElement(t, "Status");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "1");
+	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
 	b = b->parent->parent;
 	b = mxmlNewElement(t, "StartTime");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "0001-01-01T00:00:00+00:00");
+	b = mxmlNewOpaque(b, "0001-01-01T00:00:00+00:00");
 	if (!b) goto fault;
 
 	b = b->parent->parent;
 	b = mxmlNewElement(t, "CompleteTime");
 	if (!b) goto fault;
 
-	b = mxmlNewText(b, 0, "0001-01-01T00:00:00+00:00");
+	b = mxmlNewOpaque(b, "0001-01-01T00:00:00+00:00");
 	if (!b) goto fault;
 
 	if(error == FAULT_CPE_NO_FAULT)
@@ -4541,14 +4569,14 @@ int cwmp_handle_rpc_cpe_fault(struct session *session, struct rpc *rpc)
 	t = mxmlNewElement(b, "faultcode");
 	if (!t) return -1;
 
-	u = mxmlNewText(t, 0,
+	u = mxmlNewOpaque(t,
 			(FAULT_CPE_ARRAY[session->fault_code].TYPE == FAULT_CPE_TYPE_CLIENT) ? "Client" : "Server");
 	if (!u) return -1;
 
 	t = mxmlNewElement(b, "faultstring");
 	if (!t) return -1;
 
-	u = mxmlNewText(t, 0, "CWMP fault");
+	u = mxmlNewOpaque(t, "CWMP fault");
 	if (!u) return -1;
 
 	b = mxmlNewElement(b, "detail");
@@ -4560,13 +4588,13 @@ int cwmp_handle_rpc_cpe_fault(struct session *session, struct rpc *rpc)
 	t = mxmlNewElement(b, "FaultCode");
 	if (!t) return -1;
 
-	u = mxmlNewText(t, 0, FAULT_CPE_ARRAY[session->fault_code].CODE);
+	u = mxmlNewOpaque(t, FAULT_CPE_ARRAY[session->fault_code].CODE);
 	if (!u) return -1;
 
 	t = mxmlNewElement(b, "FaultString");
 	if (!b) return -1;
 
-	u = mxmlNewText(t, 0, FAULT_CPE_ARRAY[session->fault_code].DESCRIPTION);
+	u = mxmlNewOpaque(t, FAULT_CPE_ARRAY[session->fault_code].DESCRIPTION);
 	if (!u) return -1;
 
 	if (rpc->type == RPC_CPE_SET_PARAMETER_VALUES) {
@@ -4583,19 +4611,19 @@ int cwmp_handle_rpc_cpe_fault(struct session *session, struct rpc *rpc)
 				u = mxmlNewElement(t, "ParameterName");
 				if (!u) return -1;
 
-				u = mxmlNewText(u, 0, param_fault->name);
+				u = mxmlNewOpaque(u, param_fault->name);
 				if (!u) return -1;
 
 				u = mxmlNewElement(t, "FaultCode");
 				if (!u) return -1;
 
-				u = mxmlNewText(u, 0, FAULT_CPE_ARRAY[idx].CODE);
+				u = mxmlNewOpaque(u, FAULT_CPE_ARRAY[idx].CODE);
 				if (!u) return -1;
 
 				u = mxmlNewElement(t, "FaultString");
 				if (!u) return -1;
 
-				u = mxmlNewText(u, 0, FAULT_CPE_ARRAY[idx].DESCRIPTION);
+				u = mxmlNewOpaque(u, FAULT_CPE_ARRAY[idx].DESCRIPTION);
 				if (!u) return -1;
 			}
 #ifdef TR098

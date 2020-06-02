@@ -45,7 +45,7 @@ mxml_node_t *bkp_session_insert(mxml_node_t *tree, char *name, char *value)
 
 	if(value != NULL)
 	{
-		mxmlNewText(b, 0, value);
+		mxmlNewOpaque(b, value);
 	}
 	return b;
 }
@@ -71,7 +71,7 @@ mxml_node_t *bkp_session_node_found(mxml_node_t *tree, char *name, struct search
 				{
 					d = c;
 					d = mxmlWalkNext(d, c, MXML_DESCEND);
-					if((keys[i].value == NULL)||(d && d->type == MXML_TEXT && keys[i].value != NULL && strcmp(keys[i].value, d->value.text.string) == 0))
+					if((keys[i].value == NULL)||(d && d->type == MXML_OPAQUE && keys[i].value != NULL && strcmp(keys[i].value, d->value.opaque) == 0))
 						i++;
 				}
 				c = mxmlWalkNext(c, b, MXML_NO_DESCEND);
@@ -766,11 +766,11 @@ char *load_child_value(mxml_node_t *tree, char *sub_name)
 		b = mxmlFindElement(b, b, sub_name, NULL, NULL, MXML_DESCEND);
 		if (b) {
 			b = mxmlWalkNext(b, tree, MXML_DESCEND);
-			if (b && b->type == MXML_TEXT)
+			if (b && b->type == MXML_OPAQUE)
 			{
-				if(b->value.text.string != NULL)
+				if(b->value.opaque != NULL)
 				{
-					value = strdup(b->value.text.string);
+					value = strdup(b->value.opaque);
 				}
 			}
 		}
@@ -792,33 +792,33 @@ void load_queue_event(mxml_node_t *tree,struct cwmp *cwmp)
 			if(strcmp(b->value.element.name, "index") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						idx = atoi(c->value.text.string);
+						idx = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if(strcmp(b->value.element.name, "id") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						id = atoi(c->value.text.string);
+						id = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if(strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						command_key = strdup(c->value.text.string);
+						command_key = strdup(c->value.opaque);
 					}
 				}
 				if(idx != -1)
@@ -837,14 +837,14 @@ void load_queue_event(mxml_node_t *tree,struct cwmp *cwmp)
 			else if(strcmp(b->value.element.name, "parameter") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
 						if(event_container_save != NULL)
 						{
 							add_dm_parameter_tolist(&(event_container_save->head_dm_parameter),
-									c->value.text.string, NULL, NULL);
+									c->value.opaque, NULL, NULL);
 						}
 					}
 				}
@@ -869,22 +869,22 @@ void load_schedule_inform(mxml_node_t *tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						command_key = strdup(c->value.text.string);
+						command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						scheduled_time = atol(c->value.text.string);
+						scheduled_time = atol(c->value.opaque);
 					}
 				}
 			}
@@ -924,77 +924,77 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "url") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->url = strdup(c->value.text.string);
+						download_request->url = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->command_key = strdup(c->value.text.string);
+						download_request->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "file_type") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->file_type = strdup(c->value.text.string);
+						download_request->file_type = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "username") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->username = strdup(c->value.text.string);
+						download_request->username = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "password") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->password = strdup(c->value.text.string);
+						download_request->password = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "file_size") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->file_size = atoi(c->value.text.string);
+						download_request->file_size = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->scheduled_time = atol(c->value.text.string);
+						download_request->scheduled_time = atol(c->value.opaque);
 					}
 				}
 			}
@@ -1030,176 +1030,176 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "url") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->url = strdup(c->value.text.string);
+						download_request->url = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->command_key = strdup(c->value.text.string);
+						download_request->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "file_type") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->file_type = strdup(c->value.text.string);
+						download_request->file_type = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "username") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->username = strdup(c->value.text.string);
+						download_request->username = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "password") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->password = strdup(c->value.text.string);
+						download_request->password = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "file_size") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->file_size = atoi(c->value.text.string);
+						download_request->file_size = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowstart1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[0].windowstart = atol(c->value.text.string);
+						download_request->timewindowstruct[0].windowstart = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowend1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[0].windowend = atol(c->value.text.string);
+						download_request->timewindowstruct[0].windowend = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowmode1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[0].windowmode = strdup(c->value.text.string);
+						download_request->timewindowstruct[0].windowmode = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "usermessage1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[0].usermessage = strdup(c->value.text.string);
+						download_request->timewindowstruct[0].usermessage = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "maxretrie1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[0].maxretries = atoi(c->value.text.string);
+						download_request->timewindowstruct[0].maxretries = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowstart2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[1].windowstart = atol(c->value.text.string);
+						download_request->timewindowstruct[1].windowstart = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowend2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[1].windowend = atol(c->value.text.string);
+						download_request->timewindowstruct[1].windowend = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowmode2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[1].windowmode = strdup(c->value.text.string);
+						download_request->timewindowstruct[1].windowmode = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "usermessage2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[1].usermessage = strdup(c->value.text.string);
+						download_request->timewindowstruct[1].usermessage = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "maxretrie2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timewindowstruct[1].maxretries = atoi(c->value.text.string);
+						download_request->timewindowstruct[1].maxretries = atoi(c->value.opaque);
 					}
 				}
 			}
@@ -1236,99 +1236,99 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->command_key = strdup(c->value.text.string);
+						download_request->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "file_type") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->file_type = strdup(c->value.text.string);
+						download_request->file_type = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "start_time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->start_time = strdup(c->value.text.string);
+						download_request->start_time = strdup(c->value.opaque);
 					}
 				}
 			}			
 			else if (strcmp(b->value.element.name, "windowstart1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timeintervals[0].windowstart = atol(c->value.text.string);
+						download_request->timeintervals[0].windowstart = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowend1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timeintervals[0].windowend = atol(c->value.text.string);
+						download_request->timeintervals[0].windowend = atol(c->value.opaque);
 					}
 				}
 			}			
 			else if (strcmp(b->value.element.name, "maxretrie1") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timeintervals[0].maxretries = atoi(c->value.text.string);
+						download_request->timeintervals[0].maxretries = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowstart2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timeintervals[1].windowstart = atol(c->value.text.string);
+						download_request->timeintervals[1].windowstart = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "windowend2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timeintervals[1].windowend = atol(c->value.text.string);
+						download_request->timeintervals[1].windowend = atol(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "maxretrie2") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						download_request->timeintervals[1].maxretries = atoi(c->value.text.string);
+						download_request->timeintervals[1].maxretries = atoi(c->value.opaque);
 					}
 				}
 			}
@@ -1362,66 +1362,66 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "url") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						upload_request->url = strdup(c->value.text.string);
+						upload_request->url = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						upload_request->command_key = strdup(c->value.text.string);
+						upload_request->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "file_type") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						upload_request->file_type = strdup(c->value.text.string);
+						upload_request->file_type = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "username") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						upload_request->username = strdup(c->value.text.string);
+						upload_request->username = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "password") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						upload_request->password = strdup(c->value.text.string);
+						upload_request->password = strdup(c->value.opaque);
 					}
 				}
 			}			
 			else if (strcmp(b->value.element.name, "time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						upload_request->scheduled_time = atol(c->value.text.string);
+						upload_request->scheduled_time = atol(c->value.opaque);
 					}
 				}
 			}
@@ -1458,22 +1458,22 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						change_du_state_request->command_key = strdup(c->value.text.string);
+						change_du_state_request->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						change_du_state_request->timeout = atol(c->value.text.string);
+						change_du_state_request->timeout = atol(c->value.opaque);
 					}
 				}
 			}
@@ -1489,11 +1489,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "uuid") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1502,11 +1502,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "version") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->version = strdup(d->value.text.string);
+									elem->version = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1515,11 +1515,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "url") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->url = strdup(d->value.text.string);
+									elem->url = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1528,11 +1528,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "username") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->username = strdup(d->value.text.string);
+									elem->username = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1541,11 +1541,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "password") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->password = strdup(d->value.text.string);
+									elem->password = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1564,11 +1564,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "uuid") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1577,11 +1577,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "executionenvref") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->executionenvref = strdup(d->value.text.string);
+									elem->executionenvref = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1590,11 +1590,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "url") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->url = strdup(d->value.text.string);
+									elem->url = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1603,11 +1603,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "username") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->username = strdup(d->value.text.string);
+									elem->username = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1616,11 +1616,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "password") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->password = strdup(d->value.text.string);
+									elem->password = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1639,11 +1639,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "uuid") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1652,11 +1652,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "executionenvref") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->executionenvref = strdup(d->value.text.string);
+									elem->executionenvref = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1665,11 +1665,11 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "version") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->version = strdup(d->value.text.string);
+									elem->version = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1700,22 +1700,22 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						du_state_change_complete_request->command_key = strdup(c->value.text.string);
+						du_state_change_complete_request->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name, "time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						du_state_change_complete_request->timeout = atol(c->value.text.string);
+						du_state_change_complete_request->timeout = atol(c->value.opaque);
 					}
 				}
 			}
@@ -1729,11 +1729,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "uuid") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->uuid = strdup(d->value.text.string);
+									elem->uuid = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1742,11 +1742,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "version") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->version = strdup(d->value.text.string);
+									elem->version = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1755,11 +1755,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "du_ref") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->du_ref = strdup(d->value.text.string);
+									elem->du_ref = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1768,11 +1768,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "current_state") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->current_state = strdup(d->value.text.string);
+									elem->current_state = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1781,11 +1781,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "resolved") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->resolved = d->value.text.string;
+									elem->resolved = d->value.opaque;
 								}
 							}
 						}
@@ -1794,11 +1794,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "start_time") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->start_time = strdup(d->value.text.string);
+									elem->start_time = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1807,11 +1807,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "complete_time") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->complete_time = strdup(d->value.text.string);
+									elem->complete_time = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1820,11 +1820,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "fault") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->fault = atoi(d->value.text.string);
+									elem->fault = atoi(d->value.opaque);
 								}
 							}
 						}
@@ -1833,11 +1833,11 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 						if (strcmp(c->value.element.name, "execution_unit_ref") == 0)
 						{
 							d = mxmlWalkNext(c, c, MXML_DESCEND);
-							if (d && d->type == MXML_TEXT)
+							if (d && d->type == MXML_OPAQUE)
 							{
-								if(d->value.text.string != NULL)
+								if(d->value.opaque != NULL)
 								{
-									elem->execution_unit_ref = strdup(d->value.text.string);
+									elem->execution_unit_ref = strdup(d->value.opaque);
 								}
 							}
 						}
@@ -1864,66 +1864,66 @@ void load_transfer_complete(mxml_node_t	*tree,struct cwmp *cwmp)
 			if (strcmp(b->value.element.name,"command_key") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						ptransfer_complete->command_key = strdup(c->value.text.string);
+						ptransfer_complete->command_key = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name,"start_time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						ptransfer_complete->start_time = strdup(c->value.text.string);
+						ptransfer_complete->start_time = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name,"complete_time") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						ptransfer_complete->complete_time = strdup(c->value.text.string);
+						ptransfer_complete->complete_time = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name,"old_software_version") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						ptransfer_complete->old_software_version = strdup(c->value.text.string);
+						ptransfer_complete->old_software_version = strdup(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name,"fault_code") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						ptransfer_complete->fault_code = atoi(c->value.text.string);
+						ptransfer_complete->fault_code = atoi(c->value.opaque);
 					}
 				}
 			}
 			else if (strcmp(b->value.element.name,"type") == 0)
 			{
 				c = mxmlWalkNext(b, b, MXML_DESCEND);
-				if (c && c->type == MXML_TEXT)
+				if (c && c->type == MXML_OPAQUE)
 				{
-					if(c->value.text.string != NULL)
+					if(c->value.opaque != NULL)
 					{
-						ptransfer_complete->type = atoi(c->value.text.string);
+						ptransfer_complete->type = atoi(c->value.opaque);
 					}
 				}
 			}
@@ -1949,7 +1949,7 @@ void bkp_session_create_file()
 	fprintf(pFile,"%s",CWMP_BACKUP_SESSION);
 	if(bkp_tree != NULL)
 		MXML_DELETE(bkp_tree);
-	bkp_tree = mxmlLoadString(NULL, CWMP_BACKUP_SESSION, MXML_NO_CALLBACK);
+	bkp_tree = mxmlLoadString(NULL, CWMP_BACKUP_SESSION, MXML_OPAQUE_CALLBACK);
 	fclose(pFile);
 	pthread_mutex_unlock (&mutex_backup_session);
 }
@@ -1967,7 +1967,7 @@ int bkp_session_check_file()
 	if(bkp_tree == NULL)
 	{
 		pFile = fopen(CWMP_BKP_FILE, "r");
-		bkp_tree = mxmlLoadFile(NULL, pFile, MXML_NO_CALLBACK);
+		bkp_tree = mxmlLoadFile(NULL, pFile, MXML_OPAQUE_CALLBACK);
 		fclose(pFile);
 	}
 
