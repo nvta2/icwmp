@@ -1568,10 +1568,10 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Value")) {
 			int whitespace;
-			parameter_value = strdup((char *)mxmlGetText(b, &whitespace));
+			parameter_value = strdup((char *)mxmlGetOpaque(b));
 			n = b->parent;
 			while (b = mxmlWalkNext(b, n, MXML_DESCEND)) {
-				v = (char *)mxmlGetText(b, &whitespace);
+				v = (char *)mxmlGetOpaque(b);
 				if (!whitespace) break;
 				asprintf(&c, "%s %s", parameter_value, v);
 				FREE(parameter_value);
