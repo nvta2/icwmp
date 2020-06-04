@@ -19,7 +19,6 @@ config acs 'acs'
 config cpe 'cpe'
 	option interface 'eth0.1'
 	option default_wan_interface 'wan'
-	option manufacturer 'iopsys'
 	option log_to_console 'disable'
 	option log_to_file 'enable'
 	# log_severity: INFO (Default)	
