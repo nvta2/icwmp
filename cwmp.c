@@ -187,6 +187,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         cwmp->session_status.last_start_time = time(NULL);
         cwmp->session_status.last_status = SESSION_RUNNING;
         cwmp->session_status.next_retry = 0;
+        cwmp_add_notification_min();
         CWMP_LOG (INFO,"Start session");
         uci_get_value(UCI_CPE_EXEC_DOWNLOAD, &exec_download);
         if(strcmp(exec_download, "1") == 0){
