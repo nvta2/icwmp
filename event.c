@@ -301,7 +301,6 @@ void cwmp_add_notification_min(void) {
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
-#ifdef TR098
 		dmjson_parse_init(buf);
 		dmjson_get_var("parameter", &jval);
 		parameter = strdup(jval);
@@ -310,28 +309,14 @@ void cwmp_add_notification_min(void) {
 		dmjson_get_var("notification", &jval);
 		notification = strdup(jval);
 		dmjson_parse_fini();
-#else
-		bbfdmjson_parse_init(buf);
-		bbfdmjson_get_var("parameter", &jval);
-		parameter = strdup(jval);
-		bbfdmjson_get_var("value", &jval);
-		value = strdup(jval);
-		bbfdmjson_get_var("notification", &jval);
-		notification = strdup(jval);
-		bbfdmjson_parse_fini();
-#endif
 		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 			if (strcmp(dm_parameter->data, value) != 0 && notification[0] == '1') {
-#ifdef TR098
+
 				dm_update_file_enabled_notify(parameter, dm_parameter->data);
 				iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
 
-#else
-				bbfdm_update_file_enabled_notify(parameter, dm_parameter->data);
-				iscopy = dm_copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
-#endif
 				if(iscopy)
 					remove(DM_ENABLED_NOTIFY_TEMPORARY);
 				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
@@ -393,14 +378,8 @@ void cwmp_add_notification(void)
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 			if (strcmp(dm_parameter->data, value) != 0) {
-#ifdef TR098
 				dm_update_file_enabled_notify(parameter, dm_parameter->data);
 				iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
-
-#else
-				bbfdm_update_file_enabled_notify(parameter, dm_parameter->data);
-				iscopy = dm_copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
-#endif
 				if(iscopy)
 					remove(DM_ENABLED_NOTIFY_TEMPORARY);
 				if (notification[0] == '1' || notification[0] == '2' || notification[0] == '4' || notification[0] == '6' )
@@ -425,11 +404,7 @@ void cwmp_add_notification(void)
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 			if (strcmp(dm_parameter->data, p->value) != 0) {
-#ifdef TR098
 				dm_update_enabled_notify(p, dm_parameter->data);
-#else
-				bbfdm_update_enabled_notify(p, dm_parameter->data);
-#endif
 				if (p->notification[0] >= '3' ) add_lw_list_value_change(p->name, dm_parameter->data, dm_parameter->type);
 				if (p->notification[0] == '5' || p->notification[0] == '6') lw_isactive = true;
 			}

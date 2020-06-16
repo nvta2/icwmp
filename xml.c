@@ -4599,11 +4599,7 @@ int cwmp_handle_rpc_cpe_fault(struct session *session, struct rpc *rpc)
 				u = mxmlNewOpaque(u, FAULT_CPE_ARRAY[idx].DESCRIPTION);
 				if (!u) return -1;
 			}
-#ifdef TR098
 			del_list_fault_param(param_fault);
-#else
-			bbf_del_list_fault_param(param_fault);
-#endif
 		}
 	}
 
