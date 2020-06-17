@@ -33,7 +33,6 @@
 #else
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
-#include <libbbf_api/dmbbf.h>
 #endif
 
 LIST_HEAD(list_value_change);
