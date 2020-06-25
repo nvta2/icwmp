@@ -34,10 +34,50 @@
 #include "log.h"
 #include "config.h"
 
+static int itfcmp(char *itf1, char *itf2);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
 static void netlink_new_msg_v6(struct uloop_fd *ufd, unsigned events);
 static struct uloop_fd netlink_event = { .cb = netlink_new_msg };
 static struct uloop_fd netlink_event_v6 = { .cb = netlink_new_msg };
+
+static int itfcmp(char *itf1, char *itf2)
+{
+	int index = 0;
+	int status = 1;
+	char *str = NULL;
+	char *buf1 = NULL;
+	char *buf2 = NULL;
+	if(itf1[0] == '\0')
+		goto end;
+	str = strchr(itf1, '.');
+	index = (int)(str - itf1);
+	if(!index)
+		goto end;
+	buf1 = malloc(index);
+	strncpy(buf1, itf1, index);
+	if(!buf1)
+		goto end;
+	buf1[index] = '\0';
+	if(itf2[0] == '\0')
+		goto end;
+	str = strchr(itf2, '.');
+	index = (int)(str - itf2);
+	if(!index)
+		goto end;
+	buf2 = malloc(index);
+	if(!buf2)
+		goto end;
+	buf2[index] = '\0';
+	strncpy(buf2, itf1, index);
+	if(strncmp(buf1, buf2, index) == 0)
+		status = 0;
+end:
+	if(buf1)
+		free(buf1);
+	if(buf2)
+		free(buf2);
+	return status;
+}
 
 static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 {
@@ -52,39 +92,38 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 
 	char pradd_v6[128];
 	if(ifa->ifa_family == AF_INET) { //CASE IPv4
-	while (rtl && RTA_OK(rth, rtl)) {
-		if (rth->rta_type != IFA_LOCAL) {
-			rth = RTA_NEXT(rth, rtl);
-			continue;
-		}
+		while (rtl && RTA_OK(rth, rtl)) {
+			if (rth->rta_type != IFA_LOCAL) {
+				rth = RTA_NEXT(rth, rtl);
+				continue;
+			}
 
-		uint32_t addr = htonl(* (uint32_t *)RTA_DATA(rth));
-		if (htonl(13) == 13) {
-			// running on big endian system
-		} else {
-			// running on little endian system
-			addr = __builtin_bswap32(addr);
-		}
+			uint32_t addr = htonl(* (uint32_t *)RTA_DATA(rth));
+			if (htonl(13) == 13) {
+				// running on big endian system
+			} else {
+				// running on little endian system
+				addr = __builtin_bswap32(addr);
+			}
 
-		if_indextoname(ifa->ifa_index, if_name);
-		if (strncmp(cwmp_main.conf.interface, if_name, IFNAMSIZ)) {
-			rth = RTA_NEXT(rth, rtl);
-			continue;
-		}
+			if_indextoname(ifa->ifa_index, if_name);
+			if (itfcmp(cwmp_main.conf.interface, if_name)) {
+				rth = RTA_NEXT(rth, rtl);
+				continue;
+			}
 
-		inet_ntop(AF_INET, &(addr), if_addr, INET_ADDRSTRLEN);
+			inet_ntop(AF_INET, &(addr), if_addr, INET_ADDRSTRLEN);
 
-		if (cwmp_main.conf.ip) FREE(cwmp_main.conf.ip);
-		cwmp_main.conf.ip = strdup(if_addr);
-		if (asprintf(&c,"cwmp.cpe.ip=%s",cwmp_main.conf.ip) != -1)
-		{
-			uci_set_state_value(c);
-			free(c);
-		}
+			if (cwmp_main.conf.ip) FREE(cwmp_main.conf.ip);
+			cwmp_main.conf.ip = strdup(if_addr);
+			if (asprintf(&c,"cwmp.cpe.ip=%s",cwmp_main.conf.ip) != -1)
+			{
+				uci_set_state_value(c);
+				free(c);
+			}
 			connection_request_ip_value_change(&cwmp_main, IPv4);
-		break;
-	}
-
+			break;
+		}
 	} else { //CASE IPv6
 		while (rtl && RTA_OK(rth, rtl)) {
 			if (rth->rta_type != IFA_ADDRESS || ifa->ifa_scope == RT_SCOPE_LINK) {
