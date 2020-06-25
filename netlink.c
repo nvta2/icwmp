@@ -50,6 +50,8 @@ static int itfcmp(char *itf1, char *itf2)
 	if(itf1[0] == '\0')
 		goto end;
 	str = strchr(itf1, '.');
+	if(str == NULL)
+	    goto end;
 	index = (int)(str - itf1);
 	if(!index)
 		goto end;
@@ -61,6 +63,8 @@ static int itfcmp(char *itf1, char *itf2)
 	if(itf2[0] == '\0')
 		goto end;
 	str = strchr(itf2, '.');
+	if(str == NULL)
+	    goto end;
 	index = (int)(str - itf2);
 	if(!index)
 		goto end;
@@ -69,7 +73,7 @@ static int itfcmp(char *itf1, char *itf2)
 		goto end;
 	buf2[index] = '\0';
 	strncpy(buf2, itf1, index);
-	if(strncmp(buf1, buf2, index) == 0)
+	if(strcmp(buf1, buf2) == 0)
 		status = 0;
 end:
 	if(buf1)
