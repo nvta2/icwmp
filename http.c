@@ -255,8 +255,9 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 		curl_easy_setopt(curl, CURLOPT_CAPATH,  cwmp->conf.acs_ssl_capath);
 	if (cwmp->conf.insecure_enable) {
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);		
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 	}
+	uci_get_value(UCI_CPE_INTERFACE_PATH, &(cwmp->conf.interface));
 	curl_easy_setopt(curl, CURLOPT_INTERFACE, cwmp->conf.interface);
 	*msg_in = (char *) calloc (1, sizeof(char));
 
