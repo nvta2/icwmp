@@ -22,5 +22,6 @@ int uci_get_value(char *cmd,char **value);
 int get_amd_version_config();
 int get_instance_mode_config();
 int get_session_timeout_config();
+int uci_set_value(char *cmd);
 
 #endif
