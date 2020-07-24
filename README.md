@@ -312,11 +312,13 @@ Usage: icwmpd [OPTIONS]
 root@iopsys:~# 
 ```
 
-For example `'-m'` option is used to connect to the datamodel **(libbbfdm)** as following:
+For example `'-m'` option is used to execute the datamodel **(libbbfdm)** RPC method through CLI.
+
+if -m is followed by an integer different from 0, so the command result is displayed as output as following:
 
 ```
 root@iopsys:~# icwmpd -m 1 get_value Device.Time.
-{ "parameter": "Device.Time.CurrentLocalTime", "value": "2019-12-19T16:51:53+01:00", "type": "xsd:dateTime" }
+{ "parameter": "Device.Time.CurrentLocalTime", "value": "2020-07-08T08:00:39Z", "type": "xsd:dateTime" }
 { "parameter": "Device.Time.Enable", "value": "1", "type": "xsd:boolean" }
 { "parameter": "Device.Time.LocalTimeZone", "value": "CET-1CEST,M3.5.0,M10.5.0/3", "type": "xsd:string" }
 { "parameter": "Device.Time.NTPServer1", "value": "ntp1.sth.netnod.se", "type": "xsd:string" }
@@ -325,10 +327,22 @@ root@iopsys:~# icwmpd -m 1 get_value Device.Time.
 { "parameter": "Device.Time.NTPServer4", "value": "", "type": "xsd:string" }
 { "parameter": "Device.Time.NTPServer5", "value": "", "type": "xsd:string" }
 { "parameter": "Device.Time.Status", "value": "Synchronized", "type": "xsd:string" }
-{ "parameter": "Device.Time.X_IOPSYS_EU_LocalTimeZoneOlson", "value": "Europe/Stockholm", "type": "xsd:string" }
+{ "parameter": "Device.Time.X_IOPSYS_EU_LocalTimeZoneName", "value": "Europe/Stockholm", "type": "xsd:string" }
 { "parameter": "Device.Time.X_IOPSYS_EU_SourceInterface", "value": "", "type": "xsd:string" }
+root@iopsys:~# 
+root@iopsys:~# icwmpd -m 1 set_value key Device.Time.Enable 0
+{ "status": "1" }
 root@iopsys:~#
 ```
+if -m is followed by 0 so no output is displayed in the terminal:
+
+```
+root@iopsys:~# icwmpd -m 0 set_value setkey Device.Time.Enable 1
+root@iopsys:~#
+
+```
+And in this case when -m is followed by 0, the icwmpd command is faster.
+
 Another way to use icwmp cli is via the script `'icwmp'` that can be runned as follow:
 
 ```
