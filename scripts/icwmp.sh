@@ -214,7 +214,7 @@ handle_action() {
 
 
 	if [ "$action" = "add_object" -o "$action" = "delete_object" ]; then
-		/usr/sbin/icwmpd -m 1 get_value "$__arg2" "$__arg1"		
+		/usr/sbin/icwmpd -m 1 $action "$__arg2" "$__arg1"		
 	fi
 
 	if [ "$action" = "inform" ]; then
