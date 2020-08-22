@@ -28,8 +28,7 @@ static int jshn_message_parse(char **policy, int size, char **tb, char *msg)
 	json_object *obj;
 
 	jshn_obj = json_tokener_parse(msg);
-	if (jshn_obj == NULL || is_error(jshn_obj) ||
-		json_object_get_type(jshn_obj) != json_type_object)
+	if (jshn_obj == NULL || json_object_get_type(jshn_obj) != json_type_object)
 	{
 		jshn_obj = NULL;
 		return -1;
@@ -37,8 +36,7 @@ static int jshn_message_parse(char **policy, int size, char **tb, char *msg)
 	for (i=0; i<size; i++)
 	{
 		obj = json_object_object_get(jshn_obj, policy[i]);
-		if (obj == NULL || is_error(obj) ||
-			json_object_get_type(obj) != json_type_string)
+		if (obj == NULL || json_object_get_type(obj) != json_type_string)
 			continue;
 		tb[i] = (char *)json_object_get_string(obj);
 	}
