@@ -1,4 +1,0 @@
-config cwmp 'twamp'
-	option id '1'
-	#Log levels: Critical=0, Warning=1, Notice=2, Info=3, Debug=4
-	option log_level '3'
