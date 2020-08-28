@@ -16,12 +16,6 @@ AS_IF([test "x$enable_acs" = "xmulti"], [AC_DEFINE(ACS_MULTI)])
 AS_IF([test "x$enable_acs" = "xyes"], [AC_DEFINE(ACS_MULTI)])
 AS_IF([test "x$enable_acs" = "xno"], [AC_DEFINE(ACS_MULTI)])
 
-AC_ARG_ENABLE(http, [AS_HELP_STRING([--enable-http],
-	[specify which HTTP library is going to be used; one can choose from zstream and curl (default --enable-http=curl]))],,)
-
-AM_CONDITIONAL([HTTP_ZSTREAM], [test "x$enable_http" = "xzstream" ])
-AM_CONDITIONAL([HTTP_CURL], [test "x$enable_http" = "xcurl" ])
-
 AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging messages])], AC_DEFINE(WITH_CWMP_DEBUG),)
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(WITH_DEV_DEBUG),)
 AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy mode])], AC_DEFINE(DUMMY_MODE),)
@@ -58,9 +52,6 @@ LIBPTHREAD_LIBS='-lpthread'
 AC_SUBST([LIBPTHREAD_LIBS])
 
 # checks for libraries
-LIBSTROPHE_LIBS='-lstrophe'
-AC_SUBST([LIBSTROPHE_LIBS])
-
 LIBZ_LIBS='-lz'
 AC_SUBST([LIBZ_LIBS])
 
@@ -117,28 +108,10 @@ AC_SUBST([LCRYPTO_LIBS])
 LSSL_LIBS='-lssl'
 AC_SUBST([LSSL_LIBS])
 
-AM_COND_IF([HTTP_CURL], [
- AC_DEFINE(HTTP_CURL)
  PKG_CHECK_MODULES(LIBCURL, [libcurl])
  AC_SUBST(LIBCURL_CFLAGS)
  AC_SUBST(LIBCURL_LDFLAGS)
  AC_SUBST(LIBCURL_LIBS)
-])
-
-AM_COND_IF([HTTP_ZSTREAM], [
- AC_DEFINE(HTTP_ZSTREAM)
- AC_ARG_WITH([zstream-include-path],
-   [AS_HELP_STRING([--with-zstream-include-path],
-     [location of the zstream library headers])],
-   [LIBZSTREAM_CFLAGS="-I$withval"])
- AC_SUBST([LIBZSTREAM_CFLAGS])
-
- AC_ARG_WITH([zstream-lib-path],
-   [AS_HELP_STRING([--with-zstream-lib-path], [location of the zstream library])], [LIBZSTREAM_LDFLAGS="-L$withval"])
-
- LIBZSTREAM_LIBS='-lzstream'
- AC_SUBST([LIBZSTREAM_LIBS])
-])
 
 PKG_CHECK_MODULES(MICROXML, [microxml])
 AC_SUBST(MICROXML_CFLAGS)

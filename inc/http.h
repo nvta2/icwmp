@@ -14,14 +14,8 @@
 
 #include <libubox/uloop.h>
 #include <cwmp.h>
-
-#ifdef HTTP_CURL
 #include <curl/curl.h>
-#endif
 
-#ifdef HTTP_ZSTREAM
-#include <zstream.h>
-#endif
 
 #ifdef DUMMY_MODE
 static char *fc_cookies = "./ext/tmp/icwmp_cookies";
@@ -33,12 +27,7 @@ static char *fc_cookies = "/tmp/icwmp_cookies";
 
 struct http_client
 {
-#ifdef HTTP_CURL
 	struct curl_slist *header_list;
-#endif /* HTTP_CURL */
-#ifdef HTTP_ZSTREAM
-	zstream_t *stream;
-#endif /* HTTP_ZSTREAM */
 	char *url;
 };
 

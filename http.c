@@ -28,15 +28,8 @@
 #include "config.h"
 #include <libubox/uloop.h>
 #include <libubox/usock.h>
-
-#ifdef HTTP_CURL
 #include <curl/curl.h>
-#endif
 
-#ifdef HTTP_ZSTREAM
-#include <zstream.h>
-#include <zstream/http.h>
-#endif
 
 #include "http.h"
 
@@ -47,9 +40,7 @@
 
 static struct http_client http_c;
 
-#ifdef HTTP_CURL
 static CURL *curl;
-#endif
 
 int http_client_init(struct cwmp *cwmp)
 {
@@ -57,7 +48,7 @@ int http_client_init(struct cwmp *cwmp)
 	char *acs_var_stat = NULL;
 	unsigned char buf[sizeof(struct in6_addr)];
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
-#ifdef HTTP_CURL
+
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
 		if(acs_var_stat){
@@ -79,50 +70,17 @@ int http_client_init(struct cwmp *cwmp)
 			return -1;
 		}
 	}
-#endif
+
 	if(dhcp_dis)
 		free(dhcp_dis);
-#ifdef HTTP_ZSTREAM
-	char *add = strstr(cwmp->conf.acsurl,"://");
-	if(!add) return -1;
-	if (asprintf(&http_c.url, "%.*s://%s:%s@%s",
-			 add-cwmp->conf.acsurl,
-			 cwmp->conf.acsurl,
-			 cwmp->conf.acs_userid,
-			 cwmp->conf.acs_passwd,
-			 add+3) == -1)
-		return -1;
-#endif
 
 	CWMP_LOG(INFO, "ACS url: %s", http_c.url);
 
 	/* TODO debug ssl config from freecwmp*/
 
-#ifdef HTTP_CURL
 	curl_global_init(CURL_GLOBAL_SSL);
 	curl = curl_easy_init();
 	if (!curl) return -1;
-
-#endif /* HTTP_CURL */
-
-#ifdef HTTP_ZSTREAM
-	http_c.stream = zstream_open(http_c.url, ZSTREAM_POST);
-	if (!http_c.stream)
-		return -1;
-
-# ifdef ACS_HDM
-	if (zstream_http_configure(http_c.stream, ZSTREAM_HTTP_COOKIES, 1))
-# elif ACS_MULTI
-	if (zstream_http_configure(http_c.stream, ZSTREAM_HTTP_COOKIES, 3))
-# endif
-		return -1;
-
-	if (zstream_http_addheader(http_c.stream, "User-Agent", "cwmp"))
-		return -1;
-
-	if (zstream_http_addheader(http_c.stream, "Content-Type", "text/xml"))
-		return -1;
-#endif /* HTTP_ZSTREAM */
 
 if (cwmp->conf.ipv6_enable) {
 	char *ip = NULL;
@@ -146,7 +104,6 @@ http_client_exit(void)
 {
 	FREE(http_c.url);
 
-#ifdef HTTP_CURL
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;
@@ -155,18 +112,8 @@ http_client_exit(void)
 		remove(fc_cookies);
 	curl_easy_cleanup(curl);
 	curl_global_cleanup();
-
-#endif /* HTTP_CURL */
-
-#ifdef HTTP_ZSTREAM
-	if (http_c.stream) {
-		zstream_close(http_c.stream);
-		http_c.stream = NULL;
-	}
-#endif /* HTTP_ZSTREAM */
 }
 
-#ifdef HTTP_CURL
 static size_t
 http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in)
 {
@@ -182,14 +129,12 @@ http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in)
 
 	return size * rxed;
 }
-#endif /* HTTP_CURL */
 
 int
 http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_in)
 {
 	 unsigned char buf[sizeof(struct in6_addr)];
 	 int tmp = 0;
-#ifdef HTTP_CURL
 	CURLcode res;
 	long http_code = 0;
 	static char ip_acs[128] = {0};
@@ -315,43 +260,6 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 	}
 
 	if (res) goto error;
-
-#endif /* HTTP_CURL */
-
-#ifdef HTTP_ZSTREAM
-	char buffer[BUFSIZ];
-	ssize_t rxed;
-	if (zstream_reopen(http_c.stream, http_c.url, ZSTREAM_POST)) {
-		/* something not good, let's try recreate */
-		http_client_exit();
-		if (http_client_init(cwmp)) return -1;
-	}
-
-
-	if (msg_out) {
-		zstream_write(http_c.stream, msg_out, strlen(msg_out));
-	} else {
-		zstream_write(http_c.stream, NULL , 0);
-	}
-
-	*msg_in = (char *) calloc (1, sizeof(char));
-	while ((rxed = zstream_read(http_c.stream, buffer, sizeof(buffer))) > 0) {
-		*msg_in = (char *) realloc(*msg_in, (strlen(*msg_in) + rxed + 1) * sizeof(char));
-		if (!(*msg_in)) return -1;
-		bzero(*msg_in + strlen(*msg_in), rxed + 1);
-		memcpy(*msg_in + strlen(*msg_in), buffer, rxed);
-	}
-
-	/* we got no response, that is ok and defined in documentation */
-	if (!strlen(*msg_in)) {
-		FREE(*msg_in);
-	}
-
-	if (rxed < 0)
-		goto error;
-
-#endif /* HTTP_ZSTREAM */
-
 
 	return 0;
 
