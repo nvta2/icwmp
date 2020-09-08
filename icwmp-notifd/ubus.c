@@ -1,0 +1,94 @@
+/*
+*	This program is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 2 of the License, or
+*	(at your option) any later version.
+*
+*	Copyright (C) 2020 iopsys Software Solutions AB
+*		Author: Omar Kallel <omar.kallel@pivasoftware.com>
+*/
+
+#include <strings.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <errno.h>
+#include <unistd.h>
+#include <json-c/json.h>
+#include <libubox/blobmsg_json.h>
+#include <libubus.h>
+
+#include "ubus.h"
+
+static struct ubus_context *ubus_ctx = NULL;
+static struct blob_buf b;
+
+int pubus_init(void)
+{
+	ubus_ctx = ubus_connect(NULL);
+	if (!ubus_ctx) {
+		return -1;
+	}
+	return 0;
+}
+
+int pubus_fini(void)
+{
+	if (ubus_ctx) {
+		ubus_free(ubus_ctx);
+	}
+	ubus_ctx = NULL;
+	return 0;
+}
+
+void padd_json_obj(json_object *json_obj_out, char *object, char *string)
+{
+	json_object *json_obj_tmp = json_object_new_string(string);
+	json_object_object_add(json_obj_out, object, json_obj_tmp);
+}
+
+static int pubus_call_req(char *path, char *method, int argc, struct parg parg[])
+{
+	uint32_t id;
+	int i, r = 1;
+	char *arg;
+
+	json_object *json_obj_out = json_object_new_object();
+	if (json_obj_out == NULL)
+		return r;
+
+	blob_buf_init(&b, 0);
+
+	if (argc) {
+		for (i = 0; i < argc; i++) {
+			padd_json_obj(json_obj_out, parg[i].key, parg[i].val);
+		}
+		arg = (char *)json_object_to_json_string(json_obj_out);
+
+		if (!blobmsg_add_json_from_string(&b, arg)) {
+			goto end;
+		}
+	}
+
+	if (ubus_lookup_id(ubus_ctx, path, &id))
+		goto end;
+
+	r = ubus_invoke(ubus_ctx, id, method, b.head, NULL, NULL, 1);
+
+end:
+	json_object_put(json_obj_out);
+	blob_buf_free(&b);
+	return r;
+}
+
+int pubus_call(char *path, char *method, int argc, struct parg dmarg[])
+{
+	int r = -1;
+	pubus_init();
+	if (ubus_ctx) {
+		r = pubus_call_req(path, method, argc, dmarg);
+		if (r > 0) r = -1;
+	}
+	pubus_fini();
+	return r;
+}

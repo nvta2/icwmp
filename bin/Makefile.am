@@ -287,3 +287,25 @@ icwmp_bulkdatad_LDADD =				\
 	$(LIBCURL_LIBS) 			\
 	-lbbfdm
 endif
+
+if ICWMP_ACTIVE_NOTIF
+bin_PROGRAMS += icwmp_notifd
+icwmp_notifd_SOURCES = \
+	../icwmp-notifd/icwmp-notifd.c \
+	../icwmp-notifd/ubus.c				\
+	../icwmp-notifd/uci.c
+
+icwmp_notifd_LDADD =				\
+	$(AM_LIBS)					\
+	$(LIBUCI_LIBS)				\
+	$(LIBUBOX_LIBS)				\
+	-lbbfdm						\
+	-lubus 						\
+	-ljson-c					\
+	-lblobmsg_json
+	
+icwmp_notifd_LDFLAGS =			\
+	$(AM_LDFLAGS)				\
+	$(LIBUCI_LDFLAGS)			\
+	$(LIBUBOX_LDFLAGS)
+endif

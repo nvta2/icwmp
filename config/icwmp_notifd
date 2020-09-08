@@ -1,0 +1,2 @@
+config icwmp_notifd 'icwmp_notif'
+	option polling_period '5'

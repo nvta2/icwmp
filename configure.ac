@@ -44,6 +44,9 @@ AM_CONDITIONAL([ICWMP_TWAMP],[test "x$enable_icwmp_twamp" = "xyes"])
 AC_ARG_ENABLE(icwmp_bulkdata, [AS_HELP_STRING([--enable-icwmp_bulkdata], [enable icwmp bulkdata])], AC_DEFINE(ICWMP_BULKDATA),)
 AM_CONDITIONAL([ICWMP_BULKDATA],[test "x$enable_icwmp_bulkdata" = "xyes"])
 
+AC_ARG_ENABLE(icwmp_notifd, [AS_HELP_STRING([--enable-icwmp_notifd], [enable icwmp icwmp_notifd])], AC_DEFINE(ICWMP_ACTIVE_NOTIF),)
+AM_CONDITIONAL([ICWMP_ACTIVE_NOTIF],[test "x$enable_icwmp_notifd" = "xyes"])
+
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
