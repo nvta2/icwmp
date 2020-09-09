@@ -38,6 +38,7 @@ config cpe 'cpe'
 	option notification '1'
 	option datamodel 'tr181'
 	option exec_download '0'
+	option polling_period '5'
 	
 config lwn 'lwn'
 	option enable '1'

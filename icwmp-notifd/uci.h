@@ -15,5 +15,5 @@
 #include <libbbfdm/dmbbfcommon.h>
 bool check_section_name(const char *str, bool name);
 int dmuci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value);
-#define UCI_OPTION_POLLING_PERIOD "icwmp_notifd.icwmp_notif.polling_period"
+#define UCI_OPTION_CPE_NOTIF_POLLING_PERIOD "cwmp.cpe.polling_period"
 #endif

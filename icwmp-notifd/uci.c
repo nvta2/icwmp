@@ -57,11 +57,13 @@ lookup:
 	return 0;
 }
 
-void load_uci_config(char **polling_period) {
+void load_uci_config(char **polling_period)
+{
 	struct  uci_context         *c = uci_alloc_context();
 	struct  uci_ptr             ptr;
 	char *s;
-	s= strdup(UCI_OPTION_POLLING_PERIOD);
+
+	s= strdup(UCI_OPTION_CPE_NOTIF_POLLING_PERIOD);
 
     if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
     {
