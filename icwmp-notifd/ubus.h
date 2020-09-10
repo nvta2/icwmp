@@ -20,7 +20,7 @@ struct parg {
 	char *val;
 };
 
-#define UBUS_ARGS (struct parg[])
+#define PUBUS_ARGS (struct parg[])
 
 int pubus_call(char *path, char *method, int argc, struct parg sarg[]);
 

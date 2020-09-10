@@ -274,10 +274,9 @@ error:
 
 void http_success_cr()
 {
-	struct event_container  *event_container;
 	CWMP_LOG(INFO,"Connection Request thread: add connection request event in the queue");
 	pthread_mutex_lock (&(cwmp_main.mutex_session_queue));
-	event_container = cwmp_add_event_container (&cwmp_main, EVENT_IDX_6CONNECTION_REQUEST, "");
+	cwmp_add_event_container(&cwmp_main, EVENT_IDX_6CONNECTION_REQUEST, "");
 	pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 	pthread_cond_signal(&(cwmp_main.threshold_session_send));
 }

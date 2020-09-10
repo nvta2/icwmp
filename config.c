@@ -298,14 +298,11 @@ int uci_add_list_value(char *cmd)
 
 static int cwmp_package_commit(struct uci_context *c,char *tuple)
 {
-    struct uci_element      *e = NULL;
     struct uci_ptr          ptr;
 
     if (uci_lookup_ptr(c, &ptr, tuple, true) != UCI_OK) {
         return CWMP_GEN_ERR;
     }
-
-    e = ptr.last;
 
     if (uci_commit(c, &ptr.p, false) != UCI_OK)
     {
@@ -996,7 +993,6 @@ int global_env_init (int argc, char** argv, struct env *env)
 	unsigned int dminstancemode =INSTANCE_MODE_NUMBER;
 	unsigned int dmamendment = AMD_2;
 	unsigned int dmtype = DM_CWMP;
-	struct dmctx dmctx = {0};
 
 	char *file = NULL;
 	char *upnpuser;
@@ -1139,12 +1135,12 @@ int global_conf_init (struct config *conf)
     int error;
 
     pthread_mutex_lock (&mutex_config_load);
-    if (error = get_global_config(conf))
+    if ((error = get_global_config(conf)))
     {
     	pthread_mutex_unlock (&mutex_config_load);
         return error;
     }
-    if (error = check_global_config(conf))
+    if ((error = check_global_config(conf)))
     {
     	pthread_mutex_unlock (&mutex_config_load);
         return error;
@@ -1180,13 +1176,11 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
 {
     int         error;
     struct env  env;
-	struct config   *conf;
-    conf = &(cwmp->conf);
+
     memset(&env,0,sizeof(struct env));
-    if(error = global_env_init (argc, argv, &env))
-    {
+    if ((error = global_env_init (argc, argv, &env)))
         return error;
-    }
+
     /* Only One instance should run*/
     cwmp->pid_file = open("/var/run/icwmpd.pid", O_CREAT | O_RDWR, 0666);
     fcntl(cwmp->pid_file, F_SETFD, fcntl(cwmp->pid_file, F_GETFD) | FD_CLOEXEC);
@@ -1208,10 +1202,10 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
     pthread_mutex_init(&cwmp->mutex_handle_notify, NULL);
     memcpy(&(cwmp->env),&env,sizeof(struct env));
     INIT_LIST_HEAD(&(cwmp->head_session_queue));
-    if(error = global_conf_init(&(cwmp->conf)))
-    {
+
+    if ((error = global_conf_init(&(cwmp->conf))))
         return error;
-    }
+
     cwmp_get_deviceid(cwmp);
     dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode, add_list_value_change, send_active_value_change);
     return CWMP_OK;
@@ -1220,14 +1214,13 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
 int cwmp_config_reload(struct cwmp *cwmp)
 {
     int error;
-	struct config   *conf;
-    conf = &(cwmp->conf);
-    memset(&cwmp->env,0,sizeof(struct env));
-    memset(&cwmp->conf,0,sizeof(struct config));
-    if(error = global_conf_init(&(cwmp->conf)))
-    {
+
+    memset(&cwmp->env, 0, sizeof(struct env));
+    memset(&cwmp->conf, 0, sizeof(struct config));
+
+    if ((error = global_conf_init(&(cwmp->conf))))
         return error;
-    }
+
     dm_entry_reload_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }

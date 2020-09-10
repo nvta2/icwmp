@@ -32,14 +32,18 @@
 #include "log.h"
 
 static int pid;
-static json_object *json_obj_in;
 static int pfds_in[2], pfds_out[2];
-static FILE *fpipe;
 char *external_MethodFault = NULL;
 char *external_MethodName = NULL;
 char *external_MethodVersion = NULL;
 char *external_MethodUUID = NULL;
 char *external_MethodENV = NULL;
+
+#ifdef DUMMY_MODE
+static char *fc_script = "./ext/openwrt/scripts/icwmp.sh";
+#else
+static char *fc_script = "/usr/sbin/icwmp";
+#endif
 
 #define ICWMP_PROMPT "icwmp>"
 
@@ -109,7 +113,6 @@ void external_fetch_du_change_stateFaultResp(char **fault, char **version, char 
 static void external_read_pipe_input(int (*external_handler)(char *msg))
 {
     char buf[1], *value = NULL, *c = NULL;
-    int i=0, len;
 	struct pollfd fd = {
 		.fd	= pfds_in[0],
 		.events	= POLLIN
@@ -141,7 +144,6 @@ static void external_read_pipe_input(int (*external_handler)(char *msg))
 static void external_write_pipe_output(const char *msg)
 {
     char *value = NULL;
-    int i=0, len;
 
     asprintf(&value, "%s\n", msg);
     if (write(pfds_out[1], value, strlen(value)) == -1) {

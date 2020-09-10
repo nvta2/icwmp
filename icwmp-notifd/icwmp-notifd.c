@@ -26,7 +26,7 @@ char *polling_period = NULL;
 
 static void polling_parse_icwmp_active_notifications()
 {
-	struct uci_element *e, *tmp;
+	struct uci_element *e;
 	struct uci_list *list_notif;
 	LIST_HEAD(listnotif);
 	list_notif = &listnotif;
@@ -75,7 +75,7 @@ static void polling_parse_icwmp_active_notifications()
 					if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 						dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 						if (strcmp(dm_parameter->data, value) != 0) {
-							if (pubus_call("tr069", "notify", 0, UBUS_ARGS{}) < 0){
+							if (pubus_call("tr069", "notify", 0, PUBUS_ARGS{}) < 0){
 								continue;
 							}
 						}
@@ -96,8 +96,8 @@ static void polling_parse_icwmp_active_notifications()
 			value = NULL;
 		}
 	}
-	end:
-		uloop_timeout_set(&active_notif_timer, polling_period && atoi(polling_period)?atoi(polling_period)*1000:5000);
+end:
+	uloop_timeout_set(&active_notif_timer, polling_period && atoi(polling_period)?atoi(polling_period)*1000:5000);
 }
 
 static void parse_icwmp_active_notifications(struct uloop_timeout *timeout) {

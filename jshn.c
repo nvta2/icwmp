@@ -60,7 +60,6 @@ char *download_fault_policy[] = {
 int
 cwmp_handle_downloadFault(char *msg)
 {
-	int tmp;
 	char *tb[__DOWNLOAD_MAX] = {0};
 
 	jshn_message_parse(download_fault_policy, ARRAYSIZEOF(download_fault_policy), tb, msg);
@@ -91,7 +90,6 @@ char *upload_fault_policy[] = {
 int
 cwmp_handle_uploadFault(char *msg)
 {
-	int tmp;
 	char *tb[__UPLOAD_MAX] = {0};
 
 	jshn_message_parse(upload_fault_policy, ARRAYSIZEOF(upload_fault_policy), tb, msg);
@@ -131,7 +129,6 @@ char *dustatechange_fault_policy[] = {
 int
 cwmp_handle_dustate_changeFault(char *msg)
 {
-	int tmp;
 	char *tb[__DUSTATE_MAX] = {0};
 
 	jshn_message_parse(dustatechange_fault_policy, ARRAYSIZEOF(dustatechange_fault_policy), tb, msg);
@@ -163,7 +160,6 @@ char *uninstall_fault_policy[] = {
 int
 cwmp_handle_uninstallFault(char *msg)
 {
-	int tmp;
 	char *tb[__UNINSTALL_MAX] = {0};
 
 	jshn_message_parse(uninstall_fault_policy, ARRAYSIZEOF(uninstall_fault_policy), tb, msg);

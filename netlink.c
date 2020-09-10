@@ -36,7 +36,6 @@
 
 static int itfcmp(char *itf1, char *itf2);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
-static void netlink_new_msg_v6(struct uloop_fd *ufd, unsigned events);
 static struct uloop_fd netlink_event = { .cb = netlink_new_msg };
 static struct uloop_fd netlink_event_v6 = { .cb = netlink_new_msg };
 
@@ -47,6 +46,7 @@ static int itfcmp(char *itf1, char *itf2)
 	char *str = NULL;
 	char *buf1 = NULL;
 	char *buf2 = NULL;
+
 	if(itf1[0] == '\0')
 		goto end;
 	str = strchr(itf1, '.');
@@ -189,42 +189,6 @@ static void netlink_new_msg(struct uloop_fd *ufd, unsigned events)
 	}
 }
 
-static void netlink_new_msg_v6(struct uloop_fd *ufd, unsigned events)
-{
-	struct nlmsghdr *nlh;
-	char buffer[BUFSIZ];
-	int msg_size;
-
-	memset(&buffer, 0, sizeof(buffer));
-
-	nlh = (struct nlmsghdr *)buffer;
-	if ((msg_size = recv(ufd->fd, nlh, BUFSIZ, 0)) == -1) {
-		CWMP_LOG(ERROR,"error receiving netlink message");
-		return;
-	}
-
-	while (msg_size > sizeof(*nlh)) {
-		int len = nlh->nlmsg_len;
-		int req_len = len - sizeof(*nlh);
-
-		if (req_len < 0 || len > msg_size) {
-			CWMP_LOG(ERROR,"error reading netlink message");
-			return;
-		}
-
-		if (!NLMSG_OK(nlh, msg_size)) {
-			CWMP_LOG(ERROR,"netlink message is not NLMSG_OK");
-			return;
-		}
-
-		if (nlh->nlmsg_type == RTM_NEWADDR) {
-			freecwmp_netlink_interface(nlh);
-		}
-		msg_size -= NLMSG_ALIGN(len);
-		nlh = (struct nlmsghdr*)((char*)nlh + NLMSG_ALIGN(len));
-	}
-}
-
 int netlink_init_v6(void)
 {
 	struct {
@@ -244,7 +208,7 @@ int netlink_init_v6(void)
 
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV6_IFADDR;
-	if ((bind(sock[0], (struct sockaddr_in6 *)&addr, sizeof(addr))) == -1) {
+	if ((bind(sock[0], (struct sockaddr *)&addr, sizeof(addr))) == -1) {
 		CWMP_LOG(ERROR,"couldn't bind netlink socket");
 		return -1;
 	}
@@ -272,6 +236,7 @@ int netlink_init_v6(void)
 
 	return 0;
 }
+
 int netlink_init(void)
 {
 	struct {

@@ -358,7 +358,6 @@ void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *
 	struct search_keywords	keys[9];
 	char 					delay[4][128];
 	int 					i;
-	char 					file_size[128];
 	char 					maxretrie[2][128];
 	mxml_node_t 			*b;
 
@@ -411,8 +410,6 @@ void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *
 {
 	struct search_keywords	keys[9];
 	char 					delay[4][128];
-	char schedule_time[128];
-	char file_size[128];
 	char 					maxretrie[2][128];
 	int i;
 	mxml_node_t *b;
@@ -572,7 +569,6 @@ void bkp_session_delete_schedule_download(struct schedule_download *pschedule_do
 {
 	struct search_keywords	keys[16];
 	char 					delay[4][128];
-	char schedule_time[128];
 	char file_size[128];
 	char 					maxretrie[2][128];
 	int i;
@@ -1224,8 +1220,6 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 {
 	mxml_node_t			*b = tree, *c;
 	struct apply_schedule_download		*download_request = NULL;
-    struct list_head	*ilist = NULL;
-    struct apply_schedule_download		*idownload_request = NULL;
 
 	download_request = calloc(1,sizeof(struct apply_schedule_download));
 
@@ -1445,8 +1439,6 @@ void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
 {
 	mxml_node_t			*b = tree, *c, *d;
 	struct change_du_state		*change_du_state_request = NULL;
-    struct list_head	*ilist = NULL;
-    struct change_du_state		*ichange_du_state_request = NULL;
 	struct operations		*elem;
 
 	change_du_state_request = calloc(1,sizeof(struct change_du_state));
@@ -1687,8 +1679,6 @@ void load_du_state_change_complete (mxml_node_t	*tree,struct cwmp *cwmp)
 {
 	mxml_node_t			*b = tree, *c, *d;
 	struct du_state_change_complete		*du_state_change_complete_request = NULL;
-    struct list_head	*ilist = NULL;
-    struct change_du_state		*idu_state_change_complete_request = NULL;
 	struct opresult		*elem;
 
 	du_state_change_complete_request = calloc(1,sizeof(struct du_state_change_complete));

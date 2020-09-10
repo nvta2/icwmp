@@ -15,12 +15,6 @@
 #define _FREECWMP_EXTERNAL_H__
 #include <libubox/list.h>
 
-#ifdef DUMMY_MODE
-static char *fc_script = "./ext/openwrt/scripts/icwmp.sh";
-#else
-static char *fc_script = "/usr/sbin/icwmp";
-#endif
-
 void external_du_change_stateFaultResp (char *fault_code, char *version, char *name, char *uuid, char *env);
 void external_downloadFaultResp (char *fault_code);
 void external_fetch_downloadFaultResp (char **fault_code);

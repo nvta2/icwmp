@@ -278,9 +278,9 @@ typedef struct rpc {
 
 extern int ip_version;
 extern char *commandKey;
-#define ARRAYSIZEOF(a)  (sizeof(a) / sizeof((a)[0]))
+#define ARRAYSIZEOF(a) (sizeof(a) / sizeof((a)[0]))
 #ifndef FREE
-#define FREE(x) do { free(x); x = NULL; } while (0)
+#define FREE(x) do { if (x) {free(x); x = NULL;} } while (0)
 #endif
 
 extern struct cwmp	cwmp_main;

@@ -87,13 +87,13 @@ static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
 {
 	va_list arg;
 	int i, pid;
-	static int dmcmd_pfds[2];
 	char *argv[n+2];
 	static char sargv[4][128];
+
 	argv[0] = cmd;
-	va_start(arg,n);
-	for (i=0; i<n; i++)
-	{
+
+	va_start(arg, n);
+	for (i = 0; i < n; i++) {
 		strcpy(sargv[i], va_arg(arg, char*));
 		argv[i+1] = sargv[i];
 	}
@@ -109,6 +109,7 @@ static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
 		exit(ESRCH);
 	} else if (pid < 0)
 		return -1;
+
 	return 0;
 }
 
@@ -124,13 +125,12 @@ int cwmp_start_diagnostic(int diagnostic_type)
 	if (diagnostic_type == DOWNLOAD_DIAGNOSTIC) {
 		uci_get_state_value("cwmp.@downloaddiagnostic[0].url", &url);
 		uci_get_state_value("cwmp.@downloaddiagnostic[0].device", &interface);
-	}
-	else
-	{
+	} else {
 		uci_get_state_value("cwmp.@uploaddiagnostic[0].url", &url);
 		uci_get_state_value("cwmp.@uploaddiagnostic[0].TestFileLength", &size);
 		uci_get_state_value("cwmp.@uploaddiagnostic[0].device", &interface);
 	}
+	
 	if( url == NULL || ((url != NULL) && (strcmp(url,"")==0))
 		|| ((strncmp(url,DOWNLOAD_PROTOCOL_FTP,strlen(DOWNLOAD_PROTOCOL_FTP))!=0) &&
 		(strstr(url,"@") != NULL && strncmp(url,DOWNLOAD_PROTOCOL_HTTP,strlen(DOWNLOAD_PROTOCOL_HTTP)) == 0))

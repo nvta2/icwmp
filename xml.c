@@ -221,7 +221,7 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 		if (!ns.cwmp) continue;
 
 		return 0;
-	} while(b = mxmlWalkNext(b, tree, MXML_DESCEND));
+	} while ((b = mxmlWalkNext(b, tree, MXML_DESCEND)));
 
 	return -1;
 }
@@ -263,7 +263,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 		}
 		if (msg_in) {
 			CWMP_LOG_XML_MSG(DEBUG,msg_in,XML_MSG_IN);
-			if (s = strstr(msg_in, "<FaultCode>"))
+			if ((s = strstr(msg_in, "<FaultCode>")))
 				sscanf(s, "<FaultCode>%d</FaultCode>",&f);
 			if (f) {
 				if (f == 8005) {
@@ -495,7 +495,7 @@ const char *whitespace_cb(mxml_node_t *node, int where)
                 return NULL;
         case MXML_WS_BEFORE_OPEN:
             tab_space[0] = '\0';
-            while (node = node->parent)
+            while ((node = node->parent))
                 strcat(tab_space, CWMP_MXML_TAB_SPACE);
             return tab_space;
         case MXML_WS_AFTER_OPEN:
@@ -557,11 +557,9 @@ error:
 static int xml_prepare_parameters_inform(struct dmctx *dmctx, struct dm_parameter *dm_parameter, mxml_node_t *parameter_list, int *size)
 {
 	mxml_node_t *node, *b;
-	int found;
 
 	b = mxmlFindElementOpaque(parameter_list, parameter_list, dm_parameter->name, MXML_DESCEND);
-	if(b && dm_parameter->data != NULL)
-	{
+	if (b && dm_parameter->data != NULL) {
 		node = b->parent->parent;
 		b = mxmlFindElement(node, node, "Value", NULL, NULL, MXML_DESCEND_FIRST);
 		if(!b) return 0;
@@ -638,13 +636,11 @@ error:
 
 int xml_prepare_lwnotification_message(char **msg_out)
 {
-	mxml_node_t *tree, *b, *n, *parameter_list;
-	struct external_parameter *external_parameter;
-	struct cwmp   *cwmp = &cwmp_main;
-	struct config   *conf;
+	mxml_node_t *tree, *b, *parameter_list;
+	struct cwmp *cwmp = &cwmp_main;
+	struct config *conf;
 	conf = &(cwmp->conf);
 	char *c = NULL;
-	int counter = 0;
 
 	tree = mxmlLoadString(NULL, CWMP_LWNOTIFICATION_MESSAGE, MXML_OPAQUE_CALLBACK);
 	if (!tree) goto error;
@@ -727,16 +723,14 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
     struct event_container *event_container;
     mxml_node_t *tree, *b, *node, *parameter_list;
     char *c = NULL;
-    int size = 0, i, error;
+    int size = 0;
     struct list_head *ilist,*jlist;
 	struct dmctx dmctx = {0};
 
     cwmp_dm_ctx_init(cwmp, &dmctx);
 
-    if (session==NULL || this==NULL)
-    {
+    if (session == NULL || this == NULL)
         return -1;
-    }
 
 #ifdef DUMMY_MODE
 	FILE *fp;
@@ -1175,7 +1169,6 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	mxml_node_t *n, *parameter_list, *b;
 	struct dm_parameter *dm_parameter;
 	char *parameter_name = NULL;
-	char *parameter_value = NULL;
 	char *c = NULL;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
 	struct dmctx dmctx = {0};
@@ -1496,7 +1489,7 @@ error:
 static int is_duplicated_parameter(mxml_node_t *param_node, struct session *session)
 {
 	mxml_node_t *b = param_node;
-	while(b = mxmlWalkNext(b, session->body_in, MXML_DESCEND)) {
+	while ((b = mxmlWalkNext(b, session->body_in, MXML_DESCEND))) {
 		if (b && b->type == MXML_OPAQUE &&
 			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
@@ -1514,9 +1507,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	char *parameter_name = NULL;
 	char *parameter_value = NULL;
 	char *parameter_key = NULL;
-	char *status = NULL;
 	char *v, *c = NULL;
-	char buf[128];
 	int fault_code = FAULT_CPE_INTERNAL_ERROR;
 	struct dmctx dmctx = {0};
 
@@ -1551,10 +1542,10 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Value")) {
-			int whitespace;
+			int whitespace = 0;
 			parameter_value = strdup((char *)mxmlGetOpaque(b));
 			n = b->parent;
-			while (b = mxmlWalkNext(b, n, MXML_DESCEND)) {
+			while ((b = mxmlWalkNext(b, n, MXML_DESCEND))) {
 				v = (char *)mxmlGetOpaque(b);
 				if (!whitespace) break;
 				asprintf(&c, "%s %s", parameter_value, v);
@@ -1613,7 +1604,6 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
-success:
 	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
 	return 0;
 
@@ -1717,7 +1707,6 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	b = mxmlNewElement(b, "cwmp:SetParameterAttributesResponse");
 	if (!b) goto fault;
 
-end_success:
 	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
 	return 0;
 
@@ -1739,8 +1728,6 @@ error:
 int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 {
 	mxml_node_t *b;
-	struct paramameter_container *paramameter_container;
-	char buf[128];
 	char *object_name = NULL;
 	char *parameter_key = NULL;
 	int fault_code = FAULT_CPE_INTERNAL_ERROR;
@@ -1796,7 +1783,6 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
-success:
 	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
 	return 0;
 
@@ -1818,7 +1804,6 @@ error:
 int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 {
 	mxml_node_t *b;
-	char buf[128];
 	char *object_name = NULL;
 	char *parameter_key = NULL;
 	int fault_code = FAULT_CPE_INTERNAL_ERROR;
@@ -1868,7 +1853,6 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
-success:
 	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
 	return 0;
 
@@ -2231,17 +2215,13 @@ int cwmp_scheduleInform_remove_all()
 
 int cwmp_handle_rpc_cpe_schedule_inform(struct session *session, struct rpc *rpc)
 {
-	mxml_node_t *n, *method_list, *b = session->body_in;
-	char *c = NULL, *command_key = NULL;
-	int i,counter = 0;
-    struct event_container          *event_container;
-    struct schedule_inform          *schedule_inform;
-    time_t                          scheduled_time;
-    struct list_head                *ilist;
-    bool                            cond_signal=false;
-    pthread_t                       scheduleInform_thread;
-    int                             error,fault = FAULT_CPE_NO_FAULT;
-    unsigned int					delay_seconds = 0;
+	mxml_node_t *n, *b = session->body_in;
+	char *command_key = NULL;
+    struct schedule_inform *schedule_inform;
+    time_t scheduled_time;
+    struct list_head *ilist;
+    int fault = FAULT_CPE_NO_FAULT;
+    unsigned int delay_seconds = 0;
 
     pthread_mutex_lock (&mutex_schedule_inform);
 
@@ -2307,7 +2287,7 @@ int cwmp_handle_rpc_cpe_schedule_inform(struct session *session, struct rpc *rpc
     bkp_session_insert_schedule_inform(schedule_inform->scheduled_time,schedule_inform->commandKey);
     bkp_session_save();
     pthread_mutex_unlock (&mutex_schedule_inform);
-        pthread_cond_signal(&threshold_schedule_inform);
+    pthread_cond_signal(&threshold_schedule_inform);
 
 success:
 	return 0;
@@ -2622,19 +2602,17 @@ void *thread_cwmp_rpc_cpe_download (void *v)
 
 void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 {
-    struct cwmp                     			*cwmp = (struct cwmp *)v;
-    struct schedule_download          			*pschedule_download;
-    struct timespec                 			download_timeout = {0, 0};
-    time_t                          			current_time, stime;
-    int											i,error = FAULT_CPE_NO_FAULT;
-    struct transfer_complete					*ptransfer_complete;
-    long int									timeout;
-    char										*fault_code;
+    struct cwmp *cwmp = (struct cwmp *)v;
+    struct timespec download_timeout = {0, 0};
+    time_t current_time;
+    int i,error = FAULT_CPE_NO_FAULT;
+    struct transfer_complete *ptransfer_complete;
+    char *fault_code;
 	int min_time = 0;
 	struct schedule_download *current_download = NULL;
 	struct schedule_download *p, *_p;
-	for(;;)
-    {
+
+	for (;;) {
 		current_time = time(NULL);
 		if(list_schedule_download.next != &(list_schedule_download))
 		{
@@ -2894,17 +2872,16 @@ void *thread_cwmp_rpc_cpe_schedule_download (void *v)
 
 void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 {
-    struct cwmp                     			*cwmp = (struct cwmp *)v;
-    struct schedule_download          			*pschedule_download;
-    struct timespec                 			apply_timeout = {0, 0};
-    time_t                          			current_time, stime;
-    int											i,error = FAULT_CPE_NO_FAULT;
-    struct transfer_complete					*ptransfer_complete;
-    long int									timeout;
-    char										*fault_code;
+    struct cwmp *cwmp = (struct cwmp *)v;
+    struct timespec apply_timeout = {0, 0};
+    time_t current_time;
+    int i, error = FAULT_CPE_NO_FAULT;
+    struct transfer_complete *ptransfer_complete;
+    char *fault_code;
 	int min_time = 0;
 	struct apply_schedule_download *apply_download = NULL;
 	struct apply_schedule_download *p, *_p;
+
 	for(;;)
     {
 		current_time = time(NULL);
@@ -3083,41 +3060,32 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 	return NULL;
 }
 
-void *thread_cwmp_rpc_cpe_change_du_state (void *v)
+void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 {
-    struct cwmp                     			*cwmp = (struct cwmp *)v;
-    struct change_du_state          			*pchange_du_state;
-    struct timespec                 			download_timeout = {50, 0};
-    time_t                          			current_time, stime;
-    int											i, error = FAULT_CPE_NO_FAULT;
-    struct du_state_change_complete				*pdu_state_change_complete;
-    long int									time_of_grace = 216000, timeout;
-    char										*fault_code;
-	char										*package_version;
-	char										*package_name;
-	char										*package_uuid;
-	char										*package_env;
-	struct operations							*p, *q;
-	struct opresult								*res;
-	char 										*operation_endTime;
-	char 										*du_instance;
+    struct cwmp *cwmp = (struct cwmp *)v;
+    struct change_du_state *pchange_du_state;
+    struct timespec download_timeout = {50, 0};
+    time_t current_time;
+    int error = FAULT_CPE_NO_FAULT;
+    struct du_state_change_complete *pdu_state_change_complete;
+    long int time_of_grace = 216000, timeout;
+	char *package_version;
+	char *package_name;
+	char *package_uuid;
+	char *package_env;
+	struct operations *p, *q;
+	struct opresult *res;
 	struct dmctx dmctx = {0};
 	char *du_ref = NULL;
 	char *cur_uuid = NULL;
 	char *cur_url = NULL;
-	char *cur_user = NULL;
-	char *cur_pass = NULL;
-	char *cur_instance = NULL;
 	char *cur_name = NULL;
 	char *cur_version = NULL;
 	char *cur_env = NULL;
-	int uuid;
     
-    for (;;)
-    {
+    for (;;) {
         if (list_change_du_state.next != &(list_change_du_state)) {
             pchange_du_state = list_entry(list_change_du_state.next,struct change_du_state, list);
-            stime = pchange_du_state->timeout;
             current_time = time(NULL);
             timeout = current_time - pchange_du_state->timeout;
             if ((timeout >= 0) && (timeout > time_of_grace))
@@ -3374,16 +3342,15 @@ int cwmp_launch_du_uninstall(char *package_name, char *package_env, struct opres
 
 void *thread_cwmp_rpc_cpe_upload (void *v)
 {
-    struct cwmp                     			*cwmp = (struct cwmp *)v;
-    struct upload          					*pupload;
-    struct timespec                 			upload_timeout = {0, 0};
-    time_t                          			current_time, stime;
-    int											i,error = FAULT_CPE_NO_FAULT;
-    struct transfer_complete					*ptransfer_complete;
-    long int									time_of_grace = 3600,timeout;
-    char										*fault_code;
-    for(;;)
-    {
+    struct cwmp *cwmp = (struct cwmp *)v;
+    struct upload *pupload;
+    struct timespec upload_timeout = {0, 0};
+    time_t current_time, stime;
+    int error = FAULT_CPE_NO_FAULT;
+    struct transfer_complete *ptransfer_complete;
+    long int time_of_grace = 3600,timeout;
+
+    for (;;) {
         if (list_upload.next!=&(list_upload)) {
             pupload = list_entry(list_upload.next,struct upload, list);
             stime = pupload->scheduled_time;
@@ -3463,28 +3430,22 @@ void *thread_cwmp_rpc_cpe_upload (void *v)
 
 int cwmp_free_download_request(struct download *download)
 {
-	if(download != NULL)
-	{
+	if (download != NULL) {
 		if(download->command_key != NULL)
-		{
 			free(download->command_key);
-		}
+
 		if(download->file_type != NULL)
-		{
 			free(download->file_type);
-		}
+
 		if(download->url != NULL)
-		{
 			free(download->url);
-		}
+
 		if(download->username != NULL)
-		{
 			free(download->username);
-		}
+
 		if(download->password != NULL)
-		{
 			free(download->password);
-		}
+
 		free(download);
 	}
 	return CWMP_OK;
@@ -3492,70 +3453,47 @@ int cwmp_free_download_request(struct download *download)
 
 int cwmp_free_schedule_download_request(struct schedule_download *schedule_download)
 {
-	int i;	
-	if(schedule_download != NULL)
-	{		
+	if (schedule_download != NULL) {
 		if(schedule_download->command_key != NULL)
-		{
 			free(schedule_download->command_key);
-		}
+
 		if(schedule_download->file_type != NULL)
-		{
 			free(schedule_download->file_type);
-		}
 		
 		if(schedule_download->url != NULL)
-		{
 			free(schedule_download->url);
-		}
 		
 		if(schedule_download->username != NULL)
-		{
 			free(schedule_download->username);
-		}
 		
 		if(schedule_download->password != NULL)
-		{
 			free(schedule_download->password);
-		}
-		for (i = 0; i<=1; i++)
-		{
+
+		for (int i = 0; i <= 1; i++) {
 			if(schedule_download->timewindowstruct[i].windowmode != NULL)
-			{
 				free(schedule_download->timewindowstruct[i].windowmode);				
-			}
+
 			if(schedule_download->timewindowstruct[i].usermessage != NULL)
-			{
-				
-				free(schedule_download->timewindowstruct[i].usermessage);				
-			}
+				free(schedule_download->timewindowstruct[i].usermessage);
 		}
 		free(schedule_download);
-		
 	}
 	return CWMP_OK;
 }
 
 int cwmp_free_apply_schedule_download_request(struct apply_schedule_download *apply_schedule_download)
 {
-	int i;	
-	if(apply_schedule_download != NULL)
-	{		
-		if(apply_schedule_download->command_key != NULL)
-		{
+	if (apply_schedule_download != NULL) {
+		if (apply_schedule_download->command_key != NULL)
 			free(apply_schedule_download->command_key);
-		}
-		if(apply_schedule_download->file_type != NULL)
-		{
+
+		if (apply_schedule_download->file_type != NULL)
 			free(apply_schedule_download->file_type);
-		}
-		if(apply_schedule_download->start_time != NULL)
-		{
+
+		if (apply_schedule_download->start_time != NULL)
 			free(apply_schedule_download->start_time);
-		}
 		
 		free(apply_schedule_download);
-		
 	}
 	return CWMP_OK;
 }
@@ -3587,32 +3525,25 @@ int cwmp_free_change_du_state_request(struct change_du_state *change_du_state)
 
 int cwmp_free_upload_request(struct upload *upload)
 {
-	if(upload != NULL)
-	{
-		if(upload->command_key != NULL)
-		{
+	if (upload != NULL) {
+		if (upload->command_key != NULL)
 			FREE(upload->command_key);
-		}
-		if(upload->file_type != NULL)
-		{
+
+		if (upload->file_type != NULL)
 			FREE(upload->file_type);
-		}
-		if(upload->url != NULL)
-		{
+
+		if (upload->url != NULL)
 			FREE(upload->url);
-		}
-		if(upload->username != NULL)
-		{
+
+		if (upload->username != NULL)
 			FREE(upload->username);
-		}
-		if(upload->password != NULL)
-		{
+
+		if (upload->password != NULL)
 			FREE(upload->password);
-		}
-		if(upload->f_instance != NULL)
-		{
+
+		if (upload->f_instance != NULL)
 			FREE(upload->f_instance);
-		}
+
 		FREE(upload);
 	}
 	return CWMP_OK;
@@ -3697,16 +3628,11 @@ int cwmp_apply_scheduled_Download_remove_all()
 int cwmp_add_apply_schedule_download(struct schedule_download *schedule_download, char *start_time)
 {
 	int i = 0;
-	int							error = FAULT_CPE_NO_FAULT;
-	struct apply_schedule_download 			*apply_schedule_download,*iapply_schedule_download;
-	
-	struct transfer_complete 	*ptransfer_complete;
-	struct list_head    		*ilist;
+	int error = FAULT_CPE_NO_FAULT;
+	struct apply_schedule_download *apply_schedule_download;
 
-	
 	apply_schedule_download = calloc (1,sizeof(struct apply_schedule_download));
-	if (apply_schedule_download == NULL)
-	{
+	if (apply_schedule_download == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
@@ -3732,12 +3658,7 @@ int cwmp_add_apply_schedule_download(struct schedule_download *schedule_download
 	return 0;
 fault:
     cwmp_free_apply_schedule_download_request(apply_schedule_download);
-	/*if (cwmp_create_fault_message(session, rpc, error))
-		goto error;*/ //TOCK
 	return 0;
-
-error:
-	return -1;
 }
 
 int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc)
@@ -3884,15 +3805,12 @@ error:
 int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 {
 	mxml_node_t 				*n, *t, *b = session->body_in;
-	pthread_t           		download_thread;
 	char 						*c, *tmp, *file_type = NULL;
 	int							error = FAULT_CPE_NO_FAULT;
 	struct download 			*download = NULL,*idownload;
-	struct transfer_complete 	*ptransfer_complete;
 	struct list_head    		*ilist;
 	time_t             			scheduled_time = 0;
 	time_t 						download_delay = 0;
-	bool                		cond_signal = false;
 
 	if (asprintf(&c, "%s:%s", ns.cwmp, "Download") == -1)
 	{
@@ -4078,22 +3996,15 @@ error:
 
 int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *rpc)
 {
-	mxml_node_t 				*ibc, *n, *t, *b = session->body_in;
-	pthread_t           		schedule_download_thread;
+	mxml_node_t 				*n, *t, *b = session->body_in;
 	char 						*c, *tmp, *file_type = NULL;
 	char 						*windowmode0 = NULL, *windowmode1 = NULL;
 	int							i = 0, j = 0;
 	int							error = FAULT_CPE_NO_FAULT;
-	struct schedule_download 	*schedule_download = NULL,*ischedule_download;
-	struct transfer_complete 	*ptransfer_complete;
-	struct list_head    		*ilist;
-	time_t             			scheduled_time;
-	time_t 						schedule_download_delay[4] = {0, 0, 0, 0};
-	bool                		cond_signal = false;
-	
+	struct schedule_download 	*schedule_download = NULL;
+	time_t 						schedule_download_delay[4] = {0, 0, 0, 0};	
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ScheduleDownload") == -1)
-	{
+	if (asprintf(&c, "%s:%s", ns.cwmp, "ScheduleDownload") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
@@ -4103,7 +4014,6 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 
 	if (!n) return -1;
 	b = n;
-
 
 	schedule_download = calloc (1,sizeof(struct schedule_download));
 	if (schedule_download == NULL)
@@ -4307,8 +4217,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		while (i > 0) {
 			i--;
 			schedule_download->timewindowstruct[i].windowstart = time(NULL) + schedule_download_delay[i*2];
-			schedule_download->timewindowstruct[i].windowend = time(NULL) + schedule_download_delay[i*2+1];
-			
+			schedule_download->timewindowstruct[i].windowend = time(NULL) + schedule_download_delay[i*2+1];	
 		}
 		bkp_session_insert_schedule_download(schedule_download);
 		bkp_session_save();
@@ -4339,15 +4248,12 @@ error:
 int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 {
 	mxml_node_t 				*n, *t, *b = session->body_in;
-	pthread_t           		upload_thread;
 	char 						*c, *tmp, *file_type = NULL;
 	int							error = FAULT_CPE_NO_FAULT;
 	struct upload 			*upload = NULL,*iupload;
-	struct transfer_complete 	*ptransfer_complete;
 	struct list_head    		*ilist;
 	time_t             			scheduled_time = 0;
 	time_t 						upload_delay = 0;
-	bool                		cond_signal = false;
 
 	if (asprintf(&c, "%s:%s", ns.cwmp, "Upload") == -1)
 	{

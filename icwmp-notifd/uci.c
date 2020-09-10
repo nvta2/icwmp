@@ -11,7 +11,9 @@
 #include "uci.h"
 #include <stdio.h>
 
-bool check_section_name(const char *str, bool name)
+#define UCI_OPTION_CPE_NOTIF_POLLING_PERIOD "cwmp.cpe.polling_period"
+
+static bool check_section_name(const char *str, bool name)
 {
 	if (!*str)
 		return false;
@@ -59,33 +61,29 @@ lookup:
 
 void load_uci_config(char **polling_period)
 {
-	struct  uci_context         *c = uci_alloc_context();
-	struct  uci_ptr             ptr;
+	struct uci_context *c = uci_alloc_context();
+	struct uci_ptr ptr;
 	char *s;
 
-	s= strdup(UCI_OPTION_CPE_NOTIF_POLLING_PERIOD);
+	s = strdup(UCI_OPTION_CPE_NOTIF_POLLING_PERIOD);
 
-    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
-    {
+    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK) {
         fprintf(stderr, "Error occurred in uci\n");
         goto end;
     }
 
-    if(ptr.flags & UCI_LOOKUP_COMPLETE)
-    {
+    if(ptr.flags & UCI_LOOKUP_COMPLETE) {
 
-        if (ptr.o==NULL || ptr.o->v.string==NULL)
-        {
-            fprintf(stderr, "icwmp_notifd.icwmp_notif.polling_period not found or empty value\n");
-            uci_free_context(c);
+        if (ptr.o == NULL || ptr.o->v.string == NULL) {
+            fprintf(stderr, "cwmp.cpe.icwmp_notif.polling_period not found or empty value\n");
             *polling_period = NULL;
             goto end;
         }
 
         *polling_period = strdup(ptr.o->v.string);
-
     }
 
-    end:
-    	uci_free_context(c);
+end:
+	uci_free_context(c);
+	free(s);
 }

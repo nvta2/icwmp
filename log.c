@@ -30,10 +30,8 @@ static pthread_mutex_t  mutex_log = PTHREAD_MUTEX_INITIALIZER;
 int log_set_severity_idx (char *value)
 {
     int i;
-    for (i=0;i<8;i++)
-    {
-        if (strstr(SEVERITY_NAMES[i],value)!=NULL)
-        {
+    for (i = 0;i < 8; i++) {
+        if (strstr(SEVERITY_NAMES[i],value) != NULL) {
             log_severity = i;
             return 0;
         }
@@ -43,12 +41,9 @@ int log_set_severity_idx (char *value)
 
 int log_set_log_file_name (char *value)
 {
-    if(value != NULL)
-    {
+    if(value != NULL) {
         strcpy(log_file_name,value);
-    }
-    else
-    {
+    } else {
         strcpy(log_file_name,DEFAULT_LOG_FILE_NAME);
     }
     return 1;
@@ -90,7 +85,6 @@ void puts_log(int severity, const char *fmt, ...)
 {
     va_list         args;
     int             i;
-    time_t          t;
     struct tm       *Tm;
     struct timeval  tv;
     FILE            *pLog = NULL;
@@ -108,9 +102,8 @@ void puts_log(int severity, const char *fmt, ...)
     pthread_mutex_lock (&mutex_log);
 
     gettimeofday(&tv, 0);
-    t   = time((time_t*)NULL);
-    Tm= localtime(&tv.tv_sec);
-    i   = sprintf(buf,"%02d-%02d-%4d, %02d:%02d:%02d %s ",
+    Tm = localtime(&tv.tv_sec);
+    i = sprintf(buf,"%02d-%02d-%4d, %02d:%02d:%02d %s ",
                     Tm->tm_mday,
                     Tm->tm_mon+1,
                     Tm->tm_year+1900,
@@ -161,9 +154,6 @@ void puts_log(int severity, const char *fmt, ...)
 
 void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 {
-    va_list         args;
-    int             i;
-    time_t          t;
     struct tm       *Tm;
     struct timeval  tv;
     FILE            *pLog = NULL;
@@ -171,7 +161,6 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
     long int        size = 0;
     char            log_file_name_bak[256];
     char buf[1024];
-    char buf_file[1024];
     char *description, *separator;
 
     if (severity>log_severity)
@@ -182,9 +171,8 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
     pthread_mutex_lock(&mutex_log);
 
     gettimeofday(&tv, 0);
-    t   = time((time_t*)NULL);
-    Tm= localtime(&tv.tv_sec);
-    i   = sprintf(buf,"%02d-%02d-%4d, %02d:%02d:%02d %s ",
+    Tm = localtime(&tv.tv_sec);
+    sprintf(buf,"%02d-%02d-%4d, %02d:%02d:%02d %s ",
                     Tm->tm_mday,
                     Tm->tm_mon+1,
                     Tm->tm_year+1900,

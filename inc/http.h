@@ -31,10 +31,6 @@ struct http_client
 	char *url;
 };
 
-#ifdef HTTP_CURL
-static size_t http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in);
-#endif /* HTTP_CURL */
-
 int http_client_init(struct cwmp *cwmp);
 void http_client_exit(void);
 int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_in);

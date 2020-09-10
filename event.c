@@ -62,24 +62,19 @@ const struct EVENT_CONST_STRUCT EVENT_CONST [] = {
 
 void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_container)
 {
-    struct list_head                    *ilist;
-    struct dm_parameter                 *dm_parameter;
-    char                                section[256];
-    mxml_node_t							*b;
+    struct list_head *ilist;
+    struct dm_parameter *dm_parameter;
+    mxml_node_t *b;
 
-    if (EVENT_CONST[event_container->code].RETRY & EVENT_RETRY_AFTER_REBOOT)
-    {
+    if (EVENT_CONST[event_container->code].RETRY & EVENT_RETRY_AFTER_REBOOT) {
         b = bkp_session_insert_event(event_container->code, event_container->command_key, event_container->id, "queue");
 
-        list_for_each(ilist,&(event_container->head_dm_parameter))
-        {
+        list_for_each(ilist,&(event_container->head_dm_parameter)) {
             dm_parameter = list_entry(ilist, struct dm_parameter, list);
             bkp_session_insert_parameter(b, dm_parameter->name);
         }
         bkp_session_save();
     }
-
-    return;
 }
 
 struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_code, char *command_key)
@@ -278,15 +273,15 @@ void cwmp_lwnotification()
 	FREE(msg_out);
 }
 
-void cwmp_add_notification_min(void) {
+void cwmp_add_notification_min(void)
+{
 	int fault, iscopy;
 	FILE *fp;
 	char buf[512];
 	char *parameter, *notification = NULL, *value = NULL, *jval;
-	struct cwmp   *cwmp = &cwmp_main;
+	struct cwmp *cwmp = &cwmp_main;
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
-	bool initiate = false;
 
 	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
 
@@ -296,7 +291,6 @@ void cwmp_add_notification_min(void) {
 
 	while (fgets(buf, 512, fp) != NULL) {
 		dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
-		initiate = true;
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
@@ -337,13 +331,11 @@ void cwmp_add_notification(void)
 	FILE *fp;
 	char buf[512];
 	char *parameter, *notification = NULL, *value = NULL, *jval;
-	struct event_container   *event_container;
-	struct cwmp   *cwmp = &cwmp_main;
+	struct cwmp *cwmp = &cwmp_main;
 	struct dm_enabled_notify *p;
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
-	struct config   *conf;
-	conf = &(cwmp->conf);	
+	struct config *conf = &(cwmp->conf);	
 	bool isactive = false;
 	bool initiate = false;
 	bool lw_isactive = false;
@@ -457,11 +449,9 @@ int cwmp_root_cause_event_boot (struct cwmp *cwmp)
 }
 int event_remove_all_event_container(struct session *session, int rem_from)
 {
-    struct event_container              *event_container;
-    struct dm_parameter                 *dm_parameter;
+    struct event_container *event_container;
 
-    while (session->head_event_container.next!=&(session->head_event_container))
-    {
+    while (session->head_event_container.next!=&(session->head_event_container)) {
         event_container = list_entry(session->head_event_container.next, struct event_container, list);
         bkp_session_delete_event(event_container->id, rem_from?"send":"queue");
         if (event_container->code == EVENT_IDX_1BOOT && rem_from == RPC_SEND) {
@@ -478,12 +468,10 @@ int event_remove_all_event_container(struct session *session, int rem_from)
 
 int event_remove_noretry_event_container(struct session *session, struct cwmp *cwmp)
 {
-	struct event_container              *event_container;
-	struct dm_parameter                 *dm_parameter;
-
+	struct event_container *event_container;
 	struct list_head *ilist, *q;
-	list_for_each_safe(ilist,q,&(session->head_event_container))
-	{
+
+	list_for_each_safe(ilist,q,&(session->head_event_container)) {
 		event_container = list_entry(ilist, struct event_container, list);
 		if (EVENT_CONST[event_container->code].RETRY == 0) {
 			free (event_container->command_key);
@@ -491,40 +479,34 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 			list_del(&(event_container->list));
 			free (event_container);
 		}
+
 		if (EVENT_CONST[event_container->code].CODE[0] == '6')
-		{
 			cwmp->cwmp_cr_event = 1;
-		}
 	}
 	return CWMP_OK;
 }
 
 int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
 {
-    char                    *acsurl = NULL;
-    int                     error,cmp=0;
-    struct event_container  *event_container;
-    struct session          *session;
+    char *acsurl = NULL;
+    int cmp = 0;
+    struct event_container *event_container;
+    struct session *session;
 
-    error   = cwmp_load_saved_session(cwmp, &acsurl, ACS);
+    cwmp_load_saved_session(cwmp, &acsurl, ACS);
 
-    if(acsurl == NULL)
-    {
+    if (acsurl == NULL)
         save_acs_bkp_config (cwmp);
-    }
 
-    if (acsurl == NULL || ((acsurl != NULL)&&(cmp = strcmp(cwmp->conf.acsurl,acsurl))))
-    {
+    if (acsurl == NULL || ((acsurl != NULL)&&(cmp = strcmp(cwmp->conf.acsurl,acsurl)))) {
         pthread_mutex_lock (&(cwmp->mutex_session_queue));
-        if (cwmp->head_event_container!=NULL && cwmp->head_session_queue.next!=&(cwmp->head_session_queue))
-        {
+        if (cwmp->head_event_container!=NULL && cwmp->head_session_queue.next!=&(cwmp->head_session_queue)) {
             session = list_entry(cwmp->head_event_container,struct session, head_event_container);
             event_remove_all_event_container (session,RPC_QUEUE);
         }
         event_container = cwmp_add_event_container (cwmp, EVENT_IDX_0BOOTSTRAP, "");
         FREE(acsurl);
-        if (event_container == NULL)
-        {
+        if (event_container == NULL) {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
@@ -539,12 +521,10 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
         FREE(acsurl);
     }
 
-    if (cmp)
-    {
+    if (cmp) {
         pthread_mutex_lock (&(cwmp->mutex_session_queue));
         event_container = cwmp_add_event_container (cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-        if (event_container == NULL)
-        {
+        if (event_container == NULL) {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
@@ -650,25 +630,20 @@ int cwmp_root_cause_dustatechangeComplete (struct cwmp *cwmp, struct du_state_ch
 
 int cwmp_root_cause_getRPCMethod (struct cwmp *cwmp)
 {
-    char                    acsurl[256];
-    int                     error,cmp=0;
-    struct event_container  *event_container;
-    struct session          *session;
+    struct event_container *event_container;
+    struct session *session;
 
-    if (cwmp->env.periodic == CWMP_START_PERIODIC)
-    {
+    if (cwmp->env.periodic == CWMP_START_PERIODIC) {
         pthread_mutex_lock (&(cwmp->mutex_session_queue));
         cwmp->env.periodic = 0;
         event_container = cwmp_add_event_container (cwmp, EVENT_IDX_2PERIODIC, "");
-        if (event_container == NULL)
-        {
+        if (event_container == NULL) {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
         cwmp_save_event_container (cwmp,event_container);
         session = list_entry (cwmp->head_event_container, struct session,head_event_container);
-        if(cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL)
-        {
+        if (cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL) {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
@@ -682,8 +657,7 @@ void *thread_handle_notify(void *v)
 {
     struct cwmp                 *cwmp = (struct cwmp *) v;
 
-    for(;;)
-    {
+    for(;;) {
         pthread_mutex_lock(&(cwmp->mutex_handle_notify));
         pthread_cond_wait(&(cwmp->threshold_handle_notify), &(cwmp->mutex_handle_notify));
         pthread_mutex_unlock(&(cwmp->mutex_handle_notify));
@@ -697,58 +671,51 @@ void *thread_handle_notify(void *v)
 
 void *thread_event_periodic (void *v)
 {
-    struct cwmp                 *cwmp = (struct cwmp *) v;
-    struct event_container      *event_container;
-    static int                  periodic_interval;
-    static bool 				periodic_enable;
-    static time_t				periodic_time;
-    static struct timespec      periodic_timeout = {0, 0};
-    time_t						current_time;
-    long int					delta_time;
+    struct cwmp *cwmp = (struct cwmp *) v;
+    struct event_container *event_container;
+    static int periodic_interval;
+    static bool periodic_enable;
+    static time_t periodic_time;
+    static struct timespec periodic_timeout = {0, 0};
+    time_t current_time;
+    long int delta_time;
 
-    periodic_interval 	= cwmp->conf.period;
-    periodic_enable		= cwmp->conf.periodic_enable;
-    periodic_time		= cwmp->conf.time;
+    periodic_interval = cwmp->conf.period;
+    periodic_enable = cwmp->conf.periodic_enable;
+    periodic_time = cwmp->conf.time;
 
-    for(;;)
-    {
+    for(;;) {
         pthread_mutex_lock (&(cwmp->mutex_periodic));
-        if (cwmp->conf.periodic_enable)
-        {
+        if (cwmp->conf.periodic_enable) {
 	        current_time = time(NULL);
-		    if(periodic_time != 0)
-		    {
+		    if (periodic_time != 0) {
 		    	delta_time = (current_time - periodic_time) % periodic_interval;
 		    	if (delta_time >= 0)
 		    		periodic_timeout.tv_sec = current_time + periodic_interval - delta_time;
 	    		else
 	    			periodic_timeout.tv_sec = current_time - delta_time;
-		    }
-		    else
-		    {
+		    } else {
 		    	periodic_timeout.tv_sec = current_time + periodic_interval;
 		    }
 		    cwmp->session_status.next_periodic = periodic_timeout.tv_sec;
         	pthread_cond_timedwait(&(cwmp->threshold_periodic), &(cwmp->mutex_periodic), &periodic_timeout);
-        }
-        else
-        {
+        } else {
             cwmp->session_status.next_periodic = 0;
         	pthread_cond_wait(&(cwmp->threshold_periodic), &(cwmp->mutex_periodic));
         }
         pthread_mutex_unlock (&(cwmp->mutex_periodic));
-        if (periodic_interval != cwmp->conf.period || periodic_enable != cwmp->conf.periodic_enable || periodic_time != cwmp->conf.time)
-        {
-        	periodic_enable		= cwmp->conf.periodic_enable;
-        	periodic_interval	= cwmp->conf.period;
-        	periodic_time		= cwmp->conf.time;
+        if (periodic_interval != cwmp->conf.period ||
+        		periodic_enable != cwmp->conf.periodic_enable ||
+				periodic_time != cwmp->conf.time) {
+        	periodic_enable = cwmp->conf.periodic_enable;
+        	periodic_interval = cwmp->conf.period;
+        	periodic_time = cwmp->conf.time;
             continue;
         }
         CWMP_LOG(INFO,"Periodic thread: add periodic event in the queue");
         pthread_mutex_lock (&(cwmp->mutex_session_queue));
         event_container = cwmp_add_event_container (cwmp, EVENT_IDX_2PERIODIC, "");
-        if (event_container == NULL)
-        {
+        if (event_container == NULL) {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             continue;
         }
@@ -759,29 +726,30 @@ void *thread_event_periodic (void *v)
     return CWMP_OK;
 }
 
-int cwmp_root_cause_event_periodic (struct cwmp *cwmp)
+int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
 {
-    static int      period = 0;
-    static bool		periodic_enable = false;
-    static time_t	periodic_time = 0;
-    char 			local_time[26] = {0};
-    struct tm 		*t_tm;
+    static int period = 0;
+    static bool periodic_enable = false;
+    static time_t periodic_time = 0;
+    char local_time[27] = {0};
+    struct tm *t_tm;
     
-    if (period==cwmp->conf.period && periodic_enable==cwmp->conf.periodic_enable && periodic_time==cwmp->conf.time)
-    {
+    if (period == cwmp->conf.period &&
+    		periodic_enable == cwmp->conf.periodic_enable &&
+			periodic_time == cwmp->conf.time)
         return CWMP_OK;
-    }
-    pthread_mutex_lock (&(cwmp->mutex_periodic));
-    period  		= cwmp->conf.period;
+
+    pthread_mutex_lock(&(cwmp->mutex_periodic));
+    period = cwmp->conf.period;
     periodic_enable = cwmp->conf.periodic_enable;
-    periodic_time	= cwmp->conf.time;
+    periodic_time = cwmp->conf.time;
     CWMP_LOG(INFO,periodic_enable?"Periodic event is enabled. Interval period = %ds":"Periodic event is disabled", period);
 	
 	t_tm = localtime(&periodic_time);
 	if (t_tm == NULL)
 		return CWMP_GEN_ERR;
 
-	if(strftime(local_time, sizeof(local_time), "%FT%T%z", t_tm) == 0)
+	if (strftime(local_time, sizeof(local_time), "%FT%T%z", t_tm) == 0)
 		return CWMP_GEN_ERR;
 	
 	local_time[25] = local_time[24];
@@ -815,26 +783,25 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 {
 	char *bip = NULL;
 	struct event_container *event_container;
-	int error;
 	char *ip_version = (version == IPv6) ? strdup("ipv6") : strdup("ip");
 	char *ip_value = (version == IPv6) ? strdup(cwmp->conf.ipv6) : strdup(cwmp->conf.ip);
 
-	error = (version == IPv6) ? cwmp_load_saved_session(cwmp, &bip, CR_IPv6): cwmp_load_saved_session(cwmp, &bip, CR_IP);
+	if (version == IPv6)
+		cwmp_load_saved_session(cwmp, &bip, CR_IPv6);
+	else
+		cwmp_load_saved_session(cwmp, &bip, CR_IP);
 
-	if(bip == NULL)
-	{
+	if (bip == NULL) {
 		bkp_session_simple_insert_in_parent("connection_request", ip_version, ip_value);
 		bkp_session_save();
 		FREE(ip_version);
 		FREE(ip_value);
 		return;
 	}
-	if (strcmp(bip, ip_value)!=0)
-	{
+	if (strcmp(bip, ip_value) != 0) {
 		pthread_mutex_lock (&(cwmp->mutex_session_queue));
 		event_container = cwmp_add_event_container (cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-		if (event_container == NULL)
-		{
+		if (event_container == NULL) {
 			FREE(bip);
 			pthread_mutex_unlock (&(cwmp->mutex_session_queue));
 			FREE(ip_version);
@@ -856,24 +823,20 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port)
 {
 	char *bport = NULL;
 	struct event_container *event_container;
-	int error;
-	char bufport[32];
+	char bufport[16];
 
-	sprintf(bufport, "%d", port);
+	snprintf(bufport, sizeof(bufport), "%d", port);
 
-	error   = cwmp_load_saved_session(cwmp, &bport, CR_PORT);
+	cwmp_load_saved_session(cwmp, &bport, CR_PORT);
 
-	if(bport == NULL)
-	{
+	if (bport == NULL) {
 		bkp_session_simple_insert_in_parent("connection_request", "port", bufport);
 		bkp_session_save();
 		return;
 	}
-	if (strcmp(bport, bufport)!=0)
-	{
+	if (strcmp(bport, bufport) != 0) {
 		event_container = cwmp_add_event_container (cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-		if (event_container == NULL)
-		{
+		if (event_container == NULL) {
 			FREE(bport);
 			return;
 		}
@@ -888,25 +851,18 @@ int cwmp_root_cause_events (struct cwmp *cwmp)
 {
     int error;
 
-    if (error = cwmp_root_cause_event_bootstrap(cwmp))
-	{
+    if ((error = cwmp_root_cause_event_bootstrap(cwmp)))
 		return error;
-	}
 
-    if (error = cwmp_root_cause_event_boot(cwmp))
-    {
+    if ((error = cwmp_root_cause_event_boot(cwmp)))
         return error;
-    }
 
-    if (error = cwmp_root_cause_getRPCMethod(cwmp))
-    {
+    if ((error = cwmp_root_cause_getRPCMethod(cwmp)))
         return error;
-    }
 
-    if (error = cwmp_root_cause_event_periodic(cwmp))
-    {
+    if ((error = cwmp_root_cause_event_periodic(cwmp)))
         return error;
-    }
+
     return CWMP_OK;
 }
 
