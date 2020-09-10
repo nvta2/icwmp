@@ -14,16 +14,13 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <unistd.h>
-#include <json-c/json.h>
-#include <libubox/blobmsg_json.h>
-#include <libubus.h>
 
 #include "ubus.h"
 
 static struct ubus_context *ubus_ctx = NULL;
 static struct blob_buf b;
 
-int pubus_init(void)
+int nubus_init(void)
 {
 	ubus_ctx = ubus_connect(NULL);
 	if (!ubus_ctx) {
@@ -32,7 +29,7 @@ int pubus_init(void)
 	return 0;
 }
 
-int pubus_fini(void)
+int nubus_end(void)
 {
 	if (ubus_ctx) {
 		ubus_free(ubus_ctx);
@@ -41,38 +38,17 @@ int pubus_fini(void)
 	return 0;
 }
 
-void padd_json_obj(json_object *json_obj_out, char *object, char *string)
-{
-	json_object *json_obj_tmp = json_object_new_string(string);
-	json_object_object_add(json_obj_out, object, json_obj_tmp);
-}
-
-static int pubus_call_req(char *path, char *method, int argc, struct parg parg[])
+static int nubus_call_req(char *path, char *method)
 {
 	uint32_t id;
-	int i, r = 1;
-	char *arg;
+	int r = 1;
 
 	json_object *json_obj_out = json_object_new_object();
 	if (json_obj_out == NULL)
 		return r;
-
 	blob_buf_init(&b, 0);
-
-	if (argc) {
-		for (i = 0; i < argc; i++) {
-			padd_json_obj(json_obj_out, parg[i].key, parg[i].val);
-		}
-		arg = (char *)json_object_to_json_string(json_obj_out);
-
-		if (!blobmsg_add_json_from_string(&b, arg)) {
-			goto end;
-		}
-	}
-
 	if (ubus_lookup_id(ubus_ctx, path, &id))
 		goto end;
-
 	r = ubus_invoke(ubus_ctx, id, method, b.head, NULL, NULL, 1);
 
 end:
@@ -81,14 +57,14 @@ end:
 	return r;
 }
 
-int pubus_call(char *path, char *method, int argc, struct parg dmarg[])
+int nubus_call(char *path, char *method)
 {
 	int r = -1;
-	pubus_init();
+	nubus_init();
 	if (ubus_ctx) {
-		r = pubus_call_req(path, method, argc, dmarg);
+		r = nubus_call_req(path, method);
 		if (r > 0) r = -1;
 	}
-	pubus_fini();
+	nubus_end();
 	return r;
 }

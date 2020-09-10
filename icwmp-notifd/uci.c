@@ -11,9 +11,23 @@
 #include "uci.h"
 #include <stdio.h>
 
-#define UCI_OPTION_CPE_NOTIF_POLLING_PERIOD "cwmp.cpe.polling_period"
+struct uci_context *uci_ctx;
 
-static bool check_section_name(const char *str, bool name)
+struct uci_context *uci_ctx = NULL;
+
+void nuci_init()
+{
+	uci_ctx = uci_alloc_context();
+}
+
+void nuci_end()
+{
+	if(uci_ctx) {
+		uci_free_context(uci_ctx);
+		uci_ctx = NULL;
+	}
+}
+bool check_section_name(const char *str, bool name)
 {
 	if (!*str)
 		return false;
@@ -27,7 +41,7 @@ static bool check_section_name(const char *str, bool name)
 	return true;
 }
 
-int dmuci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value)
+int nuci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value)
 {
 	/*value*/
 	ptr->value = value;
@@ -61,29 +75,49 @@ lookup:
 
 void load_uci_config(char **polling_period)
 {
-	struct uci_context *c = uci_alloc_context();
-	struct uci_ptr ptr;
+	struct  uci_context         *c = uci_alloc_context();
+	struct  uci_ptr             ptr;
 	char *s;
 
-	s = strdup(UCI_OPTION_CPE_NOTIF_POLLING_PERIOD);
-
-    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK) {
+	s= strdup(UCI_OPTION_CPE_NOTIF_POLLING_PERIOD);
+    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
+    {
         fprintf(stderr, "Error occurred in uci\n");
         goto end;
     }
-
-    if(ptr.flags & UCI_LOOKUP_COMPLETE) {
-
-        if (ptr.o == NULL || ptr.o->v.string == NULL) {
-            fprintf(stderr, "cwmp.cpe.icwmp_notif.polling_period not found or empty value\n");
+    if(ptr.flags & UCI_LOOKUP_COMPLETE)
+    {
+        if (ptr.o==NULL || ptr.o->v.string==NULL)
+        {
+            fprintf(stderr, "icwmp_notifd.icwmp_notif.polling_period not found or empty value\n");
             *polling_period = NULL;
             goto end;
         }
-
         *polling_period = strdup(ptr.o->v.string);
     }
+    end:
+    	uci_free_context(c);
+    	free(s);
+}
 
-end:
-	uci_free_context(c);
-	free(s);
+int nuci_get_list(char *package, char *section, char *list_opt, struct uci_list** list_val)
+{
+	if(!uci_ctx)
+		goto end_uci;
+
+	if (list_val == NULL)
+		goto end_uci;
+
+	struct uci_ptr ptr = {0};
+
+	if (nuci_lookup_ptr(uci_ctx, &ptr, package, section, list_opt, NULL))
+		goto end_uci;
+
+	if (ptr.o && ptr.o->type == UCI_TYPE_LIST) {
+		*list_val = &ptr.o->v.list;
+		return 1;
+	}
+
+	end_uci:
+		return 0;
 }

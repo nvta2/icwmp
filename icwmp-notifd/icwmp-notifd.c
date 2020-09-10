@@ -21,16 +21,12 @@
 #define DM_ENABLED_NOTIFY "/etc/icwmpd/.dm_enabled_notify"
 static void parse_icwmp_active_notifications(struct uloop_timeout *timeout);
 static struct uloop_timeout active_notif_timer = { .cb = parse_icwmp_active_notifications };
-struct uci_context *uci_ctx;
 char *polling_period = NULL;
 
 static void polling_parse_icwmp_active_notifications()
 {
 	struct uci_element *e;
 	struct uci_list *list_notif;
-	LIST_HEAD(listnotif);
-	list_notif = &listnotif;
-	struct uci_ptr ptr = {0};
 	char *parameter = NULL, *notification = NULL, *value = NULL, *jval;
 	struct dmctx dmctx = {0};
 	FILE *fp = NULL;
@@ -38,15 +34,11 @@ static void polling_parse_icwmp_active_notifications()
 	int fault;
 	struct dm_parameter *dm_parameter;
 
-	uci_ctx = uci_alloc_context();
-	if (dmuci_lookup_ptr(uci_ctx, &ptr, "cwmp", "@notifications[0]", "active", NULL)) {
-		goto end;
-	}
+	LIST_HEAD(listnotif);
+	list_notif = (struct uci_list*)&listnotif;
 
-	if (ptr.o && ptr.o->type == UCI_TYPE_LIST)
-		list_notif = &ptr.o->v.list;
-
-	uci_free_context(uci_ctx);
+	nuci_init();
+	nuci_get_list("cwmp", "@notifications[0]", "active", list_notif?&list_notif:NULL);
 	if (!list_notif || uci_list_empty(list_notif))
 		goto end;
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
@@ -75,7 +67,7 @@ static void polling_parse_icwmp_active_notifications()
 					if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 						dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 						if (strcmp(dm_parameter->data, value) != 0) {
-							if (pubus_call("tr069", "notify", 0, PUBUS_ARGS{}) < 0){
+							if (nubus_call("tr069", "notify") < 0){
 								continue;
 							}
 						}
@@ -96,8 +88,9 @@ static void polling_parse_icwmp_active_notifications()
 			value = NULL;
 		}
 	}
-end:
-	uloop_timeout_set(&active_notif_timer, polling_period && atoi(polling_period)?atoi(polling_period)*1000:5000);
+	end:
+		uloop_timeout_set(&active_notif_timer, polling_period && atoi(polling_period)?atoi(polling_period)*1000:5000);
+		nuci_end();
 }
 
 static void parse_icwmp_active_notifications(struct uloop_timeout *timeout) {

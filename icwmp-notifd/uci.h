@@ -8,14 +8,14 @@
 *		Author: Omar Kallel <omar.kallel@pivasoftware.com>
 */
 
-#ifndef __PUCI_H
-#define __PUCI_H
-
+#ifndef __NUCI_H
+#define __NUCI_H
 #include <uci.h>
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/dmbbfcommon.h>
-
-int dmuci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value);
+#define UCI_OPTION_CPE_NOTIF_POLLING_PERIOD "cwmp.cpe.polling_period"
+void nuci_init();
+void nuci_end();
 void load_uci_config(char **polling_period);
-
+int nuci_get_list(char *package, char *section, char *list_opt, struct uci_list** list_val); //, struct uci_list *list_val
 #endif

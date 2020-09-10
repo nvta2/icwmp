@@ -15,13 +15,6 @@
 #include <json-c/json.h>
 #include <libubus.h>
 
-struct parg {
-	char *key;
-	char *val;
-};
+int nubus_call(char *path, char *method);
 
-#define PUBUS_ARGS (struct parg[])
-
-int pubus_call(char *path, char *method, int argc, struct parg sarg[]);
-
-#endif //__SUBUS_H
+#endif //__NUBUS_H
