@@ -4,6 +4,7 @@
 #  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 #  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
 
+
 . /usr/share/libubox/jshn.sh
 #TODO help message
 
@@ -344,7 +345,7 @@ handle_action() {
 			rm /tmp/icwmp_download 2> /dev/null
 			icwmp_fault_output "" "$fault_code"
 		else
-			if [ "$__arg3" = "1" ];then
+			if [ "$__arg3" = "1 Firmware Upgrade Image" ];then
 				mv /tmp/icwmp_download /tmp/firmware_upgrade_image 2> /dev/null
 				(icwmp_check_image)
 				if [ "$?" = "0" ];then
@@ -362,10 +363,10 @@ handle_action() {
 					rm /tmp/firmware_upgrade_image 2> /dev/null
 					icwmp_fault_output "" "$fault_code"
 				fi
-			elif [ "$__arg3" = "2" ];then
+			elif [ "$__arg3" = "2 Web Content" ];then
 				mv /tmp/icwmp_download /tmp/web_content.ipk 2> /dev/null
 				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
-			elif [ "$__arg3" = "3" ];then
+			elif [ "$__arg3" = "3 Vendor Config File" ];then
 				if [ "$__arg6" != "" ]; then
 					local tmp="/etc/vendor_configuration_file_${__arg6}.cfg"
 					mv /tmp/icwmp_download "$tmp" 2> /dev/null
@@ -373,7 +374,7 @@ handle_action() {
 					mv /tmp/icwmp_download /tmp/vendor_configuration_file.cfg 2> /dev/null
 				fi
 				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
-			elif [ "$__arg3" = "6" ]; then                                                                                                   
+			elif [ "$__arg3" = "6 Stored Firmware Image" ]; then
             	mv /tmp/icwmp_download /tmp/owsd-repeater-control-cert.pem 2> /dev/null
             	icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 			else
@@ -475,22 +476,22 @@ handle_action() {
 	
 	if [ "$action" = "apply_download" ]; then
 		case "$__arg1" in
-			1) icwmp_apply_firmware ;;
-			2)
+			"1 Firmware Upgrade Image") icwmp_apply_firmware ;;
+			"2 Web Content")
 				if [ "$__arg2" != "0" ]; then 
 					icwmp_apply_web_content $__arg2
 				else
 					icwmp_apply_web_content
 				fi
 			;;
-			3) 
+			"3 Vendor Configuration File")
 				if [ "$__arg2" != "" ]; then 
 					icwmp_apply_vendor_configuration $__arg2
 				else
 					icwmp_apply_vendor_configuration
 				fi
 			;;
-			6) icwmp_apply_ca_ssl_certificate_key ;;
+			"6 Stored Firmware Image") icwmp_apply_ca_ssl_certificate_key ;;
 		esac
 	fi
 
