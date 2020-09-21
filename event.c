@@ -295,11 +295,11 @@ void cwmp_add_notification_min(void)
 		if (len)
 			buf[len-1] = '\0';
 		dmjson_parse_init(buf);
-		dmjson_get_var("parameter", &jval);
+		dmjson_get_string("parameter", &jval);
 		parameter = strdup(jval);
-		dmjson_get_var("value", &jval);
+		dmjson_get_string("value", &jval);
 		value = strdup(jval);
-		dmjson_get_var("notification", &jval);
+		dmjson_get_string("notification", &jval);
 		notification = strdup(jval);
 		dmjson_parse_fini();
 		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
@@ -357,11 +357,11 @@ void cwmp_add_notification(void)
 		if (len)
 			buf[len-1] = '\0';
 		dmjson_parse_init(buf);
-		dmjson_get_var("parameter", &jval);
+		dmjson_get_string("parameter", &jval);
 		parameter = strdup(jval);
-		dmjson_get_var("value", &jval);
+		dmjson_get_string("value", &jval);
 		value = strdup(jval);
-		dmjson_get_var("notification", &jval);
+		dmjson_get_string("notification", &jval);
 		notification = strdup(jval);
 		dmjson_parse_fini();
 
