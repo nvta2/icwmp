@@ -366,7 +366,7 @@ handle_action() {
 			elif [ "$__arg3" = "2 Web Content" ];then
 				mv /tmp/icwmp_download /tmp/web_content.ipk 2> /dev/null
 				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
-			elif [ "$__arg3" = "3 Vendor Config File" ];then
+			elif [ "$__arg3" = "3 Vendor Configuration File" ];then
 				if [ "$__arg6" != "" ]; then
 					local tmp="/etc/vendor_configuration_file_${__arg6}.cfg"
 					mv /tmp/icwmp_download "$tmp" 2> /dev/null
