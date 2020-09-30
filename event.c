@@ -288,8 +288,8 @@ void check_value_change(void)
 	if (fp == NULL)
 		return;
 
+	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
 	while (fgets(buf, 512, fp) != NULL) {
-		dm_ctx_init(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 		dmctx.in_param = "";
 		int len = strlen(buf);
 		if (len)
@@ -311,11 +311,9 @@ void check_value_change(void)
 		FREE(value);
 		FREE(notification);
 		FREE(parameter);
-		dm_ctx_clean(&dmctx);
 	}
+	cwmp_dm_ctx_clean(cwmp, &dmctx);
 	fclose(fp);
-
-
 }
 
 void cwmp_add_notification(void)
