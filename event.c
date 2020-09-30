@@ -273,7 +273,7 @@ void cwmp_lwnotification()
 	FREE(msg_out);
 }
 
-void cwmp_add_notification_min(void)
+void check_value_change(void)
 {
 	int fault, iscopy;
 	FILE *fp;
@@ -283,14 +283,14 @@ void cwmp_add_notification_min(void)
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
 
-	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
 
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
 		return;
 
 	while (fgets(buf, 512, fp) != NULL) {
-		dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
+		dm_ctx_init(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
+		dmctx.in_param = "";
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
@@ -305,23 +305,17 @@ void cwmp_add_notification_min(void)
 		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (strcmp(dm_parameter->data, value) != 0 && notification[0] == '1') {
-
-				dm_update_file_enabled_notify(parameter, dm_parameter->data);
-				iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
-
-				if(iscopy)
-					remove(DM_ENABLED_NOTIFY_TEMPORARY);
-				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
-			}
+			if (strcmp(dm_parameter->data, value) != 0 && notification[0] == '1')
+				add_dm_parameter_tolist(&list_value_change, parameter, dm_parameter->data, dm_parameter->type);
 		}
 		FREE(value);
 		FREE(notification);
 		FREE(parameter);
+		dm_ctx_clean(&dmctx);
 	}
 	fclose(fp);
 
-	cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 }
 
 void cwmp_add_notification(void)

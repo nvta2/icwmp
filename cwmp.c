@@ -176,7 +176,10 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         }
 
         session = list_entry(ilist, struct session, list);
-
+        //free_dm_parameter_all_fromlist(&list_value_change);
+        if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 )
+        	check_value_change();
+        dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp, session);
 
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
@@ -189,7 +192,6 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         cwmp->session_status.last_status = SESSION_RUNNING;
         cwmp->session_status.next_retry = 0;
 
-        cwmp_add_notification_min();
     	if (access(fc_cookies, F_OK) != -1)
     		remove(fc_cookies);
         CWMP_LOG (INFO,"Start session");
