@@ -299,7 +299,7 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_container);
 void *thread_event_periodic (void *v);
 void cwmp_add_notification(void);
-void cwmp_add_notification_min(void);
+void check_value_change(void);
 int netlink_init(void);
 char * mix_get_time(void);
 char * mix_get_time_of(time_t t_time);
