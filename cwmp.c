@@ -38,7 +38,7 @@ int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx)
 	return 0;
 }
 
-int cwmp_dm_ctx_clean(struct cwmp *cwmp, struct dmctx *ctx)
+int cwmp_dm_ctx_clean(struct dmctx *ctx)
 {
 	dm_ctx_clean(ctx);
 	return 0;
@@ -134,7 +134,7 @@ int cwmp_get_retry_interval (struct cwmp *cwmp)
     return (retry_count);
 }
 
-static void cwmp_prepare_value_change (struct cwmp *cwmp, struct session *session)
+static void cwmp_prepare_value_change (struct cwmp *cwmp)
 {
 	struct event_container *event_container;
 	if (list_value_change.next == &(list_value_change))
@@ -179,7 +179,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 )
         	check_value_change();
         dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
-        cwmp_prepare_value_change(cwmp, session);
+        cwmp_prepare_value_change(cwmp);
         //free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
             CWMP_LOG(EMERG,"FATAL error in the mutex process in the session scheduler!");
@@ -205,7 +205,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         CWMP_LOG (INFO,"End session");
         if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )
         {
-            run_session_end_func(session);
+            run_session_end_func();
             error = cwmp_move_session_to_session_queue (cwmp, session);
             CWMP_LOG(INFO,"Retry session, retry count = %d, retry in %ds",cwmp->retry_count_session,cwmp_get_retry_interval(cwmp));
             retry = true;
@@ -217,8 +217,8 @@ void cwmp_schedule_session (struct cwmp *cwmp)
             continue;
         }
         event_remove_all_event_container(session,RPC_SEND);
-        run_session_end_func(session);
-        cwmp_session_destructor (cwmp, session);
+        run_session_end_func();
+        cwmp_session_destructor (session);
         cwmp->session_send          = NULL;
         cwmp->retry_count_session   = 0;
         cwmp->session_status.last_end_time = time(NULL);
@@ -448,12 +448,12 @@ int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *sessi
         list_del(&(rpc_acs->list));
         list_add_tail (&(rpc_acs->list), &(session_queue->head_rpc_acs));
     }
-    cwmp_session_destructor (cwmp, session);
+    cwmp_session_destructor (session);
     pthread_mutex_unlock (&(cwmp->mutex_session_queue));
     return CWMP_OK;
 }
 
-int cwmp_session_destructor (struct cwmp *cwmp, struct session *session)
+int cwmp_session_destructor (struct session *session)
 {
 	struct rpc *rpc;
 
@@ -498,7 +498,7 @@ struct session *cwmp_add_queue_session (struct cwmp *cwmp)
     return session;
 }
 
-int run_session_end_func (struct session *session)
+int run_session_end_func ()
 {
 	apply_end_session();
 

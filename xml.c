@@ -828,11 +828,11 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	free(c);
 	session->tree_out = tree;
 
-	cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 	return -1;
 }
 
@@ -1251,17 +1251,17 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	FREE(c);
 #endif
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -1359,17 +1359,17 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 	FREE(c);
 #endif
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -1468,17 +1468,17 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 	FREE(c);
 #endif
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -1604,18 +1604,18 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	rpc->list_set_value_fault = &dmctx.list_fault_param;
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -1707,17 +1707,17 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	b = mxmlNewElement(b, "cwmp:SetParameterAttributesResponse");
 	if (!b) goto fault;
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -1783,17 +1783,17 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -1853,17 +1853,17 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
 
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
@@ -2440,7 +2440,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 		lookup_vcf_name(pupload->f_instance, &name);
 	}
 	external_upload(pupload->url, pupload->file_type, pupload->username, pupload->password, name);
-	cwmp_dm_ctx_clean(&cwmp_main, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	external_handle_action(cwmp_handle_uploadFault);
 	external_fetch_uploadFaultResp(&fault_code);
 
@@ -3137,7 +3137,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 										cwmp_dm_ctx_init(cwmp, &dmctx);
 										du_ref = get_deployment_unit_reference(&dmctx, package_name, package_env);
 										if (du_ref) res->du_ref = strdup(du_ref);
-										cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 									}
 									if (package_uuid) res->uuid = strdup(package_uuid);
 									res->current_state = strdup("Installed");
@@ -3159,7 +3159,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								if (!package_name || package_name[0] == '\0' || !package_version || package_version[0] == '\0' || !package_env || package_env[0] == '\0') {
 									error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
 									res->fault = error;
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 									break;
 								}
 								if (package_name) cur_name = strdup(package_name);
@@ -3169,7 +3169,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 									cwmp_dm_ctx_init(cwmp, &dmctx);
 									du_ref = get_deployment_unit_reference(&dmctx, cur_name, cur_env);
 									if (du_ref) res->du_ref = strdup(du_ref);
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 								}
 								if((p->version)[0] == '\0') {
 									error = cwmp_launch_du_uninstall(cur_name, cur_env, &res);
@@ -3203,7 +3203,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								if ((p->url)[0] != '\0' && (p->uuid)[0] == '\0') {
 									cwmp_dm_ctx_init(cwmp, &dmctx);
 									cur_uuid = strdup(get_softwaremodules_uuid(p->url));
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 									if (cur_uuid == NULL || cur_uuid[0] == '\0') {
 										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
 										break;
@@ -3211,7 +3211,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								} else if ((p->url)[0] == '\0' && (p->uuid)[0] != '\0') {
 									cwmp_dm_ctx_init(cwmp, &dmctx);
 									cur_url = strdup(get_softwaremodules_url(p->uuid));
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 									if (cur_url == NULL || cur_url[0] == '\0') {
 										error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
 										break;
@@ -3222,7 +3222,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 									cwmp_dm_ctx_init(cwmp, &dmctx);
 									du_ref = get_deployment_unit_reference(&dmctx, package_name, package_env);
 									if (du_ref) res->du_ref = strdup(du_ref);
-									cwmp_dm_ctx_clean(cwmp, &dmctx);
+
 								}
 								if( error == FAULT_CPE_NO_FAULT) {
 									if (package_uuid) res->uuid = strdup(package_uuid);

@@ -850,7 +850,7 @@ void load_queue_event(mxml_node_t *tree,struct cwmp *cwmp)
 	}
 }
 
-void load_schedule_inform(mxml_node_t *tree,struct cwmp *cwmp)
+void load_schedule_inform(mxml_node_t *tree)
 {
 	char						*command_key = NULL;
 	mxml_node_t					*b = tree, *c;
@@ -904,7 +904,7 @@ void load_schedule_inform(mxml_node_t *tree,struct cwmp *cwmp)
 	}
 }
 
-void load_download(mxml_node_t *tree,struct cwmp *cwmp)
+void load_download(mxml_node_t *tree)
 {
 	mxml_node_t			*b = tree, *c;
 	struct download		*download_request = NULL;
@@ -1010,7 +1010,7 @@ void load_download(mxml_node_t *tree,struct cwmp *cwmp)
 		count_download_queue++;
 }
 
-void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
+void load_schedule_download(mxml_node_t *tree)
 {
 	mxml_node_t			*b = tree, *c;
 	struct schedule_download		*download_request = NULL;
@@ -1216,7 +1216,7 @@ void load_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 }
 
 
-void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
+void load_apply_schedule_download(mxml_node_t *tree)
 {
 	mxml_node_t			*b = tree, *c;
 	struct apply_schedule_download		*download_request = NULL;
@@ -1340,7 +1340,7 @@ void load_apply_schedule_download(mxml_node_t *tree,struct cwmp *cwmp)
 	if(download_request->timeintervals[0].windowstart != 0)
 		count_download_queue++;
 }
-void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
+void load_upload(mxml_node_t *tree)
 {
 	mxml_node_t			*b = tree, *c;
 	struct upload		*upload_request = NULL;
@@ -1435,7 +1435,7 @@ void load_upload(mxml_node_t *tree,struct cwmp *cwmp)
 		count_download_queue++;
 }
 
-void load_change_du_state(mxml_node_t *tree,struct cwmp *cwmp)
+void load_change_du_state(mxml_node_t *tree)
 {
 	mxml_node_t			*b = tree, *c, *d;
 	struct change_du_state		*change_du_state_request = NULL;
@@ -2030,11 +2030,11 @@ int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading l
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "download") == 0)
 			{
-				load_download(b,cwmp);
+				load_download(b);
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "upload") == 0)
 			{
-				load_upload(b,cwmp);
+				load_upload(b);
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "transfer_complete") == 0)
 			{
@@ -2042,11 +2042,11 @@ int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading l
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_inform") == 0)
 			{
-				load_schedule_inform(b,cwmp);
+				load_schedule_inform(b);
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "change_du_state") == 0)
 			{
-				load_change_du_state(b,cwmp);
+				load_change_du_state(b);
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "du_state_change_complete") == 0)
 			{
@@ -2054,11 +2054,11 @@ int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading l
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_download") == 0)
 			{
-				load_schedule_download(b,cwmp);
+				load_schedule_download(b);
 			}
 			else if(b->type == MXML_ELEMENT && strcmp(b->value.element.name, "apply_schedule_download") == 0)
 			{
-				load_apply_schedule_download(b,cwmp);
+				load_apply_schedule_download(b);
 			}
 		}
 		b = mxmlWalkNext(b, bkp_tree, MXML_NO_DESCEND);

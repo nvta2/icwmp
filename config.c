@@ -1168,7 +1168,7 @@ int cwmp_get_deviceid(struct cwmp *cwmp) {
 	cwmp->deviceid.productclass = strdup(get_deviceid_productclass());
 	cwmp->deviceid.oui = strdup(get_deviceid_manufactureroui());
 	cwmp->deviceid.softwareversion = strdup(get_softwareversion());
-	cwmp_dm_ctx_clean(cwmp, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	return CWMP_OK;
 }
 
