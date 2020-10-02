@@ -302,7 +302,7 @@ void check_value_change(void)
 		dmjson_get_string("notification", &jval);
 		notification = strdup(jval);
 		dmjson_parse_fini();
-		fault = dmentry_get_parameter_leaf_value(&dmctx, CMD_GET_VALUE, parameter);
+		fault = dmentry_get_parameter_leaf_value(&dmctx, parameter);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
 			if (strcmp(dm_parameter->data, value) != 0 && notification[0] == '1')
@@ -312,7 +312,7 @@ void check_value_change(void)
 		FREE(notification);
 		FREE(parameter);
 	}
-	cwmp_dm_ctx_clean(cwmp, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	fclose(fp);
 }
 
@@ -394,7 +394,7 @@ void cwmp_add_notification(void)
 		}
 		dm_ctx_clean_sub(&dmctx);
 	}
-	cwmp_dm_ctx_clean(cwmp, &dmctx);
+	cwmp_dm_ctx_clean(&dmctx);
 	if (lw_isactive) {
 		cwmp_lwnotification();
 	}
