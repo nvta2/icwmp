@@ -27,6 +27,7 @@
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/dmbbfcommon.h>
 #include <libbbfdm/dmdiagnostics.h>
+extern unsigned int end_session_flag;
 #endif
 
 #define MAX_EVENTS							64
@@ -113,6 +114,21 @@ enum event_retry_after_enum {
 enum event_type_enum {
 	EVENT_TYPE_SINGLE = 0x0,
 	EVENT_TYPE_MULTIPLE = 0x1
+};
+
+enum end_session_enum {
+	END_SESSION_REBOOT = 1,
+	END_SESSION_EXTERNAL_ACTION = 1<<1,
+	END_SESSION_RELOAD = 1<<2,
+	END_SESSION_FACTORY_RESET = 1<<3,
+	END_SESSION_IPPING_DIAGNOSTIC = 1<<4,
+	END_SESSION_DOWNLOAD_DIAGNOSTIC = 1<<5,
+	END_SESSION_UPLOAD_DIAGNOSTIC = 1<<6,
+	END_SESSION_X_FACTORY_RESET_SOFT = 1<<7,
+	END_SESSION_NSLOOKUP_DIAGNOSTIC = 1<<8,
+	END_SESSION_TRACEROUTE_DIAGNOSTIC = 1<<9,
+	END_SESSION_UDPECHO_DIAGNOSTIC = 1<<10,
+	END_SESSION_SERVERSELECTION_DIAGNOSTIC = 1<<11
 };
 
 enum event_idx_enum {
@@ -322,4 +338,7 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp);
 int cwmp_exit(void);
 void add_list_value_change(char *param_name, char *param_data, char *param_type);
 void send_active_value_change(void);
+#ifndef TR098
+void cwmp_set_end_session(unsigned int flag);
+#endif
 #endif /* _CWMP_H__ */

@@ -29,6 +29,14 @@
 struct cwmp cwmp_main = {0};
 char *commandKey = NULL;
 
+#ifndef TR098
+unsigned int end_session_flag = 0;
+
+void cwmp_set_end_session(unsigned int flag)
+{
+	end_session_flag |= flag;
+}
+#endif
 int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx)
 {
 	if(cwmp->conf.supported_amd_version == 0)
