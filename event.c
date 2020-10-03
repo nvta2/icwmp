@@ -283,11 +283,9 @@ void check_value_change(void)
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
 
-
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
 		return;
-
 	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
 	while (fgets(buf, 512, fp) != NULL) {
 		dmctx.in_param = "";
@@ -296,17 +294,19 @@ void check_value_change(void)
 			buf[len-1] = '\0';
 		dmjson_parse_init(buf);
 		dmjson_get_string("parameter", &jval);
-		parameter = strdup(jval);
+		parameter = strdup(jval?jval:"");
 		dmjson_get_string("value", &jval);
-		value = strdup(jval);
+		value = strdup(jval?jval:"");
 		dmjson_get_string("notification", &jval);
-		notification = strdup(jval);
+		notification = strdup(jval?jval:"");
 		dmjson_parse_fini();
 		fault = dmentry_get_parameter_leaf_value(&dmctx, parameter);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (strcmp(dm_parameter->data, value) != 0 && notification[0] == '1')
+			if (notification && strlen(notification)>0 && notification[0] == '1' && strcmp(dm_parameter->data, value) != 0){
+				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
 				add_dm_parameter_tolist(&list_value_change, parameter, dm_parameter->data, dm_parameter->type);
+			}
 		}
 		FREE(value);
 		FREE(notification);
@@ -376,8 +376,8 @@ void cwmp_add_notification(void)
 		FREE(parameter);
 	}
 	fclose(fp);
-
-	list_for_each_entry(p, &list_enabled_lw_notify, list) {
+	cwmp_dm_ctx_clean(&dmctx);
+	/*list_for_each_entry(p, &list_enabled_lw_notify, list) {
 		if (!initiate || i != 0)		
 			dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 		i++;
@@ -397,7 +397,7 @@ void cwmp_add_notification(void)
 	cwmp_dm_ctx_clean(&dmctx);
 	if (lw_isactive) {
 		cwmp_lwnotification();
-	}
+	}*/
 	pthread_mutex_unlock(&(cwmp->mutex_session_send));
 	if (isactive)
 		send_active_value_change();

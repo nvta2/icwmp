@@ -178,9 +178,10 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         session = list_entry(ilist, struct session, list);
         if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 )
         	check_value_change();
+
         dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp);
-        //free_dm_parameter_all_fromlist(&list_value_change);
+        free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
             CWMP_LOG(EMERG,"FATAL error in the mutex process in the session scheduler!");
             exit(EXIT_FAILURE);
@@ -579,7 +580,6 @@ int run_session_end_func ()
 	dm_entry_restart_services();
 
 	end_session_flag = 0;
-
 	return CWMP_OK;
 }
 
