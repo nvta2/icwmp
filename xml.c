@@ -1562,6 +1562,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		}
 		if (parameter_name && parameter_value) {
 			int e = dm_entry_param_method(&dmctx, CMD_SET_VALUE, parameter_name, parameter_value, NULL);
+			cwmp_set_end_session(dmctx.end_session_flag);
 			if (e) {
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 			}
@@ -1684,6 +1685,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 		}
 		if (attr_notification_update && parameter_name && parameter_notification) {
 			int e = dm_entry_param_method(&dmctx, CMD_SET_NOTIFICATION, parameter_name, parameter_notification, attr_notification_update);
+			cwmp_set_end_session(dmctx.end_session_flag);
 			if (e) {
 				fault_code = cwmp_get_fault_code(e);
 				goto fault;
