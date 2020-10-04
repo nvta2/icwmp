@@ -278,7 +278,7 @@ void check_value_change(void)
 	int fault, iscopy;
 	FILE *fp;
 	char buf[512];
-	char *parameter, *notification = NULL, *value = NULL, *jval;
+	char *parameter, *notification = NULL, *value = NULL, *jval = NULL;
 	struct cwmp *cwmp = &cwmp_main;
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
@@ -295,6 +295,8 @@ void check_value_change(void)
 		dmjson_parse_init(buf);
 		dmjson_get_string("parameter", &jval);
 		parameter = strdup(jval?jval:"");
+		if(!jval || jval[0] == '\0')
+			continue;
 		dmjson_get_string("value", &jval);
 		value = strdup(jval?jval:"");
 		dmjson_get_string("notification", &jval);
