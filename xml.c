@@ -1690,6 +1690,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 				fault_code = cwmp_get_fault_code(e);
 				goto fault;
 			}
+
 			attr_notification_update = NULL;
 			parameter_name = NULL;
 			parameter_notification = NULL;
@@ -1710,6 +1711,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	if (!b) goto fault;
 
 	cwmp_dm_ctx_clean(&dmctx);
+	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 	return 0;
 
 fault:
