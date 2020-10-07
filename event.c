@@ -282,12 +282,16 @@ void check_value_change(void)
 	struct cwmp *cwmp = &cwmp_main;
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
+	bool first_iteration =true;
 
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
 		return;
 	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
 	while (fgets(buf, 512, fp) != NULL) {
+		if (!first_iteration)
+			dm_ctx_init_list_parameter(&dmctx);
+		first_iteration = false;
 		dmctx.in_param = "";
 		int len = strlen(buf);
 		if (len)
@@ -313,6 +317,7 @@ void check_value_change(void)
 		FREE(value);
 		FREE(notification);
 		FREE(parameter);
+		dm_ctx_clean_list_parameter(&dmctx);
 	}
 	cwmp_dm_ctx_clean(&dmctx);
 	fclose(fp);
