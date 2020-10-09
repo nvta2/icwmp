@@ -778,6 +778,51 @@ int get_global_config(struct config *conf)
     {
         return error;
     }
+    if((error = uci_get_value(UCI_CPE_NOTIFY_PERIODIC_ENABLE,&value)) == CWMP_OK)
+    {
+	    if(value != NULL)
+        {
+            uppercase(value);
+            if ((strcmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
+            {
+                conf->notify_periodic_enable = true;
+            }
+            else
+            {
+                conf->notify_periodic_enable = false;
+            }
+            free(value);
+            value = NULL;
+        }
+    }
+    else
+    {
+        return error;
+    }
+    if((error = uci_get_value(UCI_CPE_NOTIFY_PERIOD,&value)) == CWMP_OK)
+    {
+        int a = 0;
+
+        if(value != NULL)
+        {
+            a = atoi(value);
+            free(value);
+            value = NULL;
+        }
+        if(a==0)
+        {
+            CWMP_LOG(INFO,"Set notify period to the default value: %d",DEFAULT_NOTIFY_PERIOD);
+            conf->notify_period = DEFAULT_NOTIFY_PERIOD;
+        }
+        else
+        {
+            conf->notify_period = a;
+        }
+    }
+    else
+    {
+        return error;
+    }
      if((error = uci_get_value(UCI_PERIODIC_INFORM_TIME_PATH,&value)) == CWMP_OK)
     {
         int a = 0;
