@@ -167,6 +167,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
     static struct timespec              time_to_wait = {0, 0};
     bool                                retry = false;
     char *exec_download= NULL;
+    int is_notify = 0;
 
     cwmp->cwmp_cr_event = 0;
     while (1)
@@ -184,10 +185,12 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         }
 
         session = list_entry(ilist, struct session, list);
-        if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 )
-        	check_value_change();
-
-        dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+        if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 ) {
+        	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
+        		is_notify = check_value_change();
+        }
+        if (is_notify > 0)
+        	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp);
         free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
@@ -694,6 +697,8 @@ int main(int argc, char **argv)
     pthread_t upload_thread;
     pthread_t ubus_thread;
     pthread_t http_cr_server_thread;
+    pthread_t periodic_check_notify;
+
     struct sigaction act = {0};
 #ifndef TR098
     set_bbfdatamodel_type(BBFDM_CWMP); // To show only CWMP parameters
@@ -733,6 +738,9 @@ int main(int argc, char **argv)
 	if (error < 0)
 		CWMP_LOG(ERROR,"Error when creating the handle notify thread!");
 
+    error = pthread_create(&periodic_check_notify, NULL, &thread_periodic_check_notify, (void *)cwmp);
+    if (error < 0)
+        CWMP_LOG(ERROR,"Error when creating the download thread!");
     error = pthread_create(&scheduleInform_thread, NULL, &thread_cwmp_rpc_cpe_scheduleInform, (void *)cwmp);
     if (error < 0)
         CWMP_LOG(ERROR,"Error when creating the scheduled inform thread!");

@@ -273,7 +273,7 @@ void cwmp_lwnotification()
 	FREE(msg_out);
 }
 
-void check_value_change(void)
+int check_value_change(void)
 {
 	int fault, iscopy;
 	FILE *fp;
@@ -283,10 +283,11 @@ void check_value_change(void)
 	struct dm_parameter *dm_parameter;
 	struct dmctx dmctx = {0};
 	bool first_iteration =true;
+	int is_notify = 0;
 
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
-		return;
+		return false;
 
     dm_ctx_init(&dmctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
 	while (fgets(buf, 512, fp) != NULL) {
@@ -310,9 +311,13 @@ void check_value_change(void)
 		fault = dmentry_get_parameter_leaf_value(&dmctx, parameter);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (notification && strlen(notification)>0 && notification[0] == '1' && strcmp(dm_parameter->data, value) != 0){
+			if (notification && strlen(notification)>0 && (notification[0] == '1' || notification[0] == '2') && strcmp(dm_parameter->data, value) != 0){
 				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
 				add_dm_parameter_tolist(&list_value_change, parameter, dm_parameter->data, dm_parameter->type);
+				if (notification[0] == '1' && is_notify < 2)
+					is_notify = 1;
+				if (notification[0] == '2')
+					is_notify = 2;
 			}
 		}
 		FREE(value);
@@ -322,6 +327,7 @@ void check_value_change(void)
 	}
 	cwmp_dm_ctx_clean(&dmctx);
 	fclose(fp);
+	return is_notify;
 }
 
 void cwmp_add_notification(void)
@@ -726,6 +732,49 @@ void *thread_event_periodic (void *v)
     return CWMP_OK;
 }
 
+void *thread_periodic_check_notify (void *v)
+{
+    struct cwmp *cwmp = (struct cwmp *) v;
+    static int periodic_interval;
+    static bool periodic_enable;
+    static struct timespec periodic_timeout = {0, 0};
+    time_t current_time;
+    long int delta_time;
+    int is_notify;
+
+    periodic_interval = cwmp->conf.notify_period;
+    periodic_enable = cwmp->conf.notify_periodic_enable;
+
+    for(;;) {
+        if (periodic_enable) {
+        	pthread_mutex_lock (&(cwmp->mutex_notify_periodic));
+	        current_time = time(NULL);
+	        periodic_timeout.tv_sec = current_time + periodic_interval;
+        	pthread_cond_timedwait(&(cwmp->threshold_notify_periodic), &(cwmp->mutex_notify_periodic), &periodic_timeout);
+        	pthread_mutex_lock(&(cwmp->mutex_session_send));
+        	is_notify = check_value_change();
+        	if (is_notify > 0)
+        		dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+        	pthread_mutex_unlock(&(cwmp->mutex_session_send));
+        	if (is_notify == 2)
+        		send_active_value_change();
+        	pthread_mutex_unlock (&(cwmp->mutex_notify_periodic));
+        }
+        else
+        	break;
+    }
+    return CWMP_OK;
+}
+
+bool event_exist_in_list(struct cwmp *cwmp, int event)
+{
+	struct event_container   *event_container;
+	list_for_each_entry(event_container, cwmp->head_event_container, list) {
+		if (event_container->code == event)
+			return true;
+	}
+	return false;
+}
 int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
 {
     static int period = 0;

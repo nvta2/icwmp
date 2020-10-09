@@ -118,38 +118,3 @@ icwmp_tr098d_LDFLAGS+=-DCWMP_VERSION=\"$(CWMP_VERSION)\"
 icwmp_tr098d_CFLAGS+=-DCWMP_BKP_FILE=\"$(CWMP_BKP_FILE)\"
 icwmp_tr098d_CFLAGS+=-I../inc
 endif
-
-if ICWMP_ACTIVE_NOTIF
-bin_PROGRAMS += icwmp_notifd
-
-icwmp_notifd_SOURCES = \
-	../icwmp-notifd/icwmp-notifd.c	\
-	../icwmp-notifd/ubus.c			\
-	../icwmp-notifd/uci.c
-
-icwmp_notifd_CFLAGS =			\
-	$(AM_CFLAGS)		\
-	$(LIBUCI_CFLAGS)	\
-	$(LIBUBOX_CFLAGS)	\
-	$(LIBUBUS_CFLAGS)	\
-	$(LIBJSON_LIBS)		\
-	$(LBLOBMSG_LIBS) 	\
-	-Wall
-
-icwmp_notifd_LDFLAGS =			\
-	$(AM_LDFLAGS)				\
-	$(LIBUCI_LDFLAGS)			\
-	$(LIBUBOX_LDFLAGS) 			\
-	$(LIBUBUS_LIBS)				\
-	$(LIBJSON_LIBS)				\
-	$(LBLOBMSG_LIBS)
-
-icwmp_notifd_LDADD =			\
-	$(AM_LIBS)					\
-	$(LIBUCI_LIBS)				\
-	$(LIBUBOX_LIBS)				\
-	$(LIBUBUS_LIBS)				\
-	$(LIBJSON_LIBS)				\
-	$(LBLOBMSG_LIBS) 			\
-	-lbbfdm
-endif

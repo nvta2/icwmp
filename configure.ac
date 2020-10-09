@@ -23,9 +23,6 @@ AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy m
 AC_ARG_ENABLE(icwmp_tr098, [AS_HELP_STRING([--enable-icwmp_tr098], [enable icwmp tr098])], AC_DEFINE(ICWMP_TR098),)
 AM_CONDITIONAL([ICWMP_TR098],[test "x$enable_icwmp_tr098" = "xyes"])
 
-AC_ARG_ENABLE(icwmp_notifd, [AS_HELP_STRING([--enable-icwmp_notifd], [enable icwmp icwmp_notifd])], AC_DEFINE(ICWMP_ACTIVE_NOTIF),)
-AM_CONDITIONAL([ICWMP_ACTIVE_NOTIF],[test "x$enable_icwmp_notifd" = "xyes"])
-
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O

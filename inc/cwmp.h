@@ -39,6 +39,7 @@ extern unsigned int end_session_flag;
 #define CONNECTION_REQUEST_RESTRICT_PERIOD	5
 #define CONNECTION_REQUEST_RESTRICT_REQUEST	50
 #define DEFAULT_CONNECTION_REQUEST_PORT		7547
+#define DEFAULT_NOTIFY_PERIOD				10
 #define DEFAULT_LWN_PORT                    7547 
 #define DEFAULT_RETRY_MINIMUM_WAIT_INTERVAL 5
 #define DEFAULT_RETRY_INITIAL_INTERVAL		60
@@ -79,11 +80,12 @@ extern unsigned int end_session_flag;
 #define UCI_CPE_INSTANCE_MODE				"cwmp.cpe.instance_mode"
 #define UCI_CPE_SESSION_TIMEOUT				"cwmp.cpe.session_timeout"
 #define UCI_CPE_EXEC_DOWNLOAD				"cwmp.cpe.exec_download"
+#define UCI_CPE_NOTIFY_PERIODIC_ENABLE		"cwmp.cpe.notify_periodic_enable"
+#define UCI_CPE_NOTIFY_PERIOD				"cwmp.cpe.notify_period"
 #define LW_NOTIFICATION_ENABLE              "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME            "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT                "cwmp.lwn.port"
 #define UCI_DHCP_ACS_URL					"cwmp.acs.dhcp_url"
-
 enum action
 {
 	NONE = 0,
@@ -189,9 +191,11 @@ typedef struct config {
     char                                *ubus_socket;
     int                                 connection_request_port;
     int                                 period;
+    int 								notify_period;
     int                                 compression;
     time_t                              time;
     bool                                periodic_enable;
+    bool                                notify_periodic_enable;
     bool                                insecure_enable;
     bool								ipv6_enable;
 	int 								retry_min_wait_interval;
@@ -258,7 +262,9 @@ typedef struct cwmp {
     pthread_mutex_t		mutex_session_send;
     pthread_cond_t		threshold_session_send;
     pthread_mutex_t		mutex_periodic;
+    pthread_mutex_t		mutex_notify_periodic;
     pthread_cond_t		threshold_periodic;
+    pthread_cond_t threshold_notify_periodic;
     pthread_mutex_t		mutex_handle_notify;
     pthread_cond_t		threshold_handle_notify;
     int					count_handle_notify;
@@ -315,7 +321,7 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_container);
 void *thread_event_periodic (void *v);
 void cwmp_add_notification(void);
-void check_value_change(void);
+int check_value_change(void);
 int netlink_init(void);
 char * mix_get_time(void);
 char * mix_get_time_of(time_t t_time);
@@ -340,5 +346,7 @@ void add_list_value_change(char *param_name, char *param_data, char *param_type)
 void send_active_value_change(void);
 #ifndef TR098
 void cwmp_set_end_session(unsigned int flag);
+bool event_exist_in_list(struct cwmp *cwmp, int event);
+void *thread_periodic_check_notify (void *v);
 #endif
 #endif /* _CWMP_H__ */
