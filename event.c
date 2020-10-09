@@ -287,7 +287,8 @@ void check_value_change(void)
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
 		return;
-	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
+
+    dm_ctx_init(&dmctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
 	while (fgets(buf, 512, fp) != NULL) {
 		if (!first_iteration)
 			dm_ctx_init_list_parameter(&dmctx);
@@ -298,9 +299,9 @@ void check_value_change(void)
 			buf[len-1] = '\0';
 		dmjson_parse_init(buf);
 		dmjson_get_string("parameter", &jval);
-		parameter = strdup(jval?jval:"");
 		if(!jval || jval[0] == '\0')
 			continue;
+		parameter = strdup(jval?jval:"");
 		dmjson_get_string("value", &jval);
 		value = strdup(jval?jval:"");
 		dmjson_get_string("notification", &jval);
