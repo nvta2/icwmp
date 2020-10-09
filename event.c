@@ -742,8 +742,8 @@ void *thread_periodic_check_notify (void *v)
     long int delta_time;
     int is_notify;
 
-    periodic_interval = cwmp->conf.notify_period;
-    periodic_enable = cwmp->conf.notify_periodic_enable;
+    periodic_interval = cwmp->conf.periodic_notify_interval;
+    periodic_enable = cwmp->conf.periodic_notify_enable;
 
     for(;;) {
         if (periodic_enable) {
