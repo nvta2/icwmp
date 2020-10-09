@@ -782,14 +782,13 @@ int get_global_config(struct config *conf)
     {
 	    if(value != NULL)
         {
-            uppercase(value);
-            if ((strcmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
+            if ((strcasecmp(value,"FALSE")==0) || (strcmp(value,"0")==0))
             {
-                conf->periodic_notify_enable = true;
+                conf->periodic_notify_enable = false;
             }
             else
             {
-                conf->periodic_notify_enable = false;
+                conf->periodic_notify_enable = true;
             }
             free(value);
             value = NULL;
