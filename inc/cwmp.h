@@ -80,8 +80,8 @@ extern unsigned int end_session_flag;
 #define UCI_CPE_INSTANCE_MODE				"cwmp.cpe.instance_mode"
 #define UCI_CPE_SESSION_TIMEOUT				"cwmp.cpe.session_timeout"
 #define UCI_CPE_EXEC_DOWNLOAD				"cwmp.cpe.exec_download"
-#define UCI_CPE_NOTIFY_PERIODIC_ENABLE		"cwmp.cpe.notify_periodic_enable"
-#define UCI_CPE_NOTIFY_PERIOD				"cwmp.cpe.notify_period"
+#define UCI_CPE_NOTIFY_PERIODIC_ENABLE		"cwmp.cpe.periodic_notify_enable"
+#define UCI_CPE_NOTIFY_PERIOD				"cwmp.cpe.periodic_notify_interval"
 #define LW_NOTIFICATION_ENABLE              "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME            "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT                "cwmp.lwn.port"
@@ -191,11 +191,11 @@ typedef struct config {
     char                                *ubus_socket;
     int                                 connection_request_port;
     int                                 period;
-    int 								notify_period;
+    int 								periodic_notify_interval;
     int                                 compression;
     time_t                              time;
     bool                                periodic_enable;
-    bool                                notify_periodic_enable;
+    bool                                periodic_notify_enable;
     bool                                insecure_enable;
     bool								ipv6_enable;
 	int 								retry_min_wait_interval;

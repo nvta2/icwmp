@@ -785,11 +785,11 @@ int get_global_config(struct config *conf)
             uppercase(value);
             if ((strcmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
             {
-                conf->notify_periodic_enable = true;
+                conf->periodic_notify_enable = true;
             }
             else
             {
-                conf->notify_periodic_enable = false;
+                conf->periodic_notify_enable = false;
             }
             free(value);
             value = NULL;
@@ -812,11 +812,11 @@ int get_global_config(struct config *conf)
         if(a==0)
         {
             CWMP_LOG(INFO,"Set notify period to the default value: %d",DEFAULT_NOTIFY_PERIOD);
-            conf->notify_period = DEFAULT_NOTIFY_PERIOD;
+            conf->periodic_notify_interval = DEFAULT_NOTIFY_PERIOD;
         }
         else
         {
-            conf->notify_period = a;
+            conf->periodic_notify_interval = a;
         }
     }
     else
