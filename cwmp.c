@@ -190,7 +190,8 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         		is_notify = check_value_change();
         }
 
-        dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+        if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
+        	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp);
         free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
@@ -588,6 +589,10 @@ int run_session_end_func ()
 		cwmp_serverselection_diagnostic();
 	}
 
+	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
+		CWMP_LOG (INFO,"SetParameterAttributes end session: update enabled notify file");
+		dmbbf_update_enabled_notify_file(DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
+	}
 	dm_entry_restart_services();
 
 	end_session_flag = 0;

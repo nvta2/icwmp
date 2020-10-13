@@ -1711,7 +1711,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	if (!b) goto fault;
 
 	cwmp_dm_ctx_clean(&dmctx);
-	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
+	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE);
 	return 0;
 
 fault:
