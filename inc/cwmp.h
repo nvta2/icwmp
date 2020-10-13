@@ -134,6 +134,13 @@ enum end_session_enum {
 	END_SESSION_SET_NOTIFICATION_UPDATE = 1<<12
 };
 
+enum NOTIFICATION_STATUS {
+	NOTIF_NONE = 0,
+	NOTIF_PASSIVE = 1 << 1,
+	NOTIF_ACTIVE = 1 << 2,
+	NOTIF_LW_PASSIVE = 1 << 3,
+	NOTIF_LW_ACTIVE = 1 << 4
+};
 enum event_idx_enum {
 	EVENT_IDX_0BOOTSTRAP,
 	EVENT_IDX_1BOOT,

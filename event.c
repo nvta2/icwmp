@@ -311,13 +311,19 @@ int check_value_change(void)
 		fault = dmentry_get_parameter_leaf_value(&dmctx, parameter);
 		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
 			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (notification && strlen(notification)>0 && (notification[0] == '1' || notification[0] == '2') && strcmp(dm_parameter->data, value) != 0){
-				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
-				add_dm_parameter_tolist(&list_value_change, parameter, dm_parameter->data, dm_parameter->type);
-				if (notification[0] == '1' && is_notify < 2)
-					is_notify = 1;
+			if (notification && strlen(notification)>0 && notification[0] >= '1'  && strcmp(dm_parameter->data, value) != 0){
+				if (notification[0] == '1' || notification[0] == '2')
+					add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
+				if (notification[0] >= '3' )
+					add_lw_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
+
+				if (notification[0] == '1')
+					is_notify |= NOTIF_PASSIVE;
 				if (notification[0] == '2')
-					is_notify = 2;
+					is_notify |= NOTIF_ACTIVE;
+
+				if (notification[0] == '5' || notification[0] == '6')
+					is_notify |= NOTIF_LW_ACTIVE;
 			}
 		}
 		FREE(value);
@@ -653,8 +659,10 @@ void *thread_periodic_check_notify (void *v)
         	if (is_notify > 0)
         		dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         	pthread_mutex_unlock(&(cwmp->mutex_session_send));
-        	if (is_notify == 2)
+        	if (is_notify & NOTIF_ACTIVE)
         		send_active_value_change();
+        	if (is_notify & NOTIF_LW_ACTIVE)
+        		cwmp_lwnotification();
         	pthread_mutex_unlock (&(cwmp->mutex_notify_periodic));
         }
         else
