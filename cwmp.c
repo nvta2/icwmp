@@ -192,6 +192,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
         		is_notify = check_value_change();
         }
+
         if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
         	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp);
@@ -591,6 +592,10 @@ int run_session_end_func ()
 		cwmp_serverselection_diagnostic();
 	}
 
+	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
+		CWMP_LOG (INFO,"SetParameterAttributes end session: update enabled notify file");
+		dmbbf_update_enabled_notify_file(DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
+	}
 	dm_entry_restart_services();
 
 	end_session_flag = 0;
@@ -700,8 +705,8 @@ int main(int argc, char **argv)
     pthread_t ubus_thread;
     pthread_t http_cr_server_thread;
     pthread_t periodic_check_notify;
-    struct sigaction act = {0};
 
+    struct sigaction act = {0};
 #ifndef TR098
     set_bbfdatamodel_type(BBFDM_CWMP); // To show only CWMP parameters
 #endif
@@ -723,6 +728,7 @@ int main(int argc, char **argv)
     act.sa_handler = signal_handler;
     sigaction(SIGINT,  &act, 0);
     sigaction(SIGTERM, &act, 0);
+	
     error = pthread_create(&http_cr_server_thread, NULL, &thread_http_cr_server_listen, NULL);
     if (error < 0)
         CWMP_LOG(ERROR,"Error when creating the http connection request server thread!");

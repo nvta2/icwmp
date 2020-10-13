@@ -97,7 +97,7 @@ struct FAULT_CPE FAULT_CPE_ARRAY [] = {
     [FAULT_CPE_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD]     = {"9017", FAULT_9017, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download"},
     [FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED]        = {"9018", FAULT_9018, FAULT_CPE_TYPE_SERVER, "Download failure: file corrupted"},
     [FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION]   = {"9019", FAULT_9019, FAULT_CPE_TYPE_SERVER, "Download failure: file authentication failure"},
-	[FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW]   	= {"9020", FAULT_9020, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download"},
+	[FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW]   = {"9020", FAULT_9020, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download"},
 	[FAULT_CPE_DUPLICATE_DEPLOYMENT_UNIT]   		= {"9026", FAULT_9026, FAULT_CPE_TYPE_SERVER, "Duplicate deployment unit"},
 	[FAULT_CPE_SYSTEM_RESOURCES_EXCEEDED]   		= {"9027", FAULT_9027, FAULT_CPE_TYPE_SERVER, "System ressources exceeded"},
 	[FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT]   			= {"9028", FAULT_9028, FAULT_CPE_TYPE_SERVER, "Unknown deployment unit"},
@@ -1239,6 +1239,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(parameter_list, "xsi:type", "soap_enc:Array");
 #endif
+
 	while (b) {
 		if (b && b->type == MXML_OPAQUE &&
 		    b->value.opaque &&
@@ -1748,7 +1749,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	b = mxmlNewElement(b, "cwmp:SetParameterAttributesResponse");
 	if (!b) goto fault;
 
-	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
+	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE);
 	return 0;
 
 fault:
