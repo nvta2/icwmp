@@ -33,56 +33,6 @@
 #include <libbbfdm/dmdiagnostics.h>
 #endif
 
-static int icwmpd_cmd(char *cmd, int n, ...)
-{
-	va_list arg;
-	int i, pid;
-	static int dmcmd_pfds[2];
-	char *argv[n+2];
-
-	argv[0] = cmd;
-
-	va_start(arg,n);
-	for (i=0; i<n; i++)
-	{
-		argv[i+1] = va_arg(arg, char*);
-	}
-	va_end(arg);
-
-	argv[n+1] = NULL;
-
-	if (pipe(dmcmd_pfds) < 0)
-		return -1;
-
-	if ((pid = fork()) == -1)
-		return -1;
-
-	if (pid == 0) {
-		/* child */
-		close(dmcmd_pfds[0]);
-		dup2(dmcmd_pfds[1], 1);
-		close(dmcmd_pfds[1]);
-
-		execvp(argv[0], (char **) argv);
-		exit(ESRCH);
-	} else if (pid < 0)
-		return -1;
-
-	/* parent */
-	close(dmcmd_pfds[1]);
-
-	int status;
-	while (waitpid(pid, &status, 0) != pid)
-	{
-		kill(pid, 0);
-		if (errno == ESRCH) {
-			return dmcmd_pfds[0];
-		}
-	}
-
-	return dmcmd_pfds[0];
-}
-
 static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
 {
 	va_list arg;
@@ -116,82 +66,14 @@ static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
 #ifndef TR098
 int cwmp_start_diagnostic(int diagnostic_type)
 {
-	char *url = NULL;
-	char *interface = NULL;
-	char *size = NULL;
-	int error;
-	char *status;
+	struct dmctx dmctx = {0};
+	struct cwmp *cwmp = &cwmp_main;
 
-	if (diagnostic_type == DOWNLOAD_DIAGNOSTIC) {
-		uci_get_state_value("cwmp.@downloaddiagnostic[0].url", &url);
-		uci_get_state_value("cwmp.@downloaddiagnostic[0].device", &interface);
-	} else {
-		uci_get_state_value("cwmp.@uploaddiagnostic[0].url", &url);
-		uci_get_state_value("cwmp.@uploaddiagnostic[0].TestFileLength", &size);
-		uci_get_state_value("cwmp.@uploaddiagnostic[0].device", &interface);
-	}
-	
-	if( url == NULL || ((url != NULL) && (strcmp(url,"")==0))
-		|| ((strncmp(url,DOWNLOAD_PROTOCOL_FTP,strlen(DOWNLOAD_PROTOCOL_FTP))!=0) &&
-		(strstr(url,"@") != NULL && strncmp(url,DOWNLOAD_PROTOCOL_HTTP,strlen(DOWNLOAD_PROTOCOL_HTTP)) == 0))
-	)
-	{
-		CWMP_LOG(ERROR,"Invalid URL %s", url);
-		free(url);
-		return -1;
-	}
+	cwmp_dm_ctx_init(cwmp, &dmctx);
+	start_upload_download_diagnostic(diagnostic_type, "cwmp");
+	cwmp_dm_ctx_clean(&dmctx);
+	cwmp_root_cause_event_ipdiagnostic();
 
-	if ( interface == NULL || interface[0] == '\0' )
-	{
-		error = get_default_gateway_device(&interface);
-		if (error == -1)
-		{
-			CWMP_LOG(ERROR,"Interface value: Empty");
-			free(interface);
-			return -1;
-		}
-	}
-	if (diagnostic_type == DOWNLOAD_DIAGNOSTIC)
-	{
-		CWMP_LOG(INFO,"Launch Download diagnostic with url %s", url);
-		icwmpd_cmd("/bin/sh", 5, DOWNLOAD_DIAGNOSTIC_PATH, "run", "cwmp", url, interface);
-		uci_get_state_value("cwmp.@downloaddiagnostic[0].DiagnosticState", &status);
-		if (status && strcmp(status, "Complete") == 0)
-		{
-			init_download_stats();
-			CWMP_LOG(INFO,"Extract Download stats");
-			if(strncmp(url,DOWNLOAD_PROTOCOL_HTTP,strlen(DOWNLOAD_PROTOCOL_HTTP)) == 0)
-				extract_stats(DOWNLOAD_DUMP_FILE, DOWNLOAD_DIAGNOSTIC_HTTP, DOWNLOAD_DIAGNOSTIC, "cwmp");
-			if(strncmp(url,DOWNLOAD_PROTOCOL_FTP,strlen(DOWNLOAD_PROTOCOL_FTP)) == 0)
-				extract_stats(DOWNLOAD_DUMP_FILE, DOWNLOAD_DIAGNOSTIC_FTP, DOWNLOAD_DIAGNOSTIC, "cwmp");
-			cwmp_root_cause_event_ipdiagnostic();
-		}
-		else if (status && strncmp(status, "Error_", strlen("Error_")) == 0)
-			cwmp_root_cause_event_ipdiagnostic();
-		free(status);
-	}
-	else
-	{
-		CWMP_LOG(INFO,"Launch Upload diagnostic with url %s", url);
-		icwmpd_cmd("/bin/sh", 6, UPLOAD_DIAGNOSTIC_PATH, "run", "cwmp", url, interface, size);
-		uci_get_state_value("cwmp.@uploaddiagnostic[0].DiagnosticState", &status);
-		if (status && strcmp(status, "Complete") == 0)
-		{
-			init_upload_stats();
-			CWMP_LOG(INFO,"Extract Upload stats");
-			if(strncmp(url,DOWNLOAD_PROTOCOL_HTTP,strlen(DOWNLOAD_PROTOCOL_HTTP)) == 0)
-				extract_stats(UPLOAD_DUMP_FILE, DOWNLOAD_DIAGNOSTIC_HTTP, UPLOAD_DIAGNOSTIC, "cwmp");
-			if(strncmp(url,DOWNLOAD_PROTOCOL_FTP,strlen(DOWNLOAD_PROTOCOL_FTP)) == 0)
-				extract_stats(UPLOAD_DUMP_FILE, DOWNLOAD_DIAGNOSTIC_FTP, UPLOAD_DIAGNOSTIC, "cwmp");
-			cwmp_root_cause_event_ipdiagnostic();
-		}
-		else if (status && strncmp(status, "Error_", strlen("Error_")) == 0)
-			cwmp_root_cause_event_ipdiagnostic();
-		free(status);
-		free(size);
-	}
-	free(url);
-	free(interface);
 	return 0;
 }
 #endif
