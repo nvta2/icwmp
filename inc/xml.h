@@ -114,6 +114,12 @@ enum {
 	FAULT_CPE_TYPE_SERVER
 };
 
+struct cwmp_param_fault {
+	struct list_head list;
+	char *name;
+	int fault;
+};
+
 struct rpc_cpe_method {
 	const char *name;
 	int (*handler)(struct session *session, struct rpc *rpc);
@@ -298,6 +304,7 @@ int xml_prepare_lwnotification_message(char **msg_out);
 int xml_set_cwmp_id_rpc_cpe(struct session *session);
 int cwmp_create_fault_message(struct session *session, struct rpc *rpc_cpe, int fault_code);
 int cwmp_get_fault_code (int fault_code);
+int cwmp_get_fault_code_by_string (char* fault_code);
 int cwmp_scheduleInform_remove_all();
 int cwmp_scheduledDownload_remove_all();
 int cwmp_scheduledUpload_remove_all();

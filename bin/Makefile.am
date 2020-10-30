@@ -16,6 +16,7 @@ icwmpd_SOURCES =			\
 	../ubus.c				\
 	../xml.c				\
 	../diagnostic.c			\
+	../datamodelIface.c		\
 	../zlib.c
 
 icwmpd_CFLAGS =			\

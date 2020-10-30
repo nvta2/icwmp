@@ -348,5 +348,6 @@ void send_active_value_change(void);
 void cwmp_set_end_session(unsigned int flag);
 bool event_exist_in_list(struct cwmp *cwmp, int event);
 void *thread_periodic_check_notify (void *v);
+void free_dm_parameter_all_fromlist(struct list_head *list);
 #endif
 #endif /* _CWMP_H__ */

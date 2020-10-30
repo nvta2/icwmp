@@ -25,4 +25,8 @@ int cwmp_handle_setParamAttributes(char *msg);
 int cwmp_handle_addObject(char *msg);
 int cwmp_handle_delObject(char *msg);
 
+#define foreach_jsonobj_in_array(param_obj, parameters) \
+	int k, array_length = json_object_array_length(parameters); \
+	for (k=0, param_obj = json_object_array_get_idx(parameters, 0); k< array_length; k++, param_obj = json_object_array_get_idx(parameters, k)) \
+
 #endif /* _JSHN_H__ */

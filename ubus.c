@@ -30,6 +30,7 @@
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
+static json_object *json_res = NULL;
 
 static const char *arr_session_status[] = {
     [SESSION_WAITING] = "waiting",
@@ -348,4 +349,82 @@ void
 ubus_exit(void)
 {
 	if (ctx) ubus_free(ctx);
+}
+
+static void receive_ubus_call_result_data(struct ubus_request *req, int type, struct blob_attr *msg)
+{
+	const char *str;
+	if (!msg)
+		return;
+
+	str = blobmsg_format_json_indent(msg, true, -1);
+	if (!str) {
+		json_res = NULL;
+		return;
+	}
+
+	json_res = json_tokener_parse(str);
+	free((char *)str); //MEM should be free and not dmfree*/
+}
+
+int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_arg u_args[], int u_args_size, json_object **json_ret)
+{
+	uint32_t id;
+	int i = 0;
+	int rc = 0;
+	struct ubus_context *ubus_ctx = NULL;
+	struct blob_buf b = {0};
+
+	json_res = NULL;
+
+	if (ubus_ctx == NULL) {
+		ubus_ctx = ubus_connect(NULL);
+		if (ubus_ctx == NULL)
+			return -1;
+	}
+	blob_buf_init(&b, 0);
+	for (i = 0; i < u_args_size; i++) {
+		if (u_args[i].type == UBUS_String)
+			blobmsg_add_string(&b, u_args[i].key, u_args[i].val.str_val);
+		else if (u_args[i].type == UBUS_Integer)
+			blobmsg_add_u32(&b, u_args[i].key, u_args[i].val.int_val);
+		else if (u_args[i].type == UBUS_Array_Obj || u_args[i].type == UBUS_Array_Str){
+			void *a, *t;
+			int j;
+			a = blobmsg_open_array(&b, u_args[i].key);
+			if (u_args[i].type == UBUS_Array_Obj) {
+				t = blobmsg_open_table(&b, "");
+				for (j = 0; j < ARRAY_MAX; j++) {
+					if (u_args[i].val.array_value[j].param_value.key == NULL || strlen(u_args[i].val.array_value[j].param_value.key) <= 0)
+						break;
+					blobmsg_add_string(&b, u_args[i].val.array_value[j].param_value.key, u_args[i].val.array_value[j].param_value.value);
+				}
+				blobmsg_close_table(&b, t);
+			}
+			if (u_args[i].type == UBUS_Array_Str) {
+				for (j = 0; j < ARRAY_MAX; j++) {
+					if (u_args[i].val.array_value[j].str_value == NULL || strlen(u_args[i].val.array_value[j].str_value) <= 0)
+						break;
+					blobmsg_add_string(&b, NULL, u_args[i].val.array_value[j].str_value);
+				}
+			}
+			blobmsg_close_array(&b, a);
+		}
+		else if (u_args[i].type == UBUS_Bool)
+			blobmsg_add_u8(&b, u_args[i].key, u_args[i].val.bool_val);
+	}
+	blobmsg_add_string(&b, "proto", "cwmp");
+	if (!ubus_lookup_id(ubus_ctx, obj, &id))
+		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 1000);
+	else
+		rc = -1;
+
+	*json_ret = json_res;
+
+	if (ubus_ctx) {
+		ubus_free(ubus_ctx);
+		ubus_ctx = NULL;
+	}
+	blob_buf_free(&b);
+	return rc;
 }
