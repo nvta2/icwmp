@@ -34,7 +34,7 @@
 #include <libbbfdm/deviceinfo.h>
 #include <libbbfdm/softwaremodules.h>
 #endif
-#include "datamodelIface.h"
+#include "datamodel_interface.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
@@ -158,6 +158,36 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault)
 	free(param_fault->name);
 	free(param_fault);
 }
+
+void cwmp_add_list_param_value(char *param, char* value, struct list_head *list_param_value)
+{
+	struct cwmp_param_value *param_value = NULL;
+	if (param == NULL)
+		param = "";
+
+	param_value = calloc(1, sizeof(struct cwmp_param_value));
+	list_add_tail(&param_value->list, list_param_value);
+	param_value->param = strdup(param);
+	param_value->value = strdup(value);
+}
+
+void cwmp_del_list_param_value(struct cwmp_param_value *param_value)
+{
+	list_del(&param_value->list);
+	free(param_value->param);
+	free(param_value->value);
+	free(param_value);
+}
+
+void cwmp_free_all_list_param_value(struct list_head *list_param_value)
+{
+	struct cwmp_param_value *param_value;
+	while (list_param_value->next != list_param_value) {
+		param_value = list_entry(list_param_value->next, struct cwmp_param_value, list);
+		cwmp_del_list_param_value(param_value);
+	}
+}
+
 static mxml_node_t *				/* O - Element node or NULL */
 mxmlFindElementOpaque(mxml_node_t *node,	/* I - Current node */
 						mxml_node_t *top,	/* I - Top node */
@@ -1537,6 +1567,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 
 	LIST_HEAD(list_fault_param);
 	rpc->list_set_value_fault = &list_fault_param;
+	LIST_HEAD(list_param_value);
 	while (b) {
 		if (b && b->type == MXML_OPAQUE &&
 			b->value.opaque &&
@@ -1578,19 +1609,11 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			parameter_value = strdup("");
 		}
 		if (parameter_name && parameter_value) {
-			char *err = cwmp_set_parameter_value(parameter_name, parameter_value, parameter_key);
-			if (err) {
-				cwmp_add_list_fault_param(parameter_name, atoi(err), rpc->list_set_value_fault);
-				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
-			}
+			cwmp_add_list_param_value(parameter_name, parameter_value, &list_param_value);
 			parameter_name = NULL;
 			FREE(parameter_value);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
-	}
-
-	if (fault_code == FAULT_CPE_INVALID_ARGUMENTS) {
-		goto fault;
 	}
 
 	b = mxmlFindElement(session->body_in, session->body_in, "ParameterKey", NULL, NULL, MXML_DESCEND);
@@ -1598,10 +1621,23 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		fault_code = FAULT_CPE_REQUEST_DENIED;
 		goto fault;
 	}
-
 	b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 	if (b && b->type == MXML_OPAQUE && b->value.opaque)
 		parameter_key = b->value.opaque;
+	struct cwmp_param_value *param_value;
+
+	list_for_each_entry(param_value, &list_param_value, list) {
+		char *err = cwmp_set_parameter_value(param_value->param, param_value->value, parameter_key);
+		if (err) {
+			cwmp_add_list_fault_param(parameter_name, atoi(err), rpc->list_set_value_fault);
+			fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		}
+	}
+
+	cwmp_free_all_list_param_value(&list_param_value);
+	if (fault_code == FAULT_CPE_INVALID_ARGUMENTS) {
+		goto fault;
+	}
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body",
 				NULL, NULL, MXML_DESCEND);

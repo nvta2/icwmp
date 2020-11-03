@@ -120,6 +120,12 @@ struct cwmp_param_fault {
 	int fault;
 };
 
+struct cwmp_param_value {
+	struct list_head list;
+	char *param;
+	char *value;
+};
+
 struct rpc_cpe_method {
 	const char *name;
 	int (*handler)(struct session *session, struct rpc *rpc);

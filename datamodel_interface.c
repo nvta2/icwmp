@@ -1,4 +1,4 @@
-#include "datamodelIface.h"
+#include "datamodel_interface.h"
 
 char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 {
@@ -21,7 +21,7 @@ char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 char* cwmp_set_parameter_value(char* parameter_name, char* value, char* parameter_key)
 {
 	json_object *set_res;
-	int e = cwmp_ubus_call("usp.raw", "set", CWMP_UBUS_ARGS{{"path", {.str_val=parameter_name}, UBUS_String},{"value", value, UBUS_String}, {"key", parameter_key, UBUS_String}}, 2, &set_res);
+	int e = cwmp_ubus_call("usp.raw", "set", CWMP_UBUS_ARGS{{"path", {.str_val=parameter_name}, UBUS_String},{"value", {.str_val=value}, UBUS_String}, {"key", {.str_val=parameter_key}, UBUS_String}}, 3, &set_res);
 	if (e < 0 || set_res == NULL)
 		return "9002";
 
