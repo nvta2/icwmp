@@ -289,7 +289,7 @@ int check_value_change(void)
 	if (fp == NULL)
 		return false;
 
-    dm_ctx_init(&dmctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+	dm_ctx_init(&dmctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
 	while (fgets(buf, 512, fp) != NULL) {
 		if (!first_iteration)
 			dm_ctx_init_list_parameter(&dmctx);
@@ -328,93 +328,6 @@ int check_value_change(void)
 	cwmp_dm_ctx_clean(&dmctx);
 	fclose(fp);
 	return is_notify;
-}
-
-void cwmp_add_notification(void)
-{
-	int fault, iscopy;
-	int i = 0;
-	FILE *fp;
-	char buf[512];
-	char *parameter, *notification = NULL, *value = NULL, *jval;
-	struct cwmp *cwmp = &cwmp_main;
-	struct dm_enabled_notify *p;
-	struct dm_parameter *dm_parameter;
-	struct dmctx dmctx = {0};
-	struct config *conf = &(cwmp->conf);	
-	bool isactive = false;
-	bool initiate = false;
-	bool lw_isactive = false;
-
-	pthread_mutex_lock(&(cwmp->mutex_session_send));
-	pthread_mutex_lock(&(cwmp->mutex_handle_notify));
-	cwmp->count_handle_notify = 0;
-	pthread_mutex_unlock(&(cwmp->mutex_handle_notify));
-	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
-
-	fp = fopen(DM_ENABLED_NOTIFY, "r");
-	if (fp == NULL)
-		return;
-
-	while (fgets(buf, 512, fp) != NULL) {
-		dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
-		initiate = true;
-		int len = strlen(buf);
-		if (len)
-			buf[len-1] = '\0';
-		dmjson_parse_init(buf);
-		dmjson_get_string("parameter", &jval);
-		parameter = strdup(jval);
-		dmjson_get_string("value", &jval);
-		value = strdup(jval);
-		dmjson_get_string("notification", &jval);
-		notification = strdup(jval);
-		dmjson_parse_fini();
-
-		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, parameter, NULL, NULL);
-		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
-			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (strcmp(dm_parameter->data, value) != 0) {
-				dm_update_file_enabled_notify(parameter, dm_parameter->data);
-				iscopy = copy_temporary_file_to_original_file(DM_ENABLED_NOTIFY, DM_ENABLED_NOTIFY_TEMPORARY);
-				if(iscopy)
-					remove(DM_ENABLED_NOTIFY_TEMPORARY);
-				if (notification[0] == '1' || notification[0] == '2' || notification[0] == '4' || notification[0] == '6' )
-					add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
-				if (notification[0] == '2')
-					isactive = true;
-			}
-		}
-		FREE(value);
-		FREE(notification);
-		FREE(parameter);
-	}
-	fclose(fp);
-	cwmp_dm_ctx_clean(&dmctx);
-	/*list_for_each_entry(p, &list_enabled_lw_notify, list) {
-		if (!initiate || i != 0)		
-			dm_ctx_init_sub(&dmctx, DM_CWMP, cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
-		i++;
-		if (!conf->lw_notification_enable)
-			break;		
-		fault = dm_entry_param_method(&dmctx, CMD_GET_VALUE, p->name, NULL, NULL);
-		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
-			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (strcmp(dm_parameter->data, p->value) != 0) {
-				dm_update_enabled_notify(p, dm_parameter->data);
-				if (p->notification[0] >= '3' ) add_lw_list_value_change(p->name, dm_parameter->data, dm_parameter->type);
-				if (p->notification[0] == '5' || p->notification[0] == '6') lw_isactive = true;
-			}
-		}
-		dm_ctx_clean_sub(&dmctx);
-	}
-	cwmp_dm_ctx_clean(&dmctx);
-	if (lw_isactive) {
-		cwmp_lwnotification();
-	}*/
-	pthread_mutex_unlock(&(cwmp->mutex_session_send));
-	if (isactive)
-		send_active_value_change();
 }
 
 void cwmp_root_cause_event_ipdiagnostic(void)
@@ -656,22 +569,6 @@ int cwmp_root_cause_getRPCMethod (struct cwmp *cwmp)
         pthread_mutex_unlock (&(cwmp->mutex_session_queue));
     }
 
-    return CWMP_OK;
-}
-
-void *thread_handle_notify(void *v)
-{
-    struct cwmp                 *cwmp = (struct cwmp *) v;
-
-    for(;;) {
-        pthread_mutex_lock(&(cwmp->mutex_handle_notify));
-        pthread_cond_wait(&(cwmp->threshold_handle_notify), &(cwmp->mutex_handle_notify));
-        pthread_mutex_unlock(&(cwmp->mutex_handle_notify));
-		while(cwmp->count_handle_notify) {
-			cwmp_add_notification();
-		}
-
-    }
     return CWMP_OK;
 }
 

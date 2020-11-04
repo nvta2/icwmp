@@ -39,31 +39,6 @@ static const char *arr_session_status[] = {
     [SESSION_SUCCESS] = "success",
 };
 
-static int
-cwmp_handle_notify(struct ubus_context *ctx, struct ubus_object *obj,
-			struct ubus_request_data *req, const char *method,
-			struct blob_attr *msg)
-{
-	bool send_signal = false;
-	CWMP_LOG(INFO, "triggered ubus notification");
-
-	blob_buf_init(&b, 0);
-
-	pthread_mutex_lock(&(cwmp_main.mutex_handle_notify));
-	if (!cwmp_main.count_handle_notify)
-		send_signal = true;
-	cwmp_main.count_handle_notify++;
-	pthread_mutex_unlock(&(cwmp_main.mutex_handle_notify));
-	if (send_signal)
-		pthread_cond_signal(&(cwmp_main.threshold_handle_notify));
-
-	blobmsg_add_u32(&b, "status", 1);
-	ubus_send_reply(ctx, req, b.head);
-	blob_buf_free(&b);
-
-	return 0;
-}
-
 
 enum command {
 	COMMAND_NAME,
@@ -305,7 +280,6 @@ cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 static const struct ubus_method freecwmp_methods[] = {
-	UBUS_METHOD_NOARG("notify", cwmp_handle_notify),
 	UBUS_METHOD("command", cwmp_handle_command, command_policy),
 	UBUS_METHOD_NOARG("status", cwmp_handle_status),
 	UBUS_METHOD("inform", cwmp_handle_inform, inform_policy),

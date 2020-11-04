@@ -25,6 +25,8 @@
 #include "ubus.h"
 #include "diagnostic.h"
 #include "config.h"
+#include "jshn.h"
+#include <libubus.h>
 
 struct cwmp cwmp_main = {0};
 char *commandKey = NULL;
@@ -37,6 +39,7 @@ void cwmp_set_end_session(unsigned int flag)
 	end_session_flag |= flag;
 }
 #endif
+
 int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx)
 {
 	if(cwmp->conf.supported_amd_version == 0)
@@ -189,8 +192,8 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
         		is_notify = check_value_change();
         }
-
-        dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+        if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
+        	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp);
         free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
@@ -688,7 +691,6 @@ int main(int argc, char **argv)
     struct cwmp *cwmp = &cwmp_main;
     int error;
     pthread_t periodic_event_thread;
-    pthread_t handle_notify_thread;
     pthread_t scheduleInform_thread;
     pthread_t change_du_state_thread;
     pthread_t download_thread;
@@ -698,8 +700,8 @@ int main(int argc, char **argv)
     pthread_t ubus_thread;
     pthread_t http_cr_server_thread;
     pthread_t periodic_check_notify;
-
     struct sigaction act = {0};
+
 #ifndef TR098
     set_bbfdatamodel_type(BBFDM_CWMP); // To show only CWMP parameters
 #endif
@@ -721,7 +723,6 @@ int main(int argc, char **argv)
     act.sa_handler = signal_handler;
     sigaction(SIGINT,  &act, 0);
     sigaction(SIGTERM, &act, 0);
-	
     error = pthread_create(&http_cr_server_thread, NULL, &thread_http_cr_server_listen, NULL);
     if (error < 0)
         CWMP_LOG(ERROR,"Error when creating the http connection request server thread!");
@@ -733,10 +734,6 @@ int main(int argc, char **argv)
     error = pthread_create(&periodic_event_thread, NULL, &thread_event_periodic, (void *)cwmp);
     if (error < 0)
         CWMP_LOG(ERROR,"Error when creating the periodic event thread!");
-
-    error = pthread_create(&handle_notify_thread, NULL, &thread_handle_notify, (void *)cwmp);
-	if (error < 0)
-		CWMP_LOG(ERROR,"Error when creating the handle notify thread!");
 
     error = pthread_create(&periodic_check_notify, NULL, &thread_periodic_check_notify, (void *)cwmp);
     if (error < 0)
@@ -769,7 +766,6 @@ int main(int argc, char **argv)
 
     pthread_join(ubus_thread, NULL);
     pthread_join(periodic_event_thread, NULL);
-    pthread_join(handle_notify_thread, NULL);
     pthread_join(scheduleInform_thread, NULL);
     pthread_join(download_thread, NULL);
     pthread_join(upload_thread, NULL);

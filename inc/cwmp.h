@@ -265,7 +265,6 @@ typedef struct cwmp {
     pthread_mutex_t		mutex_notify_periodic;
     pthread_cond_t		threshold_periodic;
     pthread_cond_t threshold_notify_periodic;
-    pthread_mutex_t		mutex_handle_notify;
     pthread_cond_t		threshold_handle_notify;
     int					count_handle_notify;
     int					retry_count_session;
@@ -329,7 +328,6 @@ void *thread_exit_program (void *v);
 void connection_request_ip_value_change(struct cwmp *cwmp, int version);
 void connection_request_port_value_change(struct cwmp *cwmp, int port);
 void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type);
-void *thread_handle_notify(void *v);
 int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type);
 int cwmp_get_int_event_code(char *code);
 int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx);
