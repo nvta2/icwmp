@@ -1676,7 +1676,7 @@ error:
 int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct rpc *rpc)
 {
 	mxml_node_t *n, *b = session->body_in;
-	char *c, *parameter_name = NULL, *parameter_notification = NULL, *attr_notification_update = NULL;
+	char *c, *parameter_name = NULL, *parameter_notification = NULL;
 	int fault_code = FAULT_CPE_INTERNAL_ERROR;
 
 	/* handle cwmp:SetParameterAttributes */
@@ -1692,7 +1692,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	while (b != NULL) {
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "SetParameterAttributesStruct")) {
-			attr_notification_update = NULL;
+			//attr_notification_update = NULL;
 			parameter_name = NULL;
 			parameter_notification = NULL;
 		}
@@ -1711,12 +1711,12 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "NotificationChange")) {
-			attr_notification_update = b->value.opaque;
+			//attr_notification_update = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "NotificationChange") &&
 			!b->child) {
-			attr_notification_update = "";
+			//attr_notification_update = "";
 		}
 		if (b && b->type == MXML_OPAQUE &&
 			b->value.opaque &&
