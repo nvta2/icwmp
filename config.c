@@ -32,6 +32,7 @@
 #include <libbbfdm/dmbbfcommon.h>
 #include <libbbfdm/deviceinfo.h>
 #endif
+#include "cwmp_uci.h"
 #include "config.h"
 
 pthread_mutex_t  mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
@@ -91,68 +92,6 @@ void show_version()
 #else
     fprintf(stdout, "\nVersion: %s revision %s\n\n",CWMP_VERSION,CWMP_REVISION);
 #endif
-}
-
-int uci_get_list_value(char *cmd, struct list_head *list)
-{
-    struct  uci_ptr             ptr;
-    struct  uci_context         *c = uci_alloc_context();
-    struct uci_element          *e;
-    struct config_uci_list      *uci_list_elem;
-    char                        *s,*t;
-    int                         size = 0;
-
-    if (!c)
-    {
-        CWMP_LOG(ERROR, "Out of memory");
-        return size;
-    }
-
-    s = strdup(cmd);
-    t = s;
-    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
-    {
-        CWMP_LOG(ERROR, "Invalid uci command path: %s",cmd);
-        free(t);
-        uci_free_context(c);
-        return size;
-    }
-
-    if(ptr.o == NULL)
-    {
-        free(t);
-        uci_free_context(c);
-        return size;
-    }
-
-    if(ptr.o->type == UCI_TYPE_LIST)
-    {
-        uci_foreach_element(&ptr.o->v.list, e)
-        {
-            if((e != NULL)&&(e->name))
-            {
-                uci_list_elem = calloc(1,sizeof(struct config_uci_list));
-                if(uci_list_elem == NULL)
-                {
-                    free(t);
-                    uci_free_context(c);
-                    return CWMP_GEN_ERR;
-                }
-                uci_list_elem->value = strdup(e->name);
-                list_add_tail (&(uci_list_elem->list), list);
-                size++;
-            }
-            else
-            {
-                free(t);
-                uci_free_context(c);
-                return size;
-            }
-        }
-    }
-    free(t);
-    uci_free_context(c);
-    return size;
 }
 
 int uci_get_value_common(char *cmd,char **value,bool state)
@@ -1265,6 +1204,5 @@ int cwmp_config_reload(struct cwmp *cwmp)
     if ((error = global_conf_init(&(cwmp->conf))))
         return error;
 
-    dm_entry_reload_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }

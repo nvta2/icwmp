@@ -16,7 +16,8 @@ icwmpd_SOURCES =			\
 	../ubus.c				\
 	../xml.c				\
 	../diagnostic.c			\
-	../zlib.c
+	../zlib.c				\
+	../cwmp_uci.c
 
 icwmpd_CFLAGS =			\
 	$(AM_CFLAGS)		\
