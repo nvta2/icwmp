@@ -719,19 +719,21 @@ int get_global_config(struct config *conf)
     }
     if((error = uci_get_value(UCI_CPE_NOTIFY_PERIODIC_ENABLE,&value)) == CWMP_OK)
     {
+    	bool a = true;
 	    if(value != NULL)
         {
             if ((strcasecmp(value,"FALSE")==0) || (strcmp(value,"0")==0))
             {
-                conf->periodic_notify_enable = false;
+                a = false;
             }
             else
             {
-                conf->periodic_notify_enable = true;
+                a = true;
             }
             free(value);
             value = NULL;
         }
+	    conf->periodic_notify_enable = a;
     }
     else
     {
