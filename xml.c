@@ -1562,6 +1562,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		}
 		if (parameter_name && parameter_value) {
 			int e = dm_entry_param_method(&dmctx, CMD_SET_VALUE, parameter_name, parameter_value, NULL);
+			cwmp_set_end_session(dmctx.end_session_flag);
 			if (e) {
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 			}
@@ -1590,8 +1591,6 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		fault_code = cwmp_get_fault_code(f);
 		goto fault;
 	}
-
-	cwmp_set_end_session(dmctx.end_session_flag);
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body",
 				NULL, NULL, MXML_DESCEND);
