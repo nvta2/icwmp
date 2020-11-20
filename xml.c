@@ -34,8 +34,6 @@
 #include <libbbfdm/deviceinfo.h>
 #include <libbbfdm/softwaremodules.h>
 #endif
-#include "cwmp_uci.h"
-
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
 LIST_HEAD(list_schedule_download);
@@ -810,24 +808,16 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	if (!b) goto error;
 	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
 	if (!b) goto error;
-	struct config_uci_list      *param_elem = NULL;
-	LIST_HEAD(inform_parameters_list);
-	cwmp_uci_get_option_value_list("cwmp", "@inform_forced[0]", "parameter", &inform_parameters_list);
-	list_for_each_entry(param_elem, &inform_parameters_list, list) {
-		if(dm_entry_param_method(&dmctx, CMD_GET_VALUE, param_elem->value, NULL, NULL))
-			continue;
 
-		if(list_empty(&dmctx.list_parameter))
-			continue;
-		while (dmctx.list_parameter.next != &dmctx.list_parameter) {
-	    	dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-	    	if (xml_prepare_parameters_inform(&dmctx, dm_parameter, parameter_list, &size))
-	    		goto error;
+    dm_entry_param_method(&dmctx, CMD_INFORM, NULL, NULL, NULL);
 
-	    	del_list_parameter(dm_parameter);
-		}
+    while (dmctx.list_parameter.next != &dmctx.list_parameter) {
+    	dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
+    	if (xml_prepare_parameters_inform(&dmctx, dm_parameter, parameter_list, &size))
+    		goto error;
 
-	}
+    	del_list_parameter(dm_parameter);
+    }
 
     if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;

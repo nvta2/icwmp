@@ -216,6 +216,11 @@ typedef struct env {
     long int							max_firmware_size;
 } env;
 
+typedef struct config_uci_list {
+    struct list_head                    list;
+    char                                *value;
+} config_uci_list;
+
 typedef struct session_status {
     time_t last_start_time;
     time_t last_end_time;

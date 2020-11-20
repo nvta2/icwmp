@@ -189,9 +189,8 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
         		is_notify = check_value_change();
         }
-        if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
-        	dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
 
+        dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
         cwmp_prepare_value_change(cwmp);
         free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
