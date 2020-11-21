@@ -42,6 +42,12 @@ static struct http_client http_c;
 
 static CURL *curl;
 
+#ifdef DUMMY_MODE
+char *fc_cookies = "./ext/tmp/icwmp_cookies";
+#else
+char *fc_cookies = "/tmp/icwmp_cookies";
+#endif
+
 int http_client_init(struct cwmp *cwmp)
 {
 	char *dhcp_dis = NULL;

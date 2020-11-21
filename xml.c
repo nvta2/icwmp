@@ -135,6 +135,17 @@ const struct rpc_acs_method rpc_acs_methods[] = {
 	[RPC_ACS_DU_STATE_CHANGE_COMPLETE] = {"DUStateChangeComplete", cwmp_rpc_acs_prepare_du_state_change_complete, NULL, cwmp_rpc_acs_destroy_data_du_state_change_complete}
 
 };
+
+char* forced_inform_parameters[] = {
+									"Device.RootDataModelVersion",
+									"Device.DeviceInfo.HardwareVersion",
+									"Device.DeviceInfo.SoftwareVersion",
+									"Device.DeviceInfo.ProvisioningCode",
+									"Device.ManagementServer.ParameterKey",
+									"Device.ManagementServer.ConnectionRequestURL",
+									"Device.ManagementServer.AliasBasedAddressing"
+									};
+
 int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass, char *env, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete);
 int cwmp_launch_du_update(char *uuid, char *url, char *version, char *user, char *pass, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete);
 int cwmp_launch_du_uninstall(char *package_name, char *package_env, struct opresult **pchange_du_state_complete);
@@ -604,10 +615,9 @@ error:
 	return -1;
 }
 
-static int xml_prepare_parameters_inform(struct dmctx *dmctx, struct dm_parameter *dm_parameter, mxml_node_t *parameter_list, int *size)
+static int xml_prepare_parameters_inform(struct cwmp_dm_parameter *dm_parameter, mxml_node_t *parameter_list, int *size)
 {
 	mxml_node_t *node, *b;
-
 	b = mxmlFindElementOpaque(parameter_list, parameter_list, dm_parameter->name, MXML_DESCEND);
 	if (b && dm_parameter->data != NULL) {
 		node = b->parent->parent;
@@ -626,7 +636,8 @@ static int xml_prepare_parameters_inform(struct dmctx *dmctx, struct dm_paramete
 	}
 	else if (!b && dm_parameter->data == NULL)
 	{
-		dm_entry_param_method(dmctx, CMD_GET_VALUE, dm_parameter->name, NULL, NULL);
+		json_object *parameters = NULL;
+		cwmp_get_parameter_values(dm_parameter->name, &parameters);
 		return 0;
 	}
 	node = mxmlNewElement (parameter_list, "ParameterValueStruct");
@@ -769,15 +780,12 @@ char* xml_get_cwmp_version (int version)
 
 int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *session, struct rpc *this)
 {
-    struct dm_parameter *dm_parameter;
+    struct cwmp_dm_parameter *dm_parameter, cwmp_dm_param = {0};
     struct event_container *event_container;
     mxml_node_t *tree, *b, *node, *parameter_list;
     char *c = NULL;
     int size = 0;
     struct list_head *ilist,*jlist;
-	struct dmctx dmctx = {0};
-
-    cwmp_dm_ctx_init(cwmp, &dmctx);
 
     if (session == NULL || this == NULL)
         return -1;
@@ -833,8 +841,8 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
     	event_container = list_entry(ilist, struct event_container, list);
         list_for_each(jlist, &(event_container->head_dm_parameter))
         {
-        	dm_parameter = list_entry(jlist, struct dm_parameter, list);
-        	if (xml_prepare_parameters_inform(&dmctx, dm_parameter, parameter_list, &size))
+        	dm_parameter = list_entry(jlist, struct cwmp_dm_parameter, list);
+        	if (xml_prepare_parameters_inform(dm_parameter, parameter_list, &size))
         	    goto error;
         }
     }
@@ -859,16 +867,29 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
 	if (!b) goto error;
 
-    dm_entry_param_method(&dmctx, CMD_INFORM, NULL, NULL, NULL);
-
-    while (dmctx.list_parameter.next != &dmctx.list_parameter) {
-    	dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-    	if (xml_prepare_parameters_inform(&dmctx, dm_parameter, parameter_list, &size))
-    		goto error;
-
-    	del_list_parameter(dm_parameter);
-    }
-
+	json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL, *param_type = NULL;
+	size_t inform_parameters_nbre = sizeof(forced_inform_parameters)/sizeof(forced_inform_parameters[0]);
+	int i;
+	for (i=0; i<inform_parameters_nbre; i++) {
+		cwmp_get_parameter_values(forced_inform_parameters[i], &parameters);
+		if(parameters == NULL)
+			continue;
+	    foreach_jsonobj_in_array(param_obj, parameters) {
+	    	param_obj = json_object_array_get_idx(parameters, 0);
+	    	json_object_object_get_ex(param_obj, "parameter", &param_name);
+	    	json_object_object_get_ex(param_obj, "value", &param_value);
+	    	json_object_object_get_ex(param_obj, "type", &param_type);
+	    	cwmp_dm_param.name = strdup(param_name?(char*)json_object_get_string(param_name):"");
+	    	cwmp_dm_param.data = strdup(param_value?(char*)json_object_get_string(param_value):"");
+	    	cwmp_dm_param.type = strdup(param_type?(char*)json_object_get_string(param_type):"");
+	    	if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
+	    		goto error;
+	    	FREE(cwmp_dm_param.name);
+	    	FREE(cwmp_dm_param.data);
+	    	FREE(cwmp_dm_param.type);
+	    }
+	    FREE(parameters);
+	}
     if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;
 
@@ -882,7 +903,7 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	return 0;
 
 error:
-
+	CWMP_LOG(ERROR,"Unable Prepare Message Inform",CWMP_BKP_FILE);
 	return -1;
 }
 
@@ -1628,11 +1649,13 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	struct cwmp_param_value *param_value;
 
 	list_for_each_entry(param_value, &list_param_value, list) {
-		char *err = cwmp_set_parameter_value(param_value->param, param_value->value, parameter_key);
+		int flag = 0;
+		char *err = cwmp_set_parameter_value(param_value->param, param_value->value, parameter_key, &flag);
 		if (err) {
-			cwmp_add_list_fault_param(parameter_name, atoi(err), rpc->list_set_value_fault);
+			cwmp_add_list_fault_param(param_value->param, atoi(err), rpc->list_set_value_fault);
 			fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 		}
+		cwmp_set_end_session(flag);
 	}
 
 	cwmp_free_all_list_param_value(&list_param_value);
@@ -1744,10 +1767,12 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	}
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewElement(b, "cwmp:SetParameterAttributesResponse");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE);
 	return 0;

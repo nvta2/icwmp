@@ -34,6 +34,7 @@
 #include <libbbfdm/dmentry.h>
 #include <libbbfdm/deviceinfo.h>
 #endif
+#include "datamodel_interface.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
@@ -63,14 +64,14 @@ const struct EVENT_CONST_STRUCT EVENT_CONST [] = {
 void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_container)
 {
     struct list_head *ilist;
-    struct dm_parameter *dm_parameter;
+    struct cwmp_dm_parameter *dm_parameter;
     mxml_node_t *b;
 
     if (EVENT_CONST[event_container->code].RETRY & EVENT_RETRY_AFTER_REBOOT) {
         b = bkp_session_insert_event(event_container->code, event_container->command_key, event_container->id, "queue");
 
         list_for_each(ilist,&(event_container->head_dm_parameter)) {
-            dm_parameter = list_entry(ilist, struct dm_parameter, list);
+            dm_parameter = list_entry(ilist, struct cwmp_dm_parameter, list);
             bkp_session_insert_parameter(b, dm_parameter->name);
         }
         bkp_session_save();
@@ -127,11 +128,11 @@ struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_c
 
 void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type)
 {
-	struct dm_parameter *dm_parameter;
+	struct cwmp_dm_parameter *dm_parameter;
 	struct list_head *ilist;
 	int cmp;
 	list_for_each (ilist, head) {
-		dm_parameter = list_entry(ilist, struct dm_parameter, list);
+		dm_parameter = list_entry(ilist, struct cwmp_dm_parameter, list);
 		cmp = strcmp(dm_parameter->name, param_name);
 		if (cmp == 0) {
 			if (param_data && strcmp(dm_parameter->data, param_data) != 0)
@@ -144,14 +145,14 @@ void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *par
 			break;
 		}
 	}
-	dm_parameter = calloc(1, sizeof(struct dm_parameter));
+	dm_parameter = calloc(1, sizeof(struct cwmp_dm_parameter));
 	_list_add(&dm_parameter->list, ilist->prev, ilist);
 	if (param_name) dm_parameter->name = strdup(param_name);
 	if (param_data) dm_parameter->data = strdup(param_data);
 	if (param_type) dm_parameter->type = param_type ? param_type : "xsd:string";
 }
 
-void delete_dm_parameter_fromlist(struct dm_parameter *dm_parameter)
+void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter)
 {
 	list_del(&dm_parameter->list);
 	free(dm_parameter->name);
@@ -161,9 +162,9 @@ void delete_dm_parameter_fromlist(struct dm_parameter *dm_parameter)
 
 void free_dm_parameter_all_fromlist(struct list_head *list)
 {
-	struct dm_parameter *dm_parameter;
+	struct cwmp_dm_parameter *dm_parameter;
 	while (list->next!=list) {
-		dm_parameter = list_entry(list->next, struct dm_parameter, list);
+		dm_parameter = list_entry(list->next, struct cwmp_dm_parameter, list);
 		delete_dm_parameter_fromlist(dm_parameter);
 	}
 }
@@ -275,7 +276,7 @@ void cwmp_lwnotification()
 
 int check_value_change(void)
 {
-	int fault, iscopy;
+	int fault;
 	FILE *fp;
 	char buf[512];
 	char *parameter, *notification = NULL, *value = NULL, *jval = NULL;
@@ -642,7 +643,6 @@ void *thread_periodic_check_notify (void *v)
     static bool periodic_enable;
     static struct timespec periodic_timeout = {0, 0};
     time_t current_time;
-    long int delta_time;
     int is_notify;
 
     periodic_interval = cwmp->conf.periodic_notify_interval;
@@ -657,7 +657,7 @@ void *thread_periodic_check_notify (void *v)
         	pthread_mutex_lock(&(cwmp->mutex_session_send));
         	is_notify = check_value_change();
         	if (is_notify > 0)
-        		dmbbf_update_enabled_notify_file(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+        		cwmp_update_enabled_notify_file(cwmp->conf.amd_version, cwmp->conf.instance_mode);
         	pthread_mutex_unlock(&(cwmp->mutex_session_send));
         	if (is_notify & NOTIF_ACTIVE)
         		send_active_value_change();

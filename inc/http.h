@@ -16,12 +16,7 @@
 #include <cwmp.h>
 #include <curl/curl.h>
 
-
-#ifdef DUMMY_MODE
-static char *fc_cookies = "./ext/tmp/icwmp_cookies";
-#else
-static char *fc_cookies = "/tmp/icwmp_cookies";
-#endif
+extern char *fc_cookies;
 
 #define HTTP_TIMEOUT 30
 

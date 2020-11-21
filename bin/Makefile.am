@@ -14,9 +14,9 @@ icwmpd_SOURCES =			\
 	../netlink.c			\
 	../time.c				\
 	../ubus.c				\
+	../datamodel_interface.c \
 	../xml.c				\
 	../diagnostic.c			\
-	../datamodel_interface.c \
 	../zlib.c
 
 icwmpd_CFLAGS =			\

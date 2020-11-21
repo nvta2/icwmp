@@ -126,6 +126,12 @@ struct cwmp_param_value {
 	char *value;
 };
 
+struct cwmp_dm_parameter {
+	struct list_head list;
+	char *name;
+	char *data;
+	char *type;
+};
 struct rpc_cpe_method {
 	const char *name;
 	int (*handler)(struct session *session, struct rpc *rpc);
@@ -271,7 +277,6 @@ extern struct list_head		list_change_du_state;
 extern int					count_download_queue;
 extern const struct rpc_cpe_method rpc_cpe_methods[__RPC_CPE_MAX];
 extern const struct rpc_acs_method rpc_acs_methods[__RPC_ACS_MAX];
-
 
 void xml_exit(void);
 

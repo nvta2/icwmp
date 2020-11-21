@@ -360,8 +360,9 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 	for (i = 0; i < u_args_size; i++) {
 		if (u_args[i].type == UBUS_String)
 			blobmsg_add_string(&b, u_args[i].key, u_args[i].val.str_val);
-		else if (u_args[i].type == UBUS_Integer)
+		else if (u_args[i].type == UBUS_Integer) {
 			blobmsg_add_u32(&b, u_args[i].key, u_args[i].val.int_val);
+		}
 		else if (u_args[i].type == UBUS_Array_Obj || u_args[i].type == UBUS_Array_Str){
 			void *a, *t;
 			int j;
@@ -392,8 +393,8 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 1000);
 	else
 		rc = -1;
-
-	*json_ret = json_res;
+    if (json_ret)
+    	*json_ret = json_res;
 
 	if (ubus_ctx) {
 		ubus_free(ubus_ctx);

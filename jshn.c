@@ -35,7 +35,7 @@ static int jshn_message_parse(char **policy, int size, char **tb, char *msg)
 	}
 	for (i=0; i<size; i++)
 	{
-		obj = json_object_object_get(jshn_obj, policy[i]);
+		json_object_object_get_ex(jshn_obj, policy[i], &obj);
 		if (obj == NULL || json_object_get_type(obj) != json_type_string)
 			continue;
 		tb[i] = (char *)json_object_get_string(obj);

@@ -18,7 +18,7 @@ char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 	return NULL;
 }
 
-char* cwmp_set_parameter_value(char* parameter_name, char* value, char* parameter_key)
+char* cwmp_set_parameter_value(char* parameter_name, char* value, char* parameter_key, int* flag)
 {
 	json_object *set_res;
 	int e = cwmp_ubus_call("usp.raw", "set", CWMP_UBUS_ARGS{{"path", {.str_val=parameter_name}, UBUS_String},{"value", {.str_val=value}, UBUS_String}, {"key", {.str_val=parameter_key}, UBUS_String}}, 3, &set_res);
@@ -43,6 +43,9 @@ char* cwmp_set_parameter_value(char* parameter_name, char* value, char* paramete
 		json_object_object_get_ex(param_obj, "fault", &fault);
 		return (char*)json_object_get_string(fault);
 	}
+	json_object *flag_obj = NULL;
+	json_object_object_get_ex(set_res, "flag", &flag_obj);
+	*flag = flag_obj?atoi((char*)json_object_get_string(flag_obj)):0;
 	return NULL;
 }
 
@@ -68,7 +71,7 @@ char* cwmp_add_object(char* object_name, char* key, char **instance)
 		return (char*)json_object_get_string(fault);
 	json_object *instance_obj = NULL;
 	json_object_object_get_ex(param_obj, "instance", &instance_obj);
-	*instance = json_object_get_string(instance_obj);
+	*instance = (char *)json_object_get_string(instance_obj);
 	return NULL;
 }
 
@@ -149,4 +152,9 @@ char* cwmp_set_parameter_attributes(char* parameter_name, char* notification)
 	if (fault_code != NULL)
 		return (char*)json_object_get_string(fault_code);
 	return NULL;
+}
+
+void cwmp_update_enabled_notify_file(unsigned int amd_version, int instance_mode)
+{
+	cwmp_ubus_call("usp.raw", "init_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}, {"amd_version", {.int_val=amd_version}, UBUS_Integer}}, 2, NULL);
 }

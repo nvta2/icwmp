@@ -1327,7 +1327,6 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
         return error;
 
     cwmp_get_deviceid(cwmp);
-    //dm_entry_load_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode, add_list_value_change, send_active_value_change);
     return CWMP_OK;
 }
 
@@ -1341,6 +1340,5 @@ int cwmp_config_reload(struct cwmp *cwmp)
     if ((error = global_conf_init(&(cwmp->conf))))
         return error;
 
-    dm_entry_reload_enabled_notify(DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
     return CWMP_OK;
 }
