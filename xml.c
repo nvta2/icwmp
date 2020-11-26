@@ -729,8 +729,10 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 
     cwmp_dm_ctx_init(cwmp, &dmctx);
 
-    if (session == NULL || this == NULL)
-        return -1;
+	if (session == NULL || this == NULL) {
+		cwmp_dm_ctx_clean(&dmctx);
+		return -1;
+	}
 
 #ifdef DUMMY_MODE
 	FILE *fp;
@@ -828,11 +830,11 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	free(c);
 	session->tree_out = tree;
 
-
+	cwmp_dm_ctx_clean(&dmctx);
 	return 0;
 
 error:
-
+	cwmp_dm_ctx_clean(&dmctx);
 	return -1;
 }
 
