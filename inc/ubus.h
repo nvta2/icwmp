@@ -11,7 +11,7 @@
 #ifndef _FREECWMP_UBUS_H__
 #define _FREECWMP_UBUS_H__
 #include <stdbool.h>
-
+#include <libubox/list.h>
 #define ARRAY_MAX 8
 
 int ubus_init(struct cwmp *cwmp);
@@ -22,7 +22,8 @@ enum cwmp_ubus_arg_type {
 	UBUS_Integer,
 	UBUS_Array_Obj,
 	UBUS_Array_Str,
-	UBUS_Bool
+	UBUS_List_Param,
+	UBUS_Bool,
 };
 
 struct key_value {
@@ -40,6 +41,7 @@ union ubus_value {
 	int int_val;
 	bool bool_val;
 	union array_membre array_value[ARRAY_MAX];
+	struct list_head *param_value_list;
 };
 
 struct cwmp_ubus_arg {

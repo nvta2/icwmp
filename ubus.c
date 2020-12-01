@@ -330,7 +330,6 @@ static void receive_ubus_call_result_data(struct ubus_request *req, int type, st
 	const char *str;
 	if (!msg)
 		return;
-
 	str = blobmsg_format_json_indent(msg, true, -1);
 	if (!str) {
 		json_res = NULL;
@@ -384,8 +383,20 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 				}
 			}
 			blobmsg_close_array(&b, a);
-		}
-		else if (u_args[i].type == UBUS_Bool)
+		} else if (u_args[i].type == UBUS_List_Param) {
+			struct cwmp_param_value *param_value;
+			void *a, *t;
+			a = blobmsg_open_array(&b, u_args[i].key);
+			list_for_each_entry(param_value, u_args[i].val.param_value_list, list) {
+				if(!param_value->param)
+					break;
+				t = blobmsg_open_table(&b, "");
+				blobmsg_add_string(&b, "path", param_value->param);
+				blobmsg_add_string(&b, "value", param_value->value);
+				blobmsg_close_table(&b, t);
+			}
+			blobmsg_close_array(&b, a);
+		} else if (u_args[i].type == UBUS_Bool)
 			blobmsg_add_u8(&b, u_args[i].key, u_args[i].val.bool_val);
 	}
 	blobmsg_add_string(&b, "proto", "cwmp");

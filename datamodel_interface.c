@@ -1,5 +1,31 @@
 #include "datamodel_interface.h"
 
+/*
+ * Transaction Functions
+ */
+int cwmp_transaction_start()
+{
+	json_object *transaction_ret = NULL, *status_obj = NULL;
+	int e = cwmp_ubus_call("usp.raw", "transaction_start", CWMP_UBUS_ARGS{{}}, 0, &transaction_ret);
+	json_object_object_get_ex(transaction_ret, "status", &status_obj);
+	return e;
+}
+
+int cwmp_transaction_commit()
+{
+	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{{}}, 0, NULL);
+	return e;
+}
+
+int cwmp_transaction_abort()
+{
+	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{{}}, 0, NULL);
+	return e;
+}
+
+/*
+ * RPC Methods Functions
+ */
 char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 {
 	json_object *params_obj = NULL;
@@ -22,6 +48,7 @@ char* cwmp_set_parameter_value(char* parameter_name, char* value, char* paramete
 {
 	json_object *set_res;
 	int e = cwmp_ubus_call("usp.raw", "set", CWMP_UBUS_ARGS{{"path", {.str_val=parameter_name}, UBUS_String},{"value", {.str_val=value}, UBUS_String}, {"key", {.str_val=parameter_key}, UBUS_String}}, 3, &set_res);
+
 	if (e < 0 || set_res == NULL)
 		return "9002";
 
@@ -29,24 +56,68 @@ char* cwmp_set_parameter_value(char* parameter_name, char* value, char* paramete
 	json_object_object_get_ex(set_res, "fault", &fault_code);
 	if (fault_code != NULL)
 		return (char*)json_object_get_string(fault_code);
-
+	json_object *status = NULL;
+	json_object_object_get_ex(set_res, "status", &status);
+	char *status_str = NULL;
+	if (status) {
+		status_str = (char*)json_object_get_string(status);
+		if (status_str && strcmp(status_str,"true") == 0) {
+			json_object *flag_obj = NULL;
+			json_object_object_get_ex(set_res, "flag", &flag_obj);
+			*flag = flag_obj?atoi((char*)json_object_get_string(flag_obj)):0;
+			free(status_str);
+			status_str = NULL;
+			return NULL;
+		}
+		if(status_str) {
+			free(status_str);
+			status_str = NULL;
+		}
+	}
 	json_object *parameters = NULL;
 	json_object_object_get_ex(set_res, "parameters", &parameters);
+
 	if (!parameters)
 		return "9002";
 	json_object *param_obj = json_object_array_get_idx(parameters, 0);
-	json_object *status = NULL;
+
 	json_object_object_get_ex(param_obj, "status", &status);
-	char *status_str = (char*)json_object_get_string(status);
+	status_str = (char*)json_object_get_string(status);
 	if (status_str && strcmp(status_str,"false") == 0) {
 		json_object *fault = NULL;
 		json_object_object_get_ex(param_obj, "fault", &fault);
 		return (char*)json_object_get_string(fault);
 	}
-	json_object *flag_obj = NULL;
-	json_object_object_get_ex(set_res, "flag", &flag_obj);
-	*flag = flag_obj?atoi((char*)json_object_get_string(flag_obj)):0;
 	return NULL;
+}
+
+char* cwmp_set_multiple_parameters_values(struct list_head parameters_values_list, char* parameter_key, int* flag, json_object **faults_array)
+{
+	json_object *set_res;
+	int e = cwmp_ubus_call("usp.raw", "setm_values", CWMP_UBUS_ARGS{{"pv_tuple", {.param_value_list=&parameters_values_list}, UBUS_List_Param}, {"key", {.str_val=parameter_key}, UBUS_String}}, 2, &set_res);
+	if (e < 0 || set_res == NULL)
+		return "9002";
+
+	json_object *status = NULL;
+	json_object_object_get_ex(set_res, "status", &status);
+	char *status_str = NULL;
+	if (status) {
+		status_str = (char*)json_object_get_string(status);
+		if (status_str && strcmp(status_str,"true") == 0) {
+			json_object *flag_obj = NULL;
+			json_object_object_get_ex(set_res, "flag", &flag_obj);
+			*flag = flag_obj?atoi((char*)json_object_get_string(flag_obj)):0;
+			free(status_str);
+			status_str = NULL;
+			return NULL;
+		}
+		if(status_str) {
+			free(status_str);
+			status_str = NULL;
+		}
+	}
+	json_object_object_get_ex(set_res, "parameters", faults_array);
+	return "Fault";
 }
 
 char* cwmp_add_object(char* object_name, char* key, char **instance)
@@ -154,7 +225,11 @@ char* cwmp_set_parameter_attributes(char* parameter_name, char* notification)
 	return NULL;
 }
 
-void cwmp_update_enabled_notify_file(unsigned int amd_version, int instance_mode)
+/*
+ * Init Notify Function
+ */
+int cwmp_update_enabled_notify_file(unsigned int amd_version, int instance_mode)
 {
-	cwmp_ubus_call("usp.raw", "init_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}, {"amd_version", {.int_val=amd_version}, UBUS_Integer}}, 2, NULL);
+	int e = cwmp_ubus_call("usp.raw", "init_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}, {"amd_version", {.int_val=amd_version}, UBUS_Integer}}, 2, NULL);
+	return e;
 }

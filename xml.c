@@ -1589,13 +1589,13 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 
 	LIST_HEAD(list_fault_param);
 	rpc->list_set_value_fault = &list_fault_param;
-	LIST_HEAD(list_param_value);
+	LIST_HEAD(list_set_param_value);
 	while (b) {
 		if (b && b->type == MXML_OPAQUE &&
 			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Name")) {
-			parameter_name = b->value.opaque;
+			parameter_name = strdup(b->value.opaque);
 			if (is_duplicated_parameter(b,session)) {
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 				goto fault;
@@ -1606,7 +1606,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Name") &&
 			!b->child) {
-			parameter_name = "";
+			parameter_name = strdup("");
 		}
 
 		if (b && b->type == MXML_OPAQUE &&
@@ -1621,7 +1621,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 				if (!whitespace) break;
 				asprintf(&c, "%s %s", parameter_value, v);
 				FREE(parameter_value);
-				parameter_value = c;
+				parameter_value = strdup(c);
 			}
 			b = n->last_child;
 		}
@@ -1631,8 +1631,8 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			parameter_value = strdup("");
 		}
 		if (parameter_name && parameter_value) {
-			cwmp_add_list_param_value(parameter_name, parameter_value, &list_param_value);
-			parameter_name = NULL;
+			cwmp_add_list_param_value(parameter_name, parameter_value, &list_set_param_value);
+			FREE(parameter_name);
 			FREE(parameter_value);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
@@ -1646,22 +1646,22 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 	if (b && b->type == MXML_OPAQUE && b->value.opaque)
 		parameter_key = b->value.opaque;
-	struct cwmp_param_value *param_value;
-
-	list_for_each_entry(param_value, &list_param_value, list) {
-		int flag = 0;
-		char *err = cwmp_set_parameter_value(param_value->param, param_value->value, parameter_key, &flag);
-		if (err) {
-			cwmp_add_list_fault_param(param_value->param, atoi(err), rpc->list_set_value_fault);
-			fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+	json_object *faults_array = NULL;
+	int flag = 0;
+	char *faultret = cwmp_set_multiple_parameters_values(list_set_param_value, parameter_key, &flag, &faults_array);
+	if (faults_array != NULL) {
+		json_object *fault_obj = NULL, *param_name = NULL, *fault_value = NULL;
+		foreach_jsonobj_in_array(fault_obj, faults_array) {
+			json_object_object_get_ex(fault_obj, "path", &param_name);
+			json_object_object_get_ex(fault_obj, "fault", &fault_value);
+			cwmp_add_list_fault_param((char*)json_object_get_string(param_name), atoi(json_object_get_string(fault_value)), rpc->list_set_value_fault);
 		}
-		cwmp_set_end_session(flag);
-	}
-
-	cwmp_free_all_list_param_value(&list_param_value);
-	if (fault_code == FAULT_CPE_INVALID_ARGUMENTS) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		cwmp_free_all_list_param_value(&list_set_param_value);
 		goto fault;
 	}
+
+	cwmp_free_all_list_param_value(&list_set_param_value);
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body",
 				NULL, NULL, MXML_DESCEND);
@@ -1680,7 +1680,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	if (!b)
 		goto fault;
 
-	//cwmp_set_end_session(flag)
+	cwmp_set_end_session(flag);
 	return 0;
 
 fault:
