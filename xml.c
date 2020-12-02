@@ -1307,6 +1307,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 				n = mxmlNewOpaque(n, param_value? json_object_get_string(param_value) : "");
 				if (!n)
 					goto fault;
+				counter++;
 		    }
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);

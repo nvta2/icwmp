@@ -401,7 +401,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 	}
 	blobmsg_add_string(&b, "proto", "cwmp");
 	if (!ubus_lookup_id(ubus_ctx, obj, &id))
-		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 1000);
+		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 5000);
 	else
 		rc = -1;
     if (json_ret)
