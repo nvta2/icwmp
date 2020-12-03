@@ -6,6 +6,7 @@
 #include "ubus.h"
 #include "jshn.h"
 
+#define DM_ROOT_OBJ "Device."
 int cwmp_transaction_start();
 int cwmp_transaction_commit();
 int cwmp_transaction_abort();

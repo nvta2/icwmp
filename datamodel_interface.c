@@ -189,7 +189,7 @@ char* cwmp_get_parameter_names(char* object_name, bool next_level, json_object *
 char* cwmp_get_parameter_attributes(char* parameter_name, json_object **parameters)
 {
 	json_object *get_attributes_res = NULL;
-	int e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{{"paths", {.array_value={{.str_value=parameter_name}}}, UBUS_Array_Str}}, 1, &get_attributes_res);
+	int e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{{"paths", {.array_value={{.str_value=!parameter_name||parameter_name[0]=='\0'?DM_ROOT_OBJ:parameter_name}}}, UBUS_Array_Str}}, 1, &get_attributes_res);
 	if ( e < 0 || get_attributes_res == NULL)
 		return "9002";
 	json_object *fault_code = NULL;
