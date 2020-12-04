@@ -29,7 +29,7 @@ int cwmp_transaction_abort()
 char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 {
 	json_object *params_obj = NULL;
-	int e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{{"path", {.str_val=parameter_name}, UBUS_String}}, 1, &params_obj);
+	int e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{{"path", {.str_val=!parameter_name||parameter_name[0]=='\0'?DM_ROOT_OBJ:parameter_name}, UBUS_String}}, 1, &params_obj);
 	if (e < 0 || params_obj == NULL) {
 		*parameters = NULL;
 		return "9002";
