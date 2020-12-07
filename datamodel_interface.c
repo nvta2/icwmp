@@ -1,25 +1,65 @@
 #include "datamodel_interface.h"
+#include "log.h"
+bool transaction_started = false;
 
 /*
  * Transaction Functions
  */
 int cwmp_transaction_start()
 {
+	CWMP_LOG (INFO,"Starting transaction ...");
 	json_object *transaction_ret = NULL, *status_obj = NULL;
 	int e = cwmp_ubus_call("usp.raw", "transaction_start", CWMP_UBUS_ARGS{{}}, 0, &transaction_ret);
+	if (e!=0) {
+		CWMP_LOG (INFO,"Transaction start failed: Ubus err code: %d", e);
+		return 0;
+	}
 	json_object_object_get_ex(transaction_ret, "status", &status_obj);
-	return e;
+	if (strcmp((char*)json_object_get_string(status_obj), "1") != 0) {
+		json_object *error = NULL;
+		json_object_object_get_ex(transaction_ret, "error", &error);
+		CWMP_LOG (INFO,"Transaction start failed: %s\n",(char*)json_object_get_string(error));
+		return 0;
+	}
+	return 1;
 }
 
 int cwmp_transaction_commit()
 {
-	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{{}}, 0, NULL);
-	return e;
+	CWMP_LOG (INFO,"Transaction Commit ...");
+	json_object *transaction_ret = NULL, *status_obj = NULL;
+	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{{}}, 0, &transaction_ret);
+	if (e!=0) {
+		CWMP_LOG (INFO,"Transaction commit failed: Ubus err code: %d", e);
+		return 0;
+	}
+	json_object_object_get_ex(transaction_ret, "status", &status_obj);
+	if (strcmp((char*)json_object_get_string(status_obj), "1") != 0) {
+		json_object *error = NULL;
+		json_object_object_get_ex(transaction_ret, "error", &error);
+		CWMP_LOG (INFO,"Transaction commit failed: %s\n",(char*)json_object_get_string(error));
+		return 0;
+	}
+	return 1;
 }
 
 int cwmp_transaction_abort()
 {
-	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{{}}, 0, NULL);
+	CWMP_LOG (INFO,"Transaction Abort ...");
+	json_object *transaction_ret = NULL, *status_obj = NULL;
+	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{{}}, 0, &transaction_ret);
+	if (e!=0) {
+		CWMP_LOG (INFO,"Transaction abort failed: Ubus err code: %d", e);
+		return 0;
+	}
+	json_object_object_get_ex(transaction_ret, "status", &status_obj);
+	if (strcmp((char*)json_object_get_string(status_obj), "1") != 0) {
+		json_object *error = NULL;
+		json_object_object_get_ex(transaction_ret, "error", &error);
+		CWMP_LOG (INFO,"Transaction abort failed: %s\n",(char*)json_object_get_string(error));
+		return 0;
+	}
+	return 1;
 	return e;
 }
 

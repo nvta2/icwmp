@@ -187,7 +187,6 @@ void cwmp_schedule_session (struct cwmp *cwmp)
             ilist = (&(cwmp->head_session_queue))->next;
             retry = false;
         }
-        cwmp_transaction_start();
         session = list_entry(ilist, struct session, list);
         if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 ) {
         	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
@@ -199,7 +198,6 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
             CWMP_LOG(EMERG,"FATAL error in the mutex process in the session scheduler!");
-            cwmp_transaction_abort();
             exit(EXIT_FAILURE);
         }
 
@@ -517,7 +515,6 @@ struct session *cwmp_add_queue_session (struct cwmp *cwmp)
 
 int run_session_end_func ()
 {
-	apply_end_session();
 
 	if (end_session_flag & END_SESSION_EXTERNAL_ACTION) {
 		CWMP_LOG (INFO,"Executing external commands: end session request");
@@ -597,7 +594,11 @@ int run_session_end_func ()
 		CWMP_LOG (INFO,"SetParameterAttributes end session: update enabled notify file");
 		cwmp_update_enabled_notify_file(cwmp_main.conf.amd_version, cwmp_main.conf.instance_mode);
 	}
-	cwmp_transaction_commit();
+	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
+		cwmp_transaction_commit();
+		transaction_started = false;
+	}
+
 	end_session_flag = 0;
 	return CWMP_OK;
 }

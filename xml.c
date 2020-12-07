@@ -1649,6 +1649,11 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		parameter_key = b->value.opaque;
 	json_object *faults_array = NULL;
 	int flag = 0;
+	if(!transaction_started) {
+		if (!cwmp_transaction_start())
+			goto fault;
+		transaction_started = true;
+	}
 	char *faultret = cwmp_set_multiple_parameters_values(list_set_param_value, parameter_key, &flag, &faults_array);
 	if (faults_array != NULL) {
 		json_object *fault_obj = NULL, *param_name = NULL, *fault_value = NULL;
@@ -1681,15 +1686,23 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	if (!b)
 		goto fault;
 
-	cwmp_set_end_session(flag);
+	cwmp_set_end_session(flag|END_SESSION_TRANSACTION_COMMIT);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return 0;
 
 error:
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return -1;
 }
 
@@ -1713,6 +1726,11 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	if (!n) goto fault;
 	b = n;
 
+	if (!transaction_started) {
+		if (!cwmp_transaction_start())
+			goto fault;
+		transaction_started = true;
+	}
 	while (b != NULL) {
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "SetParameterAttributesStruct")) {
@@ -1753,14 +1771,12 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 			!b->child) {
 			parameter_notification = "";
 		}
-
 		if (parameter_name && parameter_notification) {
 			char* err = cwmp_set_parameter_attributes(parameter_name, parameter_notification);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
 				goto fault;
 			}
-			cwmp_set_end_session(END_SESSION_RELOAD);
 			parameter_name = NULL;
 			parameter_notification = NULL;
 		}
@@ -1775,15 +1791,23 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	if (!b)
 		goto fault;
 
-	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE);
+	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE|END_SESSION_RELOAD|END_SESSION_TRANSACTION_COMMIT);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return 0;
 
 error:
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return -1;
 }
 
@@ -1798,7 +1822,6 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	char *parameter_key = NULL;
 	int fault_code = FAULT_CPE_INTERNAL_ERROR;
 	char *instance = NULL;
-
 
 	b = session->body_in;
 	while (b) {
@@ -1816,7 +1839,11 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
-
+	if (!transaction_started) {
+		if (!cwmp_transaction_start())
+			goto fault;
+		transaction_started = true;
+	}
 	if (object_name) {
 		char *err = cwmp_add_object(object_name, parameter_key ? parameter_key : "", &instance);
 		if (err) {
@@ -1853,15 +1880,23 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b)
 		goto fault;
-
+	cwmp_set_end_session(END_SESSION_TRANSACTION_COMMIT);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return 0;
 
 error:
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return -1;
 }
 
@@ -1892,7 +1927,11 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
-
+	if (!transaction_started) {
+		if (!cwmp_transaction_start())
+			goto fault;
+		transaction_started = true;
+	}
 	if (object_name) {
 		char *err = cwmp_delete_object(object_name, parameter_key ? parameter_key : "");
 		if (err) {
@@ -1917,15 +1956,23 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 
 	b = mxmlNewOpaque(b, "1");
 	if (!b) goto fault;
-
+	cwmp_set_end_session(END_SESSION_TRANSACTION_COMMIT);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return 0;
 
 error:
+	if (transaction_started) {
+		cwmp_transaction_abort();
+		transaction_started = false;
+	}
 	return -1;
 }
 

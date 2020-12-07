@@ -7,6 +7,8 @@
 #include "jshn.h"
 
 #define DM_ROOT_OBJ "Device."
+extern bool transaction_started;
+
 int cwmp_transaction_start();
 int cwmp_transaction_commit();
 int cwmp_transaction_abort();
