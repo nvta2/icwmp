@@ -708,9 +708,6 @@ int main(int argc, char **argv)
     pthread_t periodic_check_notify;
 
     struct sigaction act = {0};
-#ifndef TR098
-    set_bbfdatamodel_type(BBFDM_CWMP); // To show only CWMP parameters
-#endif
 
     if ((error = cwmp_init(argc, argv, cwmp)))
         return error;

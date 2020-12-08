@@ -5,6 +5,7 @@ icwmpd_SOURCES =			\
 	../backupSession.c		\
 	../config.c				\
 	../cwmp.c				\
+	../md5.c				\
 	../digestauth.c			\
 	../event.c				\
 	../external.c			\

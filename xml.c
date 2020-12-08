@@ -2538,18 +2538,15 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	struct transfer_complete	*p;
 	char						*fault_code;
 	char *name = "";
-	struct dmctx dmctx = {0};
 	upload_startTime = mix_get_time();
 
 	bkp_session_delete_upload(pupload);
 	bkp_session_save();
 
-	cwmp_dm_ctx_init(&cwmp_main, &dmctx);
 	if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
 		lookup_vcf_name(pupload->f_instance, &name);
 	}
 	external_upload(pupload->url, pupload->file_type, pupload->username, pupload->password, name);
-	cwmp_dm_ctx_clean(&dmctx);
 	external_handle_action(cwmp_handle_uploadFault);
 	external_fetch_uploadFaultResp(&fault_code);
 

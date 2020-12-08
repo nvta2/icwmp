@@ -1111,19 +1111,8 @@ char* cwmp_db_get_value_string(char *package, char *section, char *option)
 
 int global_env_init (int argc, char** argv, struct env *env)
 {
-	unsigned char command_input = 0;
-	unsigned char from_shell = 0;
-	unsigned int dmaliassupport = 0;
-	unsigned int dminstancemode =INSTANCE_MODE_NUMBER;
-	unsigned int dmamendment = AMD_2;
-	unsigned int dmtype = DM_CWMP;
 
-	char *file = NULL;
-	char *upnpuser;
-	char *next;
-	char *m_argv[64];
-	int m_argc;
-	int c, option_index = 0, iv, idx;
+	int c, option_index = 0;
 
 	while ((c = getopt_long(argc, argv, "bgcaNAUtEhvm:u:M:f:w:", long_options, &option_index)) != -1) {
 
@@ -1137,98 +1126,6 @@ int global_env_init (int argc, char** argv, struct env *env)
 			env->periodic = CWMP_START_PERIODIC;
 			break;
 
-		case 'c':
-			command_input = 1;
-			break;
-
-		case 'a':
-			dmaliassupport = 1;
-			break;
-
-		case 'A':
-			dminstancemode = INSTANCE_MODE_ALIAS;
-			break;
-
-		case 'M':
-			iv = atoi(optarg);
-			if (iv > 0)
-				dmamendment = (unsigned int)(iv & 0xFF);
-			break;
-
-		case 'm':
-			from_shell = 1;
-			idx = optind - 1;
-			m_argc = 2;
-			while(idx < argc) {
-				next = argv[idx];
-				idx++;
-				if(next[0] != '-') {
-					m_argv[m_argc++] = next;
-				}
-				else
-					break;
-				if (m_argc > 63) {
-					printf("Too many arguments!\n");
-					exit(1);
-				}
-			}
-			optind = idx - 1;
-			break;
-
-		case 'U':
-			dmtype = DM_UPNP;
-			break;
-
-		case 'u':
-			upnpuser = optarg;
-			if (strcmp(upnpuser, "public") == 0) {
-				upnp_in_user_mask = DM_PUBLIC_MASK;
-			}
-			else if (strcmp(upnpuser, "basic") == 0) {
-				upnp_in_user_mask = DM_BASIC_MASK;
-			}
-			else if (strcmp(upnpuser, "xxxadmin") == 0) {
-				upnp_in_user_mask = DM_XXXADMIN_MASK;
-			}
-			else if (strcmp(upnpuser, "superadmin") == 0) {
-				upnp_in_user_mask = DM_SUPERADMIN_MASK;
-			}
-			break;
-
-		case 'w':
-			m_argc = 2;
-			idx = optind - 1;
-			while(idx < argc) {
-				next = argv[idx];
-				idx++;
-				if(next[0] != '-') {
-					m_argv[m_argc++] = next;
-				}
-				else
-					break;
-				if (m_argc > 2) {
-					printf("Too many arguments!\n");
-					exit(1);
-				}
-			}
-			optind = idx - 1;
-			wepkey_cli(m_argc, m_argv);
-			exit(0);
-			break;
-
-		case 't':
-			dmcli_timetrack = 1;
-			break;
-
-		case 'E':
-			dmcli_timetrack = 1;
-			dmcli_evaluatetest = 1;
-			break;
-
-		case 'f':
-			file = optarg;
-			break;
-
 		case 'h':
 			show_help();
 			exit(0);
@@ -1237,19 +1134,6 @@ int global_env_init (int argc, char** argv, struct env *env)
 			show_version();
 			exit(0);
 		}
-	}
-
-	if (from_shell) {
-		if (!dmaliassupport)
-			dminstancemode =INSTANCE_MODE_NUMBER;
-		dm_execute_cli_shell(m_argc, (char**)m_argv, dmtype, dmamendment, dminstancemode);
-		exit (0);
-	}
-	else if (command_input) {
-		if (!dmaliassupport)
-			dminstancemode =INSTANCE_MODE_NUMBER;
-		dm_execute_cli_command(file, dmtype, dmamendment, dminstancemode);
-		exit (0);
 	}
 	return CWMP_OK;
 }
