@@ -4,11 +4,12 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2013-2019 iopsys Software Solutions AB
+ *	Copyright (C) 2013-2020 iopsys Software Solutions AB
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
- *	Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
- *	Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
+ *	  Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
+ *	  Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
  */
 
 #include <stdbool.h>
@@ -4595,7 +4596,7 @@ int cwmp_handle_rpc_cpe_fault(struct session *session, struct rpc *rpc)
 
 	if (rpc->type == RPC_CPE_SET_PARAMETER_VALUES) {
 		while (rpc->list_set_value_fault->next != rpc->list_set_value_fault) {
-			param_fault = list_entry(rpc->list_set_value_fault->next, struct param_fault, list);
+			param_fault = list_entry(rpc->list_set_value_fault->next, struct cwmp_param_fault, list);
 
 			if (param_fault->fault)
 			{

@@ -4,10 +4,10 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2013-2019 iopsys Software Solutions AB
+ *	Copyright (C) 2013-2020 iopsys Software Solutions AB
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
- *
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #include <stdio.h>
@@ -36,12 +36,6 @@
 
 pthread_mutex_t  mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
-typedef enum uci_config_action {
-    CMD_SET,
-    CMD_SET_STATE,
-    CMD_ADD_LIST,
-    CMD_DEL,
-} uci_config_action;
 
 struct option long_options[] = {
 	{"boot-event", no_argument, NULL, 'b'},
@@ -68,18 +62,6 @@ static void show_help(void)
 	printf("Usage: icwmpd [OPTIONS]\n");
 	printf(" -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event\n");
 	printf(" -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS\n");
-	printf(" -c, --command-input                                 (DataModel CLI) Execute data model rpc(s) with commands input\n");
-	printf(" -m, --shell-cli <data model rpc>                    (DataModel CLI) Execute data model RPC command directly from shell.\n");
-	printf(" -a, --alias-based-addressing                        (DataModel CLI) Alias based addressing supported\n");
-	printf(" -N, --instance-mode-number                          (DataModel CLI) Instance mode is Number (Enabled by default)\n");
-	printf(" -A, --instance-mode-alias                           (DataModel CLI) Instance mode is Alias\n");
-	printf(" -M, --amendment <amendment version>                 (DataModel CLI) Amendment version (Default amendment version is 2)\n");
-	printf(" -U, --upnp                                          (DataModel CLI) Use UPNP data model paths\n");
-	printf(" -u, --user-acl <public|basic|xxxadmin|superadmin>   (DataModel CLI) user access level. Default: superadmin\n");
-	printf(" -t, --time-tracking                                 (DataModel CLI) Tracking time of RPC commands\n");
-	printf(" -E, --evaluating-test                               (DataModel CLI) Evaluating test format\n");
-	printf(" -f, --file <file path>                              (DataModel CLI) Execute data model rpc(s) from file\n");
-	printf(" -w, --wep <strength> <passphrase>                   (WEP KEY GEN) Generate wep keys\n");
 	printf(" -h, --help                                          Display this help text\n");
 	printf(" -v, --version                                       Display the version\n");
 }
@@ -91,296 +73,6 @@ void show_version()
 #else
     fprintf(stdout, "\nVersion: %s revision %s\n\n",CWMP_VERSION,CWMP_REVISION);
 #endif
-}
-
-int uci_get_list_value(char *cmd, struct list_head *list)
-{
-    struct  uci_ptr             ptr;
-    struct  uci_context         *c = uci_alloc_context();
-    struct uci_element          *e;
-    struct config_uci_list      *uci_list_elem;
-    char                        *s,*t;
-    int                         size = 0;
-
-    if (!c)
-    {
-        CWMP_LOG(ERROR, "Out of memory");
-        return size;
-    }
-
-    s = strdup(cmd);
-    t = s;
-    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
-    {
-        CWMP_LOG(ERROR, "Invalid uci command path: %s",cmd);
-        free(t);
-        uci_free_context(c);
-        return size;
-    }
-
-    if(ptr.o == NULL)
-    {
-        free(t);
-        uci_free_context(c);
-        return size;
-    }
-
-    if(ptr.o->type == UCI_TYPE_LIST)
-    {
-        uci_foreach_element(&ptr.o->v.list, e)
-        {
-            if((e != NULL)&&(e->name))
-            {
-                uci_list_elem = calloc(1,sizeof(struct config_uci_list));
-                if(uci_list_elem == NULL)
-                {
-                    free(t);
-                    uci_free_context(c);
-                    return CWMP_GEN_ERR;
-                }
-                uci_list_elem->value = strdup(e->name);
-                list_add_tail (&(uci_list_elem->list), list);
-                size++;
-            }
-            else
-            {
-                free(t);
-                uci_free_context(c);
-                return size;
-            }
-        }
-    }
-    free(t);
-    uci_free_context(c);
-    return size;
-}
-
-int uci_get_value_common(char *cmd,char **value,bool state)
-{
-    struct  uci_ptr             ptr;
-    struct  uci_context         *c = uci_alloc_context();
-    char                        *s,*t;
-    char                        state_path[32];
-
-    *value = NULL;
-    if (!c)
-    {
-        CWMP_LOG(ERROR, "Out of memory");
-        return CWMP_GEN_ERR;
-    }
-    if (state)
-    {
-        strcpy(state_path,"/var/state");
-        uci_add_delta_path(c, c->savedir);
-        uci_set_savedir(c, state_path);
-    }
-    s = strdup(cmd);
-    t = s;
-    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
-    {
-        CWMP_LOG(ERROR, "Error occurred in uci %s get %s",state?"state":"config",cmd);
-        free(t);
-        uci_free_context(c);
-        return CWMP_GEN_ERR;
-    }
-    free(t);
-    if(ptr.flags & UCI_LOOKUP_COMPLETE)
-    {
-        if (ptr.o==NULL || ptr.o->v.string==NULL)
-        {
-            CWMP_LOG(INFO, "%s not found or empty value",cmd);
-            uci_free_context(c);
-            return CWMP_OK;
-        }
-        *value = strdup(ptr.o->v.string);
-    }
-    uci_free_context(c);
-    return CWMP_OK;
-}
-
-int uci_get_state_value(char *cmd,char **value)
-{
-    int error;
-    error = uci_get_value_common (cmd,value,true);
-    return error;
-}
-
-int uci_get_value(char *cmd,char **value)
-{
-    int error;
-    error = uci_get_value_common (cmd,value,false);
-    return error;
-}
-
-static int uci_action_value_common(char *cmd, uci_config_action action)
-{
-    int                         ret = UCI_OK;
-    char                        *s,*t;
-    struct uci_context          *c = uci_alloc_context();
-    struct uci_ptr              ptr;
-    char                        state_path[32];
-
-    if (!c)
-    {
-        CWMP_LOG(ERROR, "Out of memory");
-        return CWMP_GEN_ERR;
-    }
-
-    if (action == CMD_SET_STATE)
-    {
-        strcpy(state_path,"/var/state");
-        uci_add_delta_path(c, c->savedir);
-        uci_set_savedir(c, state_path);
-    }
-
-    s = strdup(cmd);
-    t = s;
-
-    if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK)
-    {
-        free(t);
-        uci_free_context(c);
-        return CWMP_GEN_ERR;
-    }
-    switch (action)
-    {
-        case CMD_SET:
-        case CMD_SET_STATE:
-            ret = uci_set(c, &ptr);
-            break;
-        case CMD_DEL:
-            ret = uci_delete(c, &ptr);
-            break;
-        case CMD_ADD_LIST:
-            ret = uci_add_list(c, &ptr);
-            break;
-    }
-    if (ret == UCI_OK)
-    {
-        ret = uci_save(c, ptr.p);
-    }
-    else
-    {
-        CWMP_LOG(ERROR, "UCI %s %s not succeed %s",action==CMD_SET_STATE?"state":"config",action==CMD_DEL?"delete":"set",cmd);
-    }
-    free(t);
-    uci_free_context(c);
-    return CWMP_OK;
-}
-
-int uci_delete_value(char *cmd)
-{
-    int error;
-    error = uci_action_value_common (cmd,CMD_DEL);
-    return error;
-}
-
-int uci_set_value(char *cmd)
-{
-    int error;
-    error = uci_action_value_common (cmd,CMD_SET);
-    return error;
-}
-
-int uci_set_state_value(char *cmd)
-{
-    int error;
-    error = uci_action_value_common (cmd,CMD_SET_STATE);
-    return error;
-}
-
-int uci_add_list_value(char *cmd)
-{
-    int error;
-    error = uci_action_value_common (cmd,CMD_ADD_LIST);
-    return error;
-}
-
-static int cwmp_package_commit(struct uci_context *c,char *tuple)
-{
-    struct uci_ptr          ptr;
-
-    if (uci_lookup_ptr(c, &ptr, tuple, true) != UCI_OK) {
-        return CWMP_GEN_ERR;
-    }
-
-    if (uci_commit(c, &ptr.p, false) != UCI_OK)
-    {
-        return CWMP_GEN_ERR;
-    }
-
-    uci_unload(c, ptr.p);
-    return CWMP_OK;
-}
-
-static int cwmp_do_package_cmd(struct uci_context *c)
-{
-    char **configs = NULL;
-    char **p;
-
-    if ((uci_list_configs(c, &configs) != UCI_OK) || !configs)
-    {
-        return CWMP_GEN_ERR;
-    }
-
-    for (p = configs; *p; p++)
-    {
-        cwmp_package_commit(c,*p);
-    }
-    FREE(configs);
-    return CWMP_OK;
-}
-
-int uci_commit_value()
-{
-    int                 ret;
-    struct uci_context  *c = uci_alloc_context();
-
-    if (!c)
-    {
-        CWMP_LOG(ERROR, "Out of memory");
-        return CWMP_GEN_ERR;
-    }
-
-    ret = cwmp_do_package_cmd(c);
-    if(ret == CWMP_OK)
-    {
-        uci_free_context(c);
-        return ret;
-    }
-
-    uci_free_context(c);
-    return CWMP_GEN_ERR;
-}
-
-int uci_revert_value ()
-{
-    char **configs = NULL;
-    char **p;
-    struct  uci_context         *ctx = uci_alloc_context();
-    struct  uci_ptr             ptr;
-
-    if (!ctx)
-    {
-        return CWMP_GEN_ERR;
-    }
-
-    if ((uci_list_configs(ctx, &configs) != UCI_OK) || !configs) {
-        return CWMP_GEN_ERR;
-    }
-
-    for (p = configs; *p; p++)
-    {
-        if (uci_lookup_ptr(ctx, &ptr, *p, true) != UCI_OK)
-        {
-            return CWMP_GEN_ERR;
-        }
-        uci_revert(ctx, &ptr);
-    }
-    FREE(configs);
-    uci_free_context(ctx);
-
-    return CWMP_OK;
 }
 
 int check_global_config (struct config *conf)
@@ -978,6 +670,7 @@ int get_instance_mode_config()
 	    }
 	 return CWMP_OK;
 }
+
 int get_lwn_config(struct config *conf)
 {
     int error;
@@ -1031,90 +724,12 @@ int get_lwn_config(struct config *conf)
     return CWMP_OK;
 }
 
-static inline bool cwmp_check_section_name(const char *str, bool name)
-{
-	if (!*str)
-		return false;
-	for (; *str; str++) {
-		unsigned char c = *str;
-		if (isalnum(c) || c == '_')
-			continue;
-		if (name || (c < 33) || (c > 126))
-			return false;
-	}
-	return true;
-}
-
-int cwmp_uci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value)
-{
-	/*value*/
-	ptr->value = value;
-
-	/*package*/
-	if (!package)
-		return -1;
-	ptr->package = package;
-
-	/*section*/
-	if (!section || !section[0]) {
-		ptr->target = UCI_TYPE_PACKAGE;
-		goto lookup;
-	}
-	ptr->section = section;
-	if (ptr->section &&  !cwmp_check_section_name(ptr->section , true))
-		ptr->flags |= UCI_LOOKUP_EXTENDED;
-
-	/*option*/
-	if (!option || !option[0]) {
-		ptr->target = UCI_TYPE_SECTION;
-		goto lookup;
-	}
-	ptr->target = UCI_TYPE_OPTION;
-	ptr->option = option;
-
-lookup:
-	if (uci_lookup_ptr(ctx, ptr, NULL, true) != UCI_OK || !UCI_LOOKUP_COMPLETE) {
-		return -1;
-	}
-	return 0;
-}
-
-char* cwmp_db_get_value_string(char *package, char *section, char *option)
-{
-	struct uci_context *uci_ctx = uci_alloc_context();
-
-	struct uci_option *o = NULL;
-	struct uci_element *e;
-	struct uci_ptr ptr = {0};
-
-	uci_ctx->confdir = "/lib/db/config";
-
-	if (cwmp_uci_lookup_ptr(uci_ctx, &ptr, package, section, option, NULL))
-		return "";
-
-	e = ptr.last;
-	switch(e->type) {
-		case UCI_TYPE_OPTION:
-			o = ptr.o;
-			break;
-		default:
-			break;
-	}
-
-
-	if (o)
-		return o->v.string ? o->v.string : "";
-	else {
-		return "";
-	}
-}
-
 int global_env_init (int argc, char** argv, struct env *env)
 {
 
 	int c, option_index = 0;
 
-	while ((c = getopt_long(argc, argv, "bgcaNAUtEhvm:u:M:f:w:", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "bghv", long_options, &option_index)) != -1) {
 
 		switch (c)
 		{

@@ -2,6 +2,7 @@ CWMP_VERSION = 3.0.0
 bin_PROGRAMS = icwmpd
 
 icwmpd_SOURCES =			\
+	../cwmp_uci.c			\
 	../backupSession.c		\
 	../config.c				\
 	../cwmp.c				\

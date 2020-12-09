@@ -1,3 +1,13 @@
+/*
+ *	This program is free software: you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation, either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	Copyright (C) 2013-2020 iopsys Software Solutions AB
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
+ */
+
 #include "datamodel_interface.h"
 #include "log.h"
 bool transaction_started = false;
@@ -268,8 +278,8 @@ char* cwmp_set_parameter_attributes(char* parameter_name, char* notification)
 /*
  * Init Notify Function
  */
-int cwmp_update_enabled_notify_file(unsigned int amd_version, int instance_mode)
+int cwmp_update_enabled_notify_file(int instance_mode)
 {
-	int e = cwmp_ubus_call("usp.raw", "init_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}, {"amd_version", {.int_val=amd_version}, UBUS_Integer}}, 2, NULL);
+	int e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}}, 1, NULL);
 	return e;
 }

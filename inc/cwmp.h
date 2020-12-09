@@ -29,6 +29,8 @@
 #include <libbbfdm/dmdiagnostics.h>
 extern unsigned int end_session_flag;
 #endif
+#include "common.h"
+#include "cwmp_uci.h"
 
 #define MAX_EVENTS							64
 #define MAX_INT32							2147483646
@@ -97,14 +99,6 @@ enum action
 enum cwmp_start {
 	CWMP_START_BOOT  = 1,
 	CWMP_START_PERIODIC = 2
-};
-
-enum cwmp_ret_err {
-	CWMP_OK,			/* No Error */
-	CWMP_GEN_ERR, 		/* General Error */
-	CWMP_MEM_ERR,  		/* Memory Error */
-	CWMP_MUTEX_ERR,
-	CWMP_RETRY_SESSION
 };
 
 enum event_retry_after_enum {
@@ -225,11 +219,6 @@ typedef struct env {
     long int							max_firmware_size;
 } env;
 
-typedef struct config_uci_list {
-    struct list_head                    list;
-    char                                *value;
-} config_uci_list;
-
 typedef struct session_status {
     time_t last_start_time;
     time_t last_end_time;
@@ -309,9 +298,7 @@ typedef struct rpc {
 extern int ip_version;
 extern char *commandKey;
 #define ARRAYSIZEOF(a) (sizeof(a) / sizeof((a)[0]))
-#ifndef FREE
-#define FREE(x) do { if (x) {free(x); x = NULL;} } while (0)
-#endif
+
 
 extern struct cwmp	cwmp_main;
 extern const struct EVENT_CONST_STRUCT	EVENT_CONST [__EVENT_IDX_MAX];

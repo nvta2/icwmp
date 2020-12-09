@@ -4,9 +4,10 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2013-2019 iopsys Software Solutions AB
+ *	Copyright (C) 2013-2020 iopsys Software Solutions AB
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
@@ -657,7 +658,7 @@ void *thread_periodic_check_notify (void *v)
         	pthread_mutex_lock(&(cwmp->mutex_session_send));
         	is_notify = check_value_change();
         	if (is_notify > 0)
-        		cwmp_update_enabled_notify_file(cwmp->conf.amd_version, cwmp->conf.instance_mode);
+        		cwmp_update_enabled_notify_file(cwmp->conf.instance_mode);
         	pthread_mutex_unlock(&(cwmp->mutex_session_send));
         	if (is_notify & NOTIF_ACTIVE)
         		send_active_value_change();

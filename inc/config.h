@@ -15,13 +15,9 @@
 
 extern pthread_mutex_t  mutex_config_load;
 
-int uci_get_state_value(char *cmd,char **value);
-int uci_set_state_value(char *cmd);
 int save_acs_bkp_config(struct cwmp *cwmp);
-int uci_get_value(char *cmd,char **value);
 int get_amd_version_config();
 int get_instance_mode_config();
 int get_session_timeout_config();
-int uci_set_value(char *cmd);
 
 #endif
