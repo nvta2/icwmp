@@ -1651,7 +1651,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	json_object *faults_array = NULL;
 	int flag = 0;
 	if(!transaction_started) {
-		if (!cwmp_transaction_start())
+		if (!cwmp_transaction_start("cwmp"))
 			goto fault;
 		transaction_started = true;
 	}
@@ -1728,7 +1728,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	b = n;
 
 	if (!transaction_started) {
-		if (!cwmp_transaction_start())
+		if (!cwmp_transaction_start("cwmp"))
 			goto fault;
 		transaction_started = true;
 	}
@@ -1841,7 +1841,7 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
 	if (!transaction_started) {
-		if (!cwmp_transaction_start())
+		if (!cwmp_transaction_start("cwmp"))
 			goto fault;
 		transaction_started = true;
 	}
@@ -1929,7 +1929,7 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
 	if (!transaction_started) {
-		if (!cwmp_transaction_start())
+		if (!cwmp_transaction_start("cwmp"))
 			goto fault;
 		transaction_started = true;
 	}

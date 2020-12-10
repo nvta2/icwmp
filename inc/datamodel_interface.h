@@ -8,10 +8,12 @@
 
 #define DM_ROOT_OBJ "Device."
 extern bool transaction_started;
+extern int transaction_id;
 
-int cwmp_transaction_start();
+int cwmp_transaction_start(char *app);
 int cwmp_transaction_commit();
 int cwmp_transaction_abort();
+int cwmp_transaction_status();
 char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters);
 char* cwmp_set_parameter_value(char* parameter_name, char* value, char* parameter_key, int* flag);
 char* cwmp_set_multiple_parameters_values(struct list_head parameters_values_list, char* parameter_key, int* flag, json_object **faults_array);
