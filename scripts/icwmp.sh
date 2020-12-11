@@ -27,6 +27,11 @@ FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER="15"
 FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED="18"
 FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION="19"
 
+ICWMP_DOWNLOAD_FILE="/tmp/icwmp_download"
+
+FIRMWARE_UPGRADE_IMAGE="/tmp/firmware.bin"
+FIRMWARE_LAST_VALID_IMAGE="/tmp/firmware_last_valid"
+
 for ffile in `ls /usr/share/icwmp/functions/`; do
 . /usr/share/icwmp/functions/$ffile
 done
@@ -293,11 +298,11 @@ handle_action() {
 		local fault_code="9000"
 		if [ "$__arg4" = "" -o "$__arg5" = "" ];then
 			if [ "$__arg7" != "" ];then
-				resp=$(curl --fail --capath $__arg7 --write-out %{http_code} --silent -o /tmp/icwmp_download --output /dev/nul $__arg1)				
+				resp=$(curl --fail --capath $__arg7 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`wget --server-response -O /tmp/icwmp_download --no-check-certificate "$__arg1" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`				
+				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE --no-check-certificate "$__arg1" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
 			else
-				resp=`wget --server-response -O /tmp/icwmp_download "$__arg1" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
+				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE "$__arg1" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
 			fi
 			if [ "$resp" == "404" ];then
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
@@ -315,11 +320,11 @@ handle_action() {
 		else
 			local url=`echo "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g"`
 			if [ "$__arg7" != "" ];then
-				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o /tmp/icwmp_download --output /dev/nul $__arg1)
+				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`wget --server-response -O /tmp/icwmp_download --no-check-certificate "$url" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`		
+				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE --no-check-certificate "$url" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
 			else
-				resp=`wget --server-response -O /tmp/icwmp_download "$url" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
+				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE "$url" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
 			fi
 
 			resp=`echo $resp| awk '{print $NF}'`
@@ -338,49 +343,49 @@ handle_action() {
 			fi
 		fi
 
-		local flashsize="`icwmp_check_flash_size`" #ALZ
-		local filesize=`ls -l /tmp/icwmp_download | awk '{ print $5 }'`
+		local flashsize=256000000 #flashsize="`icwmp_check_flash_size`"
+		local filesize=`ls -l $ICWMP_DOWNLOAD_FILE | awk '{ print $5 }'`
 		if [ $flashsize -gt 0 -a $flashsize -lt $__arg2 ]; then
 			let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
-			rm /tmp/icwmp_download 2> /dev/null
+			rm $ICWMP_DOWNLOAD_FILE 2> /dev/null
 			icwmp_fault_output "" "$fault_code"
 		else
 			if [ "$__arg3" = "1 Firmware Upgrade Image" ];then
-				mv /tmp/icwmp_download /tmp/firmware_upgrade_image 2> /dev/null
+				mv $ICWMP_DOWNLOAD_FILE $FIRMWARE_UPGRADE_IMAGE 2> /dev/null
 				(icwmp_check_image)
 				if [ "$?" = "0" ];then
 					if [ $flashsize -gt 0 -a $filesize -gt $flashsize ];then
 						let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
-						rm /tmp/firmware_upgrade_image 2> /dev/null
+						rm $FIRMWARE_UPGRADE_IMAGE 2> /dev/null
 						icwmp_fault_output "" "$fault_code"
 					else
-						rm /tmp/firmware_upgrade_image_last_valid 2> /dev/null
-						mv /tmp/firmware_upgrade_image /tmp/firmware_upgrade_image_last_valid 2> /dev/null
+						rm $FIRMWARE_LAST_VALID_IMAGE 2> /dev/null
+						mv $FIRMWARE_UPGRADE_IMAGE $FIRMWARE_LAST_VALID_IMAGE 2> /dev/null
 						icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 					fi
 				else
 					let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
-					rm /tmp/firmware_upgrade_image 2> /dev/null
+					rm $FIRMWARE_UPGRADE_IMAGE 2> /dev/null
 					icwmp_fault_output "" "$fault_code"
 				fi
 			elif [ "$__arg3" = "2 Web Content" ];then
-				mv /tmp/icwmp_download /tmp/web_content.ipk 2> /dev/null
+				mv $ICWMP_DOWNLOAD_FILE /tmp/web_content.ipk 2> /dev/null
 				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 			elif [ "$__arg3" = "3 Vendor Configuration File" ];then
 				if [ "$__arg6" != "" ]; then
 					local tmp="/etc/vendor_configuration_file_${__arg6}.cfg"
-					mv /tmp/icwmp_download "$tmp" 2> /dev/null
+					mv $ICWMP_DOWNLOAD_FILE "$tmp" 2> /dev/null
 				else
-					mv /tmp/icwmp_download /tmp/vendor_configuration_file.cfg 2> /dev/null
+					mv $ICWMP_DOWNLOAD_FILE /tmp/vendor_configuration_file.cfg 2> /dev/null
 				fi
 				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 			elif [ "$__arg3" = "6 Stored Firmware Image" ]; then
-            	mv /tmp/icwmp_download /tmp/owsd-repeater-control-cert.pem 2> /dev/null
-            	icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
+				mv $ICWMP_DOWNLOAD_FILE /tmp/owsd-repeater-control-cert.pem 2> /dev/null
+				icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 			else
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAILURE
 				icwmp_fault_output "" "$fault_code"
-				rm /tmp/icwmp_download 2> /dev/null
+				rm $ICWMP_DOWNLOAD_FILE 2> /dev/null
 			fi
 		fi
 	fi
@@ -476,7 +481,9 @@ handle_action() {
 	
 	if [ "$action" = "apply_download" ]; then
 		case "$__arg1" in
-			"1 Firmware Upgrade Image") icwmp_apply_firmware ;;
+			"1 Firmware Upgrade Image")
+				icwmp_apply_firmware
+			;;
 			"2 Web Content")
 				if [ "$__arg2" != "0" ]; then 
 					icwmp_apply_web_content $__arg2
@@ -491,7 +498,9 @@ handle_action() {
 					icwmp_apply_vendor_configuration
 				fi
 			;;
-			"6 Stored Firmware Image") icwmp_apply_ca_ssl_certificate_key ;;
+			"6 Stored Firmware Image")
+				icwmp_apply_ca_ssl_certificate_key
+			;;
 		esac
 	fi
 
@@ -500,13 +509,13 @@ handle_action() {
 	fi
 	
 	if [ "$action" = "factory_reset_soft" ]; then
-		/sbin/defaultreset -s wifi fw_redirect fw_parental passwd_user ice
+		/sbin/defaultreset
 	fi
 	
 	if [ "$action" = "reboot" ]; then
 		sync
 		uci set cwmp.acs.ParameterKey="$commandKey"
-		uci commit
+		uci commit cwmp
 		reboot
 	fi
 

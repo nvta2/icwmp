@@ -4,6 +4,9 @@
 #  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
 #  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 
+FIRMWARE_UPGRADE_IMAGE="/tmp/firmware.bin"
+FIRMWARE_LAST_VALID_IMAGE="/tmp/firmware_last_valid"
+
 icwmp_fault_output()
 {
         local MSG=""
@@ -39,14 +42,8 @@ icwmp_fault_output()
 
 icwmp_check_image()
 {
-	. /lib/functions.sh; include /lib/upgrade
-	if [ -e /lib/upgrade/platform.sh ];then
-		platform_check_image /tmp/firmware_upgrade_image
-		return $?
-	else 
-		iopsys_check_image /tmp/firmware_upgrade_image
-		return $?
-	fi	
+	code="$(ubus -t 10 call rpc-sys upgrade_test | jsonfilter -e @.code)"
+	[ "$code" == "0" ] && return 0 || return 1
 }
 
 icwmp_check_flash_size()
@@ -88,11 +85,14 @@ icwmp_apply_firmware()
 	local fault_code="9000"
 	
 	sync
-	killall dropbear uhttpd; sleep 1; uci set cwmp.cpe.exec_download=1; uci commit; sleep 1; /sbin/sysupgrade /tmp/firmware_upgrade_image_last_valid
-	if [ "$?" != "0" ];then
+	uci set cwmp.cpe.exec_download=1
+	uci commit cwmp
+	/sbin/sysupgrade $FIRMWARE_LAST_VALID_IMAGE 2>/dev/null
+	if [ "$?" != "0" ]; then
 		let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
 		icwmp_fault_output "" "$fault_code"
-		uci set cwmp.cpe.exec_download=0; uci commit;
+		uci set cwmp.cpe.exec_download=0
+		uci commit cwmp
 	else
 		icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 	fi
