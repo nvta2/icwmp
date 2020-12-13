@@ -30,7 +30,6 @@ FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION="19"
 ICWMP_DOWNLOAD_FILE="/tmp/icwmp_download"
 
 FIRMWARE_UPGRADE_IMAGE="/tmp/firmware.bin"
-FIRMWARE_LAST_VALID_IMAGE="/tmp/firmware_last_valid"
 
 for ffile in `ls /usr/share/icwmp/functions/`; do
 . /usr/share/icwmp/functions/$ffile
@@ -356,16 +355,14 @@ handle_action() {
 				if [ "$?" = "0" ];then
 					if [ $flashsize -gt 0 -a $filesize -gt $flashsize ];then
 						let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
-						rm $FIRMWARE_UPGRADE_IMAGE 2> /dev/null
+						rm -f $FIRMWARE_UPGRADE_IMAGE
 						icwmp_fault_output "" "$fault_code"
 					else
-						rm $FIRMWARE_LAST_VALID_IMAGE 2> /dev/null
-						mv $FIRMWARE_UPGRADE_IMAGE $FIRMWARE_LAST_VALID_IMAGE 2> /dev/null
 						icwmp_fault_output "" "$FAULT_CPE_NO_FAULT"
 					fi
 				else
 					let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
-					rm $FIRMWARE_UPGRADE_IMAGE 2> /dev/null
+					rm -f $FIRMWARE_UPGRADE_IMAGE
 					icwmp_fault_output "" "$fault_code"
 				fi
 			elif [ "$__arg3" = "2 Web Content" ];then

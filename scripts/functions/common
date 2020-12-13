@@ -5,7 +5,6 @@
 #  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
 
 FIRMWARE_UPGRADE_IMAGE="/tmp/firmware.bin"
-FIRMWARE_LAST_VALID_IMAGE="/tmp/firmware_last_valid"
 
 icwmp_fault_output()
 {
@@ -87,7 +86,9 @@ icwmp_apply_firmware()
 	sync
 	uci set cwmp.cpe.exec_download=1
 	uci commit cwmp
-	/sbin/sysupgrade $FIRMWARE_LAST_VALID_IMAGE 2>/dev/null
+	ubus call rpc-sys upgrade_start '{"keep":true}'
+	sleep 60
+	[ 0 -gt 1 ] # If the updade did not upgrade within 60 seconds, assume it has failed
 	if [ "$?" != "0" ]; then
 		let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED
 		icwmp_fault_output "" "$fault_code"
