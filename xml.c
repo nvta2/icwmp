@@ -3167,46 +3167,96 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 	return NULL;
 }
 
-void get_deployment_unit_name_version(char *uuid, char **name, char **version, char **env)
+char* get_software_module_object_eq(char *param1, char *val1, char *param2, char* val2, json_object **parameters)
 {
-	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *cur_uuid_obj = NULL, *name_obj = NULL, *version_obj = NULL, *environment_obj = NULL;
-	int j = 0;
-	char *cur_uuid;
+	char *err = NULL;
+	char *sw_parameter_name = NULL;
+	json_object *swdu_get_obj = NULL;
 
-	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
-	if (res) {
-		json_object_object_get_ex(res, "deployment_unit", &arrobj);
-		foreach_jsonobj_in_array(du_obj, arrobj) {
-			json_object_object_get_ex(du_obj, "uuid", &cur_uuid_obj);
-			if (cur_uuid_obj && strcmp(json_object_get_string(cur_uuid_obj), uuid) == 0) {
-				json_object_object_get_ex(du_obj, "name", &name_obj);
-				*name = strdup(name_obj?json_object_get_string(name_obj):"");
-				json_object_object_get_ex(du_obj, "version", &version_obj);
-				*version = strdup(version_obj?json_object_get_string(version_obj):"");
-				json_object_object_get_ex(du_obj, "environment", &environment_obj);
-				*env = strdup(environment_obj?json_object_get_string(environment_obj):"");
-				return;
-			}
+	if (!param2)
+		asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\"%s\"].", param1, val1);
+	else
+		asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\"%s\"&&%s==\"%s\"].", param1, val1, param2, val2);
+	err = cwmp_get_parameter_values(sw_parameter_name, &swdu_get_obj);
+	if (err) {
+		FREE(sw_parameter_name);
+		return NULL;
+	}
+	json_object_object_get_ex(swdu_get_obj, "parameters", parameters);
+	json_object *param_obj = NULL;
+	if (*parameters)
+		param_obj = json_object_array_get_idx(*parameters, 0);
+	if (!param_obj) {
+		FREE(sw_parameter_name);
+		return NULL;
+	}
+	json_object *first_param = NULL;
+	json_object_object_get_ex(param_obj, "parameter", &first_param);
+	if (!first_param) {
+		FREE(sw_parameter_name);
+		return NULL;
+	}
+	char *first_param_name = strdup(json_object_get_string(first_param));
+    char instance[8];
+    snprintf(instance, (size_t)(strchr(first_param_name+strlen("Device.SoftwareModules.DeploymentUnit."),'.') - first_param_name - strlen("Device.SoftwareModules.DeploymentUnit.")+1), "%s", (char*)(first_param_name+strlen("Device.SoftwareModules.DeploymentUnit.")));
+    return strdup(instance);
+}
+
+int get_deployment_unit_name_version(char *uuid, char **name, char **version, char **env)
+{
+	json_object *du_obj = NULL, *param_obj = NULL, *arrobj = NULL, *value_obj = NULL;
+	char *sw_by_uuid_instance = NULL, *name_param = NULL, *version_param = NULL, *environment_param = NULL;
+
+	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &arrobj);
+	if(!sw_by_uuid_instance)
+		return 0;
+
+	asprintf(&name_param, "Device.SoftwareModules.DeploymentUnit.%s.Name", sw_by_uuid_instance);
+	asprintf(&version_param, "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
+	asprintf(&environment_param, "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
+
+	foreach_jsonobj_in_array(du_obj, arrobj) {
+		json_object_object_get_ex(du_obj, "parameter", &param_obj);
+		if(!param_obj)
+			continue;
+		json_object_object_get_ex(du_obj, "value", &value_obj);
+
+		if (strcmp(json_object_get_string(param_obj), name_param) == 0) {
+			*name = strdup(value_obj?json_object_get_string(value_obj):"");
+			continue;
+		}
+		if (strcmp(json_object_get_string(param_obj), version_param) == 0) {
+			*version = strdup(value_obj?json_object_get_string(value_obj):"");
+			continue;
+		}
+		if (strcmp(json_object_get_string(param_obj), environment_param) == 0) {
+			*env = strdup(value_obj?json_object_get_string(value_obj):"");
+			continue;
 		}
 	}
+	return 1;
 }
 
 char *get_softwaremodules_uuid(char *url)
 {
-	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *cur_url_obj = NULL, *uuid_obj = NULL;
-	char *cur_url, *uuid = "";
-	int j = 0;
+	json_object *du_obj = NULL, *param_obj = NULL, *arrobj = NULL, *value_obj = NULL;
+	char *sw_by_url_instance = NULL, *uuid_param = NULL, *uuid = NULL;
 
-	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
-	if (res) {
-		json_object_object_get_ex(res, "deployment_unit", &arrobj);
-		foreach_jsonobj_in_array(du_obj, arrobj) {
-			json_object_object_get_ex(du_obj, "url", &cur_url_obj);
-			if (cur_url_obj && strcmp(json_object_get_string(cur_url_obj), url) == 0) {
-				json_object_object_get_ex(du_obj, "uuid", &uuid_obj);
-				*uuid = strdup(uuid_obj?json_object_get_string(uuid_obj):"");
-				break;
-			}
+	sw_by_url_instance = get_software_module_object_eq("URL", url, NULL, NULL, &arrobj);
+	if(!sw_by_url_instance)
+		return NULL;
+
+	asprintf(&uuid_param, "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
+
+	foreach_jsonobj_in_array(du_obj, arrobj) {
+		json_object_object_get_ex(du_obj, "parameter", &param_obj);
+		if(!param_obj)
+			continue;
+		json_object_object_get_ex(du_obj, "value", &value_obj);
+
+		if (strcmp(json_object_get_string(param_obj), uuid_param) == 0) {
+			uuid = strdup(value_obj?json_object_get_string(value_obj):"");
+			break;
 		}
 	}
 	return uuid;
@@ -3214,20 +3264,24 @@ char *get_softwaremodules_uuid(char *url)
 
 char *get_softwaremodules_url(char *uuid)
 {
-	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *uuid_obj = NULL, *url_obj = NULL;
-	char *cur_uuid, *url = "";
-	int j = 0;
+	json_object *du_obj = NULL, *param_obj = NULL, *arrobj = NULL, *value_obj = NULL;
+	char *sw_by_uuid_instance = NULL, *url_param = NULL, *url = NULL;
 
-	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
-	if (res) {
-		json_object_object_get_ex(res, "deployment_unit", &arrobj);
-		foreach_jsonobj_in_array(du_obj, arrobj) {
-			json_object_object_get_ex(du_obj, "uuid", &uuid_obj);
-			if (uuid_obj && strcmp(json_object_get_string(uuid_obj), uuid) == 0) {
-				json_object_object_get_ex(du_obj, "url", &url_obj);
-				*url = strdup(url_obj?json_object_get_string(url_obj):"");
-				break;
-			}
+	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &arrobj);
+	if(!sw_by_uuid_instance)
+		return NULL;
+
+	asprintf(&url_param, "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
+
+	foreach_jsonobj_in_array(du_obj, arrobj) {
+		json_object_object_get_ex(du_obj, "parameter", &param_obj);
+		if(!param_obj)
+			continue;
+		json_object_object_get_ex(du_obj, "value", &value_obj);
+
+		if (strcmp(json_object_get_string(param_obj), url_param) == 0) {
+			url = strdup(value_obj?json_object_get_string(value_obj):"");
+			break;
 		}
 	}
 	return url;
@@ -3235,24 +3289,13 @@ char *get_softwaremodules_url(char *uuid)
 
 char *get_deployment_unit_reference(char *package_name, char *package_env)
 {
-	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *name_obj = NULL, *env_obj = NULL;
-	char *deployment_unit_ref = NULL;
-	int idx = 0;
-
-	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
-	if (res) {
-		json_object_object_get_ex(res, "deployment_unit", &arrobj);
-		foreach_jsonobj_in_array(du_obj, arrobj) {
-			idx++;
-			json_object_object_get_ex(du_obj, "name", &name_obj);
-			json_object_object_get_ex(du_obj, "environment", &env_obj);
-			if (name_obj && strcmp(json_object_get_string(name_obj), package_name) == 0 && env_obj && strcmp(json_object_get_string(env_obj), package_env) == 0) {
-				asprintf(&deployment_unit_ref, "Device.SoftwareModules.DeploymentUnit.%d", idx);
-				return deployment_unit_ref;
-			}
-		}
-	}
-	return NULL;
+	json_object *arrobj = NULL;
+	char *sw_by_name_env_instance = NULL, *deployment_unit_ref = NULL;
+	sw_by_name_env_instance = get_software_module_object_eq("Name", package_name, "ExecutionEnvRef", package_env, &arrobj);
+	if (!sw_by_name_env_instance)
+		return NULL;
+	asprintf(&deployment_unit_ref, "Device.SoftwareModules.DeploymentUnit.%s", sw_by_name_env_instance);
+	return deployment_unit_ref;
 }
 
 void *thread_cwmp_rpc_cpe_change_du_state(void *v)
