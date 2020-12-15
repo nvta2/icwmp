@@ -20,17 +20,10 @@
 #include <pthread.h>
 #include <microxml.h>
 #include <libubox/list.h>
-#ifdef TR098
-#include <libtr098/dmentry.h>
-#include <libtr098/dmtr098.h>
-#else
-#include <libbbfdm/dmentry.h>
-#include <libbbfdm/dmbbfcommon.h>
-#include <libbbfdm/dmdiagnostics.h>
-extern unsigned int end_session_flag;
-#endif
+
 #include "common.h"
 #include "cwmp_uci.h"
+extern unsigned int end_session_flag;
 
 #define MAX_EVENTS							64
 #define MAX_INT32							2147483646
@@ -326,8 +319,6 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port);
 void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type);
 int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type);
 int cwmp_get_int_event_code(char *code);
-int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx);
-int cwmp_dm_ctx_clean(struct dmctx *ctx);
 int cwmp_apply_acs_changes();
 int cwmp_move_session_to_session_send (struct cwmp *cwmp, struct session *session);
 int cwmp_schedule_rpc (struct cwmp *cwmp, struct session *session);
@@ -338,10 +329,8 @@ int cwmp_init(int argc, char** argv,struct cwmp *cwmp);
 int cwmp_exit(void);
 void add_list_value_change(char *param_name, char *param_data, char *param_type);
 void send_active_value_change(void);
-#ifndef TR098
 void cwmp_set_end_session(unsigned int flag);
 bool event_exist_in_list(struct cwmp *cwmp, int event);
 void *thread_periodic_check_notify (void *v);
 void free_dm_parameter_all_fromlist(struct list_head *list);
-#endif
 #endif /* _CWMP_H__ */

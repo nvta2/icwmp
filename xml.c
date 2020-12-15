@@ -24,17 +24,6 @@
 #include "backupSession.h"
 #include "log.h"
 #include "jshn.h"
-#ifdef TR098
-#include <libtr098/dmentry.h>
-#include <libtr098/deviceinfo.h>
-#include <libtr098/dmtr098.h>
-#include <libtr098/softwaremodules.h>
-#else
-#include <libbbfdm/dmentry.h>
-#include <libbbfdm/dmbbfcommon.h>
-#include <libbbfdm/deviceinfo.h>
-#include <libbbfdm/softwaremodules.h>
-#endif
 #include "datamodel_interface.h"
 
 LIST_HEAD(list_download);
@@ -2532,6 +2521,17 @@ int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct tr
     return error;
 }
 
+int lookup_vcf_name(char *instance, char **value)
+{
+	struct uci_section *s = NULL;
+	cwmp_uci_init(UCI_BBFDM_CONFIG);
+	cwmp_uci_path_foreach_option_eq(DMMAP, "vcf", "vcf_instance", instance, s) {
+		cwmp_uci_get_value_by_section_string(s, "name", value);
+	}
+	cwmp_uci_exit();
+	return 0;
+}
+
 int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptransfer_complete)
 {
 	int							i, error = FAULT_CPE_NO_FAULT;
@@ -3167,6 +3167,94 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download (void *v)
 	return NULL;
 }
 
+void get_deployment_unit_name_version(char *uuid, char **name, char **version, char **env)
+{
+	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *cur_uuid_obj = NULL, *name_obj = NULL, *version_obj = NULL, *environment_obj = NULL;
+	int j = 0;
+	char *cur_uuid;
+
+	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
+	if (res) {
+		json_object_object_get_ex(res, "deployment_unit", &arrobj);
+		foreach_jsonobj_in_array(du_obj, arrobj) {
+			json_object_object_get_ex(du_obj, "uuid", &cur_uuid_obj);
+			if (cur_uuid_obj && strcmp(json_object_get_string(cur_uuid_obj), uuid) == 0) {
+				json_object_object_get_ex(du_obj, "name", &name_obj);
+				*name = strdup(name_obj?json_object_get_string(name_obj):"");
+				json_object_object_get_ex(du_obj, "version", &version_obj);
+				*version = strdup(version_obj?json_object_get_string(version_obj):"");
+				json_object_object_get_ex(du_obj, "environment", &environment_obj);
+				*env = strdup(environment_obj?json_object_get_string(environment_obj):"");
+				return;
+			}
+		}
+	}
+}
+
+char *get_softwaremodules_uuid(char *url)
+{
+	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *cur_url_obj = NULL, *uuid_obj = NULL;
+	char *cur_url, *uuid = "";
+	int j = 0;
+
+	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
+	if (res) {
+		json_object_object_get_ex(res, "deployment_unit", &arrobj);
+		foreach_jsonobj_in_array(du_obj, arrobj) {
+			json_object_object_get_ex(du_obj, "url", &cur_url_obj);
+			if (cur_url_obj && strcmp(json_object_get_string(cur_url_obj), url) == 0) {
+				json_object_object_get_ex(du_obj, "uuid", &uuid_obj);
+				*uuid = strdup(uuid_obj?json_object_get_string(uuid_obj):"");
+				break;
+			}
+		}
+	}
+	return uuid;
+}
+
+char *get_softwaremodules_url(char *uuid)
+{
+	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *uuid_obj = NULL, *url_obj = NULL;
+	char *cur_uuid, *url = "";
+	int j = 0;
+
+	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
+	if (res) {
+		json_object_object_get_ex(res, "deployment_unit", &arrobj);
+		foreach_jsonobj_in_array(du_obj, arrobj) {
+			json_object_object_get_ex(du_obj, "uuid", &uuid_obj);
+			if (uuid_obj && strcmp(json_object_get_string(uuid_obj), uuid) == 0) {
+				json_object_object_get_ex(du_obj, "url", &url_obj);
+				*url = strdup(url_obj?json_object_get_string(url_obj):"");
+				break;
+			}
+		}
+	}
+	return url;
+}
+
+char *get_deployment_unit_reference(char *package_name, char *package_env)
+{
+	json_object *res = NULL, *du_obj = NULL, *arrobj = NULL, *name_obj = NULL, *env_obj = NULL;
+	char *deployment_unit_ref = NULL;
+	int idx = 0;
+
+	cwmp_ubus_call("swmodules", "du_list", CWMP_UBUS_ARGS{{}}, 0, &res);
+	if (res) {
+		json_object_object_get_ex(res, "deployment_unit", &arrobj);
+		foreach_jsonobj_in_array(du_obj, arrobj) {
+			idx++;
+			json_object_object_get_ex(du_obj, "name", &name_obj);
+			json_object_object_get_ex(du_obj, "environment", &env_obj);
+			if (name_obj && strcmp(json_object_get_string(name_obj), package_name) == 0 && env_obj && strcmp(json_object_get_string(env_obj), package_env) == 0) {
+				asprintf(&deployment_unit_ref, "Device.SoftwareModules.DeploymentUnit.%d", idx);
+				return deployment_unit_ref;
+			}
+		}
+	}
+	return NULL;
+}
+
 void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 {
     struct cwmp *cwmp = (struct cwmp *)v;
@@ -3182,7 +3270,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 	char *package_env;
 	struct operations *p, *q;
 	struct opresult *res;
-	struct dmctx dmctx = {0};
 	char *du_ref = NULL;
 	char *cur_uuid = NULL;
 	char *cur_url = NULL;
@@ -3241,8 +3328,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 				            	error = cwmp_launch_du_install(p->url, p->uuid, p->username, p->password, p->executionenvref, &package_version, &package_name, &package_uuid, &package_env, &res);
 				            	if( error == FAULT_CPE_NO_FAULT) {
 									if (package_name && package_env) {
-										cwmp_dm_ctx_init(cwmp, &dmctx);
-										du_ref = get_deployment_unit_reference(&dmctx, package_name, package_env);
+										du_ref = get_deployment_unit_reference(package_name, package_env);
 										if (du_ref) res->du_ref = strdup(du_ref);
 
 									}
@@ -3261,7 +3347,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								}
 								break;
 							case DU_UNINSTALL:
-								cwmp_dm_ctx_init(cwmp, &dmctx);
 								get_deployment_unit_name_version(p->uuid, &package_name, &package_version, &package_env);
 								if (!package_name || package_name[0] == '\0' || !package_version || package_version[0] == '\0' || !package_env || package_env[0] == '\0') {
 									error = FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT;
@@ -3273,8 +3358,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								if (package_version) cur_version = strdup(package_version);
 								if (package_env) cur_env = strdup(package_env);
 								if (cur_name && cur_env) {
-									cwmp_dm_ctx_init(cwmp, &dmctx);
-									du_ref = get_deployment_unit_reference(&dmctx, cur_name, cur_env);
+									du_ref = get_deployment_unit_reference(cur_name, cur_env);
 									if (du_ref) res->du_ref = strdup(du_ref);
 
 								}
@@ -3308,7 +3392,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								break;
 							case DU_UPDATE:
 								if ((p->url)[0] != '\0' && (p->uuid)[0] == '\0') {
-									cwmp_dm_ctx_init(cwmp, &dmctx);
 									cur_uuid = strdup(get_softwaremodules_uuid(p->url));
 
 									if (cur_uuid == NULL || cur_uuid[0] == '\0') {
@@ -3316,7 +3399,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 										break;
 									}
 								} else if ((p->url)[0] == '\0' && (p->uuid)[0] != '\0') {
-									cwmp_dm_ctx_init(cwmp, &dmctx);
 									cur_url = strdup(get_softwaremodules_url(p->uuid));
 
 									if (cur_url == NULL || cur_url[0] == '\0') {
@@ -3326,8 +3408,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 								}
 								error = cwmp_launch_du_update((cur_uuid && cur_uuid[0] != '\0')?cur_uuid:p->uuid, (cur_url && cur_url[0] != '\0')?cur_url:p->url, p->version, p->username, p->password, &package_version, &package_name, &package_uuid, &package_env, &res);
 								if (package_name && package_env) {
-									cwmp_dm_ctx_init(cwmp, &dmctx);
-									du_ref = get_deployment_unit_reference(&dmctx, package_name, package_env);
+									du_ref = get_deployment_unit_reference(package_name, package_env);
 									if (du_ref) res->du_ref = strdup(du_ref);
 
 								}

@@ -32,28 +32,11 @@
 struct cwmp cwmp_main = {0};
 char *commandKey = NULL;
 
-#ifndef TR098
 unsigned int end_session_flag = 0;
 
 void cwmp_set_end_session(unsigned int flag)
 {
 	end_session_flag |= flag;
-}
-#endif
-
-int cwmp_dm_ctx_init(struct cwmp *cwmp, struct dmctx *ctx)
-{
-	if(cwmp->conf.supported_amd_version == 0)
-		get_amd_version_config();
-	get_instance_mode_config();
-	dm_ctx_init(ctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
-	return 0;
-}
-
-int cwmp_dm_ctx_clean(struct dmctx *ctx)
-{
-	dm_ctx_clean(ctx);
-	return 0;
 }
 
 int cwmp_get_int_event_code(char *code)
@@ -536,7 +519,6 @@ int run_session_end_func ()
 		cwmp_ip_ping_diagnostic();        		
 	}
 
-#ifndef TR098
 	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing download diagnostic: end session request");
 		cwmp_start_diagnostic(DOWNLOAD_DIAGNOSTIC);
@@ -546,7 +528,6 @@ int run_session_end_func ()
 		CWMP_LOG (INFO,"Executing upload diagnostic: end session request");
 		cwmp_start_diagnostic(UPLOAD_DIAGNOSTIC);
 	}
-#endif
 
 	if (end_session_flag & END_SESSION_REBOOT) {
 		CWMP_LOG (INFO,"Executing Reboot: end session request");
@@ -781,8 +762,5 @@ int main(int argc, char **argv)
 
     CWMP_LOG(INFO,"EXIT ICWMP");
     cwmp_exit();
-#ifndef TR098
-    free_dynamic_arrays();
-#endif
     return CWMP_OK;
 }

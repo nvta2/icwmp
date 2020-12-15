@@ -55,6 +55,7 @@ int http_client_init(struct cwmp *cwmp)
 	char *acs_var_stat = NULL;
 	unsigned char buf[sizeof(struct in6_addr)];
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
+	char *uci_cmd = NULL;
 
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
@@ -97,11 +98,10 @@ if (cwmp->conf.ipv6_enable) {
 	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
 	curl_easy_perform(curl);
 	int tmp = inet_pton(AF_INET, ip, buf);
-#ifdef TR098
-	ip_version = (tmp == 1) ? 4 : 6;
-#else
-	bbf_set_ip_version((tmp == 1) ? 4 : 6);
-#endif
+
+	asprintf(&uci_cmd, "cwmp.acs.ip_version=%d", (tmp == 1) ? 4 : 6);
+	uci_set_value(uci_cmd);
+	free(uci_cmd);
 }
 	return 0;
 }

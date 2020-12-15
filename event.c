@@ -25,16 +25,6 @@
 #include "jshn.h"
 #include "external.h"
 #include "config.h"
-#ifdef TR098
-#include <libtr098/dmtr098.h>
-#include <libtr098/dmcommon.h>
-#include <libtr098/dmentry.h>
-#include <libtr098/deviceinfo.h>
-#include <libtr098/dmjson.h>
-#else
-#include <libbbfdm/dmentry.h>
-#include <libbbfdm/deviceinfo.h>
-#endif
 #include "datamodel_interface.h"
 
 LIST_HEAD(list_value_change);
@@ -333,7 +323,7 @@ int check_value_change(void)
 		FREE(parameter);
 		dm_ctx_clean_list_parameter(&dmctx);
 	}
-	cwmp_dm_ctx_clean(&dmctx);
+	dm_ctx_clean(&dmctx);
 	fclose(fp);
 	return is_notify;
 }
@@ -455,11 +445,8 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-#ifdef TR098
-        char buf[64] = "InternetGatewayDevice.ManagementServer.URL";
-#else
+
         char buf[64] = "Device.ManagementServer.URL";
-#endif
         add_dm_parameter_tolist(&(event_container->head_dm_parameter), buf, NULL, NULL);
         cwmp_save_event_container (cwmp,event_container);
         save_acs_bkp_config(cwmp);

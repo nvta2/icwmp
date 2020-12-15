@@ -165,12 +165,16 @@ fi
 
 handle_action() {
 	local fault_code=$FAULT_CPE_NO_FAULT
-	if [ "$action" = "get_value" -o "$action" = "get_notification" ]; then
-		/usr/sbin/icwmpd -m 1 $action "$__arg1"
+	if [ "$action" = "get_value" ]; then
+		ubus call usp.raw get '{"path":"$__arg1","proto":"cwmp"}'
+	fi
+	
+	if [ "$action" = "get_notification" ]; then
+		ubus call usp.raw getm_attributes '{"paths":["$__arg1"],"proto":"cwmp"}'
 	fi
 
 	if [ "$action" = "get_name" ]; then
-		/usr/sbin/icwmpd -m 1 get_name "$__arg1" "$__arg2"
+		ubus call usp.raw get_names '{"paths":["$__arg1"],"next-level":$__arg2,"proto":"cwmp"}'
 	fi
 
 	if [ "$action" = "set_value" ]; then

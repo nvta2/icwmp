@@ -429,7 +429,7 @@ int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, ch
 		return -1;
 }
 
-static inline void uci_list_init(struct uci_list *ptr)
+static inline void cwmp_uci_list_init(struct uci_list *ptr)
 {
 	ptr->prev = ptr;
 	ptr->next = ptr;
@@ -458,7 +458,7 @@ int cwmp_uci_get_value_by_section_list(struct uci_section *s, char *option, stru
 					if (!o->v.string || (o->v.string)[0] == '\0')
 						return 0;
 					list = calloc(1, sizeof(struct uci_list));
-					uci_list_init(list);
+					cwmp_uci_list_init(list);
 					dup = strdup(o->v.string);
 					pch = strtok_r(dup, " ", &spch);
 					while (pch != NULL) {
