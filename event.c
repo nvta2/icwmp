@@ -334,7 +334,6 @@ int check_value_change(void)
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
-		buf_json_obj = json_tokener_parse((char*)buf);
 		cwmp_json_obj_init(buf, &buf_json_obj);
 		cwmp_json_get_string(buf_json_obj, "parameter", &parameter);
 		if(parameter == NULL || parameter[0] == '\0')
@@ -346,8 +345,7 @@ int check_value_change(void)
 		get_parameter_value_from_parameters_list(actual_list_notify, parameter, &dm_parameter);
 		if (dm_parameter == NULL)
 			continue;
-
-		if (notification && (strlen(notification) > 0) && (notification[0] >= '1')  && (strcmp(dm_parameter->data, value) != 0)){
+		if (notification && (strlen(notification) > 0) && (notification[0] >= '1')  && (dm_parameter->data != NULL) && (value != NULL) && (strcmp(dm_parameter->data, value) != 0)){
 			if (notification[0] == '1' || notification[0] == '2')
 				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
 			if (notification[0] >= '3' )
