@@ -281,7 +281,7 @@ int check_value_change(void)
 	if (fp == NULL)
 		return false;
 
-	dm_ctx_init(&dmctx, cwmp->conf.instance_mode);
+	dm_ctx_init(&dmctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
 	while (fgets(buf, 512, fp) != NULL) {
 		if (!first_iteration)
 			dm_ctx_init_list_parameter(&dmctx);
