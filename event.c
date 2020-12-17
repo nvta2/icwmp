@@ -321,7 +321,7 @@ int check_value_change(void)
 	char *parameter, *notification = NULL, *value = NULL, *jval = NULL;
 	struct cwmp *cwmp = &cwmp_main;
 	struct cwmp_dm_parameter *dm_parameter = NULL;
-	json_object *buf_json_obj = NULL;
+	json_object *buf_json_obj = NULL, *param_name_obj = NULL, *value_obj = NULL, *notification_obj = NULL;
 	int is_notify = 0;
 
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
@@ -335,13 +335,27 @@ int check_value_change(void)
 		if (len)
 			buf[len-1] = '\0';
 		cwmp_json_obj_init(buf, &buf_json_obj);
-		cwmp_json_get_string(buf_json_obj, "parameter", &parameter);
-		if(parameter == NULL || parameter[0] == '\0')
+		json_object_object_get_ex(buf_json_obj, "parameter", &param_name_obj);
+		if(param_name_obj == NULL || strlen((char*)json_object_get_string(param_name_obj))<= 0)
 			continue;
-		cwmp_json_get_string(buf_json_obj, "value", &value);
-		cwmp_json_get_string(buf_json_obj, "notification", &notification);
-
+		parameter = strdup((char*)json_object_get_string(param_name_obj));
+		json_object_object_get_ex(buf_json_obj, "value", &value_obj);
+		json_object_object_get_ex(buf_json_obj, "notification", &notification_obj);
+		value =strdup(value_obj?(char*)json_object_get_string(value_obj):"");
+		notification = strdup(notification_obj?(char*)json_object_get_string(notification_obj):"");
 		cwmp_json_obj_clean(&buf_json_obj);
+		if (param_name_obj) {
+			json_object_put(param_name_obj);
+			param_name_obj = NULL;
+		}
+		if (value_obj) {
+			json_object_put(value_obj);
+			value_obj = NULL;
+		}
+		if (notification_obj) {
+			json_object_put(notification_obj);
+			notification_obj = NULL;
+		}
 		get_parameter_value_from_parameters_list(actual_list_notify, parameter, &dm_parameter);
 		if (dm_parameter == NULL)
 			continue;
@@ -366,6 +380,7 @@ int check_value_change(void)
 		FREE(dm_parameter->data);
 		FREE(dm_parameter->type);
 		FREE(dm_parameter);
+
 	}
 	fclose(fp);
 	return is_notify;
