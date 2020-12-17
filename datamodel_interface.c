@@ -13,6 +13,9 @@
 bool transaction_started = false;
 int transaction_id = 0;
 
+json_object *old_list_notify = NULL;
+json_object *actual_list_notify = NULL;
+
 /*
  * Transaction Functions
  */
@@ -299,8 +302,14 @@ char* cwmp_set_parameter_attributes(char* parameter_name, char* notification)
 /*
  * Init Notify Function
  */
-int cwmp_update_enabled_notify_file(int instance_mode)
+int cwmp_update_enabled_list_notify(int instance_mode, int notify_type)
 {
-	int e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}}, 1, NULL);
+	int e;
+	json_object *list_notif_obj = NULL;
+	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}}, 1, &list_notif_obj);
+	if (notify_type == OLD_LIST_NOTIFY)
+		json_object_object_get_ex(list_notif_obj, "parameters", &old_list_notify);
+	else
+		json_object_object_get_ex(list_notif_obj, "parameters", &actual_list_notify);
 	return e;
 }

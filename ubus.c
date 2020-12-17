@@ -7,6 +7,7 @@
  *	Copyright (C) 2013-2019 iopsys Software Solutions AB
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *	Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
 

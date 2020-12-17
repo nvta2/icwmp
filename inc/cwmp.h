@@ -7,7 +7,7 @@
  *	Copyright (C) 2013-2019 iopsys Software Solutions AB
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
- *
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
 #ifndef _CWMP_H__
@@ -333,4 +333,5 @@ void cwmp_set_end_session(unsigned int flag);
 bool event_exist_in_list(struct cwmp *cwmp, int event);
 void *thread_periodic_check_notify (void *v);
 void free_dm_parameter_all_fromlist(struct list_head *list);
+int cwmp_update_enabled_notify_file();
 #endif /* _CWMP_H__ */

@@ -78,6 +78,7 @@ It defines **acs configuration** (like acs url, acs username, etc...). The possi
 | `insecure_enable`           | boolean | if set to **1**, the CPE checks the validity of the ACS certificates. |
 | `http_disable_100continue`  | boolean | if set to **1**, disables the http 100 continue behaviour. |
 | `dhcp_url`                  | string  | the **url** of ACS server received from the DHCP server Option 43 when **'dhcp_discovery'** option is enabled. This option is updated automatically by the daemon. |
+| `ip_version`					| string | ip_version of ConnectionRequestURL
 
 ### cwmp cpe section ###
 
@@ -295,55 +296,12 @@ root@iopsys:~# icwmpd --help
 Usage: icwmpd [OPTIONS]
  -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event
  -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS
- -c, --command-input                                 (DataModel CLI) Execute data model rpc(s) with commands input
- -m, --shell-cli <data model rpc>                    (DataModel CLI) Execute data model RPC command directly from shell.
- -a, --alias-based-addressing                        (DataModel CLI) Alias based addressing supported
- -N, --instance-mode-number                          (DataModel CLI) Instance mode is Number (Enabled by default)
- -A, --instance-mode-alias                           (DataModel CLI) Instance mode is Alias
- -M, --amendment <amendment version>                 (DataModel CLI) Amendment version (Default amendment version is 2)
- -U, --upnp                                          (DataModel CLI) Use UPNP data model paths
- -u, --user-acl <public|basic|xxxadmin|superadmin>   (DataModel CLI) user access level. Default: superadmin
- -t, --time-tracking                                 (DataModel CLI) Tracking time of RPC commands
- -E, --evaluating-test                               (DataModel CLI) Evaluating test format
- -f, --file <file path>                              (DataModel CLI) Execute data model rpc(s) from file
- -w, --wep <strength> <passphrase>                   (WEP KEY GEN) Generate wep keys
  -h, --help                                          Display this help text
  -v, --version                                       Display the version
 root@iopsys:~# 
 ```
 
-For example `'-m'` option is used to execute the datamodel **(libbbfdm)** RPC method through CLI.
-
-if -m is followed by an integer different from 0, so the command result is displayed as output as following:
-
-```
-root@iopsys:~# icwmpd -m 1 get_value Device.Time.
-{ "parameter": "Device.Time.CurrentLocalTime", "value": "2020-07-08T08:00:39Z", "type": "xsd:dateTime" }
-{ "parameter": "Device.Time.Enable", "value": "1", "type": "xsd:boolean" }
-{ "parameter": "Device.Time.LocalTimeZone", "value": "CET-1CEST,M3.5.0,M10.5.0/3", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer1", "value": "ntp1.sth.netnod.se", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer2", "value": "ntp1.gbg.netnod.se", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer3", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer4", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer5", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.Time.Status", "value": "Synchronized", "type": "xsd:string" }
-{ "parameter": "Device.Time.X_IOPSYS_EU_LocalTimeZoneName", "value": "Europe/Stockholm", "type": "xsd:string" }
-{ "parameter": "Device.Time.X_IOPSYS_EU_SourceInterface", "value": "", "type": "xsd:string" }
-root@iopsys:~# 
-root@iopsys:~# icwmpd -m 1 set_value key Device.Time.Enable 0
-{ "status": "1" }
-root@iopsys:~#
-```
-if -m is followed by 0 so no output is displayed in the terminal:
-
-```
-root@iopsys:~# icwmpd -m 0 set_value setkey Device.Time.Enable 1
-root@iopsys:~#
-
-```
-And in this case when -m is followed by 0, the icwmpd command is faster.
-
-Another way to use icwmp cli is via the script `'icwmp'` that can be runned as follow:
+There's an icwmp cli that can be called via the script `'icwmp'` as follow:
 
 ```
 root@iopsys:~# icwmp get Device.Time.
@@ -361,43 +319,6 @@ root@iopsys:~# icwmp get Device.Time.
 root@iopsys:~#
 ```
 
-**NOTE: It's the same, whether to use icwmp script or icwmpd command for connecting to datamodel**
-
-```
-root@iopsys:~# icwmpd -m 1 inform
-{ "parameter": "Device.DeviceInfo.HardwareVersion", "value": "DG400PRIMEA", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.Manufacturer", "value": "iopsys", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ManufacturerOUI", "value": "201F31", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ModelName", "value": "DG400PRIMEA", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ProductClass", "value": "DG400PRIME", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ProvisioningCode", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.SerialNumber", "value": "J814001008", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.SoftwareVersion", "value": "DG400PRIME-A-IOPSYS-4.4.0RC1-191205_1004", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.SpecVersion", "value": "1.0", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.AliasBasedAddressing", "value": "false", "type": "xsd:boolean" }
-{ "parameter": "Device.ManagementServer.ConnReqJabberID", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.ConnReqXMPPConnection", "value": "Device.XMPP.Connection.", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.ConnectionRequestURL", "value": "http://192.168.117.45:7547/", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.ParameterKey", "value": "", "type": "xsd:string" }
-root@iopsys:~# 
-root@iopsys:~# icwmp inform
-{ "parameter": "Device.DeviceInfo.HardwareVersion", "value": "DG400PRIMEA", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.Manufacturer", "value": "iopsys", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ManufacturerOUI", "value": "201F31", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ModelName", "value": "DG400PRIMEA", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ProductClass", "value": "DG400PRIME", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.ProvisioningCode", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.SerialNumber", "value": "J814001008", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.SoftwareVersion", "value": "DG400PRIME-A-IOPSYS-4.4.0RC1-191205_1004", "type": "xsd:string" }
-{ "parameter": "Device.DeviceInfo.SpecVersion", "value": "1.0", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.AliasBasedAddressing", "value": "false", "type": "xsd:boolean" }
-{ "parameter": "Device.ManagementServer.ConnReqJabberID", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.ConnReqXMPPConnection", "value": "Device.XMPP.Connection.", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.ConnectionRequestURL", "value": "http://192.168.117.45:7547/", "type": "xsd:string" }
-{ "parameter": "Device.ManagementServer.ParameterKey", "value": "", "type": "xsd:string" }
-root@iopsys:~# 
-```
-
 ## Dependencies ##
 
 To successfully build icwmp, the following libraries are needed:
@@ -410,7 +331,6 @@ To successfully build icwmp, the following libraries are needed:
 | libjson-c   | https://s3.amazonaws.com/json-c_releases    | MIT            |
 | libopenssl  | http://ftp.fi.muni.cz/pub/openssl/source/   | OpenSSL        |
 | libcurl     | https://dl.uxnr.de/mirror/curl              | MIT            |
-| libbbfdm    | https://dev.iopsys.eu/iopsys/bbf.git        | LGPL 2.1       |
 | libmicroxml | https://dev.freecwmp.org/microxml           | LGPL 2.0       |
 | libpthread  |                                             |                |
 

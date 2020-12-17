@@ -140,7 +140,7 @@ void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *par
 	_list_add(&dm_parameter->list, ilist->prev, ilist);
 	if (param_name) dm_parameter->name = strdup(param_name);
 	if (param_data) dm_parameter->data = strdup(param_data);
-	if (param_type) dm_parameter->type = param_type ? param_type : "xsd:string";
+	if (param_type) dm_parameter->type = strdup(param_type ? param_type : "xsd:string");
 }
 
 void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter)
@@ -148,6 +148,7 @@ void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter)
 	list_del(&dm_parameter->list);
 	free(dm_parameter->name);
 	free(dm_parameter->data);
+	free(dm_parameter->type);
 	free(dm_parameter);
 }
 
@@ -265,65 +266,109 @@ void cwmp_lwnotification()
 	FREE(msg_out);
 }
 
+int cwmp_update_enabled_notify_file()
+{
+	struct cwmp *cwmp = &cwmp_main;
+	FILE *fp;
+	json_object *param_obj = NULL, *param_name_obj = NULL, *value_obj = NULL, *type_obj = NULL, *notification_obj = NULL;
+
+	int e = cwmp_update_enabled_list_notify(cwmp->conf.instance_mode, OLD_LIST_NOTIFY);
+	if (e)
+		return 0;
+	remove(DM_ENABLED_NOTIFY);
+
+	fp = fopen(DM_ENABLED_NOTIFY, "a");
+	if (fp == NULL) {
+		return 0;
+	}
+	foreach_jsonobj_in_array(param_obj, old_list_notify) {
+		json_object_object_get_ex(param_obj, "parameter", &param_name_obj);
+		if (!param_name_obj || strlen((char*)json_object_get_string(param_name_obj))<=0)
+			continue;
+		json_object_object_get_ex(param_obj, "value", &value_obj);
+		json_object_object_get_ex(param_obj, "type", &type_obj);
+		json_object_object_get_ex(param_obj, "notification", &notification_obj);
+		cwmp_json_fprintf(fp, 4, CWMP_JSON_ARGS{{"parameter", (char*)json_object_get_string(param_name_obj)}, {"notification", notification_obj?(char*)json_object_get_string(notification_obj):""}, {"value", value_obj?(char*)json_object_get_string(value_obj):""}, {"type", type_obj?(char*)json_object_get_string(type_obj):""}});
+	}
+	fclose(fp);
+	return 1;
+}
+
+void get_parameter_value_from_parameters_list(json_object* list_params_obj, char* parameter_name, struct cwmp_dm_parameter **ret_dm_param)
+{
+	json_object *param_obj = NULL, *param_name_obj = NULL, *value_obj = NULL, *type_obj = NULL;
+
+	foreach_jsonobj_in_array(param_obj, list_params_obj) {
+		json_object_object_get_ex(param_obj, "parameter", &param_name_obj);
+		if (!param_name_obj || strlen((char*)json_object_get_string(param_name_obj))<=0)
+			continue;
+		if (strcmp((char*)json_object_get_string(param_name_obj), parameter_name) != 0)
+			continue;
+		*ret_dm_param = (struct cwmp_dm_parameter*) calloc(1,sizeof(struct cwmp_dm_parameter));
+		json_object_object_get_ex(param_obj, "value", &value_obj);
+		(*ret_dm_param)->name = strdup(parameter_name);
+		(*ret_dm_param)->data = strdup(value_obj?(char*)json_object_get_string(value_obj):"");
+		json_object_object_get_ex(param_obj, "type", &type_obj);
+		(*ret_dm_param)->type = strdup(type_obj?(char*)json_object_get_string(type_obj):"");
+		break;
+	}
+}
+
 int check_value_change(void)
 {
-	int fault;
 	FILE *fp;
 	char buf[512];
 	char *parameter, *notification = NULL, *value = NULL, *jval = NULL;
 	struct cwmp *cwmp = &cwmp_main;
-	struct dm_parameter *dm_parameter;
-	struct dmctx dmctx = {0};
-	bool first_iteration =true;
+	struct cwmp_dm_parameter *dm_parameter = NULL;
+	json_object *buf_json_obj = NULL;
 	int is_notify = 0;
 
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
 		return false;
 
-	dm_ctx_init(&dmctx, DM_CWMP, cwmp->conf.amd_version, cwmp->conf.instance_mode);
+	cwmp_update_enabled_list_notify(cwmp->conf.instance_mode, ACTUAL_LIST_NOTIFY);
+
 	while (fgets(buf, 512, fp) != NULL) {
-		if (!first_iteration)
-			dm_ctx_init_list_parameter(&dmctx);
-		first_iteration = false;
-		dmctx.in_param = "";
 		int len = strlen(buf);
 		if (len)
 			buf[len-1] = '\0';
-		dmjson_parse_init(buf);
-		dmjson_get_string("parameter", &jval);
-		if(!jval || jval[0] == '\0')
+		buf_json_obj = json_tokener_parse((char*)buf);
+		cwmp_json_obj_init(buf, &buf_json_obj);
+		cwmp_json_get_string(buf_json_obj, "parameter", &parameter);
+		if(parameter == NULL || parameter[0] == '\0')
 			continue;
-		parameter = strdup(jval?jval:"");
-		dmjson_get_string("value", &jval);
-		value = strdup(jval?jval:"");
-		dmjson_get_string("notification", &jval);
-		notification = strdup(jval?jval:"");
-		dmjson_parse_fini();
-		fault = dmentry_get_parameter_leaf_value(&dmctx, parameter);
-		if (!fault && dmctx.list_parameter.next != &dmctx.list_parameter) {
-			dm_parameter = list_entry(dmctx.list_parameter.next, struct dm_parameter, list);
-			if (notification && strlen(notification)>0 && notification[0] >= '1'  && strcmp(dm_parameter->data, value) != 0){
-				if (notification[0] == '1' || notification[0] == '2')
-					add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
-				if (notification[0] >= '3' )
-					add_lw_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
+		cwmp_json_get_string(buf_json_obj, "value", &value);
+		cwmp_json_get_string(buf_json_obj, "notification", &notification);
 
-				if (notification[0] == '1')
-					is_notify |= NOTIF_PASSIVE;
-				if (notification[0] == '2')
-					is_notify |= NOTIF_ACTIVE;
+		cwmp_json_obj_clean(&buf_json_obj);
+		get_parameter_value_from_parameters_list(actual_list_notify, parameter, &dm_parameter);
+		if (dm_parameter == NULL)
+			continue;
 
-				if (notification[0] == '5' || notification[0] == '6')
-					is_notify |= NOTIF_LW_ACTIVE;
-			}
+		if (notification && (strlen(notification) > 0) && (notification[0] >= '1')  && (strcmp(dm_parameter->data, value) != 0)){
+			if (notification[0] == '1' || notification[0] == '2')
+				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
+			if (notification[0] >= '3' )
+				add_lw_list_value_change(parameter, dm_parameter->data, dm_parameter->type);
+
+			if (notification[0] == '1')
+				is_notify |= NOTIF_PASSIVE;
+			if (notification[0] == '2')
+				is_notify |= NOTIF_ACTIVE;
+
+			if (notification[0] == '5' || notification[0] == '6')
+				is_notify |= NOTIF_LW_ACTIVE;
 		}
 		FREE(value);
 		FREE(notification);
 		FREE(parameter);
-		dm_ctx_clean_list_parameter(&dmctx);
+		FREE(dm_parameter->name);
+		FREE(dm_parameter->data);
+		FREE(dm_parameter->type);
+		FREE(dm_parameter);
 	}
-	dm_ctx_clean(&dmctx);
 	fclose(fp);
 	return is_notify;
 }
@@ -645,7 +690,7 @@ void *thread_periodic_check_notify (void *v)
         	pthread_mutex_lock(&(cwmp->mutex_session_send));
         	is_notify = check_value_change();
         	if (is_notify > 0)
-        		cwmp_update_enabled_notify_file(cwmp->conf.instance_mode);
+        		cwmp_update_enabled_notify_file();
         	pthread_mutex_unlock(&(cwmp->mutex_session_send));
         	if (is_notify & NOTIF_ACTIVE)
         		send_active_value_change();

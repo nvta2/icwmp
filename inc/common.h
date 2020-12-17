@@ -1,8 +1,8 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 #include <libbbfdm/dmdiagnostics.h>
-#include <libbbfdm/dmentry.h>
-#include <libbbfdm/dmbbfcommon.h>
+
+#define DM_ENABLED_NOTIFY "/etc/icwmpd/.dm_enabled_notify"
 enum cwmp_ret_err {
 	CWMP_OK,			/* No Error */
 	CWMP_GEN_ERR, 		/* General Error */

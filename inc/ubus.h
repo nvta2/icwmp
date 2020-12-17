@@ -4,10 +4,11 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
+ * 	Copyright (C) 2013-2020 iopsys Software Solutions AB
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
+ *
  *	Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
-
-
 #ifndef _FREECWMP_UBUS_H__
 #define _FREECWMP_UBUS_H__
 #include <stdbool.h>

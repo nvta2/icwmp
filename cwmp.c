@@ -176,7 +176,7 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         		is_notify = check_value_change();
         }
         if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
-        	cwmp_update_enabled_notify_file(cwmp->conf.instance_mode);
+        	cwmp_update_enabled_notify_file();
         cwmp_prepare_value_change(cwmp);
         free_dm_parameter_all_fromlist(&list_value_change);
         if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
@@ -573,7 +573,7 @@ int run_session_end_func ()
 
 	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
 		CWMP_LOG (INFO,"SetParameterAttributes end session: update enabled notify file");
-		cwmp_update_enabled_notify_file(cwmp_main.conf.instance_mode);
+		cwmp_update_enabled_notify_file();
 	}
 	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
 		cwmp_transaction_commit();
@@ -675,7 +675,6 @@ int cwmp_exit(void)
 
 int main(int argc, char **argv)
 {
-
     struct cwmp *cwmp = &cwmp_main;
     int error;
     pthread_t periodic_event_thread;
@@ -692,7 +691,7 @@ int main(int argc, char **argv)
     struct sigaction act = {0};
 
     if ((error = cwmp_init(argc, argv, cwmp)))
-        return error;
+    	return error;
 
     CWMP_LOG(INFO,"STARTING ICWMP with PID :%d", getpid());
     cwmp->start_time = time(NULL);

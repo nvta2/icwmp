@@ -9,6 +9,13 @@
 #define DM_ROOT_OBJ "Device."
 extern bool transaction_started;
 extern int transaction_id;
+extern json_object *old_list_notify;
+extern json_object *actual_list_notify;
+
+enum notify_type {
+	OLD_LIST_NOTIFY,
+	ACTUAL_LIST_NOTIFY
+};
 
 int cwmp_transaction_start(char *app);
 int cwmp_transaction_commit();
@@ -22,6 +29,6 @@ char* cwmp_delete_object(char* object_name, char* key);
 char* cwmp_get_parameter_names(char* object_name, bool next_level, json_object **parameters);
 char* cwmp_get_parameter_attributes(char* parameter_name, json_object **parameters);
 char* cwmp_set_parameter_attributes(char* parameter_name, char* notification);
-int cwmp_update_enabled_notify_file(int instance_mode);
+int cwmp_update_enabled_list_notify(int instance_moden, int notify_type);
 
 #endif /* SRC_DATAMODELIFACE_H_ */
