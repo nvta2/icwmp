@@ -46,10 +46,12 @@ case "$1" in
 		elif [ "$2" = "value" ]; then
 			__arg1="$3"
 			__arg2="$4"
+			__arg3="$5"
 			action="set_value"
 		else
 			__arg1="$2"
 			__arg2="$3"
+			__arg3="$4"
 			action="set_value"
 		fi
 		;;
@@ -130,14 +132,14 @@ case "$1" in
 		fi
 		;;
 	add)
-		__arg1="$3"
-		__arg2="$4"
+		__arg1="$2"
+		__arg2="$3"
 		action="add_object"
 		;;
 	delete)
-		__arg1="$3"
-		__arg2="$4"
-		action="delete_object"
+		__arg1="$2"
+		__arg2="$3"
+		action="del_object"
 		;;
 	inform)
 		action="inform"
@@ -166,64 +168,92 @@ fi
 handle_action() {
 	local fault_code=$FAULT_CPE_NO_FAULT
 	if [ "$action" = "get_value" ]; then
-		ubus call usp.raw get '{"path":"$__arg1","proto":"cwmp"}'
+		 ubus call usp.raw get "{'path':'$__arg1','proto':'cwmp'}"
 	fi
 	
 	if [ "$action" = "get_notification" ]; then
-		ubus call usp.raw getm_attributes '{"paths":["$__arg1"],"proto":"cwmp"}'
+		ubus call usp.raw getm_attributes "{'paths':['$__arg1'],'proto':'cwmp'}"
 	fi
 
 	if [ "$action" = "get_name" ]; then
-		ubus call usp.raw get_names '{"paths":["$__arg1"],"next-level":$__arg2,"proto":"cwmp"}'
+		if [ $__arg2 -eq 1 ]; then
+			nextlevel=true
+		else
+			nextlevel=false
+		fi
+		ubus call usp.raw object_names "{'path':'$__arg1','proto':'cwmp','next-level':$nextlevel}"
 	fi
 
 	if [ "$action" = "set_value" ]; then
-		json_init
-		json_add_string "parameter" "$__arg1"
-		json_add_string "value" "$__arg2"
-		json_dump >> $TMP_SET_VALUE
-		json_close_object
+		transaction_start_ret=`ubus call usp.raw transaction_start '{"app":"cwmp"}'`
+		if [ `echo $transaction_start_ret | jsonfilter -e @.status` = false ];then
+			echo "Not able to start a transaction "
+			exit 0
+		fi
+		transaction_id=`echo $transaction_start_ret | jsonfilter -e @.transaction_id`
+		set_res=`ubus call usp.raw set "{'path':'$__arg1','value':'$__arg2','proto':'cwmp','key':'$__arg3','transaction_id':$transaction_id}"`
+		if [ -z `echo $set_res | jsonfilter -e @.fault` ]; then
+			if [ `echo $set_res | jsonfilter -e @.status` = true ]; then
+				ubus call usp.raw transaction_commit "{'transaction_id':$transaction_id}" &> /dev/null
+				echo "Parameter is successfully set"
+			else
+				echo "Not able to set parameter"
+				ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
+			fi
+		else
+			echo "Not able to set parameter"
+			ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
+		fi 
+		echo $set_res
+		exit 0
 	fi
 
 	if [ "$action" = "set_notification" ]; then
-		json_init
-		json_add_string "parameter" "$__arg1"
-		json_add_string "value" "$__arg2"
-		json_dump >> $TMP_SET_NOTIFICATION
-		json_close_object
+		transaction_start_ret=`ubus call usp.raw transaction_start '{"app":"cwmp"}'`
+		if [ `echo $transaction_start_ret | jsonfilter -e @.status` = false ];then
+			echo "Not able to start a transaction "
+			exit 0
+		fi
+		transaction_id=`echo $transaction_start_ret | jsonfilter -e @.transaction_id`
+		set_notif=`ubus call usp.raw setm_attributes "{'paths':[{'path':'$__arg1','notify-type':'$__arg2','notify':'1'}], 'transaction_id': $transaction_id}"`
+		if [ -z `echo $set_notif | jsonfilter -e @.fault` ]; then
+			if [ -z `echo $set_notif | jsonfilter -e @.parameters[0].fault` ]; then
+				ubus call usp.raw transaction_commit "{'transaction_id':$transaction_id}" &> /dev/null
+				echo "Parameter notification is successfully set"
+			else
+				echo "Not able to set parameter notification"
+				ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
+			fi
+		else
+			echo "Not able to set parameter"
+			ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
+		fi 
+		echo $set_notif
+		exit 0
 	fi
 
-	if [ "$action" = "apply_value" ]; then
-		local svargs="-m 1 set_value \"$__arg1\""
-		local svp svv
-		while read line; do
-			json_init
-			json_load "$line"
-			json_get_var svp parameter
-			json_get_var svv value
-			svargs="$svargs \"$svp\" \"$svv\""
-		done < $TMP_SET_VALUE
-		eval "/usr/sbin/icwmpd $svargs"
-		rm -f $TMP_SET_VALUE
-	fi
-
-	if [ "$action" = "apply_notification" ]; then
-		local snargs="-m 1 set_notification"
-		local snp snv
-		while read line; do
-			json_init
-			json_load "$line"
-			json_get_var snp parameter
-			json_get_var snv value
-			snargs="$snargs \"$snp\" \"$snv\""
-		done < $TMP_SET_NOTIFICATION
-		eval "/usr/sbin/icwmpd $snargs"
-		rm -f $TMP_SET_NOTIFICATION
-	fi
-
-
-	if [ "$action" = "add_object" -o "$action" = "delete_object" ]; then
-		/usr/sbin/icwmpd -m 1 $action "$__arg2" "$__arg1"		
+	if [ "$action" = "add_object" -o "$action" = "del_object" ]; then
+		transaction_start_ret=`ubus call usp.raw transaction_start '{"app":"cwmp"}'`
+		if [ `echo $transaction_start_ret | jsonfilter -e @.status` = false ];then
+			echo "Not able to start a transaction "
+			exit 0
+		fi
+		transaction_id=`echo $transaction_start_ret | jsonfilter -e @.transaction_id`
+		adddel_obj_res=`ubus call usp.raw $action "{'path':'$__arg1','key':'$__arg2','proto':'cwmp','instance_mode':0, 'transaction_id':$transaction_id}"`
+		if [ -z `echo $adddel_obj_res | jsonfilter -e @.fault` ]; then
+			if [ -z `echo $adddel_obj_res | jsonfilter -e @.parameters[0].fault` ]; then
+				ubus call usp.raw transaction_commit "{'transaction_id':$transaction_id}" &> /dev/null
+				echo "Add/Delete operation successfully done"
+			else
+				echo "Add/Delete operation failed"
+				ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
+			fi
+		else
+			echo "Not able to set parameter"
+			ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
+		fi 
+		echo $adddel_obj_res
+		exit 0
 	fi
 
 	if [ "$action" = "inform" ]; then
@@ -654,7 +684,7 @@ handle_action() {
 				delete)
 					json_get_var __arg1 parameter
 					json_get_var __arg2 parameter_key
-					action="delete_object"
+					action="del_object"
 					;;
 				inform)
 					action="inform"
