@@ -10,6 +10,7 @@
 
 #include "datamodel_interface.h"
 #include "log.h"
+
 bool transaction_started = false;
 int transaction_id = 0;
 
@@ -32,13 +33,21 @@ int cwmp_transaction_start(char *app)
 	if (strcmp((char*)json_object_get_string(status_obj), "true") != 0) {
 		json_object *error = NULL;
 		json_object_object_get_ex(transaction_ret, "error", &error);
+		FREE_JSON(status_obj)
+		FREE_JSON(error)
+		FREE_JSON(transaction_ret)
 		CWMP_LOG (INFO,"Transaction start failed: %s\n",(char*)json_object_get_string(error));
 		return 0;
 	}
+	FREE_JSON(status_obj)
 	json_object_object_get_ex(transaction_ret, "transaction_id", &transaction_id_obj);
-	if (transaction_id_obj == NULL)
+	if (transaction_id_obj == NULL) {
+		FREE_JSON(transaction_ret)
 		return 0;
+	}
 	transaction_id = atoi((char*)json_object_get_string(transaction_id_obj));
+	FREE_JSON(transaction_id_obj)
+	FREE_JSON(transaction_ret)
 	return 1;
 }
 
@@ -48,7 +57,7 @@ int cwmp_transaction_commit()
 	json_object *transaction_ret = NULL, *status_obj = NULL;
 	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{{"transaction_id", {.int_val=transaction_id}, UBUS_Integer}}, 1, &transaction_ret);
 	if (e!=0) {
-		CWMP_LOG (INFO,"Transaction commit failed: Ubus err code: %d", e);
+		CWMP_LOG (INFO,"Transaction commit failed: Ubus err code: %d", e)
 		return 0;
 	}
 	json_object_object_get_ex(transaction_ret, "status", &status_obj);
@@ -57,9 +66,14 @@ int cwmp_transaction_commit()
 		json_object_object_get_ex(transaction_ret, "error", &error);
 		CWMP_LOG (INFO,"Transaction commit failed: %s\n",(char*)json_object_get_string(error));
 		transaction_id = 0;
+		FREE_JSON(status_obj)
+		FREE_JSON(error)
+		FREE_JSON(transaction_ret)
 		return 0;
 	}
 	transaction_id = 0;
+	FREE_JSON(status_obj)
+	FREE_JSON(transaction_ret)
 	return 1;
 }
 
@@ -77,8 +91,13 @@ int cwmp_transaction_abort()
 		json_object *error = NULL;
 		json_object_object_get_ex(transaction_ret, "error", &error);
 		CWMP_LOG (INFO,"Transaction abort failed: %s\n",(char*)json_object_get_string(error));
+		FREE_JSON(status_obj)
+		FREE_JSON(error)
+		FREE_JSON(transaction_ret)
 		return 0;
 	}
+	FREE_JSON(status_obj)
+	FREE_JSON(transaction_ret)
 	return 1;
 }
 
@@ -93,8 +112,12 @@ int cwmp_transaction_status()
 	json_object_object_get_ex(transaction_ret, "status", &status_obj);
 	if (!status_obj || strcmp((char*)json_object_get_string(status_obj), "on-going") != 0) {
 		CWMP_LOG (INFO,"Transaction with id: %d is not available anymore\n",transaction_id);
+		FREE_JSON(status_obj)
+		FREE_JSON(transaction_ret)
 		return 0;
 	}
+	FREE_JSON(status_obj)
+	FREE_JSON(transaction_ret)
 	return 1;
 }
 /*
@@ -103,6 +126,7 @@ int cwmp_transaction_status()
 char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 {
 	json_object *params_obj = NULL;
+	char *fault = NULL;
 	int e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{{"path", {.str_val=!parameter_name||parameter_name[0]=='\0'?DM_ROOT_OBJ:parameter_name}, UBUS_String}}, 1, &params_obj);
 	if (e < 0 || params_obj == NULL) {
 		*parameters = NULL;
@@ -112,7 +136,10 @@ char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 	json_object_object_get_ex(params_obj, "fault", &fault_code);
 	if (fault_code != NULL) {
 		*parameters = NULL;
-		return (char*)json_object_get_string(fault_code);
+		fault = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+		FREE_JSON(params_obj)
+		return fault;
 	}
 	json_object_object_get_ex(params_obj, "parameters", parameters);
 	return NULL;
@@ -121,6 +148,7 @@ char* cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
 char* cwmp_set_parameter_value(char* parameter_name, char* value, char* parameter_key, int* flag)
 {
 	json_object *set_res;
+	char *fault = NULL;
 	int e = cwmp_ubus_call("usp.raw", "set", CWMP_UBUS_ARGS{{"path", {.str_val=parameter_name}, UBUS_String},{"value", {.str_val=value}, UBUS_String}, {"key", {.str_val=parameter_key}, UBUS_String},{"transaction_id", {.int_val=transaction_id}, UBUS_Integer}}, 3, &set_res);
 
 	if (e < 0 || set_res == NULL)
@@ -128,8 +156,12 @@ char* cwmp_set_parameter_value(char* parameter_name, char* value, char* paramete
 
 	json_object *fault_code = NULL;
 	json_object_object_get_ex(set_res, "fault", &fault_code);
-	if (fault_code != NULL)
-		return (char*)json_object_get_string(fault_code);
+	if (fault_code != NULL) {
+		fault = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+		FREE_JSON(set_res)
+		return fault;
+	}
 	json_object *status = NULL;
 	json_object_object_get_ex(set_res, "status", &status);
 	char *status_str = NULL;
@@ -139,13 +171,10 @@ char* cwmp_set_parameter_value(char* parameter_name, char* value, char* paramete
 			json_object *flag_obj = NULL;
 			json_object_object_get_ex(set_res, "flag", &flag_obj);
 			*flag = flag_obj?atoi((char*)json_object_get_string(flag_obj)):0;
-			free(status_str);
-			status_str = NULL;
+			FREE_JSON(flag_obj)
+			FREE_JSON(status)
+			FREE_JSON(set_res)
 			return NULL;
-		}
-		if(status_str) {
-			free(status_str);
-			status_str = NULL;
 		}
 	}
 	json_object *parameters = NULL;
@@ -197,39 +226,60 @@ char* cwmp_set_multiple_parameters_values(struct list_head parameters_values_lis
 char* cwmp_add_object(char* object_name, char* key, char **instance)
 {
 	json_object *add_res;
+	char *err = NULL;
+
 	int e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{{"path", {.str_val=object_name}, UBUS_String},{"key", {.str_val=key}, UBUS_String},{"transaction_id", {.int_val=transaction_id}, UBUS_Integer}}, 3, &add_res);
 	if (e < 0 || add_res == NULL)
 		return "9002";
 	json_object *fault_code = NULL;
 	json_object_object_get_ex(add_res, "fault", &fault_code);
-	if (fault_code != NULL)
-		return (char*)json_object_get_string(fault_code);
+	if (fault_code != NULL) {
+		err = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+		FREE_JSON(add_res)
+		return err;
+	}
 
 	json_object *parameters = NULL;
 	json_object_object_get_ex(add_res, "parameters", &parameters);
-	if (parameters == NULL)
+	if (parameters == NULL) {
+		FREE_JSON(add_res)
 		return "9002";
+	}
 	json_object *param_obj = json_object_array_get_idx(parameters, 0);
 	json_object *fault = NULL;
 	json_object_object_get_ex(param_obj, "fault", &fault);
-	if (fault)
-		return (char*)json_object_get_string(fault);
+	if (fault) {
+		err = strdup((char*)json_object_get_string(fault));
+		FREE_JSON(parameters)
+		FREE_JSON(fault)
+		FREE_JSON(add_res)
+		return err;
+	}
 	json_object *instance_obj = NULL;
 	json_object_object_get_ex(param_obj, "instance", &instance_obj);
-	*instance = (char *)json_object_get_string(instance_obj);
+	*instance = strdup((char *)json_object_get_string(instance_obj));
+	FREE_JSON(instance_obj)
+	FREE_JSON(add_res)
 	return NULL;
 }
 
 char* cwmp_delete_object(char* object_name, char* key)
 {
 	json_object *del_res;
+	char *err = NULL;
+
 	int e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{{"path", {.str_val=object_name}, UBUS_String},{"key", {.str_val=key}, UBUS_String},{"transaction_id", {.int_val=transaction_id}, UBUS_Integer}}, 3, &del_res);
 	if (e < 0 || del_res == NULL)
 		return "9002";
 	json_object *fault_code = NULL;
 	json_object_object_get_ex(del_res, "fault", &fault_code);
-	if (fault_code != NULL)
-		return (char*)json_object_get_string(fault_code);
+	if (fault_code != NULL) {
+		err = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+		FREE_JSON(del_res)
+		return err;
+	}
 	json_object *parameters = NULL;
 	json_object_object_get_ex(del_res, "parameters", &parameters);
 	json_object *param_obj = json_object_array_get_idx(parameters, 0);
@@ -239,14 +289,22 @@ char* cwmp_delete_object(char* object_name, char* key)
 	if (status_str && strcmp(status_str,"false") == 0) {
 		json_object *fault = NULL;
 		json_object_object_get_ex(param_obj, "fault", &fault);
-		return (char*)json_object_get_string(fault);
+		err = strdup((char*)json_object_get_string(fault));
+		FREE_JSON(fault)
+		FREE_JSON(status)
+		FREE_JSON(del_res)
+		return err;
 	}
+	FREE_JSON(status)
+	FREE_JSON(del_res)
 	return NULL;
 }
 
 char* cwmp_get_parameter_names(char* object_name, bool next_level, json_object **parameters)
 {
 	json_object *get_name_res;
+	char *err = NULL;
+
 	int e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{{"path", {.str_val=object_name}, UBUS_String},{"next-level", {.bool_val=next_level}, UBUS_Bool}}, 2, &get_name_res);
 	if (e < 0 || get_name_res == NULL)
 		return "9002";
@@ -254,7 +312,10 @@ char* cwmp_get_parameter_names(char* object_name, bool next_level, json_object *
 	json_object_object_get_ex(get_name_res, "fault", &fault_code);
 	if (fault_code != NULL) {
 		*parameters = NULL;
-		return (char*)json_object_get_string(fault_code);
+		err = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+		FREE_JSON(get_name_res)
+		return err;
 	}
 	json_object_object_get_ex(get_name_res, "parameters", parameters);
 	return NULL;
@@ -263,6 +324,8 @@ char* cwmp_get_parameter_names(char* object_name, bool next_level, json_object *
 char* cwmp_get_parameter_attributes(char* parameter_name, json_object **parameters)
 {
 	json_object *get_attributes_res = NULL;
+	char *err = NULL;
+
 	int e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{{"paths", {.array_value={{.str_value=!parameter_name||parameter_name[0]=='\0'?DM_ROOT_OBJ:parameter_name}}}, UBUS_Array_Str}}, 1, &get_attributes_res);
 	if ( e < 0 || get_attributes_res == NULL)
 		return "9002";
@@ -270,22 +333,30 @@ char* cwmp_get_parameter_attributes(char* parameter_name, json_object **paramete
 	json_object_object_get_ex(get_attributes_res, "fault", &fault_code);
 	if (fault_code != NULL) {
 		*parameters = NULL;
-		return (char*)json_object_get_string(fault_code);
+		err = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+		FREE_JSON(get_attributes_res)
+		return err;
 	}
 	json_object_object_get_ex(get_attributes_res, "parameters", parameters);
 	json_object *fault = NULL, *param_obj = NULL;
 	foreach_jsonobj_in_array(param_obj, *parameters) {
 		json_object_object_get_ex(param_obj, "fault", &fault);
 		if (fault) {
-			return (char*)json_object_get_string(fault);
+			err = strdup((char*)json_object_get_string(fault));
+			FREE_JSON(fault)
+			FREE_JSON(parameters)
+			break;
 		}
 	}
-	return NULL;
+	FREE_JSON(param_obj)
+	return err;
 }
 
 char* cwmp_set_parameter_attributes(char* parameter_name, char* notification)
 {
 	json_object *set_attribute_res;
+	char *err = NULL;
 	int e = cwmp_ubus_call("usp.raw", "setm_attributes", CWMP_UBUS_ARGS{{"paths", {.array_value={{.param_value={"path",parameter_name}},{.param_value={"notify-type",notification}},{.param_value={"notify","1"}}}}, UBUS_Array_Obj},{"transaction_id", {.int_val=transaction_id}, UBUS_Integer}}, 2, &set_attribute_res);
 	if (e < 0 || set_attribute_res == NULL)
 		return "9002";
@@ -294,9 +365,14 @@ char* cwmp_set_parameter_attributes(char* parameter_name, char* notification)
 	json_object *param_obj = json_object_array_get_idx(parameters, 0);
 	json_object *fault_code = NULL;
 	json_object_object_get_ex(param_obj, "fault", &fault_code);
-	if (fault_code != NULL)
-		return (char*)json_object_get_string(fault_code);
-	return NULL;
+	if (fault_code != NULL) {
+		err = strdup((char*)json_object_get_string(fault_code));
+		FREE_JSON(fault_code)
+	}
+	FREE_JSON(param_obj)
+	FREE_JSON(parameters)
+	FREE_JSON(set_attribute_res)
+	return err;
 }
 
 /*
@@ -307,9 +383,16 @@ int cwmp_update_enabled_list_notify(int instance_mode, int notify_type)
 	int e;
 	json_object *list_notif_obj = NULL;
 	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{{"instance_mode", {.int_val=instance_mode}, UBUS_Integer}}, 1, &list_notif_obj);
-	if (notify_type == OLD_LIST_NOTIFY)
+	if (e)
+		return e;
+	if (notify_type == OLD_LIST_NOTIFY) {
+		FREE_JSON(old_list_notify)
 		json_object_object_get_ex(list_notif_obj, "parameters", &old_list_notify);
-	else
+	}
+	else {
+		FREE_JSON(actual_list_notify)
 		json_object_object_get_ex(list_notif_obj, "parameters", &actual_list_notify);
-	return e;
+	}
+	//FREE_JSON(list_notif_obj)
+	return 0;
 }

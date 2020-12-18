@@ -2,6 +2,7 @@
 #define __COMMON_H
 #include <libbbfdm/dmdiagnostics.h>
 
+#define __offsetof__(x) (x)
 #define DM_ENABLED_NOTIFY "/etc/icwmpd/.dm_enabled_notify"
 enum cwmp_ret_err {
 	CWMP_OK,			/* No Error */

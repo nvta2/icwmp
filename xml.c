@@ -861,9 +861,11 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	size_t inform_parameters_nbre = sizeof(forced_inform_parameters)/sizeof(forced_inform_parameters[0]);
 	int i;
 	for (i=0; i<inform_parameters_nbre; i++) {
-		cwmp_get_parameter_values(forced_inform_parameters[i], &parameters);
-		if(parameters == NULL)
+		char *fault = cwmp_get_parameter_values(forced_inform_parameters[i], &parameters);
+		if(parameters == NULL) {
+			FREE(fault);
 			continue;
+		}
 	    foreach_jsonobj_in_array(param_obj, parameters) {
 	    	param_obj = json_object_array_get_idx(parameters, 0);
 	    	json_object_object_get_ex(param_obj, "parameter", &param_name);
@@ -878,7 +880,7 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 	    	FREE(cwmp_dm_param.data);
 	    	FREE(cwmp_dm_param.type);
 	    }
-	    FREE(parameters);
+	    FREE_JSON(parameters);
 	}
     if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;
@@ -1267,6 +1269,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 			char *err = cwmp_get_parameter_values(parameter_name, &parameters);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
+				FREE(err);
 				goto fault;
 			}
 			foreach_jsonobj_in_array(param_obj, parameters) {
@@ -1299,6 +1302,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 					goto fault;
 				counter++;
 		    }
+			FREE_JSON(parameters)
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 		parameter_name = NULL;
@@ -1381,6 +1385,7 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 		char *err = cwmp_get_parameter_names(parameter_name, strcmp(NextLevel, "true") == 0 || strcmp(NextLevel, "1") == 0?true:false, &parameters);
 		if (err) {
 			fault_code = cwmp_get_fault_code_by_string(err);
+			FREE(err);
 			goto fault;
 		}
 	}
@@ -1424,10 +1429,11 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
 	FREE(c);
 #endif
-
+	FREE_JSON(parameters)
 	return 0;
 
 fault:
+	FREE_JSON(parameters)
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
@@ -1479,6 +1485,7 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 			char* err = cwmp_get_parameter_attributes(parameter_name, &parameters);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
+				FREE(err);
 				goto fault;
 			}
 			foreach_jsonobj_in_array(param_obj, parameters) {
@@ -1517,6 +1524,8 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 				counter++;
 
 			}
+			FREE_JSON(param_obj)
+			FREE_JSON(parameters)
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 		parameter_name = NULL;
@@ -1536,6 +1545,8 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 	return 0;
 
 fault:
+	FREE_JSON(param_obj)
+	FREE_JSON(parameters)
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
@@ -1653,6 +1664,8 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			cwmp_add_list_fault_param((char*)json_object_get_string(param_name), atoi(json_object_get_string(fault_value)), rpc->list_set_value_fault);
 		}
 		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		FREE_JSON(fault_obj)
+		FREE_JSON(faults_array)
 		cwmp_free_all_list_param_value(&list_set_param_value);
 		goto fault;
 	}
@@ -1676,7 +1689,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	if (!b)
 		goto fault;
 
-	cwmp_set_end_session(flag|END_SESSION_TRANSACTION_COMMIT);
+	cwmp_set_end_session(flag|END_SESSION_TRANSACTION_COMMIT|END_SESSION_SET_NOTIFICATION_UPDATE);
 	return 0;
 
 fault:
@@ -1765,6 +1778,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 			char* err = cwmp_set_parameter_attributes(parameter_name, parameter_notification);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
+				FREE(err);
 				goto fault;
 			}
 			parameter_name = NULL;
@@ -1838,6 +1852,7 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 		char *err = cwmp_add_object(object_name, parameter_key ? parameter_key : "", &instance);
 		if (err) {
 			fault_code = cwmp_get_fault_code_by_string(err);
+			FREE(err);
 			goto fault;
 		}
 	} else {
@@ -1870,10 +1885,12 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b)
 		goto fault;
+	FREE(instance);
 	cwmp_set_end_session(END_SESSION_TRANSACTION_COMMIT);
 	return 0;
 
 fault:
+	FREE(instance);
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	if (transaction_started) {
@@ -1926,6 +1943,7 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 		char *err = cwmp_delete_object(object_name, parameter_key ? parameter_key : "");
 		if (err) {
 			fault_code = cwmp_get_fault_code_by_string(err);
+			FREE(err);
 			goto fault;
 		}
 	} else {
@@ -3180,6 +3198,7 @@ char* get_software_module_object_eq(char *param1, char *val1, char *param2, char
 	err = cwmp_get_parameter_values(sw_parameter_name, &swdu_get_obj);
 	if (err) {
 		FREE(sw_parameter_name);
+		FREE(err);
 		return NULL;
 	}
 	json_object_object_get_ex(swdu_get_obj, "parameters", parameters);
