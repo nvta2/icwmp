@@ -352,7 +352,7 @@ int external_change_du_state_install(char *url, char *uuid, char *user, char *pa
 	return 0;
 }
 
-int external_change_du_state_update(char *uuid, char *url, char *version, char *user, char *pass)
+int external_change_du_state_update(char *uuid, char *url, char *user, char *pass)
 {
 	DD(INFO,"executing DU update");
 	json_object *json_obj_out;
@@ -363,7 +363,6 @@ int external_change_du_state_update(char *uuid, char *url, char *version, char *
 	json_obj_out_add(json_obj_out, "command", "du_update");
 	json_obj_out_add(json_obj_out, "uuid", uuid);
 	json_obj_out_add(json_obj_out, "url", url);
-	if (version) json_obj_out_add(json_obj_out, "version", version);
 	if (user) json_obj_out_add(json_obj_out, "user", user);
 	if (pass) json_obj_out_add(json_obj_out, "pass", pass);
 
@@ -384,7 +383,7 @@ int external_change_du_state_uninstall(char *name, char *env)
 
 	json_obj_out_add(json_obj_out, "command", "du_uninstall");
 	json_obj_out_add(json_obj_out, "name", name);
-	if(env) json_obj_out_add(json_obj_out, "env", env);
+	if (env) json_obj_out_add(json_obj_out, "env", env);
 
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 

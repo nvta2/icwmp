@@ -92,7 +92,6 @@ case "$1" in
 		__arg2="$3"
 		__arg3="$4"
 		__arg4="$5"
-		__arg5="$6"
 		action="du_update"
 		;;
 	du_uninstall)
@@ -280,7 +279,7 @@ handle_action() {
 	
 	if [ "$action" = "du_update" ]; then
 		local fault_code="9000"
-		ubus_args=`echo {\"uuid\":\"$__arg1\",\"url\":\"$__arg2\",\"version\":\"$__arg3\",\"username\":\"$__arg4\",\"password\":\"$__arg5\"}`
+		ubus_args=`echo {\"uuid\":\"$__arg1\",\"url\":\"$__arg2\",\"username\":\"$__arg3\",\"password\":\"$__arg4\"}`
 		output=`ubus -t 3 call swmodules du_update $ubus_args`
 		if [ "$output" != "" ];then
 			json_init
@@ -624,9 +623,8 @@ handle_action() {
 				du_update)
 					json_get_var __arg1 uuid
 					json_get_var __arg2 url
-					json_get_var __arg3 version
-					json_get_var __arg4 user
-					json_get_var __arg5 pass
+					json_get_var __arg3 user
+					json_get_var __arg4 pass
 					action="du_update"
 					;;
 				du_uninstall)

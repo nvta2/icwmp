@@ -461,21 +461,21 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 
   	list_for_each_entry(p, &(pchange_du_state->list_operation), list) {
 		if (p->type == DU_INSTALL ) {
-			n =	bkp_session_insert(b, "install", NULL);
+			n = bkp_session_insert(b, "install", NULL);
 			bkp_session_insert(n, "url", p->url);
 			bkp_session_insert(n, "uuid", p->uuid);
 			bkp_session_insert(n, "username", p->username);
 			bkp_session_insert(n, "password", p->password);
 			bkp_session_insert(n, "executionenvref", p->executionenvref);
 		} else if (p->type == DU_UPDATE) {
-			n =	bkp_session_insert(b, "upgrade", NULL);
+			n = bkp_session_insert(b, "update", NULL);
 			bkp_session_insert(n, "uuid", p->uuid);
 			bkp_session_insert(n, "version", p->version);
 			bkp_session_insert(n, "url", p->url);
 			bkp_session_insert(n, "username", p->username);
 			bkp_session_insert(n, "password", p->password);
 		} else if (p->type == DU_UNINSTALL) {
-			n =	bkp_session_insert(b, "uninstall", NULL);
+			n = bkp_session_insert(b, "uninstall", NULL);
 			bkp_session_insert(n, "uuid", p->uuid);
 			bkp_session_insert(n, "version", p->version);
 			bkp_session_insert(n, "executionenvref", p->executionenvref);
@@ -1469,7 +1469,7 @@ void load_change_du_state(mxml_node_t *tree)
 					}
 				}
 			}
-			else if (strcmp(b->value.element.name, "upgrade") == 0)
+			else if (strcmp(b->value.element.name, "update") == 0)
 			{
 				elem = (operations*)calloc(1, sizeof(operations));
 				elem->type = DU_UPDATE;

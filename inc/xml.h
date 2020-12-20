@@ -337,6 +337,7 @@ int cwmp_root_cause_events (struct cwmp *cwmp);
 void cwmp_root_cause_event_ipdiagnostic(void);
 int xml_set_cwmp_id(struct session *session);
 int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc);
+int cwmp_free_change_du_state_request(struct change_du_state *change_du_state);
 int cwmp_free_download_request(struct download *download);
 int cwmp_free_upload_request(struct upload *upload);
 int cwmp_free_schedule_download_request(struct schedule_download *schedule_download);

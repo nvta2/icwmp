@@ -28,7 +28,7 @@ int external_upload(char *url, char *type, char *user, char *pass, char *name);
 int external_apply(char *action, char *arg,time_t c);
 void external_fetch_du_change_stateFaultResp(char **fault, char **version, char **name, char **uuid, char **env);
 int external_change_du_state_install(char *url, char *uuid, char *user, char *pass, char *env);
-int external_change_du_state_update(char *uuid, char *url, char *version, char *user, char *pass);
+int external_change_du_state_update(char *uuid, char *url, char *user, char *pass);
 int external_change_du_state_uninstall(char *name, char *env);
 int external_handle_action(int (*external_handler)(char *msg));
 void external_add_list_paramameter(char *param_name, char *param_data, char *param_type, char *fault_code);
