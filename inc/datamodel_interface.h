@@ -9,6 +9,8 @@
 #define DM_ROOT_OBJ "Device."
 extern bool transaction_started;
 extern int transaction_id;
+extern json_object *old_global_json_obj;
+extern json_object *actual_global_json_obj;
 extern json_object *old_list_notify;
 extern json_object *actual_list_notify;
 

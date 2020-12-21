@@ -195,13 +195,10 @@ handle_action() {
 		if [ -z `echo $set_res | jsonfilter -e @.fault` ]; then
 			if [ `echo $set_res | jsonfilter -e @.status` = true ]; then
 				ubus call usp.raw transaction_commit "{'transaction_id':$transaction_id}" &> /dev/null
-				echo "Parameter is successfully set"
 			else
-				echo "Not able to set parameter"
 				ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
 			fi
 		else
-			echo "Not able to set parameter"
 			ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
 		fi 
 		echo $set_res
@@ -219,13 +216,10 @@ handle_action() {
 		if [ -z `echo $set_notif | jsonfilter -e @.fault` ]; then
 			if [ -z `echo $set_notif | jsonfilter -e @.parameters[0].fault` ]; then
 				ubus call usp.raw transaction_commit "{'transaction_id':$transaction_id}" &> /dev/null
-				echo "Parameter notification is successfully set"
 			else
-				echo "Not able to set parameter notification"
 				ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
 			fi
 		else
-			echo "Not able to set parameter"
 			ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
 		fi 
 		echo $set_notif
@@ -243,13 +237,10 @@ handle_action() {
 		if [ -z `echo $adddel_obj_res | jsonfilter -e @.fault` ]; then
 			if [ -z `echo $adddel_obj_res | jsonfilter -e @.parameters[0].fault` ]; then
 				ubus call usp.raw transaction_commit "{'transaction_id':$transaction_id}" &> /dev/null
-				echo "Add/Delete operation successfully done"
 			else
-				echo "Add/Delete operation failed"
 				ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
 			fi
 		else
-			echo "Not able to set parameter"
 			ubus call usp.raw transaction_abort "{'transaction_id':$transaction_id}" &> /dev/null
 		fi 
 		echo $adddel_obj_res
