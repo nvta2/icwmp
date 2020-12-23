@@ -15,7 +15,7 @@
 #include <linux/wait.h>
 #include <stdarg.h>
 #include <linux/slab.h>
-#include "inc/cwmp_kernel.h"
+#include "cwmp_kernel.h"
 
 typedef struct kernel_cwmp_input {
     char                        **argv;

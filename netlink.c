@@ -29,10 +29,11 @@
 
 #include <libubox/uloop.h>
 #include <libubox/usock.h>
-#include "cwmp.h"
 #include "http.h"
 #include "log.h"
 #include "config.h"
+#include "event.h"
+#include "cwmp_uci.h"
 
 static int itfcmp(char *itf1, char *itf2);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);

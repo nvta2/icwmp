@@ -10,12 +10,7 @@
 #ifndef _FREECWMP_HTTP_H__
 #define _FREECWMP_HTTP_H__
 
-#include <stdint.h>
-
-#include <libubox/uloop.h>
-#include <cwmp.h>
-#include <curl/curl.h>
-
+#include "common.h"
 extern char *fc_cookies;
 
 #define HTTP_TIMEOUT 30

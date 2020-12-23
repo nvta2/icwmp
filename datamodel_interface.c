@@ -10,6 +10,7 @@
 
 #include "datamodel_interface.h"
 #include "log.h"
+#include "ubus.h"
 
 bool transaction_started = false;
 int transaction_id = 0;
@@ -347,7 +348,7 @@ char* cwmp_get_parameter_attributes(char* parameter_name, json_object **paramete
 		if (fault) {
 			err = strdup((char*)json_object_get_string(fault));
 			FREE_JSON(fault)
-			FREE_JSON(parameters)
+			FREE_JSON(*parameters)
 			break;
 		}
 	}

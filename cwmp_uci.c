@@ -7,7 +7,8 @@
  *	Copyright (C) 2013-2020 iopsys Software Solutions AB
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
-
+#include "common.h"
+#include "log.h"
 #include "cwmp_uci.h"
 
 struct uci_paths uci_save_conf_paths[] = {

@@ -15,14 +15,13 @@
 
 #include <json-c/json.h>
 
-#include "cwmp.h"
 #include "external.h"
+#include "cwmp_json.h"
 #include "log.h"
-#include "jshn.h"
 
 static json_object *jshn_obj = NULL;
 
-static int jshn_message_parse(char **policy, int size, char **tb, char *msg)
+static int cwmp_json_message_parse(char **policy, int size, char **tb, char *msg)
 {
 	int i;
 	json_object *obj;
@@ -43,7 +42,7 @@ static int jshn_message_parse(char **policy, int size, char **tb, char *msg)
 	return 0;
 }
 
-static inline void jshn_message_delete()
+static inline void cwmp_json_message_delete()
 {
 	if(jshn_obj != NULL)
 		json_object_put(jshn_obj);
@@ -62,7 +61,7 @@ cwmp_handle_downloadFault(char *msg)
 {
 	char *tb[__DOWNLOAD_MAX] = {0};
 
-	jshn_message_parse(download_fault_policy, ARRAYSIZEOF(download_fault_policy), tb, msg);
+	cwmp_json_message_parse(download_fault_policy, ARRAYSIZEOF(download_fault_policy), tb, msg);
 
 	if (!tb[DOWNLOAD_FAULT])
 		goto error;
@@ -71,11 +70,11 @@ cwmp_handle_downloadFault(char *msg)
 
 	external_downloadFaultResp (tb[DOWNLOAD_FAULT]);
 
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return 0;
 
 error:
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return -1;
 }
 
@@ -87,12 +86,12 @@ enum upload_fault {
 char *upload_fault_policy[] = {
 	[UPLOAD_FAULT] = "fault_code"
 };
-int
-cwmp_handle_uploadFault(char *msg)
+
+int cwmp_handle_uploadFault(char *msg)
 {
 	char *tb[__UPLOAD_MAX] = {0};
 
-	jshn_message_parse(upload_fault_policy, ARRAYSIZEOF(upload_fault_policy), tb, msg);
+	cwmp_json_message_parse(upload_fault_policy, ARRAYSIZEOF(upload_fault_policy), tb, msg);
 
 	if (!tb[UPLOAD_FAULT])
 		goto error;
@@ -101,11 +100,11 @@ cwmp_handle_uploadFault(char *msg)
 
 	external_uploadFaultResp (tb[UPLOAD_FAULT]);
 
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return 0;
 
 error:
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return -1;
 }
 
@@ -126,12 +125,11 @@ char *dustatechange_fault_policy[] = {
 	[DUState_Change_ENV] 		= "package_env"
 };
 
-int
-cwmp_handle_dustate_changeFault(char *msg)
+int cwmp_handle_dustate_changeFault(char *msg)
 {
 	char *tb[__DUSTATE_MAX] = {0};
 
-	jshn_message_parse(dustatechange_fault_policy, ARRAYSIZEOF(dustatechange_fault_policy), tb, msg);
+	cwmp_json_message_parse(dustatechange_fault_policy, ARRAYSIZEOF(dustatechange_fault_policy), tb, msg);
 
 	if (!tb[DUState_Change_FAULT])
 		goto error;
@@ -140,11 +138,11 @@ cwmp_handle_dustate_changeFault(char *msg)
 
 	external_du_change_stateFaultResp (tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME], tb[DUState_Change_UUID], tb[DUState_Change_ENV]);
 
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return 0;
 
 error:
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return -1;
 }
 
@@ -157,12 +155,11 @@ char *uninstall_fault_policy[] = {
 	[UNINSTALL_FAULT] = "fault_code"
 };
 
-int
-cwmp_handle_uninstallFault(char *msg)
+int cwmp_handle_uninstallFault(char *msg)
 {
 	char *tb[__UNINSTALL_MAX] = {0};
 
-	jshn_message_parse(uninstall_fault_policy, ARRAYSIZEOF(uninstall_fault_policy), tb, msg);
+	cwmp_json_message_parse(uninstall_fault_policy, ARRAYSIZEOF(uninstall_fault_policy), tb, msg);
 
 	if (!tb[UNINSTALL_FAULT])
 		goto error;
@@ -171,11 +168,11 @@ cwmp_handle_uninstallFault(char *msg)
 
 	external_uninstallFaultResp (tb[UNINSTALL_FAULT]);
 
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return 0;
 
 error:
-	jshn_message_delete();
+	cwmp_json_message_delete();
 	return -1;
 }
 

@@ -1,10 +1,8 @@
 #ifndef SRC_DATAMODELIFACE_H_
 #define SRC_DATAMODELIFACE_H_
-#include <json-c/json.h>
-#include <stdlib.h>
-#include <string.h>
-#include "ubus.h"
-#include "jshn.h"
+#include "common.h"
+#include "cwmp_json.h"
+
 
 #define DM_ROOT_OBJ "Device."
 extern bool transaction_started;

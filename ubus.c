@@ -11,16 +11,19 @@
  *	Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
 
-#include <unistd.h>
-#include <libubus.h>
-#include <sys/file.h>
+/*#include <unistd.h>*/
 
-#include "cwmp.h"
+#include <sys/file.h>
+#include <pthread.h>
+#include <libubus.h>
 #include "ubus.h"
-#include "external.h"
+#include "session.h"
 #include "xml.h"
 #include "log.h"
 #include "netlink.h"
+#include "cwmp_time.h"
+#include "event.h"
+#include "backupSession.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
@@ -42,6 +45,14 @@ enum command {
 static const struct blobmsg_policy command_policy[] = {
 	[COMMAND_NAME] = { .name = "command", .type = BLOBMSG_TYPE_STRING },
 };
+
+void *thread_exit_program (void *v)
+{
+	CWMP_LOG(INFO,"EXIT ICWMP");
+	pthread_mutex_lock(&mutex_backup_session);
+	cwmp_exit();
+	exit(EXIT_SUCCESS);
+}
 
 static int
 cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
@@ -316,7 +327,8 @@ ubus_init(struct cwmp *cwmp)
 void
 ubus_exit(void)
 {
-	if (ctx) ubus_free(ctx);
+	if (ctx)
+		ubus_free(ctx);
 }
 
 static void receive_ubus_call_result_data(struct ubus_request *req, int type, struct blob_attr *msg)
@@ -331,7 +343,7 @@ static void receive_ubus_call_result_data(struct ubus_request *req, int type, st
 	}
 
 	json_res = json_tokener_parse(str);
-	free((char *)str); //MEM should be free and not dmfree*/
+	free((char *)str);
 }
 
 int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_arg u_args[], int u_args_size, json_object **json_ret)
@@ -395,11 +407,11 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 	}
 	blobmsg_add_string(&b, "proto", "cwmp");
 	if (!ubus_lookup_id(ubus_ctx, obj, &id))
-		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 5000);
+		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 10000);
 	else
 		rc = -1;
-    if (json_ret)
-    	*json_ret = json_res;
+
+    *json_ret = json_res;
 
 	if (ubus_ctx) {
 		ubus_free(ubus_ctx);

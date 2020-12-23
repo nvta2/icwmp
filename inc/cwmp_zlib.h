@@ -4,16 +4,14 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2013-2019 iopsys Software Solutions AB
- *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
- *	  Author Anis Ellouze <anis.ellouze@pivasoftware.com>
+ *	Copyright (C) 2013-2020 iopsys Software Solutions AB
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
-#ifndef _NETLINK_H__
-#define _NETLINK_H__
+#ifndef __ZLIB_H
+#define __ZLIB_H
 
-int netlink_init(void);
-int netlink_init_v6(void);
+int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type);
 
 #endif

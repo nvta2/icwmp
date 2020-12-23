@@ -13,20 +13,15 @@
 #ifndef _BACKUPSESSION_H__
 #define _BACKUPSESSION_H__
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include <microxml.h>
-#include <unistd.h>
-#include "xml.h"
+#include "common.h"
 
 #define RPC_NO_STATUS   -1
 #define RPC_QUEUE       0
 #define RPC_SEND        1
 
 # define CWMP_BACKUP_SESSION "<cwmp></cwmp>"
-
+#define CWMP_BKP_FILE "/etc/icwmpd/.icwmpd_backup_session.xml"
 typedef enum backup_loading {
     ALL,
     ACS,
@@ -62,6 +57,7 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 void bkp_session_delete_change_du_state(struct change_du_state *pchange_du_state);
 void bkp_session_insert_transfer_complete(struct transfer_complete *ptransfer_complete);
 void bkp_session_delete_transfer_complete(struct transfer_complete *ptransfer_complete);
+int save_acs_bkp_config(struct cwmp *cwmp);
 
 void bkp_session_insert_schedule_download(struct schedule_download *pschedule_download);
 void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *papply_schedule_download);

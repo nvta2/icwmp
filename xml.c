@@ -8,23 +8,22 @@
  *	  Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
+ *
  *	  Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
  *	  Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <microxml.h>
-#include <time.h>
-#include "http.h"
-#include "cwmp.h"
 #include "xml.h"
+#include "http.h"
+#include "cwmp_time.h"
+#include "cwmp_zlib.h"
+#include "notifications.h"
 #include "external.h"
 #include "messages.h"
 #include "backupSession.h"
 #include "log.h"
-#include "jshn.h"
 #include "datamodel_interface.h"
+#include "cwmp_uci.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
@@ -127,14 +126,14 @@ const struct rpc_acs_method rpc_acs_methods[] = {
 };
 
 char* forced_inform_parameters[] = {
-									"Device.RootDataModelVersion",
-									"Device.DeviceInfo.HardwareVersion",
-									"Device.DeviceInfo.SoftwareVersion",
-									"Device.DeviceInfo.ProvisioningCode",
-									"Device.ManagementServer.ParameterKey",
-									"Device.ManagementServer.ConnectionRequestURL",
-									"Device.ManagementServer.AliasBasedAddressing"
-									};
+	"Device.RootDataModelVersion",
+	"Device.DeviceInfo.HardwareVersion",
+	"Device.DeviceInfo.SoftwareVersion",
+	"Device.DeviceInfo.ProvisioningCode",
+	"Device.ManagementServer.ParameterKey",
+	"Device.ManagementServer.ConnectionRequestURL",
+	"Device.ManagementServer.AliasBasedAddressing"
+};
 
 void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault)
 {
@@ -536,21 +535,23 @@ const char *whitespace_cb(mxml_node_t *node, int where)
         return NULL;
 
     switch (where) {
-        case MXML_WS_BEFORE_CLOSE:
-            if (node->child && node->child->type != MXML_ELEMENT)
-                return NULL;
-        case MXML_WS_BEFORE_OPEN:
-            tab_space[0] = '\0';
-            while ((node = node->parent))
-                strcat(tab_space, CWMP_MXML_TAB_SPACE);
-            return tab_space;
-        case MXML_WS_AFTER_OPEN:
-            return ((!node->child || node->child->type == MXML_ELEMENT) ? "\n" : NULL);
-        case MXML_WS_AFTER_CLOSE:
-            return "\n";
-        default:
-            return NULL;
+	case MXML_WS_BEFORE_CLOSE:
+		if (node->child && node->child->type != MXML_ELEMENT)
+			return NULL;
+		break;
+	case MXML_WS_BEFORE_OPEN:
+		tab_space[0] = '\0';
+		while ((node = node->parent))
+			strcat(tab_space, CWMP_MXML_TAB_SPACE);
+		return tab_space;
+	case MXML_WS_AFTER_OPEN:
+		return ((!node->child || node->child->type == MXML_ELEMENT) ? "\n" : NULL);
+	case MXML_WS_AFTER_CLOSE:
+		return "\n";
+	default:
+		return NULL;
     }
+    return NULL;
 }
 
 
@@ -567,22 +568,28 @@ static int xml_prepare_events_inform(struct session *session, mxml_node_t *tree)
 	struct event_container *event_container;
 
 	b1 = mxmlFindElement(tree, tree, "Event", NULL, NULL, MXML_DESCEND);
-	if (!b1) return -1;
+	if (!b1)
+		return -1;
 
 	list_for_each(ilist,&(session->head_event_container))
 	{
 		event_container = list_entry(ilist, struct event_container, list);
 		node = mxmlNewElement (b1, "EventStruct");
-		if (!node) goto error;
+		if (!node)
+			goto error;
 		b2 = mxmlNewElement (node, "EventCode");
-		if (!b2) goto error;
+		if (!b2)
+			goto error;
 		b2 = mxmlNewOpaque(b2, EVENT_CONST[event_container->code].CODE);
-		if (!b2) goto error;
+		if (!b2)
+			goto error;
 		b2 = mxmlNewElement (node, "CommandKey");
-		if (!b2) goto error;
+		if (!b2)
+			goto error;
 		if (event_container->command_key) {
 			b2 = mxmlNewOpaque(b2, event_container->command_key);
-			if (!b2) goto error;
+			if (!b2)
+				goto error;
 		}
 		mxmlAdd(b1, MXML_ADD_AFTER, MXML_ADD_TO_PARENT, node);
 		n++;
@@ -607,7 +614,8 @@ static int xml_prepare_parameters_inform(struct cwmp_dm_parameter *dm_parameter,
 	if (b && dm_parameter->data != NULL) {
 		node = b->parent->parent;
 		b = mxmlFindElement(node, node, "Value", NULL, NULL, MXML_DESCEND_FIRST);
-		if(!b) return 0;
+		if(!b)
+			return 0;
 		if (b->child && strcmp(dm_parameter->data, b->child->value.opaque)==0)
 			return 0;
 		mxmlDelete(b);
@@ -629,20 +637,24 @@ static int xml_prepare_parameters_inform(struct cwmp_dm_parameter *dm_parameter,
 	if (!node) return -1;
 
 	b = mxmlNewElement(node, "Name");
-	if (!b) return -1;
+	if (!b)
+		return -1;
 
 	b = mxmlNewOpaque(b, dm_parameter->name);
-	if (!b) return -1;
+	if (!b)
+		return -1;
 
 create_value:
 	b = mxmlNewElement(node, "Value");
-	if (!b) return -1;
+	if (!b)
+		return -1;
 
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(b, "xsi:type", (dm_parameter->type && dm_parameter->type[0] != '\0')? dm_parameter->type : "xsd:string");
 #endif
 	b = mxmlNewOpaque(b, dm_parameter->data);
-	if (!b) return -1;
+	if (!b)
+		return -1;
 
 	(*size)++;
 	return 0;
@@ -653,26 +665,31 @@ static int xml_prepare_lwnotifications(mxml_node_t *parameter_list)
 	mxml_node_t *b, *n;
 
 	struct list_head *p;
-	struct dm_parameter *lw_notification;
+	struct cwmp_dm_parameter *lw_notification;
 	list_for_each(p, &list_lw_value_change) {
-		lw_notification = list_entry(p, struct dm_parameter, list);
+		lw_notification = list_entry(p, struct cwmp_dm_parameter, list);
 
 		n = mxmlNewElement(parameter_list, "Param");
-		if (!n) goto error;
+		if (!n)
+			goto error;
 
 		b = mxmlNewElement(n, "Name");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewOpaque(b, lw_notification->name);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 		
 		b = mxmlNewElement(n, "Value");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 		#ifdef ACS_MULTI
 				mxmlElementSetAttr(b, "xsi:type", lw_notification->type);
 		#endif
 		b = mxmlNewOpaque(b, lw_notification->data);
-		if (!b) goto error;		
+		if (!b)
+			goto error;
 	}
 	return 0;
 
@@ -689,51 +706,65 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	char *c = NULL;
 
 	tree = mxmlLoadString(NULL, CWMP_LWNOTIFICATION_MESSAGE, MXML_OPAQUE_CALLBACK);
-	if (!tree) goto error;
+	if (!tree)
+		goto error;
 
 	b = mxmlFindElement(tree, tree, "TS", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	if (asprintf(&c, "%ld", time(NULL)) == -1)
 		goto error;
 	b = mxmlNewOpaque(b, c);
 	free(c);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlFindElement(tree, tree, "UN", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlNewOpaque(b, conf->acs_userid);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlFindElement(tree, tree, "CN", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	c = (char*)calculate_lwnotification_cnonce();
 	b = mxmlNewOpaque(b, c);
 	free(c);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlFindElement(tree, tree, "OUI", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlNewOpaque(b, cwmp->deviceid.oui);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlFindElement(tree, tree, "ProductClass", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlNewOpaque(b, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlFindElement(tree, tree, "SerialNumber", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	parameter_list = mxmlFindElement(tree, tree, "Notification", NULL, NULL, MXML_DESCEND);
-	if (!parameter_list) goto error;
+	if (!parameter_list)
+		goto error;
 	if (xml_prepare_lwnotifications(parameter_list))
 		goto error;
 
@@ -753,13 +784,13 @@ char* xml_get_cwmp_version (int version)
 	static char versions[60] = "";
 	versions[0] = '\0';
 
-        for (k=0; k < version; k++) {
-            if (k == 0)
-                sprintf(tmp, "1.%d", k);   
-            else 
-                sprintf(tmp, ", 1.%d", k);
-            strcat(versions, tmp);
-        }
+	for (k=0; k < version; k++) {
+		if (k == 0)
+			sprintf(tmp, "1.%d", k);
+		else
+			sprintf(tmp, ", 1.%d", k);
+		strcat(versions, tmp);
+	}
 	return versions;
 }
 
@@ -783,43 +814,55 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 #else
 	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_OPAQUE_CALLBACK);
 #endif
-	if (!tree) goto error;
+	if (!tree)
+		goto error;
 	b = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
-	if(!b) { goto error;}
+	if(!b)
+		goto error;
 	mxmlElementSetAttr(b, "xmlns:cwmp", cwmp_urls[(cwmp->conf.supported_amd_version)-1]);
 	if ( cwmp->conf.supported_amd_version >= 4 ) {
 		b = mxmlFindElement(tree, tree, "soap_env:Header", NULL, NULL, MXML_DESCEND);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 		node = mxmlNewElement(b, "cwmp:SessionTimeout");
-		if (!node) goto error;
+		if (!node)
+			goto error;
 		mxmlElementSetAttr(node, "soap_env:mustUnderstand", "0");
 		node = mxmlNewInteger(node, cwmp->conf.session_timeout);
-		if (!node) goto error;
+		if (!node)
+			goto error;
 	}
 	if ( cwmp->conf.supported_amd_version >= 5 ) {
 		node = mxmlNewElement(b, "cwmp:SupportedCWMPVersions");
-		if (!node) goto error;
+		if (!node)
+			goto error;
 		mxmlElementSetAttr(node, "soap_env:mustUnderstand", "0");
 		node = mxmlNewOpaque(node,  xml_get_cwmp_version(cwmp->conf.supported_amd_version));
-		if (!node) goto error;
+		if (!node)
+			goto error;
 	} 
 	b = mxmlFindElement(tree, tree, "RetryCount", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlNewInteger(b, cwmp->retry_count_session);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	if (xml_prepare_events_inform(session, tree))
 		goto error;
 
 	b = mxmlFindElement(tree, tree, "CurrentTime", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	b = mxmlNewOpaque(b, mix_get_time());
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	parameter_list = mxmlFindElement(tree, tree, "ParameterList", NULL, NULL, MXML_DESCEND);
-   	if (!parameter_list) goto error;
+   	if (!parameter_list)
+   		goto error;
 
     list_for_each(ilist, &(session->head_event_container))
     {
@@ -833,24 +876,32 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
     }
 
     b = mxmlFindElement(tree, tree, "OUI", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 	b = mxmlNewOpaque(b, cwmp->deviceid.oui ? cwmp->deviceid.oui : "");
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
     b = mxmlFindElement(tree, tree, "Manufacturer", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 	b = mxmlNewOpaque(b, cwmp->deviceid.manufacturer ? cwmp->deviceid.manufacturer : "");
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
     b = mxmlFindElement(tree, tree, "ProductClass", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 	b = mxmlNewOpaque(b, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
     b = mxmlFindElement(tree, tree, "SerialNumber", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
-	if (!b) goto error;
+	if (!b)
+		goto error;
 
 	json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL, *param_type = NULL;
 	size_t inform_parameters_nbre = sizeof(forced_inform_parameters)/sizeof(forced_inform_parameters[0]);
@@ -982,14 +1033,17 @@ int cwmp_rpc_acs_prepare_get_rpc_methods(struct cwmp *cwmp, struct session *sess
 	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
-	if(!n) { return -1;}
+	if(!n)
+		return -1;
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(cwmp->conf.amd_version)-1]);
 	n = mxmlFindElement(tree, tree, "soap_env:Body",
 					NULL, NULL, MXML_DESCEND);
-	if (!n) return -1;
+	if (!n)
+		return -1;
 
 	n = mxmlNewElement(n, "cwmp:GetRPCMethods");
-	if (!n) return -1;
+	if (!n)
+		return -1;
 
 	session->tree_out = tree;
 
@@ -1001,9 +1055,11 @@ int cwmp_rpc_acs_parse_response_get_rpc_methods (struct cwmp *cwmp, struct sessi
 	mxml_node_t *tree, *b;
 
 	tree = session->tree_in;
-	if (!tree) goto error;
+	if (!tree)
+		goto error;
 	b = mxmlFindElement(tree, tree, "MethodList", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b)
+		goto error;
 	b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
 	if (!b || b->type != MXML_OPAQUE || !b->value.opaque)
 		goto error;
@@ -1025,52 +1081,66 @@ int cwmp_rpc_acs_prepare_transfer_complete(struct cwmp *cwmp, struct session *se
 	p = (struct transfer_complete *)rpc->extra_data;
 	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
-	if(!n) { goto error;}
+	if(!n)
+		goto error;
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(cwmp->conf.amd_version)-1]);
 
 	n = mxmlFindElement(tree, tree, "soap_env:Body",
 					NULL, NULL, MXML_DESCEND);
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewElement(n, "cwmp:TransferComplete");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewElement(n, "CommandKey");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewOpaque(n, p->command_key?p->command_key:"");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "StartTime");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewOpaque(n, p->start_time);
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "CompleteTime");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewOpaque(n, mix_get_time());
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "FaultStruct");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewElement(n, "FaultCode");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewOpaque(n, p->fault_code?FAULT_CPE_ARRAY[p->fault_code].CODE:"0");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "FaultString");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewOpaque(n, p->fault_code?FAULT_CPE_ARRAY [p->fault_code].DESCRIPTION:"");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	session->tree_out = tree;
 
@@ -1111,91 +1181,115 @@ int cwmp_rpc_acs_prepare_du_state_change_complete(struct cwmp *cwmp, struct sess
 	p = (struct du_state_change_complete *)rpc->extra_data;
 	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
-	if(!n) goto error;
+	if(!n)
+		goto error;
 
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(cwmp->conf.amd_version)-1]);
 	n = mxmlFindElement(tree, tree, "soap_env:Body", NULL, NULL, MXML_DESCEND);
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewElement(n, "cwmp:DUStateChangeComplete");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewElement(n, "CommandKey");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 
 	n = mxmlNewOpaque(n, p->command_key);
-	if (!n) goto error;
+	if (!n)
+		goto error;
 	n = n->parent->parent;
 	n = mxmlNewElement(n, "Results");
-	if (!n) goto error;
+	if (!n)
+		goto error;
 	
 	list_for_each_entry(q, &(p->list_opresult), list) {
 		t = mxmlNewElement(n, "OpResultStruct");		
-		if (!t) goto error;
+		if (!t)
+			goto error;
 
 		b = mxmlNewElement(t, "UUID");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		c = q->uuid ? strdup(q->uuid) : strdup("");
 		b = mxmlNewOpaque(b, c);
 		FREE(c);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(t, "DeploymentUnitRef");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		c = q->du_ref ? strdup(q->du_ref) : strdup("");
 		b = mxmlNewOpaque(b, c);
 		FREE(c);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(t, "Version");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		c = q->version ? strdup(q->version) : strdup("");
 		b = mxmlNewOpaque(b, c);
 		FREE(c);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(t, "CurrentState");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		c = q->current_state ? strdup(q->current_state) : strdup("");
 		b = mxmlNewOpaque(b, c);
 		FREE(c);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(t, "StartTime");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		c = q->start_time ? strdup(q->start_time) : strdup("");
 		b = mxmlNewOpaque(b, c);
 		FREE(c);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(t, "CompleteTime");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		c = q->complete_time ? strdup(q->complete_time) : strdup("");
 		b = mxmlNewOpaque(b, c);
 		FREE(c);
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(t, "FaultStruct");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewElement(b, "FaultCode");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = mxmlNewOpaque(b, q->fault?FAULT_CPE_ARRAY[q->fault].CODE:"0");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b = b->parent->parent;
 		b = mxmlNewElement(b, "FaultString");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 
 		b= mxmlNewOpaque(b, q->fault?FAULT_CPE_ARRAY [q->fault].DESCRIPTION:"");
-		if (!b) goto error;
+		if (!b)
+			goto error;
 	}
 	session->tree_out = tree;
 	return 0;
@@ -1452,13 +1546,16 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 	b = session->body_in;
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body",
 				NULL, NULL, MXML_DESCEND);
-	if (!n) goto fault;
+	if (!n)
+		goto fault;
 
 	n = mxmlNewElement(n, "cwmp:GetParameterAttributesResponse");
-	if (!n) goto fault;
+	if (!n)
+		goto fault;
 
 	parameter_list = mxmlNewElement(n, "ParameterList");
-	if (!parameter_list) goto fault;
+	if (!parameter_list)
+		goto fault;
 
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(parameter_list, "xsi:type", "soap_enc:Array");
@@ -1949,16 +2046,20 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body",
 				NULL, NULL, MXML_DESCEND);
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewElement(b, "cwmp:DeleteObjectResponse");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewElement(b, "Status");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewOpaque(b, "1");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 	cwmp_set_end_session(END_SESSION_TRANSACTION_COMMIT);
 	return 0;
 
@@ -1991,23 +2092,28 @@ int cwmp_handle_rpc_cpe_get_rpc_methods(struct session *session, struct rpc *rpc
 
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body",
 				NULL, NULL, MXML_DESCEND);
-	if (!n) goto fault;
+	if (!n)
+		goto fault;
 
 	n = mxmlNewElement(n, "cwmp:GetRPCMethodsResponse");
-	if (!n) goto fault;
+	if (!n)
+		goto fault;
 
 	method_list = mxmlNewElement(n, "MethodList");
-	if (!method_list) goto fault;
+	if (!method_list)
+		goto fault;
 
 	for (i=1; i<__RPC_CPE_MAX; i++)
 	{
 		if (i!= RPC_CPE_FAULT)
 		{
 			n = mxmlNewElement(method_list, "string");
-			if (!n) goto fault;
+			if (!n)
+				goto fault;
 
 			n = mxmlNewOpaque(n, rpc_cpe_methods[i].name);
-			if (!n) goto fault;
+			if (!n)
+				goto fault;
 
 			counter++;
 		}
@@ -2015,7 +2121,8 @@ int cwmp_handle_rpc_cpe_get_rpc_methods(struct session *session, struct rpc *rpc
 #ifdef ACS_MULTI
 	b = mxmlFindElement(session->tree_out, session->tree_out, "MethodList",
 				NULL, NULL, MXML_DESCEND);
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	mxmlElementSetAttr(b, "xsi:type", "soap_enc:Array");
 	if (asprintf(&c, "xsd:string[%d]", counter) == -1)
@@ -2045,10 +2152,12 @@ int cwmp_handle_rpc_cpe_factory_reset(struct session *session, struct rpc *rpc)
 	mxml_node_t *b;
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewElement(b, "cwmp:FactoryResetResponse");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	cwmp_set_end_session(END_SESSION_FACTORY_RESET);
 
@@ -2071,10 +2180,12 @@ int cwmp_handle_rpc_cpe_x_factory_reset_soft(struct session *session, struct rpc
 	mxml_node_t *b;
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewElement(b, "cwmp:X_FactoryResetSoftResponse");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 
 	cwmp_set_end_session(END_SESSION_X_FACTORY_RESET_SOFT);
@@ -2113,10 +2224,12 @@ int cwmp_handle_rpc_cpe_cancel_transfer(struct session *session, struct rpc *rpc
 		cancel_transfer(command_key);	
 	}
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 
 	b = mxmlNewElement(b, "cwmp:CancelTransferResponse");
-	if (!b) goto fault;
+	if (!b)
+		goto fault;
 	return 0;
 fault:
 	if (cwmp_create_fault_message(session, rpc, FAULT_CPE_INTERNAL_ERROR))

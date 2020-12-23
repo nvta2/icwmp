@@ -10,21 +10,10 @@
  *
  */
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <assert.h>
-#include <getopt.h>
-#include <string.h>
-#include <time.h>
-#include <sys/wait.h>
-#include "cwmp.h"
-#include "backupSession.h"
-#include "xml.h"
-#include "log.h"
-#include "external.h"
-#include "ubus.h"
+#include "common.h"
 #include "diagnostic.h"
 #include "config.h"
+#include "xml.h"
 
 static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
 {

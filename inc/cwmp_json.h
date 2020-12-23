@@ -12,8 +12,8 @@
 
 #ifndef _JSHN_H__
 #define _JSHN_H__
-#include <stdio.h>
-
+#include <json-c/json.h>
+#include "common.h"
 struct cwmp_json_arg {
 	char *key;
 	char *val;

@@ -13,11 +13,15 @@
 #ifndef _CONFIG_H__
 #define _CONFIG_H__
 
+#include <pthread.h>
+#include "common.h"
+
 extern pthread_mutex_t  mutex_config_load;
 
-int save_acs_bkp_config(struct cwmp *cwmp);
 int get_amd_version_config();
 int get_instance_mode_config();
 int get_session_timeout_config();
-
+int cwmp_config_reload(struct cwmp *cwmp);
+int global_conf_init (struct config *conf);
+int cwmp_get_deviceid(struct cwmp *cwmp);
 #endif

@@ -10,62 +10,12 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <uci.h>
-#include <unistd.h>
-#include <sys/file.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <getopt.h>
-#include "cwmp.h"
-#include "backupSession.h"
-#include "xml.h"
-#include "log.h"
 #include "config.h"
+#include "cwmp_uci.h"
+#include "log.h"
 
 pthread_mutex_t  mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
-
-struct option long_options[] = {
-	{"boot-event", no_argument, NULL, 'b'},
-	{"get-rpc-methods", no_argument, NULL, 'g'},
-	{"command-input", no_argument, NULL, 'c'},
-	{"shell-cli", required_argument, NULL, 'm'},
-	{"alias-based-addressing", no_argument, NULL, 'a'},
-	{"instance-mode-number", no_argument, NULL, 'N'},
-	{"instance-mode-alias", no_argument, NULL, 'A'},
-	{"upnp", no_argument, NULL, 'U'},
-	{"user-acl", required_argument, NULL, 'u'},
-	{"amendment", required_argument, NULL, 'M'},
-	{"time-tracking", no_argument, NULL, 't'},
-	{"evaluating-test", no_argument, NULL, 'E'},
-	{"file", required_argument, NULL, 'f'},
-	{"wep", required_argument, NULL, 'w'},
-	{"help", no_argument, NULL, 'h'},
-	{"version", no_argument, NULL, 'v'},
-	{NULL, 0, NULL, 0}
-};
-
-static void show_help(void)
-{
-	printf("Usage: icwmpd [OPTIONS]\n");
-	printf(" -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event\n");
-	printf(" -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS\n");
-	printf(" -h, --help                                          Display this help text\n");
-	printf(" -v, --version                                       Display the version\n");
-}
-
-void show_version()
-{
-#ifndef CWMP_REVISION
-    fprintf(stdout, "\nVersion: %s\n\n",CWMP_VERSION);
-#else
-    fprintf(stdout, "\nVersion: %s revision %s\n\n",CWMP_VERSION,CWMP_REVISION);
-#endif
-}
 
 int check_global_config (struct config *conf)
 {
@@ -74,15 +24,6 @@ int check_global_config (struct config *conf)
         conf->acsurl = strdup(DEFAULT_ACSURL);
     }
     return CWMP_OK;
-}
-
-static void uppercase ( char *sPtr )
-{
-	while ( *sPtr != '\0' )
-	{
-		*sPtr = toupper ( ( unsigned char ) *sPtr );
-		++sPtr;
-	}
 }
 
 int get_global_config(struct config *conf)
@@ -552,8 +493,7 @@ int get_global_config(struct config *conf)
 	{
 		if(value != NULL)
 		{
-			uppercase(value);
-			if ((strcmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
+			if ((strcasecmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
 			{
 				conf->periodic_enable = true;
 			}
@@ -672,8 +612,7 @@ int get_lwn_config(struct config *conf)
     {
 	    if(value != NULL)
         {
-            uppercase(value);
-            if ((strcmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
+            if ((strcasecmp(value,"TRUE")==0) || (strcmp(value,"1")==0))
             {
                 conf->lw_notification_enable = true;
             }
@@ -716,35 +655,6 @@ int get_lwn_config(struct config *conf)
     return CWMP_OK;
 }
 
-int global_env_init (int argc, char** argv, struct env *env)
-{
-
-	int c, option_index = 0;
-
-	while ((c = getopt_long(argc, argv, "bghv", long_options, &option_index)) != -1) {
-
-		switch (c)
-		{
-		case 'b':
-			env->boot = CWMP_START_BOOT;
-			break;
-
-		case 'g':
-			env->periodic = CWMP_START_PERIODIC;
-			break;
-
-		case 'h':
-			show_help();
-			exit(0);
-
-		case 'v':
-			show_version();
-			exit(0);
-		}
-	}
-	return CWMP_OK;
-}
-
 int global_conf_init (struct config *conf)
 {
     int error;
@@ -765,16 +675,6 @@ int global_conf_init (struct config *conf)
     return CWMP_OK;
 }
 
-int save_acs_bkp_config(struct cwmp *cwmp)
-{
-    struct config   *conf;
-
-    conf = &(cwmp->conf);
-	bkp_session_simple_insert("acs", "url", conf->acsurl);
-	bkp_session_save();
-    return CWMP_OK;
-}
-
 int cwmp_get_deviceid(struct cwmp *cwmp) {
 	cwmp->deviceid.manufacturer = strdup(cwmp_db_get_value_string("device", "deviceinfo", "Manufacturer")); //TODO free
 	cwmp->deviceid.serialnumber = strdup(cwmp_db_get_value_string("device", "deviceinfo", "SerialNumber"));
@@ -782,43 +682,6 @@ int cwmp_get_deviceid(struct cwmp *cwmp) {
 	cwmp->deviceid.oui = strdup(cwmp_db_get_value_string("device", "deviceinfo", "ManufacturerOUI"));
 	cwmp->deviceid.softwareversion = strdup(cwmp_db_get_value_string("device", "deviceinfo", "SoftwareVersion"));
 	return CWMP_OK;
-}
-
-int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
-{
-    int         error;
-    struct env  env;
-
-    memset(&env,0,sizeof(struct env));
-    if ((error = global_env_init (argc, argv, &env)))
-        return error;
-
-    /* Only One instance should run*/
-    cwmp->pid_file = open("/var/run/icwmpd.pid", O_CREAT | O_RDWR, 0666);
-    fcntl(cwmp->pid_file, F_SETFD, fcntl(cwmp->pid_file, F_GETFD) | FD_CLOEXEC);
-    int rc = flock(cwmp->pid_file, LOCK_EX | LOCK_NB);
-    if(rc) {
-        if(EWOULDBLOCK != errno)
-        {
-        	char *piderr = "PID file creation failed: Quit the daemon!";
-        	fprintf(stderr, "%s\n", piderr);
-        	CWMP_LOG(ERROR, "%s",piderr);
-        	exit(EXIT_FAILURE);
-        }
-        else exit(EXIT_SUCCESS);
-    }
-
-    pthread_mutex_init(&cwmp->mutex_periodic, NULL);
-    pthread_mutex_init(&cwmp->mutex_session_queue, NULL);
-    pthread_mutex_init(&cwmp->mutex_session_send, NULL);
-    memcpy(&(cwmp->env),&env,sizeof(struct env));
-    INIT_LIST_HEAD(&(cwmp->head_session_queue));
-
-    if ((error = global_conf_init(&(cwmp->conf))))
-        return error;
-
-    cwmp_get_deviceid(cwmp);
-    return CWMP_OK;
 }
 
 int cwmp_config_reload(struct cwmp *cwmp)

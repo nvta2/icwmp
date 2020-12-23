@@ -8,12 +8,9 @@
  *    Author Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  */
 
-#include <stdio.h>
 #include <zlib.h>
-#include <stdlib.h>
-#include <string.h>
+#include "common.h"
 #include "log.h"
-#include "cwmp.h"
 
 /* CHUNK is the size of the memory chunk used by the zlib routines. */
 

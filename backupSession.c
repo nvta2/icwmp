@@ -10,11 +10,11 @@
  *
  */
 
-#include <stdbool.h>
-#include "cwmp.h"
 #include "backupSession.h"
 #include "xml.h"
 #include "log.h"
+#include "notifications.h"
+#include "event.h"
 
 static mxml_node_t		*bkp_tree = NULL;
 pthread_mutex_t         mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;
@@ -750,6 +750,17 @@ void bkp_session_delete_transfer_complete(struct transfer_complete *ptransfer_co
 		mxmlDelete(b);
 	pthread_mutex_unlock (&mutex_backup_session);
 }
+
+int save_acs_bkp_config(struct cwmp *cwmp)
+{
+    struct config   *conf;
+
+    conf = &(cwmp->conf);
+	bkp_session_simple_insert("acs", "url", conf->acsurl);
+	bkp_session_save();
+    return CWMP_OK;
+}
+
 /*
  * Load backup session
  */

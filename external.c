@@ -10,24 +10,10 @@
  *	Copyright (C) 2011 Luka Perkov <freecwmp@lukaperkov.net>
  */
 
-#include <errno.h>
-#include <malloc.h>
 #include <poll.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <libubox/uloop.h>
 #include <json-c/json.h>
 
 #include "external.h"
-#include "cwmp.h"
 #include "xml.h"
 #include "log.h"
 
@@ -158,7 +144,7 @@ static void json_obj_out_add(json_object *json_obj_out, char *name, char *val)
 
 	json_obj_tmp = json_object_new_string(val);
 	json_object_object_add(json_obj_out, name, json_obj_tmp);
-	}
+}
 
 void external_init()
 {
@@ -255,9 +241,11 @@ int external_simple(char *command, char *arg, int c)
 	json_obj_out = json_object_new_object();
 
 	json_obj_out_add(json_obj_out, "command", command);
-	if (arg) json_obj_out_add(json_obj_out, "arg", arg);
+	if (arg)
+		json_obj_out_add(json_obj_out, "arg", arg);
 
-	if (c)  json_obj_out_add(json_obj_out, "ipv6", "1");
+	if (c)
+		json_obj_out_add(json_obj_out, "ipv6", "1");
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
 	json_object_put(json_obj_out);
@@ -284,7 +272,8 @@ int external_download(char *url, char *size, char *type, char *user, char *pass,
 	}
 	if(cert_path)
 		CWMP_LOG(DEBUG,"https certif path %s", cert_path);
-	if (c) asprintf(&id, "%ld", c);
+	if (c)
+		asprintf(&id, "%ld", c);
 	/* send data to the script */
 	json_obj_out = json_object_new_object();
 
@@ -292,10 +281,14 @@ int external_download(char *url, char *size, char *type, char *user, char *pass,
 	json_obj_out_add(json_obj_out, "url", url);
 	json_obj_out_add(json_obj_out, "size", size);
 	json_obj_out_add(json_obj_out, "type", type);
-	if(user) json_obj_out_add(json_obj_out, "user", user);
-	if(pass) json_obj_out_add(json_obj_out, "pass", pass);
-	if(id) json_obj_out_add(json_obj_out, "ids", id);
-	if(cert_path) json_obj_out_add(json_obj_out, "cert_path", cert_path);
+	if(user)
+		json_obj_out_add(json_obj_out, "user", user);
+	if(pass)
+		json_obj_out_add(json_obj_out, "pass", pass);
+	if(id)
+		json_obj_out_add(json_obj_out, "ids", id);
+	if(cert_path)
+		json_obj_out_add(json_obj_out, "cert_path", cert_path);
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
 	json_object_put(json_obj_out);
@@ -340,10 +333,14 @@ int external_change_du_state_install(char *url, char *uuid, char *user, char *pa
 
 	json_obj_out_add(json_obj_out, "command", "du_install");
 	json_obj_out_add(json_obj_out, "url", url);
-	if (uuid) json_obj_out_add(json_obj_out, "uuid", uuid);
-	if (user) json_obj_out_add(json_obj_out, "user", user);
-	if (pass) json_obj_out_add(json_obj_out, "pass", pass);
-	if (env) json_obj_out_add(json_obj_out, "env", env);
+	if (uuid)
+		json_obj_out_add(json_obj_out, "uuid", uuid);
+	if (user)
+		json_obj_out_add(json_obj_out, "user", user);
+	if (pass)
+		json_obj_out_add(json_obj_out, "pass", pass);
+	if (env)
+		json_obj_out_add(json_obj_out, "env", env);
 
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
@@ -363,8 +360,10 @@ int external_change_du_state_update(char *uuid, char *url, char *user, char *pas
 	json_obj_out_add(json_obj_out, "command", "du_update");
 	json_obj_out_add(json_obj_out, "uuid", uuid);
 	json_obj_out_add(json_obj_out, "url", url);
-	if (user) json_obj_out_add(json_obj_out, "user", user);
-	if (pass) json_obj_out_add(json_obj_out, "pass", pass);
+	if (user)
+		json_obj_out_add(json_obj_out, "user", user);
+	if (pass)
+		json_obj_out_add(json_obj_out, "pass", pass);
 
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
@@ -383,7 +382,8 @@ int external_change_du_state_uninstall(char *name, char *env)
 
 	json_obj_out_add(json_obj_out, "command", "du_uninstall");
 	json_obj_out_add(json_obj_out, "name", name);
-	if (env) json_obj_out_add(json_obj_out, "env", env);
+	if (env)
+		json_obj_out_add(json_obj_out, "env", env);
 
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
@@ -406,9 +406,11 @@ int external_apply(char *action, char *arg, time_t c)
 
 	json_obj_out_add(json_obj_out, "command", "apply");
 	json_obj_out_add(json_obj_out, "action", action);
-	if (arg) json_obj_out_add(json_obj_out, "arg", arg);
+	if (arg)
+		json_obj_out_add(json_obj_out, "arg", arg);
 
-	if(id) json_obj_out_add(json_obj_out, "ids", id);
+	if(id)
+		json_obj_out_add(json_obj_out, "ids", id);
 	external_write_pipe_output(json_object_to_json_string(json_obj_out));
 
 	json_object_put(json_obj_out);

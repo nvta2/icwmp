@@ -10,100 +10,11 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include <pthread.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
+
 #include "cwmp.h"
-#include "http.h"
-#include "backupSession.h"
-#include "xml.h"
-#include "log.h"
-#include "external.h"
-#include "ubus.h"
-#include "diagnostic.h"
-#include "config.h"
-#include "jshn.h"
-#include <libubus.h>
-#include "datamodel_interface.h"
 
 struct cwmp cwmp_main = {0};
-char *commandKey = NULL;
 
-unsigned int end_session_flag = 0;
-
-void cwmp_set_end_session(unsigned int flag)
-{
-	end_session_flag |= flag;
-}
-
-int cwmp_get_int_event_code(char *code)
-{
-	if (code && code[0] == '1')
-		return EVENT_IDX_1BOOT;
-	
-	else if (code && code[0] == '2')
-		return EVENT_IDX_2PERIODIC;
-
-	else if (code && code[0] == '3')
-		return EVENT_IDX_3SCHEDULED;
-
-	else if (code && code[0] == '4')
-		return EVENT_IDX_4VALUE_CHANGE;
-
-	else if (code && code[0] == '6')
-		return EVENT_IDX_6CONNECTION_REQUEST;
-
-	else if (code && code[0] == '8')
-		return EVENT_IDX_8DIAGNOSTICS_COMPLETE;
-
-	else 
-		return EVENT_IDX_6CONNECTION_REQUEST;
-}
-
-struct rpc *cwmp_add_session_rpc_acs (struct session *session, int type)
-{
-    struct rpc     *rpc_acs;
-
-    rpc_acs = calloc (1,sizeof(struct rpc));
-    if (rpc_acs==NULL)
-    {
-        return NULL;
-    }
-    rpc_acs->type = type;
-    list_add_tail (&(rpc_acs->list), &(session->head_rpc_acs));
-    return rpc_acs;
-}
-
-struct rpc *cwmp_add_session_rpc_cpe (struct session *session, int type)
-{
-    struct rpc     *rpc_cpe;
-
-    rpc_cpe = calloc (1,sizeof(struct rpc));
-    if (rpc_cpe==NULL)
-    {
-        return NULL;
-    }
-    rpc_cpe->type = type;
-    list_add_tail (&(rpc_cpe->list), &(session->head_rpc_cpe));
-    return rpc_cpe;
-}
-
-struct rpc *cwmp_add_session_rpc_acs_head (struct session *session, int type)
-{
-    struct rpc     *rpc_acs;
-
-    rpc_acs = calloc (1,sizeof(struct rpc));
-    if (rpc_acs==NULL)
-    {
-        return NULL;
-    }
-    rpc_acs->type = type;
-    list_add (&(rpc_acs->list), &(session->head_rpc_acs));
-    return rpc_acs;
-}
 
 int cwmp_session_rpc_destructor (struct rpc *rpc)
 {
@@ -146,99 +57,116 @@ end:
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 }
 
-void cwmp_schedule_session (struct cwmp *cwmp)
+int cwmp_session_destructor (struct session *session)
 {
-    struct list_head                    *ilist;
-    struct session                      *session;
-    int                                 t,error = CWMP_OK;
-    static struct timespec              time_to_wait = {0, 0};
-    bool                                retry = false;
-    char *exec_download= NULL;
-    int is_notify = 0;
+	struct rpc *rpc;
 
-    cwmp->cwmp_cr_event = 0;
-    while (1)
+    while (session->head_rpc_acs.next != &(session->head_rpc_acs)) {
+    	rpc = list_entry(session->head_rpc_acs.next, struct rpc, list);
+		if (rpc_acs_methods[rpc->type].extra_clean != NULL)
+			rpc_acs_methods[rpc->type].extra_clean(session,rpc);
+    	cwmp_session_rpc_destructor(rpc);
+    }
+
+    while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
+    	rpc = list_entry(session->head_rpc_cpe.next, struct rpc, list);
+    	cwmp_session_rpc_destructor(rpc);
+    }
+
+    if (session->list.next != NULL && session->list.prev != NULL)
+        list_del (&(session->list));
+
+    free (session);
+
+    return CWMP_OK;
+}
+int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *session)
+{
+    struct list_head            *ilist, *jlist;
+    struct rpc              	*rpc_acs, *queue_rpc_acs, *rpc_cpe;
+    struct event_container      *event_container_old, *event_container_new;
+    struct session              *session_queue;
+    bool                        dup;
+
+    pthread_mutex_lock (&(cwmp->mutex_session_queue));
+    cwmp->retry_count_session ++;
+    cwmp->session_send  = NULL;
+    if (cwmp->head_session_queue.next == &(cwmp->head_session_queue))
     {
-    	pthread_mutex_lock (&(cwmp->mutex_session_send));
-    	ilist = (&(cwmp->head_session_queue))->next;
-        while ((ilist == &(cwmp->head_session_queue)) || retry)
+        list_add_tail (&(session->list), &(cwmp->head_session_queue));
+        session->hold_request       = 0;
+        session->digest_auth        = 0;
+        cwmp->head_event_container  = &(session->head_event_container);
+        if (session->head_rpc_acs.next != &(session->head_rpc_acs))
         {
-            t = cwmp_get_retry_interval(cwmp);
-            time_to_wait.tv_sec = time(NULL) + t;
-            CWMP_LOG(INFO,"Waiting the next session");
-            pthread_cond_timedwait(&(cwmp->threshold_session_send), &(cwmp->mutex_session_send), &time_to_wait);
-            ilist = (&(cwmp->head_session_queue))->next;
-            retry = false;
+            rpc_acs = list_entry(session->head_rpc_acs.next, struct rpc, list);
+            if (rpc_acs->type != RPC_ACS_INFORM)
+            {
+                if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL)
+                {
+                    pthread_mutex_unlock (&(cwmp->mutex_session_queue));
+                    return CWMP_MEM_ERR;
+                }
+            }
         }
-        session = list_entry(ilist, struct session, list);
-        if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 ) {
-        	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
-        		is_notify = check_value_change();
-        }
-        if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
-        	cwmp_update_enabled_notify_file();
-        cwmp_prepare_value_change(cwmp);
-        free_dm_parameter_all_fromlist(&list_value_change);
-        if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
-            CWMP_LOG(EMERG,"FATAL error in the mutex process in the session scheduler!");
-            exit(EXIT_FAILURE);
-        }
-
-        cwmp->session_status.last_end_time = 0;
-        cwmp->session_status.last_start_time = time(NULL);
-        cwmp->session_status.last_status = SESSION_RUNNING;
-        cwmp->session_status.next_retry = 0;
-
-    	if (access(fc_cookies, F_OK) != -1)
-    		remove(fc_cookies);
-        CWMP_LOG (INFO,"Start session");
-
-        uci_get_value(UCI_CPE_EXEC_DOWNLOAD, &exec_download);
-        if (strcmp(exec_download, "1") == 0) {
-        	CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
-        	uci_set_value("cwmp.cpe.exec_download=0");
-        }
-
-        error = cwmp_schedule_rpc (cwmp,session);
-        CWMP_LOG (INFO,"End session");
-        if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )
+        else
         {
-            run_session_end_func();
-            error = cwmp_move_session_to_session_queue (cwmp, session);
-            CWMP_LOG(INFO,"Retry session, retry count = %d, retry in %ds",cwmp->retry_count_session,cwmp_get_retry_interval(cwmp));
-            retry = true;
-            cwmp->session_status.last_end_time = time(NULL);
-            cwmp->session_status.last_status = SESSION_FAILURE;
-            cwmp->session_status.next_retry = time(NULL) + cwmp_get_retry_interval(cwmp);
-            cwmp->session_status.failure_session++;
-            pthread_mutex_unlock (&(cwmp->mutex_session_send));
+        	if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL)
+			{
+				pthread_mutex_unlock (&(cwmp->mutex_session_queue));
+				return CWMP_MEM_ERR;
+			}
+        }
+        while (session->head_rpc_cpe.next != &(session->head_rpc_cpe))
+		{
+        	rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
+			cwmp_session_rpc_destructor(rpc_cpe);
+		}
+        bkp_session_move_inform_to_inform_queue ();
+        bkp_session_save();
+        pthread_mutex_unlock (&(cwmp->mutex_session_queue));
+        return CWMP_OK;
+    }
+    list_for_each(ilist, &(session->head_event_container))
+    {
+        event_container_old = list_entry (ilist, struct event_container, list);
+        event_container_new = cwmp_add_event_container (cwmp, event_container_old->code, event_container_old->command_key);
+        if (event_container_new == NULL)
+        {
+            pthread_mutex_unlock (&(cwmp->mutex_session_queue));
+            return CWMP_MEM_ERR;
+        }
+        list_splice_init(&(event_container_old->head_dm_parameter),
+        		&(event_container_new->head_dm_parameter));
+        cwmp_save_event_container (cwmp,event_container_new);
+    }
+    session_queue = list_entry(cwmp->head_event_container,struct session, head_event_container);
+    list_for_each(ilist, &(session->head_rpc_acs))
+    {
+        rpc_acs = list_entry(ilist, struct rpc, list);
+        dup     = false;
+        list_for_each(jlist, &(session_queue->head_rpc_acs))
+        {
+            queue_rpc_acs = list_entry(jlist, struct rpc, list);
+            if (queue_rpc_acs->type == rpc_acs->type &&
+                (rpc_acs->type == RPC_ACS_INFORM ||
+                 rpc_acs->type == RPC_ACS_GET_RPC_METHODS))
+            {
+                dup = true;
+                break;
+            }
+        }
+        if (dup)
+        {
             continue;
         }
-        event_remove_all_event_container(session,RPC_SEND);
-        run_session_end_func();
-        cwmp_session_destructor (session);
-        cwmp->session_send          = NULL;
-        cwmp->retry_count_session   = 0;
-        cwmp->session_status.last_end_time = time(NULL);
-        cwmp->session_status.last_status = SESSION_SUCCESS;
-        cwmp->session_status.next_retry = 0;
-        cwmp->session_status.success_session++;
-        pthread_mutex_unlock (&(cwmp->mutex_session_send));
+        ilist = ilist->prev;
+        list_del(&(rpc_acs->list));
+        list_add_tail (&(rpc_acs->list), &(session_queue->head_rpc_acs));
     }
-}
-
-int cwmp_rpc_cpe_handle_message (struct session *session, struct rpc *rpc_cpe)
-{
-	if (xml_prepare_msg_out(session))
-		return -1;
-
-	if (rpc_cpe_methods[rpc_cpe->type].handler(session, rpc_cpe))
-		return -1;
-
-	if (xml_set_cwmp_id_rpc_cpe(session))
-		return -1;
-
-	return 0;
+    cwmp_session_destructor (session);
+    pthread_mutex_unlock (&(cwmp->mutex_session_queue));
+    return CWMP_OK;
 }
 
 int cwmp_schedule_rpc (struct cwmp *cwmp, struct session *session)
@@ -346,156 +274,6 @@ end:
     return session->error;
 }
 
-int cwmp_move_session_to_session_send (struct cwmp *cwmp, struct session *session)
-{
-    pthread_mutex_lock (&(cwmp->mutex_session_queue));
-    if (cwmp->session_send != NULL) {
-        pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-        return CWMP_MUTEX_ERR;
-    }
-    list_del (&(session->list));
-    cwmp->session_send          = session;
-    cwmp->head_event_container  = NULL;
-    bkp_session_move_inform_to_inform_send ();
-    bkp_session_save();
-    pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-    return CWMP_OK;
-}
-
-int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *session)
-{
-    struct list_head            *ilist, *jlist;
-    struct rpc              	*rpc_acs, *queue_rpc_acs, *rpc_cpe;
-    struct event_container      *event_container_old, *event_container_new;
-    struct session              *session_queue;
-    bool                        dup;
-
-    pthread_mutex_lock (&(cwmp->mutex_session_queue));
-    cwmp->retry_count_session ++;
-    cwmp->session_send  = NULL;
-    if (cwmp->head_session_queue.next == &(cwmp->head_session_queue))
-    {
-        list_add_tail (&(session->list), &(cwmp->head_session_queue));
-        session->hold_request       = 0;
-        session->digest_auth        = 0;
-        cwmp->head_event_container  = &(session->head_event_container);
-        if (session->head_rpc_acs.next != &(session->head_rpc_acs))
-        {
-            rpc_acs = list_entry(session->head_rpc_acs.next, struct rpc, list);
-            if (rpc_acs->type != RPC_ACS_INFORM)
-            {
-                if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL)
-                {
-                    pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-                    return CWMP_MEM_ERR;
-                }
-            }
-        }
-        else
-        {
-        	if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL)
-			{
-				pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-				return CWMP_MEM_ERR;
-			}
-        }
-        while (session->head_rpc_cpe.next != &(session->head_rpc_cpe))
-		{
-        	rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
-			cwmp_session_rpc_destructor(rpc_cpe);
-		}
-        bkp_session_move_inform_to_inform_queue ();
-        bkp_session_save();
-        pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-        return CWMP_OK;
-    }
-    list_for_each(ilist, &(session->head_event_container))
-    {
-        event_container_old = list_entry (ilist, struct event_container, list);
-        event_container_new = cwmp_add_event_container (cwmp, event_container_old->code, event_container_old->command_key);
-        if (event_container_new == NULL)
-        {
-            pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-            return CWMP_MEM_ERR;
-        }
-        list_splice_init(&(event_container_old->head_dm_parameter),
-        		&(event_container_new->head_dm_parameter));
-        cwmp_save_event_container (cwmp,event_container_new);
-    }
-    session_queue = list_entry(cwmp->head_event_container,struct session, head_event_container);
-    list_for_each(ilist, &(session->head_rpc_acs))
-    {
-        rpc_acs = list_entry(ilist, struct rpc, list);
-        dup     = false;
-        list_for_each(jlist, &(session_queue->head_rpc_acs))
-        {
-            queue_rpc_acs = list_entry(jlist, struct rpc, list);
-            if (queue_rpc_acs->type == rpc_acs->type &&
-                (rpc_acs->type == RPC_ACS_INFORM ||
-                 rpc_acs->type == RPC_ACS_GET_RPC_METHODS))
-            {
-                dup = true;
-                break;
-            }
-        }
-        if (dup)
-        {
-            continue;
-        }
-        ilist = ilist->prev;
-        list_del(&(rpc_acs->list));
-        list_add_tail (&(rpc_acs->list), &(session_queue->head_rpc_acs));
-    }
-    cwmp_session_destructor (session);
-    pthread_mutex_unlock (&(cwmp->mutex_session_queue));
-    return CWMP_OK;
-}
-
-int cwmp_session_destructor (struct session *session)
-{
-	struct rpc *rpc;
-
-    while (session->head_rpc_acs.next != &(session->head_rpc_acs)) {
-    	rpc = list_entry(session->head_rpc_acs.next, struct rpc, list);
-		if (rpc_acs_methods[rpc->type].extra_clean != NULL)
-			rpc_acs_methods[rpc->type].extra_clean(session,rpc);
-    	cwmp_session_rpc_destructor(rpc);
-    }
-
-    while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
-    	rpc = list_entry(session->head_rpc_cpe.next, struct rpc, list);
-    	cwmp_session_rpc_destructor(rpc);
-    }
-
-    if (session->list.next != NULL && session->list.prev != NULL)
-        list_del (&(session->list));
-
-    free (session);
-
-    return CWMP_OK;
-}
-
-struct session *cwmp_add_queue_session (struct cwmp *cwmp)
-{
-    struct session  *session = NULL;
-    struct rpc *rpc_acs;
-
-    session = calloc(1, sizeof(struct session));
-    if (session == NULL)
-        return NULL;
-
-    list_add_tail (&(session->list), &(cwmp->head_session_queue));
-    INIT_LIST_HEAD (&(session->head_event_container));
-    INIT_LIST_HEAD (&(session->head_rpc_acs));
-    INIT_LIST_HEAD (&(session->head_rpc_cpe));
-    if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL) {
-    	FREE(session);
-        return NULL;
-    }
-
-    return session;
-}
-
 int run_session_end_func ()
 {
 
@@ -516,7 +294,7 @@ int run_session_end_func ()
 
 	if (end_session_flag & END_SESSION_IPPING_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing ippingdiagnostic: end session request");
-		cwmp_ip_ping_diagnostic();        		
+		cwmp_ip_ping_diagnostic();
 	}
 
 	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC) {
@@ -584,42 +362,99 @@ int run_session_end_func ()
 	return CWMP_OK;
 }
 
-void add_list_value_change(char *param_name, char *param_data, char *param_type)
+void cwmp_schedule_session (struct cwmp *cwmp)
 {
-	pthread_mutex_lock(&(mutex_value_change));
-	add_dm_parameter_tolist(&list_value_change, param_name, param_data, param_type);
-	pthread_mutex_unlock(&(mutex_value_change));
+    struct list_head                    *ilist;
+    struct session                      *session;
+    int                                 t,error = CWMP_OK;
+    static struct timespec              time_to_wait = {0, 0};
+    bool                                retry = false;
+    char *exec_download= NULL;
+    int is_notify = 0;
+
+    cwmp->cwmp_cr_event = 0;
+    while (1)
+    {
+    	pthread_mutex_lock (&(cwmp->mutex_session_send));
+    	ilist = (&(cwmp->head_session_queue))->next;
+        while ((ilist == &(cwmp->head_session_queue)) || retry)
+        {
+            t = cwmp_get_retry_interval(cwmp);
+            time_to_wait.tv_sec = time(NULL) + t;
+            CWMP_LOG(INFO,"Waiting the next session");
+            pthread_cond_timedwait(&(cwmp->threshold_session_send), &(cwmp->mutex_session_send), &time_to_wait);
+            ilist = (&(cwmp->head_session_queue))->next;
+            retry = false;
+        }
+        session = list_entry(ilist, struct session, list);
+        if( access( DM_ENABLED_NOTIFY, F_OK ) != -1 ) {
+        	if(!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
+        		is_notify = check_value_change();
+        }
+        if(is_notify>0 || access(DM_ENABLED_NOTIFY, F_OK ) < 0)
+        	cwmp_update_enabled_notify_file();
+        cwmp_prepare_value_change(cwmp);
+        free_dm_parameter_all_fromlist(&list_value_change);
+        if ((error = cwmp_move_session_to_session_send (cwmp, session))) {
+            CWMP_LOG(EMERG,"FATAL error in the mutex process in the session scheduler!");
+            exit(EXIT_FAILURE);
+        }
+
+        cwmp->session_status.last_end_time = 0;
+        cwmp->session_status.last_start_time = time(NULL);
+        cwmp->session_status.last_status = SESSION_RUNNING;
+        cwmp->session_status.next_retry = 0;
+
+    	if (access(fc_cookies, F_OK) != -1)
+    		remove(fc_cookies);
+        CWMP_LOG (INFO,"Start session");
+
+        uci_get_value(UCI_CPE_EXEC_DOWNLOAD, &exec_download);
+        if (strcmp(exec_download, "1") == 0) {
+        	CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
+        	uci_set_value("cwmp.cpe.exec_download=0");
+        }
+
+        error = cwmp_schedule_rpc (cwmp,session);
+        CWMP_LOG (INFO,"End session");
+        if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )
+        {
+            run_session_end_func();
+            error = cwmp_move_session_to_session_queue (cwmp, session);
+            CWMP_LOG(INFO,"Retry session, retry count = %d, retry in %ds",cwmp->retry_count_session,cwmp_get_retry_interval(cwmp));
+            retry = true;
+            cwmp->session_status.last_end_time = time(NULL);
+            cwmp->session_status.last_status = SESSION_FAILURE;
+            cwmp->session_status.next_retry = time(NULL) + cwmp_get_retry_interval(cwmp);
+            cwmp->session_status.failure_session++;
+            pthread_mutex_unlock (&(cwmp->mutex_session_send));
+            continue;
+        }
+        event_remove_all_event_container(session,RPC_SEND);
+        run_session_end_func();
+        cwmp_session_destructor (session);
+        cwmp->session_send          = NULL;
+        cwmp->retry_count_session   = 0;
+        cwmp->session_status.last_end_time = time(NULL);
+        cwmp->session_status.last_status = SESSION_SUCCESS;
+        cwmp->session_status.next_retry = 0;
+        cwmp->session_status.success_session++;
+        pthread_mutex_unlock (&(cwmp->mutex_session_send));
+    }
 }
 
-void send_active_value_change(void)
+int cwmp_rpc_cpe_handle_message (struct session *session, struct rpc *rpc_cpe)
 {
-	struct cwmp *cwmp = &cwmp_main;
-	struct event_container *event_container;
+	if (xml_prepare_msg_out(session))
+		return -1;
 
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-	if (event_container == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-		return;
-	}
+	if (rpc_cpe_methods[rpc_cpe->type].handler(session, rpc_cpe))
+		return -1;
 
-	cwmp_save_event_container(cwmp,event_container);
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-	pthread_cond_signal(&(cwmp->threshold_session_send));
-	return;
-}
+	if (xml_set_cwmp_id_rpc_cpe(session))
+		return -1;
 
-int cwmp_apply_acs_changes(void)
-{
-    int error;
-
-    if ((error = cwmp_config_reload(&cwmp_main)))
-        return error;
-
-    if ((error = cwmp_root_cause_events(&cwmp_main)))
-        return error;
-
-    return CWMP_OK;
+	return 0;
 }
 
 void *thread_uloop_run (void *v)
@@ -634,18 +469,47 @@ void *thread_http_cr_server_listen (void *v)
     return NULL;
 }
 
-void *thread_exit_program (void *v)
-{
-	CWMP_LOG(INFO,"EXIT ICWMP");
-	pthread_mutex_lock(&mutex_backup_session);
-	cwmp_exit();
-	exit(EXIT_SUCCESS);
-}
-
 void signal_handler(int signal_num)
 {
     close(cwmp_main.cr_socket_desc);
     _exit(EXIT_SUCCESS);
+}
+
+int cwmp_init(int argc, char** argv,struct cwmp *cwmp)
+{
+    int         error;
+    struct env  env;
+
+    memset(&env,0,sizeof(struct env));
+    if ((error = global_env_init (argc, argv, &env)))
+        return error;
+
+    /* Only One instance should run*/
+    cwmp->pid_file = open("/var/run/icwmpd.pid", O_CREAT | O_RDWR, 0666);
+    fcntl(cwmp->pid_file, F_SETFD, fcntl(cwmp->pid_file, F_GETFD) | FD_CLOEXEC);
+    int rc = flock(cwmp->pid_file, LOCK_EX | LOCK_NB);
+    if(rc) {
+        if(EWOULDBLOCK != errno)
+        {
+        	char *piderr = "PID file creation failed: Quit the daemon!";
+        	fprintf(stderr, "%s\n", piderr);
+        	CWMP_LOG(ERROR, "%s",piderr);
+        	exit(EXIT_FAILURE);
+        }
+        else exit(EXIT_SUCCESS);
+    }
+
+    pthread_mutex_init(&cwmp->mutex_periodic, NULL);
+    pthread_mutex_init(&cwmp->mutex_session_queue, NULL);
+    pthread_mutex_init(&cwmp->mutex_session_send, NULL);
+    memcpy(&(cwmp->env),&env,sizeof(struct env));
+    INIT_LIST_HEAD(&(cwmp->head_session_queue));
+
+    if ((error = global_conf_init(&(cwmp->conf))))
+        return error;
+
+    cwmp_get_deviceid(cwmp);
+    return CWMP_OK;
 }
 
 int cwmp_exit(void)

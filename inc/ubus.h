@@ -11,8 +11,7 @@
  */
 #ifndef _FREECWMP_UBUS_H__
 #define _FREECWMP_UBUS_H__
-#include <stdbool.h>
-#include <libubox/list.h>
+#include "common.h"
 #define ARRAY_MAX 8
 
 int ubus_init(struct cwmp *cwmp);

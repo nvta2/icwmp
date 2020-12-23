@@ -13,7 +13,7 @@
 
 #ifndef _FREECWMP_EXTERNAL_H__
 #define _FREECWMP_EXTERNAL_H__
-#include <libubox/list.h>
+#include <time.h>
 
 void external_du_change_stateFaultResp (char *fault_code, char *version, char *name, char *uuid, char *env);
 void external_downloadFaultResp (char *fault_code);

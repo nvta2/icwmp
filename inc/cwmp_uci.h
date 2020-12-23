@@ -11,19 +11,49 @@
 
 #ifndef __CWMPUCI_H
 #define __CWMPUCI_H
-#include <string.h>
-#include <strings.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <stdbool.h>
+
 #include <uci.h>
-#include <libubox/list.h>
-#include "common.h"
-#include "log.h"
+
 
 //struct uci_context *cwmp_uci_ctx = ((void *)0);
+#define UCI_DHCP_DISCOVERY_PATH				"cwmp.acs.dhcp_discovery"
+#define UCI_ACS_URL_PATH					"cwmp.acs.url"
+#define UCI_PERIODIC_INFORM_TIME_PATH		"cwmp.acs.periodic_inform_time"
+#define UCI_PERIODIC_INFORM_INTERVAL_PATH	"cwmp.acs.periodic_inform_interval"
+#define UCI_PERIODIC_INFORM_ENABLE_PATH		"cwmp.acs.periodic_inform_enable"
+#define UCI_ACS_USERID_PATH					"cwmp.acs.userid"
+#define UCI_ACS_PASSWD_PATH					"cwmp.acs.passwd"
+#define UCI_ACS_PARAMETERKEY_PATH			"cwmp.acs.ParameterKey"
+#define UCI_ACS_SSL_CAPATH					"cwmp.acs.ssl_capath"
+#define UCI_HTTPS_SSL_CAPATH				"cwmp.acs.https_ssl_capath"
+#define UCI_ACS_INSECURE_ENABLE				"cwmp.acs.insecure_enable"
+#define UCI_ACS_IPV6_ENABLE					"cwmp.acs.ipv6_enable"
+#define UCI_ACS_SSL_VERSION			 		"cwmp.acs.ssl_version"
+#define UCI_ACS_COMPRESSION                 "cwmp.acs.compression"
+#define UCI_ACS_RETRY_MIN_WAIT_INTERVAL		"cwmp.acs.retry_min_wait_interval"
+#define HTTP_DISABLE_100CONTINUE			"cwmp.acs.http_disable_100continue"
+#define UCI_ACS_RETRY_INTERVAL_MULTIPLIER	"cwmp.acs.retry_interval_multiplier"
+#define UCI_LOG_SEVERITY_PATH				"cwmp.cpe.log_severity"
+#define UCI_CPE_USERID_PATH					"cwmp.cpe.userid"
+#define UCI_CPE_PASSWD_PATH					"cwmp.cpe.passwd"
+#define UCI_CPE_INTERFACE_PATH              "cwmp.cpe.interface"
+#define UCI_CPE_UBUS_SOCKET_PATH			"cwmp.cpe.ubus_socket"
+#define UCI_CPE_PORT_PATH					"cwmp.cpe.port"
+#define UCI_CPE_LOG_FILE_NAME				"cwmp.cpe.log_file_name"
+#define UCI_CPE_LOG_MAX_SIZE				"cwmp.cpe.log_max_size"
+#define UCI_CPE_ENABLE_STDOUT_LOG			"cwmp.cpe.log_to_console"
+#define UCI_CPE_ENABLE_FILE_LOG				"cwmp.cpe.log_to_file"
+#define UCI_CPE_AMD_VERSION					"cwmp.cpe.amd_version"
+#define UCI_CPE_INSTANCE_MODE				"cwmp.cpe.instance_mode"
+#define UCI_CPE_SESSION_TIMEOUT				"cwmp.cpe.session_timeout"
+#define UCI_CPE_EXEC_DOWNLOAD				"cwmp.cpe.exec_download"
+#define UCI_CPE_NOTIFY_PERIODIC_ENABLE		"cwmp.cpe.periodic_notify_enable"
+#define UCI_CPE_NOTIFY_PERIOD				"cwmp.cpe.periodic_notify_interval"
+#define LW_NOTIFICATION_ENABLE              "cwmp.lwn.enable"
+#define LW_NOTIFICATION_HOSTNAME            "cwmp.lwn.hostname"
+#define LW_NOTIFICATION_PORT                "cwmp.lwn.port"
+#define UCI_DHCP_ACS_URL					"cwmp.acs.dhcp_url"
+
 #define UCI_CONFIG_DIR "/etc/config/"
 #define LIB_DB_CONFIG "/lib/db/config"
 #define ETC_DB_CONFIG "/etc/board-db/config"

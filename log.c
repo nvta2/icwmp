@@ -10,13 +10,8 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <time.h>
-#include "cwmp.h"
+#include <pthread.h>
+#include "common.h"
 #include "log.h"
 
 static char				*SEVERITY_NAMES[8] = {"[EMERG]  ","[ALERT]  ","[CRITIC] ","[ERROR]  ","[WARNING]","[NOTICE] ","[INFO]   ","[DEBUG]  "};
