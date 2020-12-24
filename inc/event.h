@@ -68,7 +68,7 @@ extern const struct EVENT_CONST_STRUCT	EVENT_CONST [__EVENT_IDX_MAX];
 struct event_container *cwmp_add_event_container (struct cwmp *cwmp, int event_idx, char *command_key);
 int event_remove_all_event_container(struct session *session, int rem_from);
 int event_remove_noretry_event_container(struct session *session, struct cwmp *cwmp);
-void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_container);
+void cwmp_save_event_container (struct event_container *event_container);
 void *thread_event_periodic (void *v);
 void connection_request_ip_value_change(struct cwmp *cwmp, int version);
 void connection_request_port_value_change(struct cwmp *cwmp, int port);

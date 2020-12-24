@@ -51,7 +51,7 @@ static void cwmp_prepare_value_change (struct cwmp *cwmp)
 	pthread_mutex_lock(&(mutex_value_change));
 	list_splice_init(&(list_value_change), &(event_container->head_dm_parameter));
 	pthread_mutex_unlock(&(mutex_value_change));
-	cwmp_save_event_container (cwmp,event_container);
+	cwmp_save_event_container (event_container);
 
 end:
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
@@ -138,7 +138,7 @@ int cwmp_move_session_to_session_queue (struct cwmp *cwmp, struct session *sessi
         }
         list_splice_init(&(event_container_old->head_dm_parameter),
         		&(event_container_new->head_dm_parameter));
-        cwmp_save_event_container (cwmp,event_container_new);
+        cwmp_save_event_container (event_container_new);
     }
     session_queue = list_entry(cwmp->head_event_container,struct session, head_event_container);
     list_for_each(ilist, &(session->head_rpc_acs))
@@ -457,19 +457,19 @@ int cwmp_rpc_cpe_handle_message (struct session *session, struct rpc *rpc_cpe)
 	return 0;
 }
 
-void *thread_uloop_run (void *v)
+void *thread_uloop_run (void *v __attribute__((unused)))
 {
 	ubus_init(&cwmp_main);
 	return NULL;
 }
 
-void *thread_http_cr_server_listen (void *v)
+void *thread_http_cr_server_listen (void *v __attribute__((unused)))
 {
     http_server_listen();
     return NULL;
 }
 
-void signal_handler(int signal_num)
+void signal_handler(int signal_num __attribute__((unused)))
 {
     close(cwmp_main.cr_socket_desc);
     _exit(EXIT_SUCCESS);

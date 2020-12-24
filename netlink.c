@@ -154,25 +154,25 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 	}
 }
 
-static void netlink_new_msg(struct uloop_fd *ufd, unsigned events)
+static void netlink_new_msg(struct uloop_fd *ufd, unsigned events __attribute__((unused)))
 {
 	struct nlmsghdr *nlh;
 	char buffer[BUFSIZ];
-	int msg_size;
+	size_t msg_size;
 
 	memset(&buffer, 0, sizeof(buffer));
 
 	nlh = (struct nlmsghdr *)buffer;
-	if ((msg_size = recv(ufd->fd, nlh, BUFSIZ, 0)) == -1) {
+	if ((int)(msg_size = recv(ufd->fd, nlh, BUFSIZ, 0)) == -1) {
 		CWMP_LOG(ERROR,"error receiving netlink message");
 		return;
 	}
 
-	while (msg_size > sizeof(*nlh)) {
+	while ((size_t)msg_size > sizeof(*nlh)) {
 		int len = nlh->nlmsg_len;
 		int req_len = len - sizeof(*nlh);
 
-		if (req_len < 0 || len > msg_size) {
+		if (req_len < 0 || (size_t)len > msg_size) {
 			CWMP_LOG(ERROR,"error reading netlink message");
 			return;
 		}

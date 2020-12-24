@@ -905,7 +905,7 @@ int cwmp_rpc_acs_prepare_message_inform (struct cwmp *cwmp, struct session *sess
 
 	json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL, *param_type = NULL;
 	size_t inform_parameters_nbre = sizeof(forced_inform_parameters)/sizeof(forced_inform_parameters[0]);
-	int i;
+	size_t i;
 	for (i=0; i<inform_parameters_nbre; i++) {
 		char *fault = cwmp_get_parameter_values(forced_inform_parameters[i], &parameters);
 		if(parameters == NULL) {
@@ -945,7 +945,7 @@ error:
 	return -1;
 }
 
-int cwmp_rpc_acs_parse_response_inform (struct cwmp *cwmp, struct session *session, struct rpc *this)
+int cwmp_rpc_acs_parse_response_inform (struct cwmp *cwmp, struct session *session, struct rpc *this __attribute__((unused)))
 {
 	mxml_node_t *tree, *b;
 	int i = -1;	
@@ -1016,7 +1016,7 @@ error:
 	return -1;
 }
 
-int cwmp_rpc_acs_destroy_data_inform(struct session *session, struct rpc *rpc)
+int cwmp_rpc_acs_destroy_data_inform(struct session *session __attribute__((unused)), struct rpc *rpc __attribute__((unused)))
 {
 	//event_remove_all_event_container(session,RPC_SEND);
 	return 0;
@@ -1026,7 +1026,7 @@ int cwmp_rpc_acs_destroy_data_inform(struct session *session, struct rpc *rpc)
  * [RPC ACS]: GetRPCMethods
  */
 
-int cwmp_rpc_acs_prepare_get_rpc_methods(struct cwmp *cwmp, struct session *session, struct rpc *rpc)
+int cwmp_rpc_acs_prepare_get_rpc_methods(struct cwmp *cwmp, struct session *session, struct rpc *rpc __attribute__((unused)))
 {
 	mxml_node_t *tree, *n;
 
@@ -1050,7 +1050,7 @@ int cwmp_rpc_acs_prepare_get_rpc_methods(struct cwmp *cwmp, struct session *sess
 	return 0;
 }
 
-int cwmp_rpc_acs_parse_response_get_rpc_methods (struct cwmp *cwmp, struct session *session, struct rpc *this)
+int cwmp_rpc_acs_parse_response_get_rpc_methods (struct session *session)
 {
 	mxml_node_t *tree, *b;
 
@@ -1150,7 +1150,7 @@ error:
 	return -1;
 }
 
-int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session, struct rpc *rpc)
+int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
 {
 	struct transfer_complete *p;
 	if(rpc->extra_data != NULL)
@@ -1298,7 +1298,7 @@ error:
 	return -1;
 }
 
-int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session, struct rpc *rpc)
+int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
 {
 	struct du_state_change_complete *p;
 	if(rpc->extra_data != NULL)
@@ -2314,7 +2314,7 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 		pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 		goto fault;
 	}
-	cwmp_save_event_container (&cwmp_main,event_container);
+	cwmp_save_event_container (event_container);
 	pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
@@ -2375,12 +2375,12 @@ void *thread_cwmp_rpc_cpe_scheduleInform (void *v)
                 event_container = cwmp_add_event_container (cwmp, EVENT_IDX_3SCHEDULED, "");
                 if (event_container != NULL)
                 {
-                    cwmp_save_event_container (cwmp,event_container);
+                    cwmp_save_event_container (event_container);
                 }
                 event_container = cwmp_add_event_container (cwmp, EVENT_IDX_M_ScheduleInform, schedule_inform->commandKey);
                 if (event_container != NULL)
                 {
-                    cwmp_save_event_container (cwmp,event_container);
+                    cwmp_save_event_container (event_container);
                 }
                 pthread_mutex_unlock (&(cwmp->mutex_session_queue));
                 pthread_cond_signal(&(cwmp->threshold_session_send));

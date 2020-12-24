@@ -46,7 +46,7 @@ static const struct blobmsg_policy command_policy[] = {
 	[COMMAND_NAME] = { .name = "command", .type = BLOBMSG_TYPE_STRING },
 };
 
-void *thread_exit_program (void *v)
+void *thread_exit_program (void *v __attribute__((unused)))
 {
 	CWMP_LOG(INFO,"EXIT ICWMP");
 	pthread_mutex_lock(&mutex_backup_session);
@@ -55,8 +55,8 @@ void *thread_exit_program (void *v)
 }
 
 static int
-cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
-			 struct ubus_request_data *req, const char *method,
+cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)),
+			 struct ubus_request_data *req, const char *method __attribute__((unused)),
 			 struct blob_attr *msg)
 {
 	struct blob_attr *tb[__COMMAND_MAX];
@@ -168,9 +168,9 @@ static inline time_t get_session_status_next_time() {
 }
 
 static int
-cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj,
-             struct ubus_request_data *req, const char *method,
-             struct blob_attr *msg)
+cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)),
+             struct ubus_request_data *req, const char *method __attribute__((unused)),
+             struct blob_attr *msg __attribute__((unused)))
 {
     void *c;
     time_t ntime = 0;
@@ -221,8 +221,8 @@ static const struct blobmsg_policy inform_policy[] = {
 };
 
 static int
-cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
-             struct ubus_request_data *req, const char *method,
+cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)),
+             struct ubus_request_data *req, const char *method __attribute__((unused)),
              struct blob_attr *msg)
 {
     struct blob_attr *tb[__INFORM_MAX];
@@ -250,7 +250,7 @@ cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj,
 			pthread_mutex_unlock (&(cwmp_main.mutex_session_queue));
 			return 0;
 		}
-		cwmp_save_event_container (&cwmp_main,event_container);
+		cwmp_save_event_container (event_container);
 		session = list_entry (cwmp_main.head_event_container, struct session,head_event_container);
 		if(cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL)
 		{
@@ -331,7 +331,7 @@ ubus_exit(void)
 		ubus_free(ctx);
 }
 
-static void receive_ubus_call_result_data(struct ubus_request *req, int type, struct blob_attr *msg)
+static void receive_ubus_call_result_data(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
 {
 	const char *str;
 	if (!msg)

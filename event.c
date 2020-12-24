@@ -46,7 +46,7 @@ const struct EVENT_CONST_STRUCT EVENT_CONST [] = {
 		[EVENT_IDX_M_ChangeDUState]                 = {"M ChangeDUState",                          EVENT_TYPE_MULTIPLE,EVENT_RETRY_AFTER_TRANSMIT_FAIL|EVENT_RETRY_AFTER_REBOOT}
 };
 
-void cwmp_save_event_container (struct cwmp *cwmp,struct event_container *event_container) //to be moved to backupsession
+void cwmp_save_event_container (struct event_container *event_container) //to be moved to backupsession
 {
     struct list_head *ilist;
     struct cwmp_dm_parameter *dm_parameter;
@@ -123,7 +123,7 @@ void cwmp_root_cause_event_ipdiagnostic(void)
         pthread_mutex_unlock (&(cwmp->mutex_session_queue));
 		return;
 	}    
-    cwmp_save_event_container(cwmp,event_container);
+    cwmp_save_event_container(event_container);
 	pthread_mutex_unlock (&(cwmp->mutex_session_queue));
 	pthread_cond_signal(&(cwmp->threshold_session_send));
     return;		
@@ -142,7 +142,7 @@ int cwmp_root_cause_event_boot (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-        cwmp_save_event_container (cwmp,event_container);
+        cwmp_save_event_container (event_container);
         pthread_mutex_unlock (&(cwmp->mutex_session_queue));
     }
     return CWMP_OK;
@@ -210,7 +210,7 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-        cwmp_save_event_container (cwmp,event_container);
+        cwmp_save_event_container (event_container);
         cwmp_scheduleInform_remove_all();
         cwmp_scheduledDownload_remove_all();
 		cwmp_scheduled_Download_remove_all();
@@ -231,7 +231,7 @@ int cwmp_root_cause_event_bootstrap (struct cwmp *cwmp)
 
         char buf[64] = "Device.ManagementServer.URL";
         add_dm_parameter_tolist(&(event_container->head_dm_parameter), buf, NULL, NULL);
-        cwmp_save_event_container (cwmp,event_container);
+        cwmp_save_event_container (event_container);
         save_acs_bkp_config(cwmp);
         cwmp_scheduleInform_remove_all();
         cwmp_scheduledDownload_remove_all();
@@ -338,7 +338,7 @@ int cwmp_root_cause_getRPCMethod (struct cwmp *cwmp)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             return CWMP_MEM_ERR;
         }
-        cwmp_save_event_container (cwmp,event_container);
+        cwmp_save_event_container (event_container);
         session = list_entry (cwmp->head_event_container, struct session,head_event_container);
         if (cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL) {
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
@@ -400,7 +400,7 @@ void *thread_event_periodic (void *v)
             pthread_mutex_unlock (&(cwmp->mutex_session_queue));
             continue;
         }
-        cwmp_save_event_container (cwmp,event_container);
+        cwmp_save_event_container (event_container);
         pthread_mutex_unlock (&(cwmp->mutex_session_queue));
         pthread_cond_signal(&(cwmp->threshold_session_send));
     }
@@ -483,7 +483,7 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 			FREE(ip_value);
 			return;
 		}
-		cwmp_save_event_container (cwmp,event_container);
+		cwmp_save_event_container (event_container);
 		bkp_session_simple_insert_in_parent("connection_request", ip_version, ip_value);
 		bkp_session_save();
 		pthread_mutex_unlock (&(cwmp->mutex_session_queue));
@@ -515,7 +515,7 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port)
 			FREE(bport);
 			return;
 		}
-		cwmp_save_event_container (cwmp,event_container);
+		cwmp_save_event_container (event_container);
 		bkp_session_simple_insert_in_parent("connection_request", "port", bufport);
 		bkp_session_save();
 	}

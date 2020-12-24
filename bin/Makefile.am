@@ -19,7 +19,7 @@ icwmpd_SOURCES =			\
 	../ubus.c				\
 	../datamodel_interface.c \
 	../notifications.c		\
-	../cwmp_zlib.c				\
+	../cwmp_zlib.c			\
 	../xml.c				\
 	../diagnostic.c			\
 	../cwmp.c	
@@ -31,7 +31,8 @@ icwmpd_CFLAGS =			\
 	$(LIBUBUS_CFLAGS)	\
 	$(MICROXML_CFLAGS)	\
 	$(LIBCURL_CFLAGS) 	\
-	-Wall
+	-Wall -Wextra 		\
+	-Werror -Wformat
 
 icwmpd_LDFLAGS =		\
 	$(AM_LDFLAGS)		\

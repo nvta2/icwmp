@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <limits.h>
 #include "digestauth.h"
 #include "md5.h"
 #include "log.h"
@@ -249,8 +250,7 @@ static void digest_calc_ha1(const char *alg, const char *username,
  */
 static void digest_calc_response(const char *ha1, const char *nonce,
 		const char *noncecount, const char *cnonce, const char *qop,
-		const char *method, const char *uri, const char *hentity,
-		char *response)
+		const char *method, const char *uri, char *response)
 {
 	struct MD5Context md5;
 	unsigned char ha2[MD5_DIGEST_SIZE];
@@ -350,7 +350,6 @@ int http_digest_auth_check(const char *http_method, const char *url,
 	char qop[15]; /* auth,auth-int */
 	char nc[20];
 	char response[MAX_AUTH_RESPONSE_LENGTH];
-	const char *hentity = NULL; /* "auth-int" is not supported */
 	char ha1[HASH_MD5_HEX_LEN + 1];
 	char respexp[HASH_MD5_HEX_LEN + 1];
 	char noncehashexp[HASH_MD5_HEX_LEN + 9];
@@ -451,8 +450,7 @@ int http_digest_auth_check(const char *http_method, const char *url,
 		 */
 
 		digest_calc_ha1("md5", username, realm, password, nonce, cnonce, ha1);
-		digest_calc_response(ha1, nonce, nc, cnonce, qop, http_method, uri,
-				hentity, respexp);
+		digest_calc_response(ha1, nonce, nc, cnonce, qop, http_method, uri, respexp);
 		return (0 == strcmp(response, respexp)) ? MHD_YES : MHD_NO;
 	}
 }

@@ -206,7 +206,7 @@ void send_active_value_change(void)
 		return;
 	}
 
-	cwmp_save_event_container(cwmp,event_container);
+	cwmp_save_event_container(event_container);
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	pthread_cond_signal(&(cwmp->threshold_session_send));
 	return;
