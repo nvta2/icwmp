@@ -124,3 +124,51 @@ void free_dm_parameter_all_fromlist(struct list_head *list)
 		delete_dm_parameter_fromlist(dm_parameter);
 	}
 }
+
+void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault)
+{
+	struct cwmp_param_fault *param_fault;
+	if (param == NULL)
+		param = "";
+
+	param_fault = calloc(1, sizeof(struct cwmp_param_fault));
+	list_add_tail(&param_fault->list, list_set_value_fault);
+	param_fault->name = strdup(param);
+	param_fault->fault = fault;
+}
+
+void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault)
+{
+	list_del(&param_fault->list);
+	free(param_fault->name);
+	free(param_fault);
+}
+
+void cwmp_add_list_param_value(char *param, char* value, struct list_head *list_param_value)
+{
+	struct cwmp_param_value *param_value = NULL;
+	if (param == NULL)
+		param = "";
+
+	param_value = calloc(1, sizeof(struct cwmp_param_value));
+	list_add_tail(&param_value->list, list_param_value);
+	param_value->param = strdup(param);
+	param_value->value = strdup(value?value:"");
+}
+
+void cwmp_del_list_param_value(struct cwmp_param_value *param_value)
+{
+	list_del(&param_value->list);
+	free(param_value->param);
+	free(param_value->value);
+	free(param_value);
+}
+
+void cwmp_free_all_list_param_value(struct list_head *list_param_value)
+{
+	struct cwmp_param_value *param_value;
+	while (list_param_value->next != list_param_value) {
+		param_value = list_entry(list_param_value->next, struct cwmp_param_value, list);
+		cwmp_del_list_param_value(param_value);
+	}
+}

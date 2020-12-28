@@ -22,6 +22,7 @@ enum cwmp_ubus_arg_type {
 	UBUS_Integer,
 	UBUS_Array_Obj,
 	UBUS_Array_Str,
+	UBUS_Obj_Obj,
 	UBUS_List_Param,
 	UBUS_Bool,
 };
@@ -32,8 +33,8 @@ struct key_value {
 };
 
 union array_membre {
-        char* str_value;
-        struct key_value param_value;
+	char* str_value;
+	struct key_value param_value;
 };
 
 union ubus_value {

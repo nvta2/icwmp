@@ -113,6 +113,7 @@ int uci_get_value(char *cmd,char **value);
 char* cwmp_db_get_value_string(char *package, char *section, char *option);
 struct uci_section *cwmp_uci_walk_section (char *package, char *stype, void *arg1, void *arg2, int cmp , int (*filter)(struct uci_section *s, void *value), struct uci_section *prev_section, int walk);
 int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, char **value);
+int cwmp_uci_get_option_value_string(char *package, char *section, char *option, int uci_type, char **value);
 
 #define cwmp_uci_path_foreach_option_eq(package, stype, option, val, section) \
 	for (section = cwmp_uci_walk_section(package, stype, option, val, CWMP_CMP_OPTION_EQUAL, NULL, NULL, CWMP_GET_FIRST_SECTION); \

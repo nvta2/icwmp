@@ -284,12 +284,38 @@ int run_session_end_func ()
 		external_exit();
 	}
 
-	if (end_session_flag & END_SESSION_FACTORY_RESET) {
-		CWMP_LOG (INFO,"Executing factory reset: end session request");
-		external_init();
-		external_simple("factory_reset", NULL, 0);
-		external_exit();
-		exit(EXIT_SUCCESS);
+	if (end_session_flag & END_SESSION_RELOAD) {
+		CWMP_LOG (INFO,"Config reload: end session request");
+		cwmp_apply_acs_changes();
+	}
+
+	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
+		CWMP_LOG (INFO,"SetParameterAttributes end session: update enabled notify file");
+		cwmp_update_enabled_notify_file();
+	}
+	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
+		cwmp_transaction_commit();
+		transaction_started = false;
+	}
+
+	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC) {
+		CWMP_LOG (INFO,"Executing nslookupdiagnostic: end session request");
+		cwmp_nslookup_diagnostic();
+	}
+
+	if (end_session_flag & END_SESSION_TRACEROUTE_DIAGNOSTIC) {
+		CWMP_LOG (INFO,"Executing traceroutediagnostic: end session request");
+		cwmp_traceroute_diagnostic();
+	}
+
+	if (end_session_flag & END_SESSION_UDPECHO_DIAGNOSTIC) {
+		CWMP_LOG (INFO,"Executing udpechodiagnostic: end session request");
+		cwmp_udp_echo_diagnostic();
+	}
+
+	if (end_session_flag & END_SESSION_SERVERSELECTION_DIAGNOSTIC) {
+		CWMP_LOG (INFO,"Executing serverselectiondiagnostic: end session request");
+		cwmp_serverselection_diagnostic();
 	}
 
 	if (end_session_flag & END_SESSION_IPPING_DIAGNOSTIC) {
@@ -316,11 +342,6 @@ int run_session_end_func ()
 		exit(EXIT_SUCCESS);
 	}
 
-	if (end_session_flag & END_SESSION_RELOAD) {
-		CWMP_LOG (INFO,"Config reload: end session request");
-		cwmp_apply_acs_changes();
-	}
-
 	if (end_session_flag & END_SESSION_X_FACTORY_RESET_SOFT) {
 		CWMP_LOG (INFO,"Executing factory reset soft: end session request");
 		external_init();
@@ -329,33 +350,12 @@ int run_session_end_func ()
 		exit(EXIT_SUCCESS);
 	}
 
-	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC) {
-		CWMP_LOG (INFO,"Executing nslookupdiagnostic: end session request");
-		cwmp_nslookup_diagnostic();
-	}
-
-	if (end_session_flag & END_SESSION_TRACEROUTE_DIAGNOSTIC) {
-		CWMP_LOG (INFO,"Executing traceroutediagnostic: end session request");
-		cwmp_traceroute_diagnostic();
-	}
-
-	if (end_session_flag & END_SESSION_UDPECHO_DIAGNOSTIC) {
-		CWMP_LOG (INFO,"Executing udpechodiagnostic: end session request");
-		cwmp_udp_echo_diagnostic();
-	}
-
-	if (end_session_flag & END_SESSION_SERVERSELECTION_DIAGNOSTIC) {
-		CWMP_LOG (INFO,"Executing serverselectiondiagnostic: end session request");
-		cwmp_serverselection_diagnostic();
-	}
-
-	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
-		CWMP_LOG (INFO,"SetParameterAttributes end session: update enabled notify file");
-		cwmp_update_enabled_notify_file();
-	}
-	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
-		cwmp_transaction_commit();
-		transaction_started = false;
+	if (end_session_flag & END_SESSION_FACTORY_RESET) {
+		CWMP_LOG (INFO,"Executing factory reset: end session request");
+		external_init();
+		external_simple("factory_reset", NULL, 0);
+		external_exit();
+		exit(EXIT_SUCCESS);
 	}
 
 	end_session_flag = 0;
@@ -414,7 +414,6 @@ void cwmp_schedule_session (struct cwmp *cwmp)
         	CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
         	uci_set_value("cwmp.cpe.exec_download=0");
         }
-
         error = cwmp_schedule_rpc (cwmp,session);
         CWMP_LOG (INFO,"End session");
         if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0)) )

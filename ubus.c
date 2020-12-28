@@ -16,6 +16,7 @@
 #include <sys/file.h>
 #include <pthread.h>
 #include <libubus.h>
+#include <json-c/json.h>
 #include "ubus.h"
 #include "session.h"
 #include "xml.h"
@@ -402,6 +403,15 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 				blobmsg_close_table(&b, t);
 			}
 			blobmsg_close_array(&b, a);
+		} else if (u_args[i].type == UBUS_Obj_Obj) {
+			struct cwmp_param_value *param_value;
+			json_object *input_json_obj = json_object_new_object();
+			list_for_each_entry(param_value, u_args[i].val.param_value_list, list) {
+				if(!param_value->param)
+					break;
+				json_object_object_add(input_json_obj, param_value->param, json_object_new_string(param_value->value));
+			}
+			blobmsg_add_json_element(&b, u_args[i].key, input_json_obj);
 		} else if (u_args[i].type == UBUS_Bool)
 			blobmsg_add_u8(&b, u_args[i].key, u_args[i].val.bool_val);
 	}

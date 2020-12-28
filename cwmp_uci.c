@@ -15,7 +15,7 @@ struct uci_paths uci_save_conf_paths[] = {
 		[UCI_STANDARD_CONFIG] ={"/etc/config","/tmp/.uci"},
 		[UCI_DB_CONFIG] = {"/lib/db/config", NULL},
 		[UCI_BOARD_DB_CONFIG] = {"/etc/board-db/config", NULL},
-		[UCI_VARSTATE_CONFIG] = {"/var/state", NULL},
+		[UCI_VARSTATE_CONFIG] = {NULL, "/var/state"},
 		[UCI_BBFDM_CONFIG] = {"/etc/bbfdm", "/tmp/.bbfdm"}
 };
 
@@ -39,8 +39,10 @@ int cwmp_uci_init(int uci_path_type)
 
 void cwmp_uci_exit(void)
 {
-	if (cwmp_uci_ctx)
+	if (cwmp_uci_ctx) {
 		uci_free_context(cwmp_uci_ctx);
+		cwmp_uci_ctx = NULL;
+	}
 	cwmp_uci_ctx = NULL;
 }
 
@@ -86,11 +88,57 @@ int cwmp_uci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *pack
 	ptr->option = option;
 
 lookup:
-	if (uci_lookup_ptr(ctx, ptr, NULL, true) != UCI_OK || !UCI_LOOKUP_COMPLETE) {
+	if (uci_lookup_ptr(ctx, ptr, NULL, true) != UCI_OK) {
 		return -1;
 	}
+	return UCI_OK;
+}
+
+char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
+{
+	struct uci_element *e = NULL;
+	char val[512] = {0};
+	int del_len = strlen(delimitor);
+
+	if (list) {
+		uci_foreach_element(list, e) {
+			int len = strlen(val);
+			if (len != 0) {
+				memcpy(val + len, delimitor, del_len);
+				strcpy(val + len + del_len, e->name);
+			} else
+				strcpy(val, e->name);
+		}
+		return (strdup(val));
+	} else {
+		return "";
+	}
+}
+
+int cwmp_uci_get_option_value_string(char *package, char *section, char *option, int uci_type, char **value)
+{
+	struct uci_ptr ptr = {0};
+	cwmp_uci_init(uci_type);
+
+
+	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, option, NULL) != UCI_OK) {
+		*value = "";
+		cwmp_uci_ctx = NULL;
+		return -1;
+	}
+	if (ptr.o && ptr.o->type == UCI_TYPE_LIST) {
+		*value = cwmp_uci_list_to_string(&ptr.o->v.list, " ");
+	} else if (ptr.o && ptr.o->v.string) {
+		*value = strdup(ptr.o->v.string);
+	} else {
+		*value = strdup("");
+		cwmp_uci_exit();
+		return -1;
+	}
+	cwmp_uci_exit();
 	return 0;
 }
+
 
 char* cwmp_db_get_value_string(char *package, char *section, char *option)
 {
@@ -382,27 +430,6 @@ static inline void cwmp_uci_list_insert(struct uci_list *list, struct uci_list *
 static inline void cwmp_uci_list_add(struct uci_list *head, struct uci_list *ptr)
 {
 	cwmp_uci_list_insert(head->prev, ptr);
-}
-
-char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
-{
-	struct uci_element *e = NULL;
-	char val[512] = {0};
-	int del_len = strlen(delimitor);
-
-	if (list) {
-		uci_foreach_element(list, e) {
-			int len = strlen(val);
-			if (len != 0) {
-				memcpy(val + len, delimitor, del_len);
-				strcpy(val + len + del_len, e->name);
-			} else
-				strcpy(val, e->name);
-		}
-		return (strdup(val));
-	} else {
-		return "";
-	}
 }
 
 int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, char **value)

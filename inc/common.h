@@ -432,6 +432,12 @@ void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *par
 void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter);
 void free_dm_parameter_all_fromlist(struct list_head *list);
 int global_env_init (int argc, char** argv, struct env *env);
+void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault);
+void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
+void cwmp_add_list_param_value(char *param, char* value, struct list_head *list_param_value);
+void cwmp_del_list_param_value(struct cwmp_param_value *param_value);
+void cwmp_free_all_list_param_value(struct list_head *list_param_value);
+
 #ifndef FREE
 #define FREE(x) do { if (x) {free(x); x = NULL;} } while (0)
 #endif
