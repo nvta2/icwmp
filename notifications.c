@@ -310,7 +310,7 @@ void cwmp_lwnotification()
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
 	message_compute_signature(msg_out, signature);
-	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %d\n %s: %s\n\n%s",
+	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s",
 			"POST /HTTPS/1.1",
 			"HOST",	conf->lw_notification_hostname,
 			"Content-Type", "test/xml; charset=utf-8",
