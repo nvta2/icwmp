@@ -24,6 +24,7 @@
 #include "log.h"
 #include "datamodel_interface.h"
 #include "cwmp_uci.h"
+#include "diagnostic.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
@@ -1710,9 +1711,11 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 		FREE_JSON(fault_obj)
 		FREE_JSON(faults_array)
-		cwmp_free_all_list_param_value(&list_set_param_value);
 		goto fault;
 	}
+	struct cwmp_param_value *param_value;
+	list_for_each_entry(param_value, &list_set_param_value, list)
+		set_diagnostic_parameter_structure_value(param_value->param, param_value->value);
 
 	cwmp_free_all_list_param_value(&list_set_param_value);
 
@@ -2601,12 +2604,19 @@ int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct tr
 
 int lookup_vcf_name(char *instance, char **value)
 {
-	struct uci_section *s = NULL;
-	cwmp_uci_init(UCI_BBFDM_CONFIG);
-	cwmp_uci_path_foreach_option_eq("dmmap", "vcf", "vcf_instance", instance, s) {
-		cwmp_uci_get_value_by_section_string(s, "name", value);
+	json_object *parameters = NULL, *param_obj = NULL, *value_obj = NULL;
+	char *vcf_name_parameter = NULL;
+
+	asprintf(&vcf_name_parameter, "Device.DeviceInfo.VendorConfigFile.%s.Name", instance);
+	if (cwmp_get_parameter_values(vcf_name_parameter, &parameters) != NULL) {
+		FREE(vcf_name_parameter);
+		return -1;
 	}
-	cwmp_uci_exit();
+
+	param_obj = json_object_array_get_idx(parameters, 0);
+	json_object_object_get_ex(param_obj, "value", &value_obj);
+	*value = (char*)json_object_get_string(value_obj);
+	FREE(vcf_name_parameter);
 	return 0;
 }
 

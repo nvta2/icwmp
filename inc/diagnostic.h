@@ -12,22 +12,14 @@
 #ifndef __DIAGNOSTIC__H
 #define __DIAGNOSTIC__H
 
-#define IPPING_PATH "/usr/share/bbfdm/functions/ipping_launch"
-#define NSLOOKUP_PATH "/usr/share/bbfdm/functions/nslookup_launch"
-#define TRACEROUTE_PATH "/usr/share/bbfdm/functions/traceroute_launch"
-#define UDPECHO_PATH "/usr/share/bbfdm/functions/udpecho_launch"
-#define SERVERSELECTION_PATH "/usr/share/bbfdm/functions/serverselection_launch"
+bool set_diagnostic_parameter_structure_value(char *parameter_name, char* value);
 
-enum diagnostic_type {
-	DOWNLOAD_DIAGNOSTIC = 1,
-	UPLOAD_DIAGNOSTIC
-};
-
-int cwmp_ip_ping_diagnostic();
-int cwmp_start_diagnostic(int diagnostic_type);
-int cwmp_nslookup_diagnostic();
-int cwmp_traceroute_diagnostic();
-int cwmp_udp_echo_diagnostic();
-int cwmp_serverselection_diagnostic();
+int cwmp_download_diagnostics();
+int cwmp_upload_diagnostics();
+int cwmp_ip_ping_diagnostics();
+int cwmp_nslookup_diagnostics();
+int cwmp_traceroute_diagnostics();
+int cwmp_udp_echo_diagnostics();
+int cwmp_serverselection_diagnostics();
 
 #endif

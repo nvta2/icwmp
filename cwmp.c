@@ -300,37 +300,37 @@ int run_session_end_func ()
 
 	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing nslookupdiagnostic: end session request");
-		cwmp_nslookup_diagnostic();
+		cwmp_nslookup_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_TRACEROUTE_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing traceroutediagnostic: end session request");
-		cwmp_traceroute_diagnostic();
+		cwmp_traceroute_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_UDPECHO_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing udpechodiagnostic: end session request");
-		cwmp_udp_echo_diagnostic();
+		cwmp_udp_echo_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_SERVERSELECTION_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing serverselectiondiagnostic: end session request");
-		cwmp_serverselection_diagnostic();
+		cwmp_serverselection_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_IPPING_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing ippingdiagnostic: end session request");
-		cwmp_ip_ping_diagnostic();
+		cwmp_ip_ping_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing download diagnostic: end session request");
-		cwmp_start_diagnostic(DOWNLOAD_DIAGNOSTIC);
+		cwmp_download_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_UPLOAD_DIAGNOSTIC) {
 		CWMP_LOG (INFO,"Executing upload diagnostic: end session request");
-		cwmp_start_diagnostic(UPLOAD_DIAGNOSTIC);
+		cwmp_upload_diagnostics();
 	}
 
 	if (end_session_flag & END_SESSION_REBOOT) {

@@ -7,7 +7,7 @@
  *	Copyright (C) 2019 iopsys Software Solutions AB
  *	  Author Imen Bhiri <imen.bhiri@pivasoftware.com>
  *	  Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
- *
+ *	  Author: Omar Kallel <omar.kallel@pivasoftware.com>
  */
 #include <stdarg.h>
 #include <unistd.h>
@@ -23,154 +23,200 @@ struct diagnostic_input
 {
 	char *input_name;
 	char *parameter_name;
+	char *value;
 };
-
-int get_diagnostic_value_by_uci(char *package, char* section, char* option, char **value);
-int get_dm_ip_iface_object_by_uci_iface(char *package, char* section, char* option, char **dmiface);
 
 #define DOWNLOAD_NUMBER_INPUTS 7
 #define UPLOAD_NUMBER_INPUTS 8
+#define IPPING_NUMBER_INPUTS 7
+#define SESERVERSELECT_NUMBER_INPUTS 6
+#define TRACEROUTE_NUMBER_INPUTS 8
+#define UDPECHO_NUMBER_INPUTS 9
+#define NSLKUP_NUMBER_INPUTS 5
 
-#define DOWNLOAD_DIAG_OP_NAME "DownloadDiagnostics"
-#define UPLOAD_DIAG_OP_NAME "UploadDiagnostics"
+#define IP_DIAGNOSTICS_OBJECT "Device.IP.Diagnostics."
+#define DNS_DIAGNOSTICS_OBJECT "Device.DNS.Diagnostics."
+
+#define DOWNLOAD_DIAG_ACT_NAME "DownloadDiagnostics"
+#define UPLOAD_DIAG_ACT_NAME "UploadDiagnostics"
+#define IPPING_DIAG_ACT_NAME "IPPing"
+#define ServerSelection_DIAG_ACT_NAME "ServerSelectionDiagnostics"
+#define TraceRoute_DIAG_ACT_NAME "TraceRoute"
+#define UDPEcho_DIAG_ACT_NAME "UDPEchoDiagnostics"
+#define NSLookup_DIAG_ACT_NAME "NSLookupDiagnostics"
 
 struct diagnostic_input download_diagnostics_array[DOWNLOAD_NUMBER_INPUTS]={
-		{"Interface","Device.IP.Diagnostics.DownloadDiagnostics.Interface"},
-		{"DownloadURL","Device.IP.Diagnostics.DownloadDiagnostics.DownloadURL"},
-		{"DSCP","Device.IP.Diagnostics.DownloadDiagnostics.DSCP"},
-		{"EthernetPriority","Device.IP.Diagnostics.DownloadDiagnostics.EthernetPriority"},
-		{"ProtocolVersion","Device.IP.Diagnostics.DownloadDiagnostics.ProtocolVersion"},
-		{"NumberOfConnections","Device.IP.Diagnostics.DownloadDiagnostics.NumberOfConnections"},
-		{"EnablePerConnectionResults","Device.IP.Diagnostics.DownloadDiagnostics.EnablePerConnection"}
+		{"Interface","Device.IP.Diagnostics.DownloadDiagnostics.Interface",NULL},
+		{"DownloadURL","Device.IP.Diagnostics.DownloadDiagnostics.DownloadURL",NULL},
+		{"DSCP","Device.IP.Diagnostics.DownloadDiagnostics.DSCP",NULL},
+		{"EthernetPriority","Device.IP.Diagnostics.DownloadDiagnostics.EthernetPriority",NULL},
+		{"ProtocolVersion","Device.IP.Diagnostics.DownloadDiagnostics.ProtocolVersion",NULL},
+		{"NumberOfConnections","Device.IP.Diagnostics.DownloadDiagnostics.NumberOfConnections",NULL},
+		{"EnablePerConnectionResults","Device.IP.Diagnostics.DownloadDiagnostics.EnablePerConnection",NULL},
+		//{"TimeBasedTestDuration","Device.IP.Diagnostics.DownloadDiagnostics.TimeBasedTestDuration",NULL},
+		//{"TimeBasedTestMeasurementInterval","Device.IP.Diagnostics.DownloadDiagnostics.TimeBasedTestMeasurementInterval",NULL},
+		//{"TimeBasedTestMeasurementOffset","Device.IP.Diagnostics.DownloadDiagnostics.TimeBasedTestMeasurementOffset",NULL}
 };
 
 struct diagnostic_input upload_diagnostics_array[UPLOAD_NUMBER_INPUTS]={
-		{"Interface","Device.IP.Diagnostics.UploadDiagnostics.Interface"},
-		{"UploadURL","Device.IP.Diagnostics.UploadDiagnostics.UploadURL"},
-		{"TestFileLength","Device.IP.Diagnostics.UploadDiagnostics.TestFileLength"},
-		{"DSCP","Device.IP.Diagnostics.UploadDiagnostics.DSCP"},
-		{"EthernetPriority","Device.IP.Diagnostics.UploadDiagnostics.EthernetPriority"},
-		{"ProtocolVersion","Device.IP.Diagnostics.UploadDiagnostics.ProtocolVersion"},
-		{"NumberOfConnections","Device.IP.Diagnostics.UploadDiagnostics.NumberOfConnections"},
-		{"EnablePerConnectionResults","Device.IP.Diagnostics.UploadDiagnostics.EnablePerConnection"}
+		{"Interface","Device.IP.Diagnostics.UploadDiagnostics.Interface",NULL},
+		{"UploadURL","Device.IP.Diagnostics.UploadDiagnostics.UploadURL",NULL},
+		{"TestFileLength","Device.IP.Diagnostics.UploadDiagnostics.TestFileLength",NULL},
+		{"DSCP","Device.IP.Diagnostics.UploadDiagnostics.DSCP",NULL},
+		{"EthernetPriority","Device.IP.Diagnostics.UploadDiagnostics.EthernetPriority",NULL},
+		{"ProtocolVersion","Device.IP.Diagnostics.UploadDiagnostics.ProtocolVersion",NULL},
+		{"NumberOfConnections","Device.IP.Diagnostics.UploadDiagnostics.NumberOfConnections",NULL},
+		{"EnablePerConnectionResults","Device.IP.Diagnostics.UploadDiagnostics.EnablePerConnection",NULL},
+		//{"TimeBasedTestDuration","Device.IP.Diagnostics.UploadDiagnostics.TimeBasedTestDuration",NULL},
+		//{"TimeBasedTestMeasurementInterval","Device.IP.Diagnostics.UploadDiagnostics.TimeBasedTestMeasurementInterval",NULL},
+		//{"TimeBasedTestMeasurementOffset","Device.IP.Diagnostics.UploadDiagnostics.TimeBasedTestMeasurementOffset",NULL}
 };
 
-static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
+struct diagnostic_input ipping_diagnostics_array[IPPING_NUMBER_INPUTS]={
+		{"Host","Device.IP.Diagnostics.IPPing.Host",NULL},
+		{"NumberOfRepetitions","Device.IP.Diagnostics.IPPing.NumberOfRepetitions",NULL},
+		{"Timeout","Device.IP.Diagnostics.IPPing.Timeout",NULL},
+		{"Interface","Device.IP.Diagnostics.IPPing.Interface",NULL},
+		{"ProtocolVersion","Device.IP.Diagnostics.IPPing.ProtocolVersion",NULL},
+		{"DSCP","Device.IP.Diagnostics.IPPing.DSCP",NULL},
+		{"DataBlockSize","Device.IP.Diagnostics.IPPing.DataBlockSize",NULL}
+};
+struct diagnostic_input seserverselection_diagnostics_array[SESERVERSELECT_NUMBER_INPUTS]={
+		{"Interface","Device.IP.Diagnostics.ServerSelectionDiagnostics.Interface",NULL},
+		{"Protocol","Device.IP.Diagnostics.ServerSelectionDiagnostics.Protocol",NULL},
+		{"HostList","Device.IP.Diagnostics.ServerSelectionDiagnostics.HostList",NULL},
+		{"ProtocolVersion","Device.IP.Diagnostics.ServerSelectionDiagnostics.ProtocolVersion",NULL},
+		{"NumberOfRepetitions","Device.IP.Diagnostics.ServerSelectionDiagnostics.NumberOfRepetitions",NULL},
+		{"Timeout","Device.IP.Diagnostics.ServerSelectionDiagnostics.Timeout",NULL}
+};
+
+struct diagnostic_input traceroute_diagnostics_array[TRACEROUTE_NUMBER_INPUTS]={
+		{"Interface","Device.IP.Diagnostics.TraceRoute.Interface",NULL},
+		{"Host","Device.IP.Diagnostics.TraceRoute.Host",NULL},
+		{"NumberOfTries","Device.IP.Diagnostics.TraceRoute.NumberOfTries",NULL},
+		{"ProtocolVersion","Device.IP.Diagnostics.TraceRoute.ProtocolVersion",NULL},
+		{"Timeout","Device.IP.Diagnostics.TraceRoute.Timeout",NULL},
+		{"DataBlockSize","Device.IP.Diagnostics.TraceRoute.DataBlockSize",NULL},
+		{"DSCP","Device.IP.Diagnostics.TraceRoute.DSCP",NULL},
+		{"MaxHopCount","Device.IP.Diagnostics.TraceRoute.MaxHopCount",NULL}
+};
+
+struct diagnostic_input udpecho_diagnostics_array[UDPECHO_NUMBER_INPUTS]={
+		{"Interface","Device.IP.Diagnostics.UDPEchoDiagnostics.Interface",NULL},
+		{"Host","Device.IP.Diagnostics.UDPEchoDiagnostics.Host",NULL},
+		{"Port","Device.IP.Diagnostics.UDPEchoDiagnostics.Port",NULL},
+		{"NumberOfRepetitions","Device.IP.Diagnostics.UDPEchoDiagnostics.NumberOfRepetitions",NULL},
+		{"Timeout","Device.IP.Diagnostics.UDPEchoDiagnostics.Timeout",NULL},
+		{"DataBlockSize","Device.IP.Diagnostics.UDPEchoDiagnostics.DataBlockSize",NULL},
+		{"DSCP","Device.IP.Diagnostics.UDPEchoDiagnostics.DSCP",NULL},
+		{"InterTransmissionTime","Device.IP.Diagnostics.UDPEchoDiagnostics.InterTransmissionTime",NULL},
+		{"ProtocolVersion","Device.IP.Diagnostics.UDPEchoDiagnostics.ProtocolVersion",NULL},
+		//{"EnableIndividualPacketResults","Device.IP.Diagnostics.UDPEchoDiagnostics.EnableIndividualPacketResults",NULL}
+};
+
+struct diagnostic_input nslookup_diagnostics_array[NSLKUP_NUMBER_INPUTS]={
+		{"Interface","Device.DNS.Diagnostics.NSLookupDiagnostics.Interface",NULL},
+		{"HostName","Device.DNS.Diagnostics.NSLookupDiagnostics.HostName",NULL},
+		{"DNSServer","Device.DNS.Diagnostics.NSLookupDiagnostics.DNSServer",NULL},
+		{"NumberOfRepetitions","Device.DNS.Diagnostics.NSLookupDiagnostics.NumberOfRepetitions",NULL},
+		{"Timeout","Device.DNS.Diagnostics.NSLookupDiagnostics.Timeout",NULL}
+};
+
+static bool set_specific_diagnostic_object_parameter_structure_value(struct diagnostic_input (*diagnostics_array)[], int number_inputs, char* parameter, char *value)
 {
-	va_list arg;
-	int i, pid;
-	char *argv[n+2];
-	static char sargv[4][128];
-
-	argv[0] = cmd;
-
-	va_start(arg, n);
-	for (i = 0; i < n; i++) {
-		strcpy(sargv[i], va_arg(arg, char*));
-		argv[i+1] = sargv[i];
+	int i;
+	for (i=0; i<number_inputs; i++)
+	{
+		if(strcmp((*diagnostics_array)[i].parameter_name,parameter) == 0){
+			FREE((*diagnostics_array)[i].value);
+			(*diagnostics_array)[i].value = strdup(value);
+			return true;
+		}
 	}
-	va_end(arg);
-
-	argv[n+1] = NULL;
-
-	if ((pid = fork()) == -1)
-		return -1;
-
-	if (pid == 0) {
-		execvp(argv[0], (char **) argv);
-		exit(ESRCH);
-	} else if (pid < 0)
-		return -1;
-
-	return 0;
+	return false;
 }
 
-int get_diagnostic_value_by_uci(char *package, char* section, char* option, char **value)
+bool set_diagnostic_parameter_structure_value(char *parameter_name, char* value) //returns false in case the parameter is not among diagnostics parameters
 {
-	if(cwmp_uci_get_option_value_string(package, section, option, UCI_BBFDM_CONFIG, value) != UCI_OK)
-		return -1;
-	return 0;
+
+	return set_specific_diagnostic_object_parameter_structure_value(&download_diagnostics_array, DOWNLOAD_NUMBER_INPUTS, parameter_name, value)
+		|| set_specific_diagnostic_object_parameter_structure_value(&upload_diagnostics_array, UPLOAD_NUMBER_INPUTS, parameter_name, value)
+		|| set_specific_diagnostic_object_parameter_structure_value(&ipping_diagnostics_array, IPPING_NUMBER_INPUTS, parameter_name, value)
+		|| set_specific_diagnostic_object_parameter_structure_value(&nslookup_diagnostics_array, NSLKUP_NUMBER_INPUTS, parameter_name, value)
+		|| set_specific_diagnostic_object_parameter_structure_value(&traceroute_diagnostics_array, TRACEROUTE_NUMBER_INPUTS, parameter_name, value)
+		|| set_specific_diagnostic_object_parameter_structure_value(&udpecho_diagnostics_array, UDPECHO_NUMBER_INPUTS, parameter_name, value)
+		|| set_specific_diagnostic_object_parameter_structure_value(&seserverselection_diagnostics_array, SESERVERSELECT_NUMBER_INPUTS, parameter_name, value);
 }
 
-int get_dm_ip_iface_object_by_uci_iface(char *package, char* section, char* option, char **dmiface)
+static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name, struct diagnostic_input diagnostics_array[], int number_inputs)
 {
+	int e, i;
 
-	struct uci_section *s = NULL;
-	char *iface = NULL, *ip_inst = NULL;
-
-	if(cwmp_uci_get_option_value_string(package, section, option, UCI_BBFDM_CONFIG, &iface) != UCI_OK)
-		return -1;
-	cwmp_uci_init(UCI_BBFDM_CONFIG);
-	cwmp_uci_path_foreach_option_eq("dmmap_network", "interface", "section_name", iface, s) {
-		cwmp_uci_get_value_by_section_string(s, "ip_int_instance", &ip_inst);
-		asprintf(dmiface, "Device.IP.Interface.%s.", ip_inst);
-		break;
-	}
-	cwmp_uci_exit();
-	return 0;
-}
-
-int cwmp_start_diagnostic(int diagnostic_type)
-{
-	int e, i, number_inputs;
-	char *operate_name = NULL;
-	json_object *parameters = NULL, *param_obj = NULL, *value_obj = NULL;
-
-	struct diagnostic_input *diagnostics_array;
-	if (diagnostic_type == DOWNLOAD_DIAGNOSTIC) {
-		diagnostics_array = download_diagnostics_array;
-		number_inputs = DOWNLOAD_NUMBER_INPUTS;
-		operate_name = strdup(DOWNLOAD_DIAG_OP_NAME);
-	} else {
-		diagnostics_array = upload_diagnostics_array;
-		number_inputs = UPLOAD_NUMBER_INPUTS;
-		operate_name = strdup(UPLOAD_DIAG_OP_NAME);
-	}
 	LIST_HEAD(diagnostics_param_value_list);
 	for (i=0; i<number_inputs; i++) {
-		if (cwmp_get_parameter_values(diagnostics_array[i].parameter_name, &parameters) != NULL)
+		if (diagnostics_array[i].value == NULL || diagnostics_array[i].value[0] == '\0')
 			continue;
-		param_obj = json_object_array_get_idx(parameters, 0);
-		json_object_object_get_ex(param_obj, "value", &value_obj);
-		cwmp_add_list_param_value(diagnostics_array[i].input_name, (char*)json_object_get_string(value_obj), &diagnostics_param_value_list);
-		FREE_JSON(value_obj);
-		FREE_JSON(param_obj);
+		cwmp_add_list_param_value(diagnostics_array[i].input_name, diagnostics_array[i].value, &diagnostics_param_value_list);
 	}
 
-	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{{"path", {.str_val="Device.IP.Diagnostics."}, UBUS_String},{"action", {.str_val=operate_name}, UBUS_String},{"input", {.param_value_list=&diagnostics_param_value_list}, UBUS_Obj_Obj}}, 3, &old_global_json_obj);
+	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{{"path", {.str_val=diagnostics_object}, UBUS_String},{"action", {.str_val=action_name}, UBUS_String},{"input", {.param_value_list=&diagnostics_param_value_list}, UBUS_Obj_Obj}}, 3, &old_global_json_obj);
 	if(e)
 		return -1;
-	cwmp_root_cause_event_ipdiagnostic();
-
 	return 0;
 }
 
-int cwmp_ip_ping_diagnostic()
+int cwmp_download_diagnostics()
 {
-	icwmpd_cmd_no_wait("/bin/sh", 3, IPPING_PATH, "run", "cwmp");
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, DOWNLOAD_DIAG_ACT_NAME, download_diagnostics_array, DOWNLOAD_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
+	return 0;
+}
+
+int cwmp_upload_diagnostics()
+{
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UPLOAD_DIAG_ACT_NAME, upload_diagnostics_array, UPLOAD_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
+	return 0;
+}
+
+int cwmp_ip_ping_diagnostics()
+{
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, IPPING_DIAG_ACT_NAME, ipping_diagnostics_array, IPPING_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
     return 0;
 }
 
-int cwmp_nslookup_diagnostic()
+int cwmp_nslookup_diagnostics()
 {
-	icwmpd_cmd_no_wait("/bin/sh", 3, NSLOOKUP_PATH, "run", "cwmp");
+	if (cwmp_diagnostics_operate(DNS_DIAGNOSTICS_OBJECT, NSLookup_DIAG_ACT_NAME, nslookup_diagnostics_array, NSLKUP_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
     return 0;
 }
 
-int cwmp_traceroute_diagnostic()
+int cwmp_traceroute_diagnostics()
 {
-	icwmpd_cmd_no_wait("/bin/sh", 3, TRACEROUTE_PATH, "run", "cwmp");
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, TraceRoute_DIAG_ACT_NAME, traceroute_diagnostics_array, TRACEROUTE_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
     return 0;
 }
 
-int cwmp_udp_echo_diagnostic()
+int cwmp_udp_echo_diagnostics()
 {
-	icwmpd_cmd_no_wait("/bin/sh", 3, UDPECHO_PATH, "run", "cwmp");
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UDPEcho_DIAG_ACT_NAME, udpecho_diagnostics_array, UDPECHO_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
     return 0;
 }
 
-int cwmp_serverselection_diagnostic()
+int cwmp_serverselection_diagnostics()
 {
-	icwmpd_cmd_no_wait("/bin/sh", 3, SERVERSELECTION_PATH, "run", "cwmp");
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, ServerSelection_DIAG_ACT_NAME, seserverselection_diagnostics_array, SESERVERSELECT_NUMBER_INPUTS) == -1)
+		return -1;
+	cwmp_root_cause_event_ipdiagnostic();
     return 0;
 }
