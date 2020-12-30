@@ -10,7 +10,8 @@
  *
  */
 
-#include <pthread.h>
+#include <sys/stat.h>
+#include <stdarg.h>
 #include "common.h"
 #include "log.h"
 

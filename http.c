@@ -13,9 +13,13 @@
 
 #include <curl/curl.h>
 #include <pthread.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include "external.h"
 #include "log.h"
-/*#include "xml.h"*/
 #include "config.h"
 #include "event.h"
 #include "http.h"
@@ -125,8 +129,8 @@ http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in)
 int
 http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_in)
 {
-	 unsigned char buf[sizeof(struct in6_addr)];
-	 int tmp = 0;
+	unsigned char buf[sizeof(struct in6_addr)];
+	int tmp = 0;
 	CURLcode res;
 	long http_code = 0;
 	static char ip_acs[128] = {0};
@@ -172,22 +176,7 @@ http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len,char **msg_i
 	}
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_c.header_list);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, msg_out);
-	if (msg_out)/*#include <stdint.h>
-
-#include <libubox/uloop.h>
-*/
-/*#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <uci.h>
-#include <libubox/uloop.h>
-#include <libubox/usock.h>*/
+	if (msg_out)
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)  msg_out_len);
 	else
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);

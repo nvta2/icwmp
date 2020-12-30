@@ -10,13 +10,14 @@
  */
 #ifndef __CCOMMON_H
 #define __CCOMMON_H
-#include <libbbfdm/dmdiagnostics.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <libubox/list.h>
+#include <sys/time.h>
+#include <pthread.h>
 
 #ifndef CWMP_VERSION
 #define CWMP_VERSION "3.0.0"
@@ -189,7 +190,7 @@ struct cwmp_dm_parameter {
 	char *type;
 };
 
-/*enum amd_version_enum {
+enum amd_version_enum {
 	AMD_1 = 1,
 	AMD_2,
 	AMD_3,
@@ -200,7 +201,7 @@ struct cwmp_dm_parameter {
 enum instance_mode {
 	INSTANCE_MODE_NUMBER,
 	INSTANCE_MODE_ALIAS
-};*/
+};
 
 struct cwmp_namespaces
 {

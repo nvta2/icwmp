@@ -11,6 +11,7 @@
  */
 #ifndef _FREECWMP_UBUS_H__
 #define _FREECWMP_UBUS_H__
+#include <json-c/json.h>
 #include "common.h"
 #define ARRAY_MAX 8
 

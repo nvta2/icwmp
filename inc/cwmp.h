@@ -16,6 +16,9 @@
 #include <pthread.h>
 #include <libubox/uloop.h>
 #include <sys/file.h>
+#include <math.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "common.h"
 #include "session.h"
 #include "xml.h"

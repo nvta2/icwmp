@@ -8,8 +8,11 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
+#include <unistd.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
+#include <netdb.h>
+#include <libubox/list.h>
 #include "notifications.h"
 
 LIST_HEAD(list_value_change);
@@ -278,7 +281,7 @@ static void send_udp_message(struct addrinfo *servaddr, char *msg)
 	}
 }
 
-void del_list_lw_notify(struct dm_parameter *dm_parameter)
+void del_list_lw_notify(struct cwmp_dm_parameter *dm_parameter)
 {
 
 	list_del(&dm_parameter->list);
@@ -288,9 +291,9 @@ void del_list_lw_notify(struct dm_parameter *dm_parameter)
 
 static void free_all_list_lw_notify()
 {
-	struct dm_parameter *dm_parameter;
+	struct cwmp_dm_parameter *dm_parameter;
 	while (list_lw_value_change.next != &list_lw_value_change) {
-		dm_parameter = list_entry(list_lw_value_change.next, struct dm_parameter, list);
+		dm_parameter = list_entry(list_lw_value_change.next, struct cwmp_dm_parameter, list);
 		del_list_lw_notify(dm_parameter);
 	}
 }

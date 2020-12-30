@@ -10,6 +10,8 @@
  *
  */
 
+#include <unistd.h>
+#include <fcntl.h>
 #include "backupSession.h"
 #include "xml.h"
 #include "log.h"

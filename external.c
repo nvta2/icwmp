@@ -12,6 +12,9 @@
 
 #include <poll.h>
 #include <json-c/json.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 #include "external.h"
 #include "xml.h"

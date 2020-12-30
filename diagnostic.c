@@ -9,7 +9,8 @@
  *	  Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
  *
  */
-
+#include <stdarg.h>
+#include <unistd.h>
 #include "common.h"
 #include "diagnostic.h"
 #include "config.h"
@@ -21,12 +22,8 @@
 struct diagnostic_input
 {
 	char *input_name;
-	char *package;
-	char *section;
-	char *option;
-	int (*get_input_value)(char *package, char* section, char* option, char **value);
+	char *parameter_name;
 };
-
 
 int get_diagnostic_value_by_uci(char *package, char* section, char* option, char **value);
 int get_dm_ip_iface_object_by_uci_iface(char *package, char* section, char* option, char **dmiface);
@@ -38,24 +35,24 @@ int get_dm_ip_iface_object_by_uci_iface(char *package, char* section, char* opti
 #define UPLOAD_DIAG_OP_NAME "UploadDiagnostics"
 
 struct diagnostic_input download_diagnostics_array[DOWNLOAD_NUMBER_INPUTS]={
-		{"Interface","dmmap_diagnostics","download","interface",get_dm_ip_iface_object_by_uci_iface},
-		{"DownloadURL","dmmap_diagnostics","download","url",get_diagnostic_value_by_uci},
-		{"DSCP","dmmap_diagnostics","download","DSCP",get_diagnostic_value_by_uci},
-		{"EthernetPriority","dmmap_diagnostics","download","ethernetpriority",get_diagnostic_value_by_uci},
-		{"ProtocolVersion","dmmap_diagnostics","download","ProtocolVersion",get_diagnostic_value_by_uci},
-		{"NumberOfConnections","dmmap_diagnostics","download","NumberOfConnections",get_diagnostic_value_by_uci},
-		{"EnablePerConnectionResults","dmmap_diagnostics","download","EnablePerConnection",get_diagnostic_value_by_uci}
+		{"Interface","Device.IP.Diagnostics.DownloadDiagnostics.Interface"},
+		{"DownloadURL","Device.IP.Diagnostics.DownloadDiagnostics.DownloadURL"},
+		{"DSCP","Device.IP.Diagnostics.DownloadDiagnostics.DSCP"},
+		{"EthernetPriority","Device.IP.Diagnostics.DownloadDiagnostics.EthernetPriority"},
+		{"ProtocolVersion","Device.IP.Diagnostics.DownloadDiagnostics.ProtocolVersion"},
+		{"NumberOfConnections","Device.IP.Diagnostics.DownloadDiagnostics.NumberOfConnections"},
+		{"EnablePerConnectionResults","Device.IP.Diagnostics.DownloadDiagnostics.EnablePerConnection"}
 };
 
 struct diagnostic_input upload_diagnostics_array[UPLOAD_NUMBER_INPUTS]={
-		{"Interface","dmmap_diagnostics","upload","interface",get_dm_ip_iface_object_by_uci_iface},
-		{"UploadURL","dmmap_diagnostics","upload","url",get_diagnostic_value_by_uci},
-		{"TestFileLength","dmmap_diagnostics","upload","TestFileLength",get_diagnostic_value_by_uci},
-		{"DSCP","dmmap_diagnostics","upload","DSCP",get_diagnostic_value_by_uci},
-		{"EthernetPriority","dmmap_diagnostics","upload","ethernetpriority",get_diagnostic_value_by_uci},
-		{"ProtocolVersion","dmmap_diagnostics","upload","ProtocolVersion",get_diagnostic_value_by_uci},
-		{"NumberOfConnections","dmmap_diagnostics","upload","NumberOfConnections",get_diagnostic_value_by_uci},
-		{"EnablePerConnectionResults","dmmap_diagnostics","upload","EnablePerConnection",get_diagnostic_value_by_uci}
+		{"Interface","Device.IP.Diagnostics.UploadDiagnostics.Interface"},
+		{"UploadURL","Device.IP.Diagnostics.UploadDiagnostics.UploadURL"},
+		{"TestFileLength","Device.IP.Diagnostics.UploadDiagnostics.TestFileLength"},
+		{"DSCP","Device.IP.Diagnostics.UploadDiagnostics.DSCP"},
+		{"EthernetPriority","Device.IP.Diagnostics.UploadDiagnostics.EthernetPriority"},
+		{"ProtocolVersion","Device.IP.Diagnostics.UploadDiagnostics.ProtocolVersion"},
+		{"NumberOfConnections","Device.IP.Diagnostics.UploadDiagnostics.NumberOfConnections"},
+		{"EnablePerConnectionResults","Device.IP.Diagnostics.UploadDiagnostics.EnablePerConnection"}
 };
 
 static int icwmpd_cmd_no_wait(char *cmd, int n, ...)
@@ -116,7 +113,8 @@ int get_dm_ip_iface_object_by_uci_iface(char *package, char* section, char* opti
 int cwmp_start_diagnostic(int diagnostic_type)
 {
 	int e, i, number_inputs;
-	char *value = NULL, *operate_name = NULL;
+	char *operate_name = NULL;
+	json_object *parameters = NULL, *param_obj = NULL, *value_obj = NULL;
 
 	struct diagnostic_input *diagnostics_array;
 	if (diagnostic_type == DOWNLOAD_DIAGNOSTIC) {
@@ -130,10 +128,13 @@ int cwmp_start_diagnostic(int diagnostic_type)
 	}
 	LIST_HEAD(diagnostics_param_value_list);
 	for (i=0; i<number_inputs; i++) {
-		if (diagnostics_array[i].get_input_value(diagnostics_array[i].package, diagnostics_array[i].section, diagnostics_array[i].option, &value) != 0)
+		if (cwmp_get_parameter_values(diagnostics_array[i].parameter_name, &parameters) != NULL)
 			continue;
-		cwmp_add_list_param_value(diagnostics_array[i].input_name, value, &diagnostics_param_value_list);
-		FREE(value);
+		param_obj = json_object_array_get_idx(parameters, 0);
+		json_object_object_get_ex(param_obj, "value", &value_obj);
+		cwmp_add_list_param_value(diagnostics_array[i].input_name, (char*)json_object_get_string(value_obj), &diagnostics_param_value_list);
+		FREE_JSON(value_obj);
+		FREE_JSON(param_obj);
 	}
 
 	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{{"path", {.str_val="Device.IP.Diagnostics."}, UBUS_String},{"action", {.str_val=operate_name}, UBUS_String},{"input", {.param_value_list=&diagnostics_param_value_list}, UBUS_Obj_Obj}}, 3, &old_global_json_obj);
