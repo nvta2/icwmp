@@ -20,11 +20,7 @@ struct cwmp_json_arg {
 };
 
 #define CWMP_JSON_ARGS (struct cwmp_json_arg[])
-#define FREE_JSON(jobj)                \
-	if (jobj) {                    \
-		json_object_put(jobj); \
-		jobj = NULL;           \
-	}
+#define FREE_JSON(jobj) if (jobj) { json_object_put(jobj); jobj = NULL;}
 int cwmp_handle_downloadFault(char *msg);
 int cwmp_handle_uploadFault(char *msg);
 int cwmp_handle_dustate_changeFault(char *msg);
@@ -37,12 +33,12 @@ int cwmp_handle_setParamAttributes(char *msg);
 int cwmp_handle_addObject(char *msg);
 int cwmp_handle_delObject(char *msg);
 void cwmp_json_fprintf(FILE *fp, int argc, struct cwmp_json_arg cwmp_arg[]);
-void cwmp_json_get_string(json_object *obj, char *key, char **value);
+void cwmp_json_get_string(json_object *obj, char* key, char** value);
 void cwmp_json_obj_init(char *str, json_object **obj);
 void cwmp_json_obj_clean(json_object **obj);
 
-#define foreach_jsonobj_in_array(param_obj, parameters)             \
+#define foreach_jsonobj_in_array(param_obj, parameters) \
 	int k, array_length = json_object_array_length(parameters); \
-	for (k = 0, param_obj = json_object_array_get_idx(parameters, 0); k < array_length; k++, param_obj = json_object_array_get_idx(parameters, k))
+	for (k=0, param_obj = json_object_array_get_idx(parameters, 0); k< array_length; k++, param_obj = json_object_array_get_idx(parameters, k)) \
 
 #endif /* _JSHN_H__ */

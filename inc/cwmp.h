@@ -32,5 +32,5 @@
 #include "notifications.h"
 #include "cwmp_uci.h"
 
-int cwmp_rpc_cpe_handle_message(struct session *session, struct rpc *rpc_cpe);
+int cwmp_rpc_cpe_handle_message (struct session *session, struct rpc *rpc_cpe);
 #endif /* _CWMP_H__ */

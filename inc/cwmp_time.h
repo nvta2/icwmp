@@ -12,7 +12,7 @@
 #ifndef CWMP_TIME_H_
 #define CWMP_TIME_H_
 
-char *mix_get_time(void);
-char *mix_get_time_of(time_t t_time);
+char * mix_get_time(void);
+char * mix_get_time_of(time_t t_time);
 
 #endif /* SRC_INC_CWMP_TIME_H_ */

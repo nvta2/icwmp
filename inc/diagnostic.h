@@ -12,7 +12,7 @@
 #ifndef __DIAGNOSTIC__H
 #define __DIAGNOSTIC__H
 
-bool set_diagnostic_parameter_structure_value(char *parameter_name, char *value);
+bool set_diagnostic_parameter_structure_value(char *parameter_name, char* value);
 
 int cwmp_download_diagnostics();
 int cwmp_upload_diagnostics();

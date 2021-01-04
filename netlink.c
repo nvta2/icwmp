@@ -37,8 +37,8 @@
 
 static int itfcmp(char *itf1, char *itf2);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
-static struct uloop_fd netlink_event = {.cb = netlink_new_msg };
-static struct uloop_fd netlink_event_v6 = {.cb = netlink_new_msg };
+static struct uloop_fd netlink_event = { .cb = netlink_new_msg };
+static struct uloop_fd netlink_event_v6 = { .cb = netlink_new_msg };
 
 static int itfcmp(char *itf1, char *itf2)
 {
@@ -48,45 +48,45 @@ static int itfcmp(char *itf1, char *itf2)
 	char *buf1 = NULL;
 	char *buf2 = NULL;
 
-	if (itf1[0] == '\0')
+	if(itf1[0] == '\0')
 		goto end;
 	str = strchr(itf1, '.');
-	if (str == NULL)
-		goto end;
+	if(str == NULL)
+	    goto end;
 	index = (int)(str - itf1);
-	if (!index)
+	if(!index)
 		goto end;
 	buf1 = malloc(index);
 	strncpy(buf1, itf1, index);
-	if (!buf1)
+	if(!buf1)
 		goto end;
 	buf1[index] = '\0';
-	if (itf2[0] == '\0')
+	if(itf2[0] == '\0')
 		goto end;
 	str = strchr(itf2, '.');
-	if (str == NULL)
-		goto end;
+	if(str == NULL)
+	    goto end;
 	index = (int)(str - itf2);
-	if (!index)
+	if(!index)
 		goto end;
 	buf2 = malloc(index);
-	if (!buf2)
+	if(!buf2)
 		goto end;
 	buf2[index] = '\0';
 	strncpy(buf2, itf1, index);
-	if (strcmp(buf1, buf2) == 0)
+	if(strcmp(buf1, buf2) == 0)
 		status = 0;
 end:
-	if (buf1)
+	if(buf1)
 		free(buf1);
-	if (buf2)
+	if(buf2)
 		free(buf2);
 	return status;
 }
 
 static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 {
-	struct ifaddrmsg *ifa = (struct ifaddrmsg *)NLMSG_DATA(nlh);
+	struct ifaddrmsg *ifa = (struct ifaddrmsg *) NLMSG_DATA(nlh);
 	struct rtattr *rth = IFA_RTA(ifa);
 	int rtl = IFA_PAYLOAD(nlh);
 	char if_name[IFNAMSIZ], if_addr[INET_ADDRSTRLEN];
@@ -96,14 +96,14 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 	memset(&if_addr, 0, sizeof(if_addr));
 
 	char pradd_v6[128];
-	if (ifa->ifa_family == AF_INET) { //CASE IPv4
+	if(ifa->ifa_family == AF_INET) { //CASE IPv4
 		while (rtl && RTA_OK(rth, rtl)) {
 			if (rth->rta_type != IFA_LOCAL) {
 				rth = RTA_NEXT(rth, rtl);
 				continue;
 			}
 
-			uint32_t addr = htonl(*(uint32_t *)RTA_DATA(rth));
+			uint32_t addr = htonl(* (uint32_t *)RTA_DATA(rth));
 			if (htonl(13) == 13) {
 				// running on big endian system
 			} else {
@@ -119,10 +119,10 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 
 			inet_ntop(AF_INET, &(addr), if_addr, INET_ADDRSTRLEN);
 
-			if (cwmp_main.conf.ip)
-				FREE(cwmp_main.conf.ip);
+			if (cwmp_main.conf.ip) FREE(cwmp_main.conf.ip);
 			cwmp_main.conf.ip = strdup(if_addr);
-			if (asprintf(&c, "cwmp.cpe.ip=%s", cwmp_main.conf.ip) != -1) {
+			if (asprintf(&c,"cwmp.cpe.ip=%s",cwmp_main.conf.ip) != -1)
+			{
 				uci_set_state_value(c);
 				free(c);
 			}
@@ -141,10 +141,10 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 				rth = RTA_NEXT(rth, rtl);
 				continue;
 			}
-			if (cwmp_main.conf.ipv6)
-				FREE(cwmp_main.conf.ipv6);
+			if (cwmp_main.conf.ipv6) FREE(cwmp_main.conf.ipv6);
 			cwmp_main.conf.ipv6 = strdup(pradd_v6);
-			if (asprintf(&c, "cwmp.cpe.ipv6=%s", cwmp_main.conf.ipv6) != -1) {
+			if (asprintf(&c,"cwmp.cpe.ipv6=%s",cwmp_main.conf.ipv6) != -1)
+			{
 				uci_set_state_value(c);
 				free(c);
 			}
@@ -164,7 +164,7 @@ static void netlink_new_msg(struct uloop_fd *ufd, unsigned events __attribute__(
 
 	nlh = (struct nlmsghdr *)buffer;
 	if ((int)(msg_size = recv(ufd->fd, nlh, BUFSIZ, 0)) == -1) {
-		CWMP_LOG(ERROR, "error receiving netlink message");
+		CWMP_LOG(ERROR,"error receiving netlink message");
 		return;
 	}
 
@@ -173,12 +173,12 @@ static void netlink_new_msg(struct uloop_fd *ufd, unsigned events __attribute__(
 		int req_len = len - sizeof(*nlh);
 
 		if (req_len < 0 || (size_t)len > msg_size) {
-			CWMP_LOG(ERROR, "error reading netlink message");
+			CWMP_LOG(ERROR,"error reading netlink message");
 			return;
 		}
 
 		if (!NLMSG_OK(nlh, msg_size)) {
-			CWMP_LOG(ERROR, "netlink message is not NLMSG_OK");
+			CWMP_LOG(ERROR,"netlink message is not NLMSG_OK");
 			return;
 		}
 
@@ -186,7 +186,7 @@ static void netlink_new_msg(struct uloop_fd *ufd, unsigned events __attribute__(
 			freecwmp_netlink_interface(nlh);
 
 		msg_size -= NLMSG_ALIGN(len);
-		nlh = (struct nlmsghdr *)((char *)nlh + NLMSG_ALIGN(len));
+		nlh = (struct nlmsghdr*)((char*)nlh + NLMSG_ALIGN(len));
 	}
 }
 
@@ -203,14 +203,14 @@ int netlink_init_v6(void)
 	memset(&req, 0, sizeof(req));
 
 	if ((sock[0] = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) == -1) {
-		CWMP_LOG(ERROR, "couldn't open NETLINK_ROUTE socket");
+		CWMP_LOG(ERROR,"couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
 
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV6_IFADDR;
 	if ((bind(sock[0], (struct sockaddr *)&addr, sizeof(addr))) == -1) {
-		CWMP_LOG(ERROR, "couldn't bind netlink socket");
+		CWMP_LOG(ERROR,"couldn't bind netlink socket");
 		return -1;
 	}
 
@@ -218,7 +218,7 @@ int netlink_init_v6(void)
 	uloop_fd_add(&netlink_event_v6, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
 	if ((sock[1] = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE)) == -1) {
-		CWMP_LOG(ERROR, "couldn't open NETLINK_ROUTE socket");
+		CWMP_LOG(ERROR,"couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
 
@@ -228,11 +228,11 @@ int netlink_init_v6(void)
 	req.msg.ifa_family = AF_INET6;
 
 	if ((send(sock[1], &req, req.hdr.nlmsg_len, 0)) == -1) {
-		CWMP_LOG(ERROR, "couldn't send netlink socket");
+		CWMP_LOG(ERROR,"couldn't send netlink socket");
 		return -1;
 	}
 
-	struct uloop_fd dummy_event = {.fd = sock[1] };
+	struct uloop_fd dummy_event = { .fd = sock[1] };
 	netlink_new_msg(&dummy_event, 0);
 
 	return 0;
@@ -251,14 +251,14 @@ int netlink_init(void)
 	memset(&req, 0, sizeof(req));
 
 	if ((sock[0] = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) == -1) {
-		CWMP_LOG(ERROR, "couldn't open NETLINK_ROUTE socket");
+		CWMP_LOG(ERROR,"couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
 
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV4_IFADDR;
 	if ((bind(sock[0], (struct sockaddr *)&addr, sizeof(addr))) == -1) {
-		CWMP_LOG(ERROR, "couldn't bind netlink socket");
+		CWMP_LOG(ERROR,"couldn't bind netlink socket");
 		return -1;
 	}
 
@@ -266,7 +266,7 @@ int netlink_init(void)
 	uloop_fd_add(&netlink_event, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
 	if ((sock[1] = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE)) == -1) {
-		CWMP_LOG(ERROR, "couldn't open NETLINK_ROUTE socket");
+		CWMP_LOG(ERROR,"couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
 
@@ -276,11 +276,11 @@ int netlink_init(void)
 	req.msg.ifa_family = AF_INET;
 
 	if ((send(sock[1], &req, req.hdr.nlmsg_len, 0)) == -1) {
-		CWMP_LOG(ERROR, "couldn't send netlink socket");
+		CWMP_LOG(ERROR,"couldn't send netlink socket");
 		return -1;
 	}
 
-	struct uloop_fd dummy_event = {.fd = sock[1] };
+	struct uloop_fd dummy_event = { .fd = sock[1] };
 	netlink_new_msg(&dummy_event, 0);
 
 	return 0;

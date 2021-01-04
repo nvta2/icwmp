@@ -18,8 +18,7 @@
 int ubus_init(struct cwmp *cwmp);
 void ubus_exit(void);
 
-enum cwmp_ubus_arg_type
-{
+enum cwmp_ubus_arg_type {
 	UBUS_String,
 	UBUS_Integer,
 	UBUS_Array_Obj,
@@ -35,12 +34,12 @@ struct key_value {
 };
 
 union array_membre {
-	char *str_value;
+	char* str_value;
 	struct key_value param_value;
 };
 
 union ubus_value {
-	char *str_val;
+	char* str_val;
 	int int_val;
 	bool bool_val;
 	union array_membre array_value[ARRAY_MAX];
