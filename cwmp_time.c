@@ -9,9 +9,9 @@
 
 #include <time.h>
 
-char local_time[32] = {0};
+char local_time[32] = { 0 };
 
-char * mix_get_time_of(time_t t_time)
+char *mix_get_time_of(time_t t_time)
 {
 	struct tm *t_tm;
 
@@ -19,9 +19,9 @@ char * mix_get_time_of(time_t t_time)
 	if (t_tm == NULL)
 		return NULL;
 
-	if(strftime(local_time, sizeof(local_time), "%FT%T%z", t_tm) == 0)
+	if (strftime(local_time, sizeof(local_time), "%FT%T%z", t_tm) == 0)
 		return NULL;
-	
+
 	local_time[25] = local_time[24];
 	local_time[24] = local_time[23];
 	local_time[22] = ':';
@@ -30,10 +30,10 @@ char * mix_get_time_of(time_t t_time)
 	return local_time;
 }
 
-char * mix_get_time(void)
+char *mix_get_time(void)
 {
-    time_t t_time;
-    t_time = time(NULL);
-    mix_get_time_of(t_time);
-    return local_time;
+	time_t t_time;
+	t_time = time(NULL);
+	mix_get_time_of(t_time);
+	return local_time;
 }

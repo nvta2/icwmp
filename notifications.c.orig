@@ -306,7 +306,17 @@ void cwmp_lwnotification()
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
 	message_compute_signature(msg_out, signature);
-	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
+<<<<<<< HEAD
+	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %d\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
+=======
+	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s",
+			"POST /HTTPS/1.1",
+			"HOST",	conf->lw_notification_hostname,
+			"Content-Type", "test/xml; charset=utf-8",
+			"Content-Lenght", strlen(msg_out),
+			"Signature",signature,
+			msg_out);
+>>>>>>> 3db1606... Fix compilation of x86 image
 
 	send_udp_message(servaddr, msg);
 	free_all_list_lw_notify();

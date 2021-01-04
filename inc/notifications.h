@@ -18,7 +18,8 @@
 #include "datamodel_interface.h"
 #include "xml.h"
 
-enum NOTIFICATION_STATUS {
+enum NOTIFICATION_STATUS
+{
 	NOTIF_NONE = 0,
 	NOTIF_PASSIVE = 1 << 1,
 	NOTIF_ACTIVE = 1 << 2,
@@ -35,7 +36,7 @@ extern pthread_mutex_t mutex_value_change;
 int cwmp_update_enabled_notify_file();
 int check_value_change(void);
 void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p);
-void *thread_periodic_check_notify (void *v);
+void *thread_periodic_check_notify(void *v);
 void send_active_value_change(void);
 void add_list_value_change(char *param_name, char *param_data, char *param_type);
 void add_lw_list_value_change(char *param_name, char *param_data, char *param_type);

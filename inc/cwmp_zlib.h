@@ -12,6 +12,6 @@
 #ifndef __ZLIB_H
 #define __ZLIB_H
 
-int zlib_compress (char *message, unsigned char **zmsg, int *zlen, int type);
+int zlib_compress(char *message, unsigned char **zmsg, int *zlen, int type);
 
 #endif

@@ -16,23 +16,17 @@
 #include <microxml.h>
 #include "common.h"
 
-#define RPC_NO_STATUS   -1
-#define RPC_QUEUE       0
-#define RPC_SEND        1
+#define RPC_NO_STATUS -1
+#define RPC_QUEUE 0
+#define RPC_SEND 1
 
-# define CWMP_BACKUP_SESSION "<cwmp></cwmp>"
+#define CWMP_BACKUP_SESSION "<cwmp></cwmp>"
 #define CWMP_BKP_FILE "/etc/icwmpd/.icwmpd_backup_session.xml"
-typedef enum backup_loading {
-    ALL,
-    ACS,
-    CR_IP,
-	CR_IPv6,
-    CR_PORT
-} backup_loading;
+typedef enum backup_loading { ALL, ACS, CR_IP, CR_IPv6, CR_PORT } backup_loading;
 
 struct search_keywords {
-	char		*name;
-	char		*value;
+	char *name;
+	char *value;
 };
 
 extern pthread_mutex_t mutex_backup_session;
@@ -45,10 +39,10 @@ void bkp_session_delete_event(int id, char *status);
 void bkp_session_simple_insert_in_parent(char *parent, char *child, char *value);
 void bkp_session_insert_parameter(mxml_node_t *b, char *name);
 void bkp_session_simple_insert(char *parent, char *child, char *value);
-void bkp_session_move_inform_to_inform_send ();
-void bkp_session_move_inform_to_inform_queue ();
-void bkp_session_insert_schedule_inform(time_t schedule_time,char *command_key);
-void bkp_session_delete_schedule_inform(time_t schedule_time,char *command_key);
+void bkp_session_move_inform_to_inform_send();
+void bkp_session_move_inform_to_inform_queue();
+void bkp_session_insert_schedule_inform(time_t schedule_time, char *command_key);
+void bkp_session_delete_schedule_inform(time_t schedule_time, char *command_key);
 void bkp_session_insert_download(struct download *pdownload);
 void bkp_session_delete_download(struct download *pdownload);
 void bkp_session_insert_upload(struct upload *pupload);
