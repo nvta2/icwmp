@@ -323,9 +323,9 @@ handle_action() {
 			if [ "$__arg7" != "" ];then
 				resp=$(curl --fail --capath $__arg7 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE --no-check-certificate "$__arg1" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
+				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $__arg1`
 			else
-				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE "$__arg1" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
+				resp=`curl --fail -4 -I -w %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $__arg1`
 			fi
 			if [ "$resp" == "404" ];then
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
@@ -345,9 +345,9 @@ handle_action() {
 			if [ "$__arg7" != "" ];then
 				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE --no-check-certificate "$url" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
+				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $url`
 			else
-				resp=`wget --server-response -O $ICWMP_DOWNLOAD_FILE "$url" --timeout=10 --tries=1 2>&1 | awk '/^  HTTP/{print $2}'`
+				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/nul $url`
 			fi
 
 			resp=`echo $resp| awk '{print $NF}'`
