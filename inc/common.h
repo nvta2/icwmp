@@ -27,66 +27,66 @@
 
 #define ARRAYSIZEOF(a) (sizeof(a) / sizeof((a)[0]))
 
-#define MAX_EVENTS							64
-#define MAX_INT32							2147483646
-#define MAX_INT_ID							MAX_INT32
-#define MIN_INT_ID							836464
-#define PERIOD_INFORM_MIN					60
-#define PERIOD_INFORM_DEFAULT				86400
-#define CONNECTION_REQUEST_RESTRICT_PERIOD	5
-#define CONNECTION_REQUEST_RESTRICT_REQUEST	50
-#define DEFAULT_CONNECTION_REQUEST_PORT		7547
-#define DEFAULT_NOTIFY_PERIOD				10
-#define DEFAULT_LWN_PORT                    7547
+#define MAX_EVENTS 64
+#define MAX_INT32 2147483646
+#define MAX_INT_ID MAX_INT32
+#define MIN_INT_ID 836464
+#define PERIOD_INFORM_MIN 60
+#define PERIOD_INFORM_DEFAULT 86400
+#define CONNECTION_REQUEST_RESTRICT_PERIOD 5
+#define CONNECTION_REQUEST_RESTRICT_REQUEST 50
+#define DEFAULT_CONNECTION_REQUEST_PORT 7547
+#define DEFAULT_NOTIFY_PERIOD 10
+#define DEFAULT_LWN_PORT 7547
 #define DEFAULT_RETRY_MINIMUM_WAIT_INTERVAL 5
-#define DEFAULT_RETRY_INITIAL_INTERVAL		60
-#define DEFAULT_RETRY_INTERVAL_MULTIPLIER	2000
-#define DEFAULT_RETRY_MAX_INTERVAL			60
-#define DEFAULT_AMD_VERSION                 5
-#define DEFAULT_INSTANCE_MODE               0
-#define DEFAULT_SESSION_TIMEOUT				60
-#define DEFAULT_ACSURL						"http://192.168.1.1:8080/openacs/acs"
+#define DEFAULT_RETRY_INITIAL_INTERVAL 60
+#define DEFAULT_RETRY_INTERVAL_MULTIPLIER 2000
+#define DEFAULT_RETRY_MAX_INTERVAL 60
+#define DEFAULT_AMD_VERSION 5
+#define DEFAULT_INSTANCE_MODE 0
+#define DEFAULT_SESSION_TIMEOUT 60
+#define DEFAULT_ACSURL "http://192.168.1.1:8080/openacs/acs"
 
 extern char *commandKey;
 
 typedef struct env {
-    unsigned short                      boot;
-    unsigned short                      periodic;
-    long int							max_firmware_size;
+	unsigned short boot;
+	unsigned short periodic;
+	long int max_firmware_size;
 } env;
 
 typedef struct config {
-    char                                *acsurl;
-    char                                *acs_userid;
-    char                                *acs_passwd;
-	char								*acs_ssl_capath;
-    char 								*acs_ssl_version;
-	char								*https_ssl_capath;
-    char                                *cpe_userid;
-    char                                *cpe_passwd;
-    char								*ip;
-    char								*ipv6;
-    char								*interface;
-    char                                *ubus_socket;
-    int                                 connection_request_port;
-    int                                 period;
-    int 								periodic_notify_interval;
-    int                                 compression;
-    time_t                              time;
-    bool                                periodic_enable;
-    bool                                periodic_notify_enable;
-    bool                                insecure_enable;
-    bool								ipv6_enable;
-	int 								retry_min_wait_interval;
-    int 								retry_interval_multiplier;
-	bool                                lw_notification_enable;
-    char                                *lw_notification_hostname;
-    int                                 lw_notification_port;
-    int 								amd_version;
-	int 								supported_amd_version;
-    unsigned int 						instance_mode;
-	unsigned int 						session_timeout;
-	bool								http_disable_100continue;
+	char *acsurl;
+	char *acs_userid;
+	char *acs_passwd;
+	char *acs_ssl_capath;
+	char *acs_ssl_version;
+	char *https_ssl_capath;
+	char *cpe_userid;
+	char *cpe_passwd;
+	char *ip;
+	char *ipv6;
+	char *interface;
+	char *ubus_socket;
+	int connection_request_port;
+	int period;
+	int periodic_notify_interval;
+	int compression;
+	time_t time;
+	bool periodic_enable;
+	bool periodic_notify_enable;
+	bool insecure_enable;
+	bool ipv6_enable;
+	int retry_min_wait_interval;
+	int retry_interval_multiplier;
+	bool lw_notification_enable;
+	char *lw_notification_hostname;
+	int lw_notification_port;
+	int amd_version;
+	int supported_amd_version;
+	unsigned int instance_mode;
+	unsigned int session_timeout;
+	bool http_disable_100continue;
 } config;
 
 struct deviceid {
@@ -98,38 +98,38 @@ struct deviceid {
 };
 
 typedef struct session_status {
-    time_t last_start_time;
-    time_t last_end_time;
-    int last_status;
-    time_t next_periodic;
-    time_t next_retry;
-    unsigned int success_session;
-    unsigned int failure_session;
+	time_t last_start_time;
+	time_t last_end_time;
+	int last_status;
+	time_t next_periodic;
+	time_t next_retry;
+	unsigned int success_session;
+	unsigned int failure_session;
 } session_status;
 
 typedef struct cwmp {
-    struct env			env;
-    struct config		conf;
-    struct deviceid		deviceid;
-    struct list_head	head_session_queue;
-    pthread_mutex_t		mutex_session_queue;
-    struct session		*session_send;
-    bool				cwmp_cr_event;
-    pthread_mutex_t		mutex_session_send;
-    pthread_cond_t		threshold_session_send;
-    pthread_mutex_t		mutex_periodic;
-    pthread_mutex_t		mutex_notify_periodic;
-    pthread_cond_t		threshold_periodic;
-    pthread_cond_t threshold_notify_periodic;
-    pthread_cond_t		threshold_handle_notify;
-    int					count_handle_notify;
-    int					retry_count_session;
-    struct list_head	*head_event_container;
-    int					pid_file;
-    time_t              start_time;
-    struct session_status session_status;
-    unsigned int cwmp_id;
-    int cr_socket_desc;
+	struct env env;
+	struct config conf;
+	struct deviceid deviceid;
+	struct list_head head_session_queue;
+	pthread_mutex_t mutex_session_queue;
+	struct session *session_send;
+	bool cwmp_cr_event;
+	pthread_mutex_t mutex_session_send;
+	pthread_cond_t threshold_session_send;
+	pthread_mutex_t mutex_periodic;
+	pthread_mutex_t mutex_notify_periodic;
+	pthread_cond_t threshold_periodic;
+	pthread_cond_t threshold_notify_periodic;
+	pthread_cond_t threshold_handle_notify;
+	int count_handle_notify;
+	int retry_count_session;
+	struct list_head *head_event_container;
+	int pid_file;
+	time_t start_time;
+	struct session_status session_status;
+	unsigned int cwmp_id;
+	int cr_socket_desc;
 } cwmp;
 
 enum action
@@ -140,35 +140,39 @@ enum action
 	RESTART,
 };
 
-enum cwmp_start {
-	CWMP_START_BOOT  = 1,
+enum cwmp_start
+{
+	CWMP_START_BOOT = 1,
 	CWMP_START_PERIODIC = 2
 };
 
-enum cwmp_ret_err {
-	CWMP_OK,			/* No Error */
-	CWMP_GEN_ERR, 		/* General Error */
-	CWMP_MEM_ERR,  		/* Memory Error */
+enum cwmp_ret_err
+{
+	CWMP_OK, /* No Error */
+	CWMP_GEN_ERR, /* General Error */
+	CWMP_MEM_ERR, /* Memory Error */
 	CWMP_MUTEX_ERR,
 	CWMP_RETRY_SESSION
 };
 
-enum http_compression {
-    COMP_NONE,
-    COMP_GZIP,
-    COMP_DEFLATE
+enum http_compression
+{
+	COMP_NONE,
+	COMP_GZIP,
+	COMP_DEFLATE
 };
 
-enum enum_ip_version {
-    IPv4 = 4,
-    IPv6 = 6
+enum enum_ip_version
+{
+	IPv4 = 4,
+	IPv6 = 6
 };
 
 typedef struct rpc {
-    struct list_head	list;
-    int					type;
-    void				*extra_data;
-    struct list_head	*list_set_value_fault;
+	struct list_head list;
+	int type;
+	void *extra_data;
+	struct list_head *list_set_value_fault;
 } rpc;
 
 struct cwmp_param_fault {
@@ -190,7 +194,8 @@ struct cwmp_dm_parameter {
 	char *type;
 };
 
-enum amd_version_enum {
+enum amd_version_enum
+{
 	AMD_1 = 1,
 	AMD_2,
 	AMD_3,
@@ -198,13 +203,13 @@ enum amd_version_enum {
 	AMD_5,
 };
 
-enum instance_mode {
+enum instance_mode
+{
 	INSTANCE_MODE_NUMBER,
 	INSTANCE_MODE_ALIAS
 };
 
-struct cwmp_namespaces
-{
+struct cwmp_namespaces {
 	char *soap_env;
 	char *soap_enc;
 	char *xsd;
@@ -212,7 +217,8 @@ struct cwmp_namespaces
 	char *cwmp;
 } ns;
 
-enum rpc_cpe_methods_idx {
+enum rpc_cpe_methods_idx
+{
 	RPC_CPE_GET_RPC_METHODS = 1,
 	RPC_CPE_SET_PARAMETER_VALUES,
 	RPC_CPE_GET_PARAMETER_VALUES,
@@ -234,8 +240,8 @@ enum rpc_cpe_methods_idx {
 	__RPC_CPE_MAX
 };
 
-
-enum rpc_acs_methods_idx {
+enum rpc_acs_methods_idx
+{
 	RPC_ACS_INFORM = 1,
 	RPC_ACS_GET_RPC_METHODS,
 	RPC_ACS_TRANSFER_COMPLETE,
@@ -243,19 +249,22 @@ enum rpc_acs_methods_idx {
 	__RPC_ACS_MAX
 };
 
-enum load_type {
+enum load_type
+{
 	TYPE_DOWNLOAD = 0,
 	TYPE_SCHEDULE_DOWNLOAD,
 	TYPE_UPLOAD
 };
 
-enum dustate_type {
+enum dustate_type
+{
 	DU_INSTALL = 1,
 	DU_UPDATE,
 	DU_UNINSTALL
 };
 
-enum fault_cpe_idx {
+enum fault_cpe_idx
+{
 	FAULT_CPE_NO_FAULT,
 	FAULT_CPE_METHOD_NOT_SUPPORTED,
 	FAULT_CPE_REQUEST_DENIED,
@@ -288,7 +297,8 @@ enum fault_cpe_idx {
 	__FAULT_CPE_MAX
 };
 
-enum {
+enum
+{
 	FAULT_CPE_TYPE_CLIENT,
 	FAULT_CPE_TYPE_SERVER
 };
@@ -306,125 +316,124 @@ struct rpc_acs_method {
 	int (*extra_clean)(struct session *session, struct rpc *rpc);
 };
 
-typedef struct FAULT_CPE
-{
-    char                                *CODE;
-    int                                	ICODE;
-    int                                 TYPE;
-    char                                *DESCRIPTION;
+typedef struct FAULT_CPE {
+	char *CODE;
+	int ICODE;
+	int TYPE;
+	char *DESCRIPTION;
 } FAULT_CPE;
 
 typedef struct schedule_inform {
-    struct list_head                    list;
-    time_t                              scheduled_time;
-    char                                *commandKey;
+	struct list_head list;
+	time_t scheduled_time;
+	char *commandKey;
 } schedule_inform;
 
 typedef struct download {
-    struct list_head                    list;
-    time_t                              scheduled_time;
-    int									file_size;
-	char 								*command_key;
-	char 								*file_type;
-	char 								*url;
-	char 								*username;
-	char 								*password;
+	struct list_head list;
+	time_t scheduled_time;
+	int file_size;
+	char *command_key;
+	char *file_type;
+	char *url;
+	char *username;
+	char *password;
 } download;
 
 typedef struct timewindow {
-	time_t 								windowstart;
-	time_t 								windowend;
-	char 								*windowmode;
-	char 								*usermessage;
-	int 								maxretries;
-}timewindow;
+	time_t windowstart;
+	time_t windowend;
+	char *windowmode;
+	char *usermessage;
+	int maxretries;
+} timewindow;
 
 typedef struct timeinterval {
-	time_t 								windowstart;
-	time_t 								windowend;
-	int 								maxretries;
-}timeinterval;
+	time_t windowstart;
+	time_t windowend;
+	int maxretries;
+} timeinterval;
 
 typedef struct schedule_download {
-	struct list_head                    list;
+	struct list_head list;
 	//time_t                              scheduled_time;
-	int									file_size;
-	char 								*command_key;
-	char 								*file_type;
-	char 								*url;
-	char 								*username;
-	char 								*password;
-	struct timewindow 					timewindowstruct[2];
+	int file_size;
+	char *command_key;
+	char *file_type;
+	char *url;
+	char *username;
+	char *password;
+	struct timewindow timewindowstruct[2];
 } schedule_download;
 
 typedef struct apply_schedule_download {
-	struct list_head                    list;
-	char 								*start_time;
-	char 								*command_key;
-	char 								*file_type;
-	struct timeinterval 				timeintervals[2];
+	struct list_head list;
+	char *start_time;
+	char *command_key;
+	char *file_type;
+	struct timeinterval timeintervals[2];
 } apply_schedule_download;
 
 typedef struct change_du_state {
-	struct list_head                    list;
-	time_t                              timeout;
-	char 								*command_key;
-	struct list_head                    list_operation;
+	struct list_head list;
+	time_t timeout;
+	char *command_key;
+	struct list_head list_operation;
 } change_du_state;
 
 typedef struct operations {
-	struct list_head                    list;
-	int 								type;
-	char 								*url;
-	char 								*uuid;
-	char 								*version;
-	char 								*username;
-	char 								*password;
-	char 								*executionenvref;
+	struct list_head list;
+	int type;
+	char *url;
+	char *uuid;
+	char *version;
+	char *username;
+	char *password;
+	char *executionenvref;
 } operations;
 
 typedef struct upload {
-	struct list_head					list;
-	time_t								scheduled_time;
-	char 								*command_key;
-	char 								*file_type;
-	char 								*url;
-	char 								*username;
-	char 								*password;
-	char 								*f_instance;
+	struct list_head list;
+	time_t scheduled_time;
+	char *command_key;
+	char *file_type;
+	char *url;
+	char *username;
+	char *password;
+	char *f_instance;
 } upload;
 
 typedef struct transfer_complete {
-	int									fault_code;
-	char 								*command_key;
-	char 								*start_time;
-	char 								*complete_time;
-	char 								*old_software_version;
-	int									type;
+	int fault_code;
+	char *command_key;
+	char *start_time;
+	char *complete_time;
+	char *old_software_version;
+	int type;
 } transfer_complete;
 
 typedef struct du_state_change_complete {
-	char 								*command_key;
-	time_t                              timeout;
-	struct list_head					list_opresult;
+	char *command_key;
+	time_t timeout;
+	struct list_head list_opresult;
 } du_state_change_complete;
 
 typedef struct opresult {
-	struct list_head					list;
-	char								*uuid;
-	char								*du_ref;
-	char								*version;
-	char 								*current_state;
-	bool								resolved;
-	char 								*execution_unit_ref;
-	char 								*start_time;
-	char 								*complete_time;
-	int									fault;
+	struct list_head list;
+	char *uuid;
+	char *du_ref;
+	char *version;
+	char *current_state;
+	bool resolved;
+	char *execution_unit_ref;
+	char *start_time;
+	char *complete_time;
+	int fault;
 } opresult;
 
 typedef struct opfault {
-	int									fault_code;
-	char								*fault_string;
+	int fault_code;
+	char *fault_string;
 } opfault;
 
 extern struct cwmp cwmp_main;
@@ -432,15 +441,21 @@ int cwmp_exit(void);
 void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type);
 void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter);
 void free_dm_parameter_all_fromlist(struct list_head *list);
-int global_env_init (int argc, char** argv, struct env *env);
+int global_env_init(int argc, char **argv, struct env *env);
 void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault);
 void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
-void cwmp_add_list_param_value(char *param, char* value, struct list_head *list_param_value);
+void cwmp_add_list_param_value(char *param, char *value, struct list_head *list_param_value);
 void cwmp_del_list_param_value(struct cwmp_param_value *param_value);
 void cwmp_free_all_list_param_value(struct list_head *list_param_value);
 
 #ifndef FREE
-#define FREE(x) do { if (x) {free(x); x = NULL;} } while (0)
+#define FREE(x)                   \
+	do {                      \
+		if (x) {          \
+			free(x);  \
+			x = NULL; \
+		}                 \
+	} while (0)
 #endif
 
 #endif

@@ -43,7 +43,7 @@ static time_t MHD_monotonic_time(void)
 	struct timespec ts;
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
 		return ts.tv_sec;
-	return time(NULL );
+	return time(NULL);
 }
 
 /**
@@ -58,8 +58,7 @@ static void cvthex(const unsigned char *bin, size_t len, char *hex)
 	size_t i;
 	unsigned int j;
 
-	for (i = 0; i < len; ++i)
-	{
+	for (i = 0; i < len; ++i) {
 		j = (bin[i] >> 4) & 0x0f;
 		hex[i * 2] = j <= 9 ? (j + '0') : (j + 'a' - 10);
 		j = bin[i] & 0x0f;
@@ -81,9 +80,7 @@ static void cvthex(const unsigned char *bin, size_t len, char *hex)
  * @param realm A string of characters that describes the realm of auth.
  * @param nonce A pointer to a character array for the nonce to put in
  */
-static void calculate_nonce(uint32_t nonce_time, const char *method,
-		const char *rnd, unsigned int rnd_size, const char *uri,
-		const char *realm, char *nonce)
+static void calculate_nonce(uint32_t nonce_time, const char *method, const char *rnd, unsigned int rnd_size, const char *uri, const char *realm, char *nonce)
 {
 	struct MD5Context md5;
 	unsigned char timestamp[4];
@@ -125,8 +122,7 @@ static void calculate_nonce(uint32_t nonce_time, const char *method,
  * @param key key to look up in data
  * @return size of the located value, 0 if otherwise
  */
-static int lookup_sub_value(char *dest, size_t size, const char *data,
-		const char *key)
+static int lookup_sub_value(char *dest, size_t size, const char *data, const char *key)
 {
 	size_t keylen;
 	size_t len;
@@ -141,30 +137,24 @@ static int lookup_sub_value(char *dest, size_t size, const char *data,
 		return 0;
 	keylen = strlen(key);
 	ptr = data;
-	while ('\0' != *ptr)
-	{
+	while ('\0' != *ptr) {
 		if (NULL == (eq = strchr(ptr, '=')))
 			return 0;
 		q1 = eq + 1;
 		while (' ' == *q1)
 			q1++;
-		if ('\"' != *q1)
-		{
+		if ('\"' != *q1) {
 			q2 = strchr(q1, ',');
 			qn = q2;
-		}
-		else
-		{
+		} else {
 			q1++;
 			q2 = strchr(q1, '\"');
 			if (NULL == q2)
 				return 0; /* end quote not found */
 			qn = q2 + 1;
 		}
-		if ((0 == strncasecmp(ptr, key, keylen)) && (eq == &ptr[keylen]))
-		{
-			if (NULL == q2)
-			{
+		if ((0 == strncasecmp(ptr, key, keylen)) && (eq == &ptr[keylen])) {
+			if (NULL == q2) {
 				len = strlen(q1) + 1;
 				if (size > len)
 					size = len;
@@ -172,9 +162,7 @@ static int lookup_sub_value(char *dest, size_t size, const char *data,
 				strncpy(dest, q1, size);
 				dest[size] = '\0';
 				return size;
-			}
-			else
-			{
+			} else {
 				diff = (q2 - q1) + 1;
 				if (size > diff)
 					size = diff;
@@ -208,9 +196,7 @@ static int lookup_sub_value(char *dest, size_t size, const char *data,
  * @param cnonce A `char *' pointer to the cnonce value
  * @param sessionkey pointer to buffer of HASH_MD5_HEX_LEN+1 bytes
  */
-static void digest_calc_ha1(const char *alg, const char *username,
-		const char *realm, const char *password, const char *nonce,
-		const char *cnonce, char *sessionkey)
+static void digest_calc_ha1(const char *alg, const char *username, const char *realm, const char *password, const char *nonce, const char *cnonce, char *sessionkey)
 {
 	struct MD5Context md5;
 	unsigned char ha1[MD5_DIGEST_SIZE];
@@ -222,8 +208,7 @@ static void digest_calc_ha1(const char *alg, const char *username,
 	MD5Update(&md5, ":", 1);
 	MD5Update(&md5, password, strlen(password));
 	MD5Final(ha1, &md5);
-	if (0 == strcasecmp(alg, "md5-sess"))
-	{
+	if (0 == strcasecmp(alg, "md5-sess")) {
 		MD5Init(&md5);
 		MD5Update(&md5, ha1, sizeof(ha1));
 		MD5Update(&md5, ":", 1);
@@ -248,9 +233,7 @@ static void digest_calc_ha1(const char *alg, const char *username,
  * @param hentity H(entity body) if qop="auth-int"
  * @param response request-digest or response-digest
  */
-static void digest_calc_response(const char *ha1, const char *nonce,
-		const char *noncecount, const char *cnonce, const char *qop,
-		const char *method, const char *uri, char *response)
+static void digest_calc_response(const char *ha1, const char *nonce, const char *noncecount, const char *cnonce, const char *qop, const char *method, const char *uri, char *response)
 {
 	struct MD5Context md5;
 	unsigned char ha2[MD5_DIGEST_SIZE];
@@ -269,8 +252,7 @@ static void digest_calc_response(const char *ha1, const char *nonce,
 	MD5Update(&md5, ":", 1);
 	MD5Update(&md5, nonce, strlen(nonce));
 	MD5Update(&md5, ":", 1);
-	if ('\0' != *qop)
-	{
+	if ('\0' != *qop) {
 		MD5Update(&md5, noncecount, strlen(noncecount));
 		MD5Update(&md5, ":", 1);
 		MD5Update(&md5, cnonce, strlen(cnonce));
@@ -294,27 +276,21 @@ static void digest_calc_response(const char *ha1, const char *nonce,
  * @return MHD_YES on success, MHD_NO otherwise
  */
 
-int http_digest_auth_fail_response(FILE *fp, const char *http_method,
-		const char *url, const char *realm, const char *opaque)
+int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char *url, const char *realm, const char *opaque)
 {
 	size_t hlen;
 	char nonce[HASH_MD5_HEX_LEN + 9];
 	int signal_stale = 0;
 
 	/* Generating the server nonce */
-	calculate_nonce((uint32_t) MHD_monotonic_time(), http_method,
-			NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, nonce);
+	calculate_nonce((uint32_t)MHD_monotonic_time(), http_method, NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, nonce);
 
 	/* Building the authentication header */
-	hlen = snprintf(NULL, 0,
-			"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
-			realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
+	hlen = snprintf(NULL, 0, "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s", realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
 	{
 		char header[hlen + 1];
 
-		snprintf(header, sizeof(header),
-				"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
-				realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
+		snprintf(header, sizeof(header), "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s", realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
 
 		DD(DEBUG, "%s: header: %s", __FUNCTION__, header);
 
@@ -339,9 +315,7 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method,
  * @return MHD_YES if authenticated, MHD_NO if not,
  * 			MHD_INVALID_NONCE if nonce is invalid
  */
-int http_digest_auth_check(const char *http_method, const char *url,
-		const char *header, const char *realm, const char *username,
-		const char *password, unsigned int nonce_timeout)
+int http_digest_auth_check(const char *http_method, const char *url, const char *header, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
 {
 	size_t len;
 	char *end;
@@ -391,26 +365,23 @@ int http_digest_auth_check(const char *http_method, const char *url,
 			return MHD_NO;
 
 		/* 8 = 4 hexadecimal numbers for the timestamp */
-		nonce_time = strtoul(nonce + len - 8, (char **) NULL, 16);
-		t = (uint32_t) MHD_monotonic_time();
+		nonce_time = strtoul(nonce + len - 8, (char **)NULL, 16);
+		t = (uint32_t)MHD_monotonic_time();
 		/*
 		 * First level vetting for the nonce validity if the timestamp
 		 * attached to the nonce exceeds `nonce_timeout' then the nonce is
 		 * invalid.
 		 */
-		if ((t > nonce_time + nonce_timeout)
-				|| (nonce_time + nonce_timeout < nonce_time))
+		if ((t > nonce_time + nonce_timeout) || (nonce_time + nonce_timeout < nonce_time))
 			return MHD_INVALID_NONCE;
 
-		if (0 != strncmp(uri, url, strlen(url)))
-		{
+		if (0 != strncmp(uri, url, strlen(url))) {
 			DD(DEBUG, "Authentication failed: URI does not match.");
 
 			return MHD_NO;
 		}
 
-		calculate_nonce(nonce_time, http_method, NONCE_PRIV_KEY,
-				strlen(NONCE_PRIV_KEY), url, realm, noncehashexp);
+		calculate_nonce(nonce_time, http_method, NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, noncehashexp);
 
 		/*
 		 * Second level vetting for the nonce validity
@@ -425,20 +396,13 @@ int http_digest_auth_check(const char *http_method, const char *url,
 		if (0 != strcmp(nonce, noncehashexp))
 			return MHD_INVALID_NONCE;
 
-		if ((0 == lookup_sub_value(cnonce, sizeof(cnonce), header, "cnonce"))
-				|| (0 == lookup_sub_value(qop, sizeof(qop), header, "qop"))
-				|| ((0 != strcmp(qop, "auth")) && (0 != strcmp(qop, "")))
-				|| (0 == lookup_sub_value(nc, sizeof(nc), header, "nc"))
-				|| (0
-						== lookup_sub_value(response, sizeof(response), header,
-								"response")))
-		{
+		if ((0 == lookup_sub_value(cnonce, sizeof(cnonce), header, "cnonce")) || (0 == lookup_sub_value(qop, sizeof(qop), header, "qop")) || ((0 != strcmp(qop, "auth")) && (0 != strcmp(qop, ""))) || (0 == lookup_sub_value(nc, sizeof(nc), header, "nc")) ||
+		    (0 == lookup_sub_value(response, sizeof(response), header, "response"))) {
 			DD(DEBUG, "Authentication failed, invalid format.");
 			return MHD_NO;
 		}
 		nci = strtoul(nc, &end, 16);
-		if (('\0' != *end) || ((LONG_MAX == nci) && (ERANGE == errno)))
-		{
+		if (('\0' != *end) || ((LONG_MAX == nci) && (ERANGE == errno))) {
 			DD(DEBUG, "Authentication failed, invalid format.");
 			return MHD_NO; /* invalid nonce format */
 		}
