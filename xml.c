@@ -1347,7 +1347,6 @@ error:
 /*
  * [RPC CPE]: GetParameterNames
  */
-
 int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc *rpc)
 {
 	mxml_node_t *n, *parameter_list, *b = session->body_in;
@@ -2382,8 +2381,8 @@ int cwmp_launch_download(struct download *pdownload, struct transfer_complete **
 
 	sprintf(file_size, "%d", pdownload->file_size);
 	external_download(pdownload->url, file_size, pdownload->file_type, pdownload->username, pdownload->password, 0);
-	external_handle_action(cwmp_handle_downloadFault);
-	external_fetch_downloadFaultResp(&fault_code);
+	external_handle_action(cwmp_handle_download_fault);
+	external_fetch_download_fault_resp(&fault_code);
 
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
@@ -2433,8 +2432,8 @@ int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct tr
 
 	sprintf(file_size, "%d", pdownload->file_size);
 	external_download(pdownload->url, file_size, pdownload->file_type, pdownload->username, pdownload->password, pdownload->timewindowstruct[0].windowstart);
-	external_handle_action(cwmp_handle_downloadFault);
-	external_fetch_downloadFaultResp(&fault_code);
+	external_handle_action(cwmp_handle_download_fault);
+	external_fetch_download_fault_resp(&fault_code);
 
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
@@ -2504,8 +2503,8 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 		lookup_vcf_name(pupload->f_instance, &name);
 	}
 	external_upload(pupload->url, pupload->file_type, pupload->username, pupload->password, name);
-	external_handle_action(cwmp_handle_uploadFault);
-	external_fetch_uploadFaultResp(&fault_code);
+	external_handle_action(cwmp_handle_upload_fault);
+	external_fetch_upload_fault_resp(&fault_code);
 
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
@@ -2570,7 +2569,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 
 					ptransfer_complete->type = TYPE_DOWNLOAD;
 					bkp_session_insert_transfer_complete(ptransfer_complete);
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
 				list_del(&(pdownload->list));
 				if (pdownload->scheduled_time != 0)
@@ -2587,7 +2586,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					if (pdownload->file_type[0] == '1') {
@@ -2596,8 +2595,8 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
 					external_apply("download", pdownload->file_type, 0);
-					external_handle_action(cwmp_handle_downloadFault);
-					external_fetch_downloadFaultResp(&fault_code);
+					external_handle_action(cwmp_handle_download_fault);
+					external_fetch_download_fault_resp(&fault_code);
 					if (fault_code != NULL) {
 						if (fault_code[0] == '9') {
 							for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -2617,7 +2616,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 						ptransfer_complete->fault_code = error;
 						bkp_session_insert_transfer_complete(ptransfer_complete);
 						bkp_session_save();
-						cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+						cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					}
 				}
 				external_exit();
@@ -2679,7 +2678,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 							ptransfer_complete->fault_code = error;
 							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 						}
 						list_del(&(p->list));
 						if (p->timewindowstruct[0].windowstart != 0)
@@ -2712,7 +2711,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 							ptransfer_complete->fault_code = error;
 							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 						}
 						list_del(&(p->list));
 						if (p->timewindowstruct[0].windowstart != 0)
@@ -2740,7 +2739,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					external_exit();
@@ -2755,8 +2754,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 						bkp_session_insert_transfer_complete(ptransfer_complete);
 						bkp_session_save();
 						external_apply("download", current_download->file_type, current_download->timewindowstruct[0].windowstart);
-						external_handle_action(cwmp_handle_downloadFault);
-						external_fetch_downloadFaultResp(&fault_code);
+						external_handle_action(cwmp_handle_download_fault);
+						external_fetch_download_fault_resp(&fault_code);
 						if (fault_code != NULL) {
 							if (fault_code[0] == '9') {
 								for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -2774,7 +2773,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 							ptransfer_complete->fault_code = error;
 							bkp_session_insert_transfer_complete(ptransfer_complete);
 							bkp_session_save();
-							cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 						}
 						external_exit();
 						pthread_mutex_unlock(&mutex_schedule_download);
@@ -2803,7 +2802,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					if (current_download->file_type[0] == '1') {
@@ -2812,8 +2811,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
 					external_apply("download", current_download->file_type, 0);
-					external_handle_action(cwmp_handle_downloadFault);
-					external_fetch_downloadFaultResp(&fault_code);
+					external_handle_action(cwmp_handle_download_fault);
+					external_fetch_download_fault_resp(&fault_code);
 					if (fault_code != NULL) {
 						if (fault_code[0] == '9') {
 							for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -2831,7 +2830,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 						ptransfer_complete->fault_code = error;
 						bkp_session_insert_transfer_complete(ptransfer_complete);
 						bkp_session_save();
-						cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+						cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					}
 				}
 				external_exit();
@@ -2897,7 +2896,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 							ptransfer_complete->fault_code = error;
 							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 						}
 						list_del(&(p->list));
 						if (p->timeintervals[0].windowstart != 0)
@@ -2930,7 +2929,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 							ptransfer_complete->fault_code = error;
 							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 						}
 						list_del(&(p->list));
 						/*if(p->timewindowintervals[0].windowstart != 0)
@@ -2966,8 +2965,8 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 			bkp_session_insert_transfer_complete(ptransfer_complete);
 			bkp_session_save();
 			external_apply("download", apply_download->file_type, apply_download->timeintervals[0].windowstart);
-			external_handle_action(cwmp_handle_downloadFault);
-			external_fetch_downloadFaultResp(&fault_code);
+			external_handle_action(cwmp_handle_download_fault);
+			external_fetch_download_fault_resp(&fault_code);
 			if (fault_code != NULL) {
 				if (fault_code[0] == '9') {
 					for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -2985,7 +2984,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 				ptransfer_complete->fault_code = error;
 				bkp_session_insert_transfer_complete(ptransfer_complete);
 				bkp_session_save();
-				cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+				cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 			}
 			external_exit();
 			pthread_mutex_unlock(&mutex_schedule_download);
@@ -3209,8 +3208,8 @@ static int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass,
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
 	external_change_du_state_install(url, uuid, user, pass, env);
-	external_handle_action(cwmp_handle_dustate_changeFault);
-	external_fetch_du_change_stateFaultResp(&fault_code, package_version, package_name, package_uuid, package_env);
+	external_handle_action(cwmp_handle_dustate_change_fault);
+	external_fetch_du_change_state_fault_resp(&fault_code, package_version, package_name, package_uuid, package_env);
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -3232,8 +3231,8 @@ static int cwmp_launch_du_update(char *uuid, char *url, char *user, char *pass, 
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
 	external_change_du_state_update(uuid, url, user, pass);
-	external_handle_action(cwmp_handle_dustate_changeFault);
-	external_fetch_du_change_stateFaultResp(&fault_code, package_version, package_name, package_uuid, package_env);
+	external_handle_action(cwmp_handle_dustate_change_fault);
+	external_fetch_du_change_state_fault_resp(&fault_code, package_version, package_name, package_uuid, package_env);
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -3255,8 +3254,8 @@ static int cwmp_launch_du_uninstall(char *package_name, char *package_env, struc
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
 	external_change_du_state_uninstall(package_name, package_env);
-	external_handle_action(cwmp_handle_uninstallFault);
-	external_fetch_uninstallFaultResp(&fault_code);
+	external_handle_action(cwmp_handle_uninstall_fault);
+	external_fetch_uninstall_fault_resp(&fault_code);
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -3314,7 +3313,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					}
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_dustatechangeComplete(cwmp, pdu_state_change_complete);
+					cwmp_root_cause_changedustate_complete(cwmp, pdu_state_change_complete);
 				}
 				list_del(&(pchange_du_state->list));
 				cwmp_free_change_du_state_request(pchange_du_state);
@@ -3454,7 +3453,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					bkp_session_save();
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_dustatechangeComplete(cwmp, pdu_state_change_complete);
+					cwmp_root_cause_changedustate_complete(cwmp, pdu_state_change_complete);
 				}
 			}
 
@@ -3511,7 +3510,7 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 					ptransfer_complete->fault_code = error;
 					ptransfer_complete->type = TYPE_UPLOAD;
 					bkp_session_insert_transfer_complete(ptransfer_complete);
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
 				list_del(&(pupload->list));
 				if (pupload->scheduled_time != 0)
@@ -3528,14 +3527,14 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 					ptransfer_complete->fault_code = error;
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
 				external_exit();
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));

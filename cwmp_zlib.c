@@ -19,7 +19,7 @@
 /* These are parameters to deflateInit2. See
    http://zlib.net/manual.html for the exact meanings. */
 
-#define windowBits 15
+#define WINDOW_BITS 15
 #define GZIP_ENCODING 16
 
 static int strm_init(z_stream *strm, int type)
@@ -30,7 +30,7 @@ static int strm_init(z_stream *strm, int type)
 	strm->opaque = Z_NULL;
 	switch (type) {
 	case COMP_GZIP:
-		error = deflateInit2(strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits | GZIP_ENCODING, 8, Z_DEFAULT_STRATEGY);
+		error = deflateInit2(strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, WINDOW_BITS | GZIP_ENCODING, 8, Z_DEFAULT_STRATEGY);
 		break;
 	case COMP_DEFLATE:
 		error = deflateInit(strm, Z_DEFAULT_COMPRESSION);

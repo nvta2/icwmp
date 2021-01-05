@@ -75,4 +75,5 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port);
 int cwmp_get_int_event_code(char *code);
 bool event_exist_in_list(struct cwmp *cwmp, int event);
 int cwmp_root_cause_events(struct cwmp *cwmp);
+int cwmp_root_cause_transfer_complete(struct cwmp *cwmp, struct transfer_complete *p);
 #endif /* SRC_INC_EVENT_H_ */

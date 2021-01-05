@@ -57,8 +57,6 @@
 #define LIB_DB_CONFIG "/lib/db/config"
 #define ETC_DB_CONFIG "/etc/board-db/config"
 #define VARSTATE_CONFIG "/var/state"
-#define BBFDM_CONFIG "/etc/bbfdm"
-#define BBFDM_SAVEDIR "/tmp/.bbfdm"
 
 typedef enum uci_config_action {
 	CWMP_CMD_SET,
@@ -73,7 +71,6 @@ enum uci_paths_types
 	UCI_DB_CONFIG,
 	UCI_BOARD_DB_CONFIG,
 	UCI_VARSTATE_CONFIG,
-	UCI_BBFDM_CONFIG
 };
 
 enum cwmp_uci_cmp

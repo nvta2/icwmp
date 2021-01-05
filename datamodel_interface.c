@@ -390,25 +390,19 @@ int cwmp_update_enabled_list_notify(int instance_mode, int notify_type)
 	int e;
 	CWMP_LOG(INFO, "Get List Notify for %s paramters values", notify_type == OLD_LIST_NOTIFY ? "old" : "actual");
 	if (notify_type == OLD_LIST_NOTIFY) {
-		CWMP_LOG(INFO, "%s line %d", __FILE__, __LINE__);
 		FREE_JSON(old_list_notify)
 		FREE_JSON(old_global_json_obj)
-		CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 		e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = instance_mode }, UBUS_Integer } }, 1, &old_global_json_obj);
 		if (e)
 			return e;
 		json_object_object_get_ex(old_global_json_obj, "parameters", &old_list_notify);
-		CWMP_LOG(INFO, "%s line %d", __FILE__, __LINE__);
 	} else {
-		CWMP_LOG(INFO, "%s line %d", __FILE__, __LINE__);
 		FREE_JSON(actual_list_notify)
 		FREE_JSON(actual_global_json_obj)
-		CWMP_LOG(INFO, "%s line %d", __FILE__, __FUNCTION__, __LINE__);
 		e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = instance_mode }, UBUS_Integer } }, 1, &actual_global_json_obj);
 		if (e)
 			return e;
 		json_object_object_get_ex(actual_global_json_obj, "parameters", &actual_list_notify);
-		CWMP_LOG(INFO, "%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	}
 	return 0;
 }

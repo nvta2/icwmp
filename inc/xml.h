@@ -134,8 +134,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v);
 
 const char *whitespace_cb(mxml_node_t *node, int where);
 
-int cwmp_root_cause_TransferComplete(struct cwmp *cwmp, struct transfer_complete *p);
-int cwmp_root_cause_dustatechangeComplete(struct cwmp *cwmp, struct du_state_change_complete *p);
+int cwmp_root_cause_changedustate_complete(struct cwmp *cwmp, struct du_state_change_complete *p);
 void cwmp_root_cause_event_ipdiagnostic(void);
 int xml_set_cwmp_id(struct session *session);
 int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc);

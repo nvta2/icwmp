@@ -53,7 +53,7 @@ enum download_fault
 
 char *download_fault_policy[] = {[DOWNLOAD_FAULT] = "fault_code" };
 
-int cwmp_handle_downloadFault(char *msg)
+int cwmp_handle_download_fault(char *msg)
 {
 	char *tb[__DOWNLOAD_MAX] = { 0 };
 
@@ -64,7 +64,7 @@ int cwmp_handle_downloadFault(char *msg)
 
 	DD(INFO, "triggered handle download fault %s", tb[DOWNLOAD_FAULT]);
 
-	external_downloadFaultResp(tb[DOWNLOAD_FAULT]);
+	external_download_fault_resp(tb[DOWNLOAD_FAULT]);
 
 	cwmp_json_message_delete();
 	return 0;
@@ -82,7 +82,7 @@ enum upload_fault
 
 char *upload_fault_policy[] = {[UPLOAD_FAULT] = "fault_code" };
 
-int cwmp_handle_uploadFault(char *msg)
+int cwmp_handle_upload_fault(char *msg)
 {
 	char *tb[__UPLOAD_MAX] = { 0 };
 
@@ -93,7 +93,7 @@ int cwmp_handle_uploadFault(char *msg)
 
 	DD(INFO, "triggered handle upload fault %s", tb[UPLOAD_FAULT]);
 
-	external_uploadFaultResp(tb[UPLOAD_FAULT]);
+	external_upload_fault_resp(tb[UPLOAD_FAULT]);
 
 	cwmp_json_message_delete();
 	return 0;
@@ -115,7 +115,7 @@ enum dustatechange_fault
 
 char *dustatechange_fault_policy[] = {[DUState_Change_FAULT] = "fault_code", [DUState_Change_VERSION] = "package_version", [DUState_Change_NAME] = "package_name", [DUState_Change_UUID] = "package_uuid", [DUState_Change_ENV] = "package_env" };
 
-int cwmp_handle_dustate_changeFault(char *msg)
+int cwmp_handle_dustate_change_fault(char *msg)
 {
 	char *tb[__DUSTATE_MAX] = { 0 };
 
@@ -126,7 +126,7 @@ int cwmp_handle_dustate_changeFault(char *msg)
 
 	DD(INFO, "triggered handle dustate_change fault:%s version:%s name:%s", tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME], tb[DUState_Change_UUID], tb[DUState_Change_ENV]);
 
-	external_du_change_stateFaultResp(tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME], tb[DUState_Change_UUID], tb[DUState_Change_ENV]);
+	external_du_change_state_fault_resp(tb[DUState_Change_FAULT], tb[DUState_Change_VERSION], tb[DUState_Change_NAME], tb[DUState_Change_UUID], tb[DUState_Change_ENV]);
 
 	cwmp_json_message_delete();
 	return 0;
@@ -144,7 +144,7 @@ enum uninstall_fault
 
 char *uninstall_fault_policy[] = {[UNINSTALL_FAULT] = "fault_code" };
 
-int cwmp_handle_uninstallFault(char *msg)
+int cwmp_handle_uninstall_fault(char *msg)
 {
 	char *tb[__UNINSTALL_MAX] = { 0 };
 
@@ -155,7 +155,7 @@ int cwmp_handle_uninstallFault(char *msg)
 
 	DD(INFO, "triggered handle upload fault %s", tb[UNINSTALL_FAULT]);
 
-	external_uninstallFaultResp(tb[UNINSTALL_FAULT]);
+	external_uninstall_fault_resp(tb[UNINSTALL_FAULT]);
 
 	cwmp_json_message_delete();
 	return 0;

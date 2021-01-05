@@ -17,7 +17,6 @@ struct uci_paths uci_save_conf_paths[] = {
 	[UCI_DB_CONFIG] = { "/lib/db/config", NULL },
 	[UCI_BOARD_DB_CONFIG] = { "/etc/board-db/config", NULL },
 	[UCI_VARSTATE_CONFIG] = { NULL, "/var/state" },
-	[UCI_BBFDM_CONFIG] = { "/etc/bbfdm", "/tmp/.bbfdm" }
 };
 
 struct uci_context *cwmp_uci_ctx = ((void *)0);
@@ -265,7 +264,7 @@ int uci_get_list_value(char *cmd, struct list_head *list)
 	return size;
 }
 
-int uci_get_value_common(char *cmd, char **value, bool state)
+int cwmp_uci_get_value_common(char *cmd, char **value, bool state)
 {
 	struct uci_ptr ptr;
 	struct uci_context *c = uci_alloc_context();
@@ -306,14 +305,14 @@ int uci_get_value_common(char *cmd, char **value, bool state)
 int uci_get_state_value(char *cmd, char **value)
 {
 	int error;
-	error = uci_get_value_common(cmd, value, true);
+	error = cwmp_uci_get_value_common(cmd, value, true);
 	return error;
 }
 
 int uci_get_value(char *cmd, char **value)
 {
 	int error;
-	error = uci_get_value_common(cmd, value, false);
+	error = cwmp_uci_get_value_common(cmd, value, false);
 	return error;
 }
 

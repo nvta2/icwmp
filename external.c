@@ -36,43 +36,43 @@ static char *fc_script = "/usr/sbin/icwmp";
 
 #define ICWMP_PROMPT "icwmp>"
 
-void external_downloadFaultResp(char *fault_code)
+void external_download_fault_resp(char *fault_code)
 {
 	FREE(external_MethodFault);
 	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
 }
 
-void external_fetch_downloadFaultResp(char **fault)
+void external_fetch_download_fault_resp(char **fault)
 {
 	*fault = external_MethodFault;
 	external_MethodFault = NULL;
 }
 
-void external_uploadFaultResp(char *fault_code)
+void external_upload_fault_resp(char *fault_code)
 {
 	FREE(external_MethodFault);
 	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
 }
 
-void external_fetch_uploadFaultResp(char **fault)
+void external_fetch_upload_fault_resp(char **fault)
 {
 	*fault = external_MethodFault;
 	external_MethodFault = NULL;
 }
 
-void external_uninstallFaultResp(char *fault_code)
+void external_uninstall_fault_resp(char *fault_code)
 {
 	FREE(external_MethodFault);
 	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
 }
 
-void external_fetch_uninstallFaultResp(char **fault)
+void external_fetch_uninstall_fault_resp(char **fault)
 {
 	*fault = external_MethodFault;
 	external_MethodFault = NULL;
 }
 
-void external_du_change_stateFaultResp(char *fault_code, char *version, char *name, char *uuid, char *env)
+void external_du_change_state_fault_resp(char *fault_code, char *version, char *name, char *uuid, char *env)
 {
 	FREE(external_MethodFault);
 	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
@@ -86,7 +86,7 @@ void external_du_change_stateFaultResp(char *fault_code, char *version, char *na
 	external_MethodENV = env ? strdup(env) : NULL;
 }
 
-void external_fetch_du_change_stateFaultResp(char **fault, char **version, char **name, char **uuid, char **env)
+void external_fetch_du_change_state_fault_resp(char **fault, char **version, char **name, char **uuid, char **env)
 {
 	*fault = external_MethodFault;
 	external_MethodFault = NULL;

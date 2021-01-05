@@ -35,10 +35,10 @@ struct MD5Context {
 	unsigned char in[64];
 };
 
-void MD5Init(struct MD5Context *ctx);
+void md5_init(struct MD5Context *ctx);
 
-void MD5Update(struct MD5Context *ctx, const void *buf, unsigned len);
+void md5_update(struct MD5Context *ctx, const void *buf, unsigned len);
 
-void MD5Final(unsigned char digest[MD5_DIGEST_SIZE], struct MD5Context *ctx);
+void md5_final(unsigned char digest[MD5_DIGEST_SIZE], struct MD5Context *ctx);
 
 #endif /* !MD5_H */

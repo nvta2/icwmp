@@ -231,7 +231,7 @@ int cwmp_root_cause_event_bootstrap(struct cwmp *cwmp)
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_TransferComplete(struct cwmp *cwmp, struct transfer_complete *p)
+int cwmp_root_cause_transfer_complete(struct cwmp *cwmp, struct transfer_complete *p)
 {
 	struct event_container *event_container;
 	struct session *session;
@@ -276,7 +276,7 @@ int cwmp_root_cause_TransferComplete(struct cwmp *cwmp, struct transfer_complete
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_dustatechangeComplete(struct cwmp *cwmp, struct du_state_change_complete *p)
+int cwmp_root_cause_changedustate_complete(struct cwmp *cwmp, struct du_state_change_complete *p)
 {
 	struct event_container *event_container;
 	struct session *session;
@@ -304,7 +304,7 @@ int cwmp_root_cause_dustatechangeComplete(struct cwmp *cwmp, struct du_state_cha
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_getRPCMethod(struct cwmp *cwmp)
+int cwmp_root_cause_get_rpc_method(struct cwmp *cwmp)
 {
 	struct event_container *event_container;
 	struct session *session;
@@ -507,7 +507,7 @@ int cwmp_root_cause_events(struct cwmp *cwmp)
 	if ((error = cwmp_root_cause_event_boot(cwmp)))
 		return error;
 
-	if ((error = cwmp_root_cause_getRPCMethod(cwmp)))
+	if ((error = cwmp_root_cause_get_rpc_method(cwmp)))
 		return error;
 
 	if ((error = cwmp_root_cause_event_periodic(cwmp)))

@@ -38,7 +38,7 @@
 
 #define NONCE_PRIV_KEY "h5ffku7rlxp6tjf2xamnfqjev5ul"
 
-static time_t MHD_monotonic_time(void)
+static time_t mhd_monotonic_time(void)
 {
 	struct timespec ts;
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
@@ -87,22 +87,22 @@ static void calculate_nonce(uint32_t nonce_time, const char *method, const char 
 	unsigned char tmpnonce[MD5_DIGEST_SIZE];
 	char timestamphex[sizeof(timestamp) * 2 + 1];
 
-	MD5Init(&md5);
+	md5_init(&md5);
 	timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
 	timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
 	timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
 	timestamp[3] = (nonce_time & 0x000000ff);
-	MD5Update(&md5, timestamp, 4);
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, method, strlen(method));
-	MD5Update(&md5, ":", 1);
+	md5_update(&md5, timestamp, 4);
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, method, strlen(method));
+	md5_update(&md5, ":", 1);
 	if (rnd_size > 0)
-		MD5Update(&md5, rnd, rnd_size);
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, uri, strlen(uri));
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, realm, strlen(realm));
-	MD5Final(tmpnonce, &md5);
+		md5_update(&md5, rnd, rnd_size);
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, uri, strlen(uri));
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, realm, strlen(realm));
+	md5_final(tmpnonce, &md5);
 	cvthex(tmpnonce, sizeof(tmpnonce), nonce);
 	cvthex(timestamp, 4, timestamphex);
 	strncat(nonce, timestamphex, 8);
@@ -201,21 +201,21 @@ static void digest_calc_ha1(const char *alg, const char *username, const char *r
 	struct MD5Context md5;
 	unsigned char ha1[MD5_DIGEST_SIZE];
 
-	MD5Init(&md5);
-	MD5Update(&md5, username, strlen(username));
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, realm, strlen(realm));
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, password, strlen(password));
-	MD5Final(ha1, &md5);
+	md5_init(&md5);
+	md5_update(&md5, username, strlen(username));
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, realm, strlen(realm));
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, password, strlen(password));
+	md5_final(ha1, &md5);
 	if (0 == strcasecmp(alg, "md5-sess")) {
-		MD5Init(&md5);
-		MD5Update(&md5, ha1, sizeof(ha1));
-		MD5Update(&md5, ":", 1);
-		MD5Update(&md5, nonce, strlen(nonce));
-		MD5Update(&md5, ":", 1);
-		MD5Update(&md5, cnonce, strlen(cnonce));
-		MD5Final(ha1, &md5);
+		md5_init(&md5);
+		md5_update(&md5, ha1, sizeof(ha1));
+		md5_update(&md5, ":", 1);
+		md5_update(&md5, nonce, strlen(nonce));
+		md5_update(&md5, ":", 1);
+		md5_update(&md5, cnonce, strlen(cnonce));
+		md5_final(ha1, &md5);
 	}
 	cvthex(ha1, sizeof(ha1), sessionkey);
 }
@@ -240,28 +240,28 @@ static void digest_calc_response(const char *ha1, const char *nonce, const char 
 	unsigned char resphash[MD5_DIGEST_SIZE];
 	char ha2hex[HASH_MD5_HEX_LEN + 1];
 
-	MD5Init(&md5);
-	MD5Update(&md5, method, strlen(method));
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, uri, strlen(uri));
-	MD5Final(ha2, &md5);
+	md5_init(&md5);
+	md5_update(&md5, method, strlen(method));
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, uri, strlen(uri));
+	md5_final(ha2, &md5);
 	cvthex(ha2, MD5_DIGEST_SIZE, ha2hex);
-	MD5Init(&md5);
+	md5_init(&md5);
 	/* calculate response */
-	MD5Update(&md5, ha1, HASH_MD5_HEX_LEN);
-	MD5Update(&md5, ":", 1);
-	MD5Update(&md5, nonce, strlen(nonce));
-	MD5Update(&md5, ":", 1);
+	md5_update(&md5, ha1, HASH_MD5_HEX_LEN);
+	md5_update(&md5, ":", 1);
+	md5_update(&md5, nonce, strlen(nonce));
+	md5_update(&md5, ":", 1);
 	if ('\0' != *qop) {
-		MD5Update(&md5, noncecount, strlen(noncecount));
-		MD5Update(&md5, ":", 1);
-		MD5Update(&md5, cnonce, strlen(cnonce));
-		MD5Update(&md5, ":", 1);
-		MD5Update(&md5, qop, strlen(qop));
-		MD5Update(&md5, ":", 1);
+		md5_update(&md5, noncecount, strlen(noncecount));
+		md5_update(&md5, ":", 1);
+		md5_update(&md5, cnonce, strlen(cnonce));
+		md5_update(&md5, ":", 1);
+		md5_update(&md5, qop, strlen(qop));
+		md5_update(&md5, ":", 1);
 	}
-	MD5Update(&md5, ha2hex, HASH_MD5_HEX_LEN);
-	MD5Final(resphash, &md5);
+	md5_update(&md5, ha2hex, HASH_MD5_HEX_LEN);
+	md5_final(resphash, &md5);
 	cvthex(resphash, sizeof(resphash), response);
 }
 
@@ -283,7 +283,7 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char
 	int signal_stale = 0;
 
 	/* Generating the server nonce */
-	calculate_nonce((uint32_t)MHD_monotonic_time(), http_method, NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, nonce);
+	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, nonce);
 
 	/* Building the authentication header */
 	hlen = snprintf(NULL, 0, "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s", realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
@@ -366,7 +366,7 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 
 		/* 8 = 4 hexadecimal numbers for the timestamp */
 		nonce_time = strtoul(nonce + len - 8, (char **)NULL, 16);
-		t = (uint32_t)MHD_monotonic_time();
+		t = (uint32_t)mhd_monotonic_time();
 		/*
 		 * First level vetting for the nonce validity if the timestamp
 		 * attached to the nonce exceeds `nonce_timeout' then the nonce is

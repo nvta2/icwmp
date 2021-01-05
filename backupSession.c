@@ -1168,6 +1168,7 @@ void load_apply_schedule_download(mxml_node_t *tree)
 	if (download_request->timeintervals[0].windowstart != 0)
 		count_download_queue++;
 }
+
 void load_upload(mxml_node_t *tree)
 {
 	mxml_node_t *b = tree, *c;
@@ -1553,8 +1554,9 @@ void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
 		}
 		b = mxmlWalkNext(b, tree, MXML_NO_DESCEND);
 	}
-	cwmp_root_cause_dustatechangeComplete(cwmp, du_state_change_complete_request);
+	cwmp_root_cause_changedustate_complete(cwmp, du_state_change_complete_request);
 }
+
 void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
 {
 	mxml_node_t *b = tree, *c;
@@ -1612,7 +1614,7 @@ void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
 		}
 		b = mxmlWalkNext(b, tree, MXML_NO_DESCEND);
 	}
-	cwmp_root_cause_TransferComplete(cwmp, ptransfer_complete);
+	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 	sotfware_version_value_change(cwmp, ptransfer_complete);
 }
 

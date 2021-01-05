@@ -39,10 +39,10 @@ struct diagnostic_input {
 #define DOWNLOAD_DIAG_ACT_NAME "DownloadDiagnostics"
 #define UPLOAD_DIAG_ACT_NAME "UploadDiagnostics"
 #define IPPING_DIAG_ACT_NAME "IPPing"
-#define ServerSelection_DIAG_ACT_NAME "ServerSelectionDiagnostics"
-#define TraceRoute_DIAG_ACT_NAME "TraceRoute"
-#define UDPEcho_DIAG_ACT_NAME "UDPEchoDiagnostics"
-#define NSLookup_DIAG_ACT_NAME "NSLookupDiagnostics"
+#define SERVER_SELECTION_DIAG_ACT_NAME "ServerSelectionDiagnostics"
+#define TRACE_ROUTE_DIAG_ACT_NAME "TraceRoute"
+#define UDPECHO_DIAG_ACT_NAME "UDPEchoDiagnostics"
+#define NSLOOKUP_DIAG_ACT_NAME "NSLookupDiagnostics"
 
 struct diagnostic_input download_diagnostics_array[DOWNLOAD_NUMBER_INPUTS] = {
 	{ "Interface", "Device.IP.Diagnostics.DownloadDiagnostics.Interface", NULL },
@@ -185,7 +185,7 @@ int cwmp_ip_ping_diagnostics()
 
 int cwmp_nslookup_diagnostics()
 {
-	if (cwmp_diagnostics_operate(DNS_DIAGNOSTICS_OBJECT, NSLookup_DIAG_ACT_NAME, nslookup_diagnostics_array, NSLKUP_NUMBER_INPUTS) == -1)
+	if (cwmp_diagnostics_operate(DNS_DIAGNOSTICS_OBJECT, NSLOOKUP_DIAG_ACT_NAME, nslookup_diagnostics_array, NSLKUP_NUMBER_INPUTS) == -1)
 		return -1;
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
@@ -193,7 +193,7 @@ int cwmp_nslookup_diagnostics()
 
 int cwmp_traceroute_diagnostics()
 {
-	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, TraceRoute_DIAG_ACT_NAME, traceroute_diagnostics_array, TRACEROUTE_NUMBER_INPUTS) == -1)
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, TRACE_ROUTE_DIAG_ACT_NAME, traceroute_diagnostics_array, TRACEROUTE_NUMBER_INPUTS) == -1)
 		return -1;
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
@@ -201,7 +201,7 @@ int cwmp_traceroute_diagnostics()
 
 int cwmp_udp_echo_diagnostics()
 {
-	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UDPEcho_DIAG_ACT_NAME, udpecho_diagnostics_array, UDPECHO_NUMBER_INPUTS) == -1)
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UDPECHO_DIAG_ACT_NAME, udpecho_diagnostics_array, UDPECHO_NUMBER_INPUTS) == -1)
 		return -1;
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
@@ -209,7 +209,7 @@ int cwmp_udp_echo_diagnostics()
 
 int cwmp_serverselection_diagnostics()
 {
-	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, ServerSelection_DIAG_ACT_NAME, seserverselection_diagnostics_array, SESERVERSELECT_NUMBER_INPUTS) == -1)
+	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, SERVER_SELECTION_DIAG_ACT_NAME, seserverselection_diagnostics_array, SESERVERSELECT_NUMBER_INPUTS) == -1)
 		return -1;
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
