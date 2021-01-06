@@ -321,11 +321,11 @@ handle_action() {
 		local fault_code="9000"
 		if [ "$__arg4" = "" -o "$__arg5" = "" ];then
 			if [ "$__arg7" != "" ];then
-				resp=$(curl --fail --capath $__arg7 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE --output /dev/null $__arg1)
+				resp=$(curl --fail --capath $__arg7 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/null $__arg1`
+				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $__arg1`
 			else
-				resp=`curl --fail -4 -I -w %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/null $__arg1`
+				resp=`curl --write-out %{http_code} --silent --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $__arg1`
 			fi
 			if [ "$resp" == "404" ];then
 				let fault_code=$fault_code+$FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER
@@ -343,11 +343,11 @@ handle_action() {
 		else
 			local url=`echo "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g"`
 			if [ "$__arg7" != "" ];then
-				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE --output /dev/null $__arg1)
+				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/null $url`
+				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $url`
 			else
-				resp=`curl --fail --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE --output /dev/null $url`
+				resp=`curl --fail --write-out %{http_code} --silent --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $url`
 			fi
 
 			resp=`echo $resp| awk '{print $NF}'`
