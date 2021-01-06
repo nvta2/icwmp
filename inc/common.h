@@ -447,6 +447,7 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
 void cwmp_add_list_param_value(char *param, char *value, struct list_head *list_param_value);
 void cwmp_del_list_param_value(struct cwmp_param_value *param_value);
 void cwmp_free_all_list_param_value(struct list_head *list_param_value);
+bool file_exists(const char *path);
 
 #ifndef FREE
 #define FREE(x)                   \

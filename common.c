@@ -9,7 +9,7 @@
  *
  */
 #include <getopt.h>
-
+#include <sys/stat.h>
 #include "common.h"
 
 char *commandKey = NULL;
@@ -168,4 +168,11 @@ void cwmp_free_all_list_param_value(struct list_head *list_param_value)
 		param_value = list_entry(list_param_value->next, struct cwmp_param_value, list);
 		cwmp_del_list_param_value(param_value);
 	}
+}
+
+bool file_exists(const char *path)
+{
+	struct stat buffer;
+
+	return stat(path, &buffer) == 0;
 }

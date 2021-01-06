@@ -38,12 +38,13 @@ int log_set_severity_idx(char *value)
 int log_set_log_file_name(char *value)
 {
 	if (value != NULL) {
-		strcpy(log_file_name, value);
+		strncpy(log_file_name, value, sizeof(log_file_name));
 	} else {
-		strcpy(log_file_name, DEFAULT_LOG_FILE_NAME);
+		strncpy(log_file_name, DEFAULT_LOG_FILE_NAME, sizeof(log_file_name));
 	}
 	return 1;
 }
+
 int log_set_file_max_size(char *value)
 {
 	if (value != NULL) {
@@ -51,6 +52,7 @@ int log_set_file_max_size(char *value)
 	}
 	return 1;
 }
+
 int log_set_on_console(char *value)
 {
 	if (strcmp(value, "enable") == 0) {
@@ -61,6 +63,7 @@ int log_set_on_console(char *value)
 	}
 	return 1;
 }
+
 int log_set_on_file(char *value)
 {
 	if (strcmp(value, "enable") == 0) {
@@ -93,16 +96,16 @@ void puts_log(int severity, const char *fmt, ...)
 
 	gettimeofday(&tv, 0);
 	Tm = localtime(&tv.tv_sec);
-	i = sprintf(buf, "%02d-%02d-%4d, %02d:%02d:%02d %s ", Tm->tm_mday, Tm->tm_mon + 1, Tm->tm_year + 1900, Tm->tm_hour, Tm->tm_min, Tm->tm_sec, SEVERITY_NAMES[severity]);
+	i = snprintf(buf, sizeof(buf), "%02d-%02d-%4d, %02d:%02d:%02d %s ", Tm->tm_mday, Tm->tm_mon + 1, Tm->tm_year + 1900, Tm->tm_hour, Tm->tm_min, Tm->tm_sec, SEVERITY_NAMES[severity]);
 	if (strlen(log_file_name) == 0) {
-		strcpy(log_file_name, DEFAULT_LOG_FILE_NAME);
+		strncpy(log_file_name, DEFAULT_LOG_FILE_NAME, sizeof(log_file_name));
 	}
 	if (enable_log_file) {
 		if (stat(log_file_name, &st) == 0) {
 			size = st.st_size;
 		}
 		if (size >= log_max_size) {
-			sprintf(log_file_name_bak, "%s.1", log_file_name);
+			snprintf(log_file_name_bak, sizeof(log_file_name_bak), "%s.1", log_file_name);
 			rename(log_file_name, log_file_name_bak);
 			pLog = fopen(log_file_name, "w");
 		} else {
@@ -110,9 +113,9 @@ void puts_log(int severity, const char *fmt, ...)
 		}
 	}
 	va_start(args, fmt);
-	i += vsprintf(buf + i, fmt, args);
+	i += vsprintf(buf + i, (const char *)fmt, args);
 	if (enable_log_file) {
-		strcpy(buf_file, buf);
+		strncpy(buf_file, buf, sizeof(buf_file));
 		strcat(buf_file, "\n");
 		fputs(buf_file, pLog);
 	}
@@ -145,9 +148,9 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 
 	gettimeofday(&tv, 0);
 	Tm = localtime(&tv.tv_sec);
-	sprintf(buf, "%02d-%02d-%4d, %02d:%02d:%02d %s ", Tm->tm_mday, Tm->tm_mon + 1, Tm->tm_year + 1900, Tm->tm_hour, Tm->tm_min, Tm->tm_sec, SEVERITY_NAMES[severity]);
+	snprintf(buf, sizeof(buf), "%02d-%02d-%4d, %02d:%02d:%02d %s ", Tm->tm_mday, Tm->tm_mon + 1, Tm->tm_year + 1900, Tm->tm_hour, Tm->tm_min, Tm->tm_sec, SEVERITY_NAMES[severity]);
 	if (strlen(log_file_name) == 0) {
-		strcpy(log_file_name, DEFAULT_LOG_FILE_NAME);
+		strncpy(log_file_name, DEFAULT_LOG_FILE_NAME, sizeof(log_file_name));
 	}
 
 	if (msgtype == XML_MSG_IN) {
@@ -163,7 +166,7 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 			size = st.st_size;
 		}
 		if (size >= log_max_size) {
-			sprintf(log_file_name_bak, "%s.1", log_file_name);
+			snprintf(log_file_name_bak, sizeof(log_file_name_bak), "%s.1", log_file_name);
 			rename(log_file_name, log_file_name_bak);
 			pLog = fopen(log_file_name, "w");
 		} else {

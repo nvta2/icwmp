@@ -105,7 +105,7 @@ void http_client_exit(void)
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;
 	}
-	if (access(fc_cookies, W_OK) == 0)
+	if (file_exists(fc_cookies))
 		remove(fc_cookies);
 	curl_easy_cleanup(curl);
 	curl_global_cleanup();
@@ -223,7 +223,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
 	if (ip && ip[0] != '\0') {
 		if (ip_acs[0] == '\0' || strcmp(ip_acs, ip) != 0) {
-			strcpy(ip_acs, ip);
+			strncpy(ip_acs, ip, sizeof(ip_acs));
 			if (cwmp->conf.ipv6_enable) {
 				tmp = inet_pton(AF_INET, ip, buf);
 				if (tmp == 1)
@@ -383,7 +383,7 @@ void http_server_init(void)
 		break;
 	}
 	char buf[64];
-	sprintf(buf, UCI_CPE_PORT_PATH "=%d", cr_port);
+	snprintf(buf, sizeof(buf), UCI_CPE_PORT_PATH "=%d", cr_port);
 	uci_set_state_value(buf);
 	connection_request_port_value_change(&cwmp_main, cr_port);
 	CWMP_LOG(INFO, "Connection Request server initiated with the port: %d", cr_port);

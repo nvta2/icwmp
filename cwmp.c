@@ -361,11 +361,11 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 			retry = false;
 		}
 		session = list_entry(ilist, struct session, list);
-		if (access(DM_ENABLED_NOTIFY, F_OK) != -1) {
+		if (file_exists(DM_ENABLED_NOTIFY)) {
 			if (!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
 				is_notify = check_value_change();
 		}
-		if (is_notify > 0 || access(DM_ENABLED_NOTIFY, F_OK) < 0)
+		if (is_notify > 0 || !file_exists(DM_ENABLED_NOTIFY))
 			cwmp_update_enabled_notify_file();
 		cwmp_prepare_value_change(cwmp);
 		free_dm_parameter_all_fromlist(&list_value_change);
@@ -379,7 +379,7 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 		cwmp->session_status.last_status = SESSION_RUNNING;
 		cwmp->session_status.next_retry = 0;
 
-		if (access(fc_cookies, F_OK) != -1)
+		if (file_exists(fc_cookies))
 			remove(fc_cookies);
 		CWMP_LOG(INFO, "Start session");
 
