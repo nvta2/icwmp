@@ -137,7 +137,7 @@ int kernel_api_cwmp_value_change_call(int count, ...)
 		if (kernel_cwmp_input.argv[i] == NULL) {
 			goto kernel_api_cwmp_error;
 		}
-		strncpy(kernel_cwmp_input.argv[i], s, sizeof(kernel_cwmp_input.argv[i]));
+		strcpy(kernel_cwmp_input.argv[i], s);
 		kernel_cwmp_input.argc++;
 	}
 	va_end(args);

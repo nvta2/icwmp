@@ -92,9 +92,9 @@ mxml_node_t *bkp_session_insert_event(int index, char *command_key, int id, char
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	snprintf(parent_name, sizeof(parent_name), "%s_event", status);
-	snprintf(event_id, sizeof(event_id), "%d", id);
-	snprintf(event_idx, sizeof(event_idx), "%d", index);
+	sprintf(parent_name, "%s_event", status);
+	sprintf(event_id, "%d", id);
+	sprintf(event_idx, "%d", index);
 	keys[0].name = "id";
 	keys[0].value = event_id;
 	b = bkp_session_node_found(bkp_tree, parent_name, keys, 1);
@@ -116,8 +116,8 @@ void bkp_session_delete_event(int id, char *status)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	snprintf(parent_name, sizeof(parent_name), "%s_event", status);
-	snprintf(event_id, sizeof(event_id), "%d", id);
+	sprintf(parent_name, "%s_event", status);
+	sprintf(event_id, "%d", id);
 	keys[0].name = "id";
 	keys[0].value = event_id;
 	b = bkp_session_node_found(bkp_tree, parent_name, keys, 1);
@@ -1641,7 +1641,7 @@ int bkp_session_check_file()
 {
 	FILE *pFile;
 
-	if (!file_exists(CWMP_BKP_FILE)) {
+	if (access(CWMP_BKP_FILE, F_OK) == -1) {
 		bkp_session_create_file();
 		return -1;
 	}

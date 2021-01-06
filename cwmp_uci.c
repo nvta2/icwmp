@@ -106,9 +106,9 @@ char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
 			int len = strlen(val);
 			if (len != 0) {
 				memcpy(val + len, delimitor, del_len);
-				strncpy(val + len + del_len, e->name, sizeof(val));
+				strcpy(val + len + del_len, e->name);
 			} else
-				strncpy(val, e->name, sizeof(val));
+				strcpy(val, e->name);
 		}
 		return (strdup(val));
 	} else {
@@ -277,7 +277,7 @@ int cwmp_uci_get_value_common(char *cmd, char **value, bool state)
 		return CWMP_GEN_ERR;
 	}
 	if (state) {
-		strncpy(state_path, VARSTATE_CONFIG, sizeof(state_path));
+		strcpy(state_path, VARSTATE_CONFIG);
 		uci_add_delta_path(c, c->savedir);
 		uci_set_savedir(c, state_path);
 	}
@@ -330,7 +330,7 @@ static int uci_action_value_common(char *cmd, uci_config_action action)
 	}
 
 	if (action == CWMP_CMD_SET_STATE) {
-		strncpy(state_path, VARSTATE_CONFIG, sizeof(state_path));
+		strcpy(state_path, VARSTATE_CONFIG);
 		uci_add_delta_path(c, c->savedir);
 		uci_set_savedir(c, state_path);
 	}
