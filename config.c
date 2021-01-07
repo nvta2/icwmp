@@ -13,6 +13,7 @@
 #include "config.h"
 #include "cwmp_uci.h"
 #include "log.h"
+#include "datamodel_interface.h"
 
 pthread_mutex_t mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
@@ -508,13 +509,25 @@ int global_conf_init(struct config *conf)
 	return CWMP_OK;
 }
 
+char *get_deviceid_parameter_value(char *parameter_name)
+{
+	json_object *parameters = NULL, *param_value_obj = NULL;
+	char *err = err = cwmp_get_parameter_values(parameter_name, &parameters);
+	if (err)
+		return "";
+	json_object *param_obj = json_object_array_get_idx(parameters, 0);
+	json_object_object_get_ex(param_obj, "value", &param_value_obj);
+	return (char *)json_object_get_string(param_value_obj);
+
+}
+
 int cwmp_get_deviceid(struct cwmp *cwmp)
 {
-	cwmp->deviceid.manufacturer = strdup(cwmp_db_get_value_string("device", "deviceinfo", "Manufacturer")); //TODO free
-	cwmp->deviceid.serialnumber = strdup(cwmp_db_get_value_string("device", "deviceinfo", "SerialNumber"));
-	cwmp->deviceid.productclass = strdup(cwmp_db_get_value_string("device", "deviceinfo", "ProductClass"));
-	cwmp->deviceid.oui = strdup(cwmp_db_get_value_string("device", "deviceinfo", "ManufacturerOUI"));
-	cwmp->deviceid.softwareversion = strdup(cwmp_db_get_value_string("device", "deviceinfo", "SoftwareVersion"));
+	cwmp->deviceid.manufacturer = strdup(get_deviceid_parameter_value("Device.DeviceInfo.Manufacturer")); //TODO free
+	cwmp->deviceid.serialnumber = strdup(get_deviceid_parameter_value("Device.DeviceInfo.SerialNumber"));
+	cwmp->deviceid.productclass = strdup(get_deviceid_parameter_value("Device.DeviceInfo.ProductClass"));
+	cwmp->deviceid.oui = strdup(get_deviceid_parameter_value("Device.DeviceInfo.ManufacturerOUI"));
+	cwmp->deviceid.softwareversion = strdup(get_deviceid_parameter_value("Device.DeviceInfo.SoftwareVersion"));
 	return CWMP_OK;
 }
 
