@@ -343,11 +343,11 @@ handle_action() {
 		else
 			local url=`echo "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g"`
 			if [ "$__arg7" != "" ];then
-				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE $__arg1)
+				resp=$(curl --fail --capath $__arg7 -u $__arg4:$__arg5 --anyauth --write-out %{http_code} --silent -o $ICWMP_DOWNLOAD_FILE $__arg1)
 			elif [ ${__arg1:0:8} = https:// ];then
-				resp=`curl --fail -u $__arg4:$__arg5 --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $__arg1`
+				resp=`curl --fail -u $__arg4:$__arg5 --anyauth --write-out %{http_code} --silent -k --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $__arg1`
 			else
-				resp=`curl --fail -u $__arg4:$__arg5 --write-out %{http_code} --silent --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $__arg1`
+				resp=`curl --fail -u $__arg4:$__arg5 --anyauth --write-out %{http_code} --silent --connect-timeout 10 --retry 1 -o $ICWMP_DOWNLOAD_FILE $__arg1`
 			fi
 
 			resp=`echo $resp| awk '{print $NF}'`
