@@ -141,15 +141,15 @@ int cwmp_uci_get_option_value_string(char *package, char *section, char *option,
 
 char *cwmp_db_get_value_string(char *package, char *section, char *option)
 {
-	cwmp_uci_ctx = uci_alloc_context();
+	struct uci_context *ucictx = uci_alloc_context();
 
 	struct uci_option *o = NULL;
 	struct uci_element *e;
 	struct uci_ptr ptr = { 0 };
 
-	cwmp_uci_ctx->confdir = LIB_DB_CONFIG;
+	ucictx->confdir = LIB_DB_CONFIG;
 
-	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, option, NULL))
+	if (cwmp_uci_lookup_ptr(ucictx, &ptr, package, section, option, NULL))
 		return "";
 
 	e = ptr.last;
