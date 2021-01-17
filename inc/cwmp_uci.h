@@ -42,6 +42,7 @@
 #define UCI_CPE_LOG_MAX_SIZE "cwmp.cpe.log_max_size"
 #define UCI_CPE_ENABLE_STDOUT_LOG "cwmp.cpe.log_to_console"
 #define UCI_CPE_ENABLE_FILE_LOG "cwmp.cpe.log_to_file"
+#define UCI_CPE_ENABLE_SYSLOG "cwmp.cpe.log_to_syslog"
 #define UCI_CPE_AMD_VERSION "cwmp.cpe.amd_version"
 #define UCI_CPE_INSTANCE_MODE "cwmp.cpe.instance_mode"
 #define UCI_CPE_SESSION_TIMEOUT "cwmp.cpe.session_timeout"

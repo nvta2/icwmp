@@ -12,6 +12,9 @@
 
 #include <sys/stat.h>
 #include <stdarg.h>
+#include <syslog.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "common.h"
 #include "log.h"
 
@@ -21,6 +24,7 @@ static long int log_max_size = DEFAULT_LOG_FILE_SIZE;
 static char log_file_name[256];
 static bool enable_log_file = true;
 static bool enable_log_stdout = false;
+static bool enable_log_syslog = true;
 static pthread_mutex_t mutex_log = PTHREAD_MUTEX_INITIALIZER;
 
 int log_set_severity_idx(char *value)
@@ -72,6 +76,27 @@ int log_set_on_file(char *value)
 	return 1;
 }
 
+extern char *__progname;
+
+int log_set_on_syslog(char *value)
+{
+	if (strcmp(value, "enable") == 0) {
+		char ident[256];
+
+		enable_log_syslog = true;
+
+		setlogmask(LOG_UPTO(log_severity));
+		snprintf(ident, sizeof(ident), "%s[%d]", __progname, getpid());
+		ident[sizeof(ident) - 1] = '\0';
+		openlog(ident, LOG_NDELAY, LOG_LOCAL1);
+	}
+
+	if (strcmp(value, "disable") == 0) {
+		enable_log_syslog = false;
+	}
+	return 1;
+}
+
 void puts_log(int severity, const char *fmt, ...)
 {
 	va_list args;
@@ -85,11 +110,11 @@ void puts_log(int severity, const char *fmt, ...)
 	char buf[1024];
 	char buf_file[1024];
 
-	if (severity > log_severity) {
-		return;
-	}
-
 	pthread_mutex_lock(&mutex_log);
+
+	if (severity > log_severity) {
+		goto syslog;
+	}
 
 	gettimeofday(&tv, 0);
 	Tm = localtime(&tv.tv_sec);
@@ -123,6 +148,17 @@ void puts_log(int severity, const char *fmt, ...)
 	if (enable_log_stdout) {
 		puts(buf);
 	}
+
+syslog:
+	if (enable_log_syslog) {
+		va_start(args, fmt);
+		vsnprintf(buf, sizeof(buf), fmt, args);
+		buf[sizeof(buf) - 1] = '\0';
+		va_end(args);
+
+		syslog(severity, "%s", buf);
+	}
+
 	pthread_mutex_unlock(&mutex_log);
 }
 
@@ -137,11 +173,11 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 	char buf[1024];
 	char *description, *separator;
 
-	if (severity > log_severity) {
-		return;
-	}
-
 	pthread_mutex_lock(&mutex_log);
+
+	if (severity > log_severity) {
+		goto xml_syslog;
+	}
 
 	gettimeofday(&tv, 0);
 	Tm = localtime(&tv.tv_sec);
@@ -185,5 +221,13 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 		puts("\n");
 		puts(separator);
 	}
+
+xml_syslog:
+	if (enable_log_syslog) {
+		syslog(severity, "%s: %s", ((msgtype == XML_MSG_IN) ? "IN" : "OUT"), msg);
+		if (sizeof(buf) < strlen(msg))
+			syslog(severity, "Truncated message at %d characters", strlen(msg));
+	}
+
 	pthread_mutex_unlock(&mutex_log);
 }

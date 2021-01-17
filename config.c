@@ -283,6 +283,13 @@ int get_global_config(struct config *conf)
 	} else {
 		return error;
 	}
+	if ((error = uci_get_value(UCI_CPE_ENABLE_SYSLOG, &value)) == CWMP_OK) {
+		if (value != NULL) {
+			log_set_on_syslog(value);
+			free(value);
+			value = NULL;
+		}
+	}
 	if ((error = uci_get_value(UCI_CPE_PORT_PATH, &value)) == CWMP_OK) {
 		int a = 0;
 
