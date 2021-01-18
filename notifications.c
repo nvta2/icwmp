@@ -230,7 +230,7 @@ static void udplw_server_param(struct addrinfo **res)
 	conf = &(cwmp->conf);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
-	asprintf(&port, "%d", conf->lw_notification_port);
+	cwmp_asprintf(&port, "%d", conf->lw_notification_port);
 	getaddrinfo(conf->lw_notification_hostname, port, &hints, res);
 	//FREE(port);
 }
@@ -306,7 +306,7 @@ void cwmp_lwnotification()
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
 	message_compute_signature(msg_out, signature);
-	asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
+	cwmp_asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
 
 	send_udp_message(servaddr, msg);
 	free_all_list_lw_notify();

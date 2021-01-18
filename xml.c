@@ -269,7 +269,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 
 	/* get NoMoreRequests or HolRequest*/
 	session->hold_request = false;
-	if (asprintf(&c, "%s:%s", ns.cwmp, "NoMoreRequests") == -1)
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "NoMoreRequests") == -1)
 		goto error;
 	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
 	FREE(c);
@@ -278,7 +278,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 		if (b && b->type == MXML_OPAQUE && b->value.opaque)
 			session->hold_request = atoi(b->value.opaque);
 	} else {
-		if (asprintf(&c, "%s:%s", ns.cwmp, "HoldRequests") == -1)
+		if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "HoldRequests") == -1)
 			goto error;
 
 		b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
@@ -332,7 +332,7 @@ int xml_set_cwmp_id(struct session *session)
 	mxml_node_t *b;
 
 	/* define cwmp id */
-	if (asprintf(&c, "%u", ++(cwmp_main.cwmp_id)) == -1)
+	if (cwmp_asprintf(&c, "%u", ++(cwmp_main.cwmp_id)) == -1)
 		return -1;
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
@@ -353,7 +353,7 @@ int xml_set_cwmp_id_rpc_cpe(struct session *session)
 	mxml_node_t *b;
 
 	/* handle cwmp:ID */
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ID") == -1)
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "ID") == -1)
 		return -1;
 
 	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
@@ -394,7 +394,7 @@ int xml_handle_message(struct session *session)
 
 	/* get method */
 
-	if (asprintf(&c, "%s:%s", ns.soap_env, "Body") == -1) {
+	if (cwmp_asprintf(&c, "%s:%s", ns.soap_env, "Body") == -1) {
 		CWMP_LOG(INFO, "Internal error");
 		session->fault_code = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
@@ -534,7 +534,7 @@ static int xml_prepare_events_inform(struct session *session, mxml_node_t *tree)
 		n++;
 	}
 	if (n) {
-		if (asprintf(&c, "cwmp:EventStruct[%u]", n) == -1)
+		if (cwmp_asprintf(&c, "cwmp:EventStruct[%u]", n) == -1)
 			return -1;
 		mxmlElementSetAttr(b1, "xsi:type", "soap_enc:Array");
 		mxmlElementSetAttr(b1, "soap_enc:arrayType", c);
@@ -649,7 +649,7 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	if (!b)
 		goto error;
 
-	if (asprintf(&c, "%ld", time(NULL)) == -1)
+	if (cwmp_asprintf(&c, "%ld", time(NULL)) == -1)
 		goto error;
 	b = mxmlNewOpaque(b, c);
 	free(c);
@@ -716,7 +716,7 @@ error:
 char *xml_get_cwmp_version(int version)
 {
 	int k;
-	char tmp[10] = "";
+	char tmp[15] = "";
 	static char versions[60] = "";
 	versions[0] = '\0';
 
@@ -863,7 +863,7 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 		}
 		FREE_JSON(parameters);
 	}
-	if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
+	if (cwmp_asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;
 
 	mxmlElementSetAttr(parameter_list, "xsi:type", "soap_enc:Array");
@@ -1248,9 +1248,12 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 {
 	mxml_node_t *n, *parameter_list, *b;
 	char *parameter_name = NULL;
-	char *c = NULL;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
-	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL, *param_type = NULL;
+	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL;
+#ifdef ACS_MULTI
+	char *c = NULL;
+	struct json_object *param_type = NULL;
+#endif
 
 	b = session->body_in;
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
@@ -1326,7 +1329,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	if (!b)
 		goto fault;
 
-	if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", counter) == -1)
+	if (cwmp_asprintf(&c, "cwmp:ParameterValueStruct[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
@@ -1352,10 +1355,11 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 	mxml_node_t *n, *parameter_list, *b = session->body_in;
 	char *parameter_name = NULL;
 	char *NextLevel = NULL;
-	char *c;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
 	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *writable = NULL;
-
+#ifdef ACS_MULTI
+	char *c = NULL;
+#endif
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!n)
 		goto fault;
@@ -1426,7 +1430,7 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 	if (!b)
 		goto fault;
 
-	if (asprintf(&c, "cwmp:ParameterInfoStruct[%d]", counter) == -1)
+	if (cwmp_asprintf(&c, "cwmp:ParameterInfoStruct[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
@@ -1453,10 +1457,11 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 {
 	mxml_node_t *n, *parameter_list, *b;
 	char *parameter_name = NULL;
-	char *c = NULL;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
 	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *notification = NULL;
-
+#ifdef ACS_MULTI
+	char *c = NULL;
+#endif
 	b = session->body_in;
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!n)
@@ -1535,7 +1540,7 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 	if (!b)
 		goto fault;
 
-	if (asprintf(&c, "cwmp:ParameterAttributeStruct[%d]", counter) == -1)
+	if (cwmp_asprintf(&c, "cwmp:ParameterAttributeStruct[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
@@ -1611,7 +1616,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 				v = (char *)mxmlGetOpaque(b);
 				if (!whitespace)
 					break;
-				asprintf(&c, "%s %s", parameter_value, v);
+				cwmp_asprintf(&c, "%s %s", parameter_value, v);
 				FREE(parameter_value);
 				parameter_value = strdup(c);
 			}
@@ -1710,7 +1715,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	int fault_code = FAULT_CPE_INTERNAL_ERROR;
 
 	/* handle cwmp:SetParameterAttributes */
-	if (asprintf(&c, "%s:%s", ns.cwmp, "SetParameterAttributes") == -1)
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "SetParameterAttributes") == -1)
 		goto fault;
 
 	n = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
@@ -1954,9 +1959,12 @@ error:
 
 int cwmp_handle_rpc_cpe_get_rpc_methods(struct session *session, struct rpc *rpc)
 {
-	mxml_node_t *n, *method_list, *b = session->body_in;
-	char *c = NULL;
+	mxml_node_t *n, *method_list;
 	int i, counter = 0;
+#ifdef ACS_MULTI
+	mxml_node_t *b = session->body_in;
+	char *c = NULL;
+#endif
 
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!n)
@@ -1989,7 +1997,7 @@ int cwmp_handle_rpc_cpe_get_rpc_methods(struct session *session, struct rpc *rpc
 		goto fault;
 
 	mxmlElementSetAttr(b, "xsi:type", "soap_enc:Array");
-	if (asprintf(&c, "xsd:string[%d]", counter) == -1)
+	if (cwmp_asprintf(&c, "xsd:string[%d]", counter) == -1)
 		goto fault;
 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
@@ -2474,7 +2482,7 @@ int lookup_vcf_name(char *instance, char **value)
 	json_object *parameters = NULL, *param_obj = NULL, *value_obj = NULL;
 	char *vcf_name_parameter = NULL;
 
-	asprintf(&vcf_name_parameter, "Device.DeviceInfo.VendorConfigFile.%s.Name", instance);
+	cwmp_asprintf(&vcf_name_parameter, "Device.DeviceInfo.VendorConfigFile.%s.Name", instance);
 	if (cwmp_get_parameter_values(vcf_name_parameter, &parameters) != NULL) {
 		FREE(vcf_name_parameter);
 		return -1;
@@ -2608,8 +2616,9 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 						}
 						free(fault_code);
 						if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
-							if (pdownload->file_type[0] == '3')
+							if (pdownload->file_type[0] == '3') {
 								CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
+							}
 							exit(EXIT_SUCCESS);
 						}
 						bkp_session_delete_transfer_complete(ptransfer_complete);
@@ -3021,9 +3030,9 @@ static char *get_software_module_object_eq(char *param1, char *val1, char *param
 	json_object *swdu_get_obj = NULL;
 
 	if (!param2)
-		asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"].", param1, val1);
+		cwmp_asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"].", param1, val1);
 	else
-		asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"&& %s==\\\"%s\\\"].", param1, val1, param2, val2);
+		cwmp_asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"&& %s==\\\"%s\\\"].", param1, val1, param2, val2);
 	err = cwmp_get_parameter_values(sw_parameter_name, &swdu_get_obj);
 	if (err) {
 		FREE(sw_parameter_name);
@@ -3059,9 +3068,9 @@ static int get_deployment_unit_name_version(char *uuid, char **name, char **vers
 	if (!sw_by_uuid_instance)
 		return 0;
 
-	asprintf(&name_param, "Device.SoftwareModules.DeploymentUnit.%s.Name", sw_by_uuid_instance);
-	asprintf(&version_param, "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
-	asprintf(&environment_param, "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
+	cwmp_asprintf(&name_param, "Device.SoftwareModules.DeploymentUnit.%s.Name", sw_by_uuid_instance);
+	cwmp_asprintf(&version_param, "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
+	cwmp_asprintf(&environment_param, "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
 
 	foreach_jsonobj_in_array(du_obj, arrobj)
 	{
@@ -3097,7 +3106,7 @@ static char *get_softwaremodules_uuid(char *url)
 	if (!sw_by_url_instance)
 		return NULL;
 
-	asprintf(&uuid_param, "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
+	cwmp_asprintf(&uuid_param, "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
 
 	foreach_jsonobj_in_array(du_obj, arrobj)
 	{
@@ -3125,7 +3134,7 @@ static char *get_softwaremodules_url(char *uuid)
 	if (!sw_by_uuid_instance)
 		return NULL;
 
-	asprintf(&url_param, "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
+	cwmp_asprintf(&url_param, "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
 
 	foreach_jsonobj_in_array(du_obj, arrobj)
 	{
@@ -3153,7 +3162,7 @@ static char *get_deployment_unit_reference(char *package_name, char *package_env
 		return NULL;
 
 	FREE_JSON(arrobj);
-	asprintf(&deployment_unit_ref, "Device.SoftwareModules.DeploymentUnit.%s", sw_by_name_env_instance);
+	cwmp_asprintf(&deployment_unit_ref, "Device.SoftwareModules.DeploymentUnit.%s", sw_by_name_env_instance);
 	return deployment_unit_ref;
 }
 
@@ -3182,7 +3191,7 @@ static char *get_exec_env_name(char *environment_path)
 		return "";
 	}
 
-	asprintf(&env_param, "%sName", environment_path);
+	cwmp_asprintf(&env_param, "%sName", environment_path);
 
 	foreach_jsonobj_in_array(du_obj, sw_env_get_obj)
 	{
@@ -3792,7 +3801,7 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 	int error = FAULT_CPE_NO_FAULT;
 	char *c;
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ChangeDUState") == -1) {
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "ChangeDUState") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
@@ -3925,7 +3934,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	time_t scheduled_time = 0;
 	time_t download_delay = 0;
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "Download") == -1) {
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "Download") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
@@ -3953,7 +3962,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 				file_type = strdup(b->value.opaque);
 			} else {
 				tmp = file_type;
-				if (asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
+				if (cwmp_asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
@@ -4078,7 +4087,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 	struct schedule_download *schedule_download = NULL;
 	time_t schedule_download_delay[4] = { 0, 0, 0, 0 };
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "ScheduleDownload") == -1) {
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "ScheduleDownload") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
@@ -4107,7 +4116,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 				file_type = strdup(b->value.opaque);
 			} else {
 				tmp = file_type;
-				if (asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
+				if (cwmp_asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
@@ -4149,14 +4158,14 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 							windowmode1 = strdup(t->value.opaque);
 					} else if (i == 0) {
 						tmp = windowmode0;
-						if (asprintf(&windowmode0, "%s %s", tmp, t->value.opaque) == -1) {
+						if (cwmp_asprintf(&windowmode0, "%s %s", tmp, t->value.opaque) == -1) {
 							error = FAULT_CPE_INTERNAL_ERROR;
 							goto fault;
 						}
 						FREE(tmp);
 					} else if (i == 1) {
 						tmp = windowmode1;
-						if (asprintf(&windowmode1, "%s %s", tmp, t->value.opaque) == -1) {
+						if (cwmp_asprintf(&windowmode1, "%s %s", tmp, t->value.opaque) == -1) {
 							error = FAULT_CPE_INTERNAL_ERROR;
 							goto fault;
 						}
@@ -4253,7 +4262,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	time_t scheduled_time = 0;
 	time_t upload_delay = 0;
 
-	if (asprintf(&c, "%s:%s", ns.cwmp, "Upload") == -1) {
+	if (cwmp_asprintf(&c, "%s:%s", ns.cwmp, "Upload") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
 		goto fault;
 	}
@@ -4280,7 +4289,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 				file_type = strdup(b->value.opaque);
 			} else {
 				tmp = file_type;
-				if (asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
+				if (cwmp_asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}

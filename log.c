@@ -106,7 +106,7 @@ void puts_log(int severity, const char *fmt, ...)
 	FILE *pLog = NULL;
 	struct stat st;
 	long int size = 0;
-	char log_file_name_bak[256];
+	char log_file_name_bak[258];
 	char buf[1024];
 	char buf_file[1024];
 
@@ -169,7 +169,7 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 	FILE *pLog = NULL;
 	struct stat st;
 	long int size = 0;
-	char log_file_name_bak[256];
+	char log_file_name_bak[258];
 	char buf[1024];
 	char *description, *separator;
 

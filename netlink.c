@@ -122,7 +122,7 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 			if (cwmp_main.conf.ip)
 				FREE(cwmp_main.conf.ip);
 			cwmp_main.conf.ip = strdup(if_addr);
-			if (asprintf(&c, "cwmp.cpe.ip=%s", cwmp_main.conf.ip) != -1) {
+			if (cwmp_asprintf(&c, "cwmp.cpe.ip=%s", cwmp_main.conf.ip) != -1) {
 				uci_set_state_value(c);
 				free(c);
 			}
@@ -144,7 +144,7 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 			if (cwmp_main.conf.ipv6)
 				FREE(cwmp_main.conf.ipv6);
 			cwmp_main.conf.ipv6 = strdup(pradd_v6);
-			if (asprintf(&c, "cwmp.cpe.ipv6=%s", cwmp_main.conf.ipv6) != -1) {
+			if (cwmp_asprintf(&c, "cwmp.cpe.ipv6=%s", cwmp_main.conf.ipv6) != -1) {
 				uci_set_state_value(c);
 				free(c);
 			}

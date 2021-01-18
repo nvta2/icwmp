@@ -50,19 +50,19 @@ int http_client_init(struct cwmp *cwmp)
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
 		if (acs_var_stat) {
-			if (asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
+			if (cwmp_asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
 				free(acs_var_stat);
 				free(dhcp_dis);
 				return -1;
 			}
 		} else {
-			if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
+			if (cwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
 				free(dhcp_dis);
 				return -1;
 			}
 		}
 	} else {
-		if (asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
+		if (cwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
 			if (dhcp_dis)
 				free(dhcp_dis);
 			return -1;
@@ -90,7 +90,7 @@ int http_client_init(struct cwmp *cwmp)
 		curl_easy_perform(curl);
 		int tmp = inet_pton(AF_INET, ip, buf);
 
-		asprintf(&uci_cmd, "cwmp.acs.ip_version=%d", (tmp == 1) ? 4 : 6);
+		cwmp_asprintf(&uci_cmd, "cwmp.acs.ip_version=%d", (tmp == 1) ? 4 : 6);
 		uci_set_value(uci_cmd);
 		free(uci_cmd);
 	}
@@ -115,7 +115,7 @@ static size_t http_get_response(void *buffer, size_t size, size_t rxed, char **m
 {
 	char *c;
 
-	if (asprintf(&c, "%s%.*s", *msg_in, (int)(size * rxed), (char *)buffer) == -1) {
+	if (cwmp_asprintf(&c, "%s%.*s", *msg_in, (int)(size * rxed), (char *)buffer) == -1) {
 		FREE(*msg_in);
 		return -1;
 	}

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <stdio.h>
 
 #include "external.h"
 #include "xml.h"
@@ -72,7 +73,8 @@ void external_fetch_uninstall_fault_resp(char **fault)
 	external_MethodFault = NULL;
 }
 
-void external_du_change_state_fault_resp(char *fault_code, char *version, char *name, char *uuid, char *env)
+void external_du_change_state_fault_resp(char *fault_code, char *version,
+		char *name, char *uuid, char *env)
 {
 	FREE(external_MethodFault);
 	external_MethodFault = fault_code ? strdup(fault_code) : NULL;
@@ -86,7 +88,8 @@ void external_du_change_state_fault_resp(char *fault_code, char *version, char *
 	external_MethodENV = env ? strdup(env) : NULL;
 }
 
-void external_fetch_du_change_state_fault_resp(char **fault, char **version, char **name, char **uuid, char **env)
+void external_fetch_du_change_state_fault_resp(char **fault, char **version,
+		char **name, char **uuid, char **env)
 {
 	*fault = external_MethodFault;
 	external_MethodFault = NULL;
@@ -102,7 +105,7 @@ void external_fetch_du_change_state_fault_resp(char **fault, char **version, cha
 static void external_read_pipe_input(int (*external_handler)(char *msg))
 {
 	char buf[1], *value = NULL, *c = NULL;
-	struct pollfd fd = {.fd = pfds_in[0], .events = POLLIN };
+	struct pollfd fd = {.fd = pfds_in[0], .events = POLLIN};
 	while (1) {
 		poll(&fd, 1, 500000);
 		if (!(fd.revents & POLLIN))
@@ -111,9 +114,9 @@ static void external_read_pipe_input(int (*external_handler)(char *msg))
 			break;
 		if (buf[0] != '\n') {
 			if (value)
-				asprintf(&c, "%s%c", value, buf[0]);
+				cwmp_asprintf(&c, "%s%c", value, buf[0]);
 			else
-				asprintf(&c, "%c", buf[0]);
+				cwmp_asprintf(&c, "%c", buf[0]);
 
 			FREE(value);
 			value = c;
@@ -135,7 +138,7 @@ static void external_write_pipe_output(const char *msg)
 {
 	char *value = NULL;
 
-	asprintf(&value, "%s\n", msg);
+	cwmp_asprintf(&value, "%s\n", msg);
 	if (write(pfds_out[1], value, strlen(value)) == -1) {
 		CWMP_LOG(ERROR, "Error occured when trying to write to the pipe");
 	}
@@ -176,7 +179,7 @@ void external_init()
 		argv[i++] = fc_script;
 		argv[i++] = "json_continuous_input";
 		argv[i++] = NULL;
-		execvp(argv[0], (char **)argv);
+		execvp(argv[0], (char**)argv);
 
 		close(pfds_out[0]);
 		close(pfds_in[1]);
@@ -195,7 +198,7 @@ void external_init()
 	DD(INFO, "icwmp script is listening");
 	return;
 
-error:
+	error:
 	CWMP_LOG(ERROR, "icwmp script intialization failed");
 	exit(EXIT_FAILURE);
 }
@@ -256,7 +259,8 @@ int external_simple(char *command, char *arg, int c)
 	return 0;
 }
 
-int external_download(char *url, char *size, char *type, char *user, char *pass, time_t c)
+int external_download(char *url, char *size, char *type, char *user, char *pass,
+		time_t c)
 {
 	DD(INFO, "executing download url '%s'", url);
 	char *id = NULL;
@@ -266,16 +270,17 @@ int external_download(char *url, char *size, char *type, char *user, char *pass,
 	struct cwmp *cwmp = &cwmp_main;
 
 	conf = &(cwmp->conf);
-	if (strncmp(url, DOWNLOAD_PROTOCOL_HTTPS, strlen(DOWNLOAD_PROTOCOL_HTTPS)) == 0) {
+	if (strncmp(url, DOWNLOAD_PROTOCOL_HTTPS,
+			strlen(DOWNLOAD_PROTOCOL_HTTPS)) == 0) {
 		if (conf->https_ssl_capath)
 			cert_path = strdup(conf->https_ssl_capath);
 		else
 			cert_path = NULL;
 	}
 	if (cert_path)
-		CWMP_LOG(DEBUG, "https certif path %s", cert_path);
-	if (c)
-		asprintf(&id, "%ld", c);
+		CWMP_LOG(DEBUG, "https certif path %s", cert_path)
+		if (c)
+			cwmp_asprintf(&id, "%ld", c);
 	/* send data to the script */
 	json_obj_out = json_object_new_object();
 
@@ -327,7 +332,8 @@ int external_upload(char *url, char *type, char *user, char *pass, char *name)
 	return 0;
 }
 
-int external_change_du_state_install(char *url, char *uuid, char *user, char *pass, char *env)
+int external_change_du_state_install(char *url, char *uuid, char *user,
+		char *pass, char *env)
 {
 	DD(INFO, "executing DU install");
 	json_object *json_obj_out;
@@ -353,7 +359,8 @@ int external_change_du_state_install(char *url, char *uuid, char *user, char *pa
 	return 0;
 }
 
-int external_change_du_state_update(char *uuid, char *url, char *user, char *pass)
+int external_change_du_state_update(char *uuid, char *url, char *user,
+		char *pass)
 {
 	DD(INFO, "executing DU update");
 	json_object *json_obj_out;
@@ -404,7 +411,7 @@ int external_apply(char *action, char *arg, time_t c)
 	char *id = NULL;
 
 	if (c)
-		asprintf(&id, "%ld", c);
+		cwmp_asprintf(&id, "%ld", c);
 
 	/* send data to the script */
 	json_obj_out = json_object_new_object();

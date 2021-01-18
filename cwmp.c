@@ -457,9 +457,9 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 		return error;
 
 	/* Only One instance should run*/
-	cwmp->pid_file = open("/var/run/icwmpd.pid", O_CREAT | O_RDWR, 0666);
-	fcntl(cwmp->pid_file, F_SETFD, fcntl(cwmp->pid_file, F_GETFD) | FD_CLOEXEC);
-	int rc = flock(cwmp->pid_file, LOCK_EX | LOCK_NB);
+	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
+	fcntl(fileno(cwmp->pid_file), F_SETFD, fcntl(fileno(cwmp->pid_file), F_GETFD) | FD_CLOEXEC);
+	int rc = flock(fileno(cwmp->pid_file), LOCK_EX | LOCK_NB);
 	if (rc) {
 		if (EWOULDBLOCK != errno) {
 			char *piderr = "PID file creation failed: Quit the daemon!";
@@ -544,43 +544,53 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &act, 0);
 
 	error = pthread_create(&http_cr_server_thread, NULL, &thread_http_cr_server_listen, NULL);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the http connection request server thread!");
+	}
 
 	error = pthread_create(&ubus_thread, NULL, &thread_uloop_run, NULL);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the ubus thread!");
+	}
 
 	error = pthread_create(&periodic_event_thread, NULL, &thread_event_periodic, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the periodic event thread!");
+	}
 
 	error = pthread_create(&periodic_check_notify, NULL, &thread_periodic_check_notify, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the download thread!");
+	}
 	error = pthread_create(&scheduleInform_thread, NULL, &thread_cwmp_rpc_cpe_scheduleInform, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the scheduled inform thread!");
+	}
 
 	error = pthread_create(&download_thread, NULL, &thread_cwmp_rpc_cpe_download, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the download thread!");
+	}
 
 	error = pthread_create(&change_du_state_thread, NULL, &thread_cwmp_rpc_cpe_change_du_state, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the state change thread!");
+	}
 
 	error = pthread_create(&schedule_download_thread, NULL, &thread_cwmp_rpc_cpe_schedule_download, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the schedule download thread!");
+	}
 
 	error = pthread_create(&apply_schedule_download_thread, NULL, &thread_cwmp_rpc_cpe_apply_schedule_download, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the schedule download thread!");
+	}
 
 	error = pthread_create(&upload_thread, NULL, &thread_cwmp_rpc_cpe_upload, (void *)cwmp);
-	if (error < 0)
+	if (error < 0) {
 		CWMP_LOG(ERROR, "Error when creating the download thread!");
+	}
 
 	cwmp_schedule_session(cwmp);
 

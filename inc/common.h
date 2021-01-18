@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <libubox/list.h>
 #include <sys/time.h>
@@ -125,7 +126,7 @@ typedef struct cwmp {
 	int count_handle_notify;
 	int retry_count_session;
 	struct list_head *head_event_container;
-	int pid_file;
+	FILE* pid_file;
 	time_t start_time;
 	struct session_status session_status;
 	unsigned int cwmp_id;
@@ -447,6 +448,7 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
 void cwmp_add_list_param_value(char *param, char *value, struct list_head *list_param_value);
 void cwmp_del_list_param_value(struct cwmp_param_value *param_value);
 void cwmp_free_all_list_param_value(struct list_head *list_param_value);
+int cwmp_asprintf(char **s, const char *format, ...);
 
 #ifndef FREE
 #define FREE(x)                   \

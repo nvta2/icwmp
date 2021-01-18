@@ -169,3 +169,25 @@ void cwmp_free_all_list_param_value(struct list_head *list_param_value)
 		cwmp_del_list_param_value(param_value);
 	}
 }
+
+int cwmp_asprintf(char **s, const char *format, ...)
+{
+        int size;
+        char *str = NULL;
+        va_list arg, argcopy;
+
+        va_start(arg,format);
+        va_copy(argcopy, arg);
+        size = vsnprintf(NULL, 0, format, argcopy);
+        if (size < 0)
+                return -1;
+        va_end(argcopy);
+        str = (char *)calloc(sizeof(char), size+1);
+        vsnprintf(str, size+1, format, arg);
+        va_end(arg);
+        *s = strdup(str);
+        FREE(str);
+        if (*s == NULL)
+                return -1;
+        return 0;
+}

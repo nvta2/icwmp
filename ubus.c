@@ -71,7 +71,7 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
 		cwmp_set_end_session(END_SESSION_RELOAD);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "icwmpd config will reload at the end of the session") == -1)
+		if (cwmp_asprintf(&info, "icwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
@@ -84,34 +84,34 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 			cwmp_apply_acs_changes();
 			pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
 			blobmsg_add_u32(&b, "status", 0);
-			if (asprintf(&info, "icwmpd config reloaded") == -1)
+			if (cwmp_asprintf(&info, "icwmpd config reloaded") == -1)
 				return -1;
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
 		cwmp_set_end_session(END_SESSION_REBOOT);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "icwmpd will reboot at the end of the session") == -1)
+		if (cwmp_asprintf(&info, "icwmpd will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "icwmpd will execute the scheduled action commands at the end of the session") == -1)
+		if (cwmp_asprintf(&info, "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("exit", cmd)) {
 		pthread_t exit_thread;
 		int error;
 		CWMP_LOG(INFO, "triggered ubus exit");
-		int rc = flock(cwmp_main.pid_file, LOCK_UN | LOCK_NB);
-		close(cwmp_main.pid_file);
+		int rc = flock(fileno(cwmp_main.pid_file), LOCK_UN | LOCK_NB);
+		fclose(cwmp_main.pid_file);
 		if (rc) {
 			char *piderr = "PID file unlock failed!";
 			fprintf(stderr, "%s\n", piderr);
 			CWMP_LOG(ERROR, "%s", piderr);
 		}
 		blobmsg_add_u32(&b, "status", 0);
-		if (asprintf(&info, "icwmpd daemon stopped") == -1)
+		if (cwmp_asprintf(&info, "icwmpd daemon stopped") == -1)
 			return -1;
 		blobmsg_add_string(&b, "info", info);
 		free(info);
@@ -119,7 +119,8 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		ubus_send_reply(ctx, req, b.head);
 
 		blob_buf_free(&b);
-		close(cwmp_main.cr_socket_desc);
+		FILE *socke_file = fdopen(cwmp_main.cr_socket_desc, "r+");
+		fclose(socke_file);
 		CWMP_LOG(INFO, "Close connection request server socket");
 		error = pthread_create(&exit_thread, NULL, &thread_exit_program, NULL);
 		if (error < 0) {
@@ -130,7 +131,7 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 
 	} else {
 		blobmsg_add_u32(&b, "status", -1);
-		if (asprintf(&info, "%s command is not supported", cmd) == -1)
+		if (cwmp_asprintf(&info, "%s command is not supported", cmd) == -1)
 			return -1;
 	}
 
