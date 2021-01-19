@@ -9,6 +9,7 @@
  *
  */
 #include <getopt.h>
+#include <sys/stat.h>
 
 #include "common.h"
 
@@ -190,4 +191,11 @@ int cwmp_asprintf(char **s, const char *format, ...)
         if (*s == NULL)
                 return -1;
         return 0;
+}
+
+bool folder_exists(const char *path)
+{
+	struct stat folder_stat;
+
+	return (stat(path, &folder_stat) == 0 && S_ISDIR(folder_stat.st_mode));
 }
