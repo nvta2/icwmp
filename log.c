@@ -226,7 +226,7 @@ xml_syslog:
 	if (enable_log_syslog) {
 		syslog(severity, "%s: %s", ((msgtype == XML_MSG_IN) ? "IN" : "OUT"), msg);
 		if (sizeof(buf) < strlen(msg))
-			syslog(severity, "Truncated message at %d characters", strlen(msg));
+			syslog(severity, "Truncated message at %ld characters", strlen(msg));
 	}
 
 	pthread_mutex_unlock(&mutex_log);
