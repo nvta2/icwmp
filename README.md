@@ -108,6 +108,8 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `manufacturer_oui`     | string  | Specifies the manafacturer oui of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ManufacturerOUI** parameter. |
 | `model_name`            | string  | Specifies the model name of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ModelName** parameter. |
 | `product_class`         | string  | Specifies the product class of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ProductClass** parameter. |
+| `log_to_syslog`         | boolean  | If set to **1**, the cwmp log will be appended to busybox syslog. |
+| `periodic_notify_enable` | boolean  | If set to **1**, icwmp will be able to detect parameter value change at any time. |
 
 ### cwmp lwn section ###
 
