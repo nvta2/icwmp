@@ -106,6 +106,7 @@ int cwmp_transaction_abort()
 
 int cwmp_transaction_status()
 {
+	CWMP_LOG(INFO, "Transaction Status");
 	json_object *status_obj = NULL, *transaction_ret = NULL;
 	int e = cwmp_ubus_call("usp.raw", "transaction_status", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, &transaction_ret);
 	if (e != 0) {
@@ -388,7 +389,7 @@ char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 int cwmp_update_enabled_list_notify(int instance_mode, int notify_type)
 {
 	int e;
-	CWMP_LOG(INFO, "Get List Notify for %s paramters values", notify_type == OLD_LIST_NOTIFY ? "old" : "actual");
+	CWMP_LOG(DEBUG, "Get List Notify for %s paramters values", notify_type == OLD_LIST_NOTIFY ? "old" : "actual");
 	if (notify_type == OLD_LIST_NOTIFY) {
 		FREE_JSON(old_list_notify)
 		FREE_JSON(old_global_json_obj)
