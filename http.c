@@ -290,9 +290,9 @@ static void http_cr_new_client(int client, bool service_available)
 
 	pthread_mutex_lock(&mutex_config_load);
 	fp = fdopen(client, "r+");
-
 	char *username = cwmp_main.conf.cpe_userid;
 	char *password = cwmp_main.conf.cpe_passwd;
+
 	if (!username || !password) {
 		// if we dont have username or password configured proceed with connecting to ACS
 		service_available = false;
@@ -311,16 +311,16 @@ static void http_cr_new_client(int client, bool service_available)
 			break;
 		}
 	}
-	if (!service_available || !method_is_get || !auth_digest_checked) {
+	if (!service_available || !method_is_get) {
 		goto http_end;
 	}
-	if (http_digest_auth_check("GET", "/", auth_digest_buffer + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
+	if (auth_digest_checked && http_digest_auth_check("GET", "/", auth_digest_buffer + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
 		auth_status = 1;
 	else
 		auth_status = 0;
 
 http_end:
-	if (!service_available || !method_is_get || !auth_digest_checked) {
+	if (!service_available || !method_is_get) {
 		CWMP_LOG(INFO, "Receive Connection Request: Return 503 Service Unavailable");
 		fputs("HTTP/1.1 503 Service Unavailable\r\n", fp);
 		fputs("Connection: close\r\n", fp);
