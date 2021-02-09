@@ -22,19 +22,19 @@
 /**
  * Maximum length of a username for digest authentication.
  */
-#define MAX_USERNAME_LENGTH 128
+#define MAX_USERNAME_LENGTH 1024
 
 /**
  * Maximum length of a realm for digest authentication.
  */
-#define MAX_REALM_LENGTH 256
+#define MAX_REALM_LENGTH 1024
 
 /**
  * Maximum length of the response in digest authentication.
  */
-#define MAX_AUTH_RESPONSE_LENGTH 128
+#define MAX_AUTH_RESPONSE_LENGTH 1024
 
-#define MAX_NONCE_LENGTH 129
+#define MAX_NONCE_LENGTH 1024
 
 #define NONCE_PRIV_KEY "h5ffku7rlxp6tjf2xamnfqjev5ul"
 
