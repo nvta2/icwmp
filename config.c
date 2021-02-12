@@ -307,6 +307,25 @@ int get_global_config(struct config *conf)
 	} else {
 		return error;
 	}
+	if ((error = uci_get_value(UCI_CPE_CRPATH_PATH, &value)) == CWMP_OK) {
+		if (conf->connection_request_path != NULL) {
+			free(conf->connection_request_path);
+		}
+		if (value == NULL)
+			conf->connection_request_path = strdup("/");
+		else {
+			if (value[0] == '/')
+				conf->connection_request_path = strdup(value);
+			else {
+				char *cr_path = NULL;
+				asprintf(&cr_path, "/%s", value);
+				conf->connection_request_path = strdup(cr_path);
+				free(cr_path);
+			}
+		}
+	} else {
+		return error;
+	}
 	if ((error = uci_get_value(UCI_CPE_NOTIFY_PERIODIC_ENABLE, &value)) == CWMP_OK) {
 		bool a = true;
 		if (value != NULL) {

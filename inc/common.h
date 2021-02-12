@@ -69,6 +69,7 @@ typedef struct config {
 	char *ipv6;
 	char *interface;
 	char *ubus_socket;
+	char *connection_request_path;
 	int connection_request_port;
 	int period;
 	int periodic_notify_interval;

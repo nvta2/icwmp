@@ -287,6 +287,7 @@ static void http_cr_new_client(int client, bool service_available)
 	int8_t auth_status = 0;
 	bool auth_digest_checked = false;
 	bool method_is_get = false;
+	char *cr_http_get_head = NULL;
 
 	pthread_mutex_lock(&mutex_config_load);
 	fp = fdopen(client, "r+");
@@ -298,8 +299,10 @@ static void http_cr_new_client(int client, bool service_available)
 		service_available = false;
 		goto http_end;
 	}
+
+	asprintf(&cr_http_get_head, "GET %s", cwmp_main.conf.connection_request_path);
 	while (fgets(buffer, sizeof(buffer), fp)) {
-		if (!strncasecmp(buffer, "GET ", strlen("GET ")))
+		if (!strncasecmp(buffer, cr_http_get_head, strlen(cr_http_get_head)))
 			method_is_get = true;
 		if (!strncasecmp(buffer, "Authorization: Digest ", strlen("Authorization: Digest "))) {
 			auth_digest_checked = true;
@@ -318,8 +321,8 @@ static void http_cr_new_client(int client, bool service_available)
 		auth_status = 1;
 	else
 		auth_status = 0;
-
 http_end:
+	FREE(cr_http_get_head);
 	if (!service_available || !method_is_get) {
 		CWMP_LOG(INFO, "Receive Connection Request: Return 503 Service Unavailable");
 		fputs("HTTP/1.1 503 Service Unavailable\r\n", fp);

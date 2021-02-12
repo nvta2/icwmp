@@ -38,6 +38,7 @@
 #define UCI_CPE_INTERFACE_PATH "cwmp.cpe.interface"
 #define UCI_CPE_UBUS_SOCKET_PATH "cwmp.cpe.ubus_socket"
 #define UCI_CPE_PORT_PATH "cwmp.cpe.port"
+#define UCI_CPE_CRPATH_PATH "cwmp.cpe.path"
 #define UCI_CPE_LOG_FILE_NAME "cwmp.cpe.log_file_name"
 #define UCI_CPE_LOG_MAX_SIZE "cwmp.cpe.log_max_size"
 #define UCI_CPE_ENABLE_STDOUT_LOG "cwmp.cpe.log_to_console"
