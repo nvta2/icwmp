@@ -299,7 +299,7 @@ static void http_cr_new_client(int client, bool service_available)
 		service_available = false;
 		goto http_end;
 	}
-	asprintf(&cr_http_get_head, "GET %s HTTP/1.1", cwmp_main.conf.connection_request_path);
+	cwmp_asprintf(&cr_http_get_head, "GET %s HTTP/1.1", cwmp_main.conf.connection_request_path);
 	while (fgets(buffer, sizeof(buffer), fp)) {
 		if (!strncasecmp(buffer, cr_http_get_head, strlen(cr_http_get_head)))
 			method_is_get = true;

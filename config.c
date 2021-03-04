@@ -318,7 +318,7 @@ int get_global_config(struct config *conf)
 				conf->connection_request_path = strdup(value);
 			else {
 				char *cr_path = NULL;
-				asprintf(&cr_path, "/%s", value);
+				cwmp_asprintf(&cr_path, "/%s", value);
 				conf->connection_request_path = strdup(cr_path);
 				free(cr_path);
 			}
