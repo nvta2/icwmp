@@ -165,22 +165,6 @@ error:
 	return -1;
 }
 
-void cwmp_json_obj_init(char *str, json_object **obj)
-{
-	if (*obj) {
-		json_object_put(*obj);
-		*obj = NULL;
-	}
-	*obj = json_tokener_parse(str);
-}
-
-void cwmp_json_obj_clean(json_object **obj)
-{
-	if (*obj) {
-		json_object_put(*obj);
-		*obj = NULL;
-	}
-}
 void cwmp_add_json_obj(json_object *json_obj_out, char *object, char *string)
 {
 	if (object != NULL && string != NULL) {
@@ -206,15 +190,4 @@ void cwmp_json_fprintf(FILE *fp, int argc, struct cwmp_json_arg cwmp_arg[])
 	}
 
 	json_object_put(json_obj_out);
-}
-
-void cwmp_json_get_string(json_object *obj, char *key, char **value)
-{
-	json_object *key_obj = NULL;
-	json_object_object_get_ex(obj, key, &key_obj);
-	*value = strdup(key_obj ? (char *)json_object_get_string(key_obj) : "");
-	if (key_obj) {
-		json_object_put(key_obj);
-		key_obj = NULL;
-	}
 }

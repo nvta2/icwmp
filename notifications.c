@@ -81,42 +81,33 @@ int check_value_change(void)
 	struct cwmp_dm_parameter *dm_parameter = NULL;
 	json_object *buf_json_obj = NULL, *param_name_obj = NULL, *value_obj = NULL, *notification_obj = NULL;
 	int is_notify = 0;
-
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
 		return false;
-
 	cwmp_update_enabled_list_notify(cwmp->conf.instance_mode, ACTUAL_LIST_NOTIFY);
-
 	while (fgets(buf, 512, fp) != NULL) {
 		int len = strlen(buf);
 		if (len)
 			buf[len - 1] = '\0';
-		cwmp_json_obj_init(buf, &buf_json_obj);
+		buf_json_obj = json_tokener_parse(buf);
 		json_object_object_get_ex(buf_json_obj, "parameter", &param_name_obj);
-		if (param_name_obj == NULL || strlen((char *)json_object_get_string(param_name_obj)) <= 0)
+		if (param_name_obj == NULL || strlen((char *)json_object_get_string(param_name_obj)) <= 0) {
+			FREE_JSON(buf_json_obj)
 			continue;
+		}
 		parameter = strdup((char *)json_object_get_string(param_name_obj));
 		json_object_object_get_ex(buf_json_obj, "value", &value_obj);
 		json_object_object_get_ex(buf_json_obj, "notification", &notification_obj);
 		value = strdup(value_obj ? (char *)json_object_get_string(value_obj) : "");
 		notification = strdup(notification_obj ? (char *)json_object_get_string(notification_obj) : "");
-		cwmp_json_obj_clean(&buf_json_obj);
-		if (param_name_obj) {
-			json_object_put(param_name_obj);
-			param_name_obj = NULL;
-		}
-		if (value_obj) {
-			json_object_put(value_obj);
-			value_obj = NULL;
-		}
-		if (notification_obj) {
-			json_object_put(notification_obj);
-			notification_obj = NULL;
-		}
+		FREE_JSON(buf_json_obj)
 		get_parameter_value_from_parameters_list(actual_list_notify, parameter, &dm_parameter);
-		if (dm_parameter == NULL)
+		if (dm_parameter == NULL) {
+			FREE(value);
+			FREE(notification);
+			FREE(parameter);
 			continue;
+		}
 		if (notification && (strlen(notification) > 0) && (notification[0] >= '1') && (dm_parameter->data != NULL) && (value != NULL) && (strcmp(dm_parameter->data, value) != 0)) {
 			if (notification[0] == '1' || notification[0] == '2')
 				add_list_value_change(parameter, dm_parameter->data, dm_parameter->type);

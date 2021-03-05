@@ -10,6 +10,7 @@ extern json_object *old_global_json_obj;
 extern json_object *actual_global_json_obj;
 extern json_object *old_list_notify;
 extern json_object *actual_list_notify;
+extern json_object *str_json_parse_object;
 
 enum notify_type
 {

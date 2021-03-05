@@ -13,10 +13,7 @@
 #include "cwmp_uci.h"
 
 struct uci_paths uci_save_conf_paths[] = {
-	[UCI_STANDARD_CONFIG] = { "/etc/config", "/tmp/.uci" },
-	[UCI_DB_CONFIG] = { "/lib/db/config", NULL },
-	[UCI_BOARD_DB_CONFIG] = { "/etc/board-db/config", NULL },
-	[UCI_VARSTATE_CONFIG] = { NULL, "/var/state" },
+		[UCI_STANDARD_CONFIG] = { "/etc/config", "/tmp/.uci" }, [UCI_DB_CONFIG] = { "/lib/db/config", NULL }, [UCI_BOARD_DB_CONFIG] = { "/etc/board-db/config", NULL }, [UCI_VARSTATE_CONFIG] = { NULL, "/var/state" },
 };
 
 struct uci_context *cwmp_uci_ctx = ((void *)0);
@@ -270,6 +267,7 @@ int cwmp_uci_get_value_common(char *cmd, char **value, bool state)
 	*value = NULL;
 	if (!c) {
 		CWMP_LOG(ERROR, "Out of memory");
+		uci_free_context(c);
 		return CWMP_GEN_ERR;
 	}
 	if (state) {

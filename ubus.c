@@ -26,6 +26,7 @@
 #include "cwmp_time.h"
 #include "event.h"
 #include "backupSession.h"
+#include "cwmp_json.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
@@ -320,7 +321,6 @@ static void receive_ubus_call_result_data(struct ubus_request *req __attribute__
 		json_res = NULL;
 		return;
 	}
-
 	json_res = json_tokener_parse(str);
 	free((char *)str);
 }

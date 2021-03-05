@@ -30,9 +30,6 @@ int cwmp_handle_upload_fault(char *msg);
 int cwmp_handle_dustate_change_fault(char *msg);
 int cwmp_handle_uninstall_fault(char *msg);
 void cwmp_json_fprintf(FILE *fp, int argc, struct cwmp_json_arg cwmp_arg[]);
-void cwmp_json_get_string(json_object *obj, char *key, char **value);
-void cwmp_json_obj_init(char *str, json_object **obj);
-void cwmp_json_obj_clean(json_object **obj);
 
 #define foreach_jsonobj_in_array(param_obj, parameters)             \
 	int k, array_length = json_object_array_length(parameters); \
