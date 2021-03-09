@@ -113,7 +113,7 @@ void puts_log(int severity, const char *fmt, ...)
 	pthread_mutex_lock(&mutex_log);
 
 	if (severity > log_severity) {
-		goto syslog;
+		goto end;
 	}
 
 	gettimeofday(&tv, 0);
@@ -149,7 +149,6 @@ void puts_log(int severity, const char *fmt, ...)
 		puts(buf);
 	}
 
-syslog:
 	if (enable_log_syslog) {
 		va_start(args, fmt);
 		vsnprintf(buf, sizeof(buf), fmt, args);
@@ -158,7 +157,7 @@ syslog:
 
 		syslog(severity, "%s", buf);
 	}
-
+end:
 	pthread_mutex_unlock(&mutex_log);
 }
 
@@ -176,7 +175,7 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 	pthread_mutex_lock(&mutex_log);
 
 	if (severity > log_severity) {
-		goto xml_syslog;
+		goto end;
 	}
 
 	gettimeofday(&tv, 0);
@@ -222,12 +221,11 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 		puts(separator);
 	}
 
-xml_syslog:
 	if (enable_log_syslog) {
 		syslog(severity, "%s: %s", ((msgtype == XML_MSG_IN) ? "IN" : "OUT"), msg);
 		if (sizeof(buf) < strlen(msg))
 			syslog(severity, "Truncated message at %zu characters", strlen(msg));
 	}
-
+end:
 	pthread_mutex_unlock(&mutex_log);
 }
