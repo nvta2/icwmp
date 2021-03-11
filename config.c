@@ -359,14 +359,12 @@ int get_global_config(struct config *conf)
 		return error;
 	}
 	if ((error = uci_get_value(UCI_PERIODIC_INFORM_TIME_PATH, &value)) == CWMP_OK) {
-		int a = 0;
-
 		if (value != NULL) {
-			a = atol(value);
-			free(value);
-			value = NULL;
-		}
-		conf->time = a;
+			struct tm tm;
+			strptime(value, "%Y-%m-%dT%H:%M:%SZ", &tm);
+			conf->time = mktime(&tm);
+		} else
+			conf->time = 0;
 	} else {
 		return error;
 	}
