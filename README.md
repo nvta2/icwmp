@@ -26,7 +26,7 @@ The package is composed of the following components:
 The icwmp client is :
 * tested with several ACS such as **Axiros**, **AVSytem**, **GenieACS**, **OpenACS**, etc...
 * supports all required **TR069 RPCs**.
-* supports all DataModel of TR family such as **TR-181**, **TR-104**, **TR-143**, **TR-157**, **TR-098**, etc...
+* supports all DataModel of TR family such as **TR-181**, **TR-104**, **TR-143**, **TR-157**, etc...
 * supports all types of connection requests such as **HTTP**, **XMPP**, **STUN**.
 * supports integrated file transfer such as **HTTP**, **HTTPS**, **FTP**.
 
@@ -46,7 +46,6 @@ config cpe 'cpe'
 	option interface 'eth0.1'
 	option default_wan_interface 'wan'
 	option userid 'iopsys'
-	option datamodel 'tr181'
 	option exec_download '0'
 	
 config lwn 'lwn'
@@ -102,7 +101,6 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `instance_mode`         | string  | Specifies the instance mode to use, by default **'InstanceNumber'**. Two instance modes are supported: **'InstanceNumber' and 'InstanceNumber'**. |
 | `session_timeout`       | integer | Represents the number of seconds that should be used by the ACS as the amount of time to wait before timing out a CWMP session due to the CPE not responding, by default **60**.|
 | `notification`          | boolean | If set to **1**, it enables the notification feature. |
-| `datamodel`             | string  | Specifies the data model to use, by default **'tr181'**. Two data models are supported: **'tr181' and 'tr098'**. |
 | `exec_download`         | boolean | If set to **1**, Specifies if Download method is executed. |
 | `manufacturer`         | string  | Specifies the manafacturer of the device, by default **iopsys**. If set, its value will be the value of **Device.DeviceInfo.Manufacturer** parameter. |
 | `manufacturer_oui`     | string  | Specifies the manafacturer oui of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ManufacturerOUI** parameter. |
@@ -307,18 +305,66 @@ There's an icwmp cli that can be called via the script `'icwmp'` as follow:
 
 ```
 root@iopsys:~# icwmp get Device.Time.
-{ "parameter": "Device.Time.CurrentLocalTime", "value": "2019-12-19T16:52:05+01:00", "type": "xsd:dateTime" }
-{ "parameter": "Device.Time.Enable", "value": "1", "type": "xsd:boolean" }
-{ "parameter": "Device.Time.LocalTimeZone", "value": "CET-1CEST,M3.5.0,M10.5.0/3", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer1", "value": "ntp1.sth.netnod.se", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer2", "value": "ntp1.gbg.netnod.se", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer3", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer4", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.Time.NTPServer5", "value": "", "type": "xsd:string" }
-{ "parameter": "Device.Time.Status", "value": "Synchronized", "type": "xsd:string" }
-{ "parameter": "Device.Time.X_IOPSYS_EU_LocalTimeZoneOlson", "value": "Europe/Stockholm", "type": "xsd:string" }
-{ "parameter": "Device.Time.X_IOPSYS_EU_SourceInterface", "value": "", "type": "xsd:string" }
-root@iopsys:~#
+{
+	"parameters": [
+		{
+			"parameter": "Device.Time.CurrentLocalTime",
+			"value": "2021-03-14T00:19:45Z",
+			"type": "xsd:dateTime"
+		},
+		{
+			"parameter": "Device.Time.Enable",
+			"value": "1",
+			"type": "xsd:boolean"
+		},
+		{
+			"parameter": "Device.Time.LocalTimeZone",
+			"value": "CET-1CEST,M3.5.0,M10.5.0/3",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.NTPServer1",
+			"value": "ntp1.sth.netnod.se",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.NTPServer2",
+			"value": "ntp1.gbg.netnod.se",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.NTPServer3",
+			"value": "",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.NTPServer4",
+			"value": "",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.NTPServer5",
+			"value": "",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.Status",
+			"value": "Synchronized",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.X_IOPSYS_EU_LocalTimeZoneName",
+			"value": "Europe/Stockholm",
+			"type": "xsd:string"
+		},
+		{
+			"parameter": "Device.Time.X_IOPSYS_EU_SourceInterface",
+			"value": "",
+			"type": "xsd:string"
+		}
+	]
+}
+root@iopsys:~# 
 ```
 
 ## Dependencies ##
@@ -334,5 +380,3 @@ To successfully build icwmp, the following libraries are needed:
 | libopenssl  | http://ftp.fi.muni.cz/pub/openssl/source/   | OpenSSL        |
 | libcurl     | https://dl.uxnr.de/mirror/curl              | MIT            |
 | libmicroxml | https://dev.freecwmp.org/microxml           | LGPL 2.0       |
-| libpthread  |                                             |                |
-

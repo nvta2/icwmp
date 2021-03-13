@@ -20,9 +20,6 @@ AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging message
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(WITH_DEV_DEBUG),)
 AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy mode])], AC_DEFINE(DUMMY_MODE),)
 
-AC_ARG_ENABLE(icwmp_tr098, [AS_HELP_STRING([--enable-icwmp_tr098], [enable icwmp tr098])], AC_DEFINE(ICWMP_TR098),)
-AM_CONDITIONAL([ICWMP_TR098],[test "x$enable_icwmp_tr098" = "xyes"])
-
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
