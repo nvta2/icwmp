@@ -71,34 +71,28 @@ struct diagnostic_input upload_diagnostics_array[UPLOAD_NUMBER_INPUTS] = {
 	//{"TimeBasedTestMeasurementOffset","Device.IP.Diagnostics.UploadDiagnostics.TimeBasedTestMeasurementOffset",NULL}
 };
 
-struct diagnostic_input ipping_diagnostics_array[IPPING_NUMBER_INPUTS] = {
-	{ "Host", "Device.IP.Diagnostics.IPPing.Host", NULL },
-	{ "NumberOfRepetitions", "Device.IP.Diagnostics.IPPing.NumberOfRepetitions", NULL },
-	{ "Timeout", "Device.IP.Diagnostics.IPPing.Timeout", NULL },
-	{ "Interface", "Device.IP.Diagnostics.IPPing.Interface", NULL },
-	{ "ProtocolVersion", "Device.IP.Diagnostics.IPPing.ProtocolVersion", NULL },
-	{ "DSCP", "Device.IP.Diagnostics.IPPing.DSCP", NULL },
-	{ "DataBlockSize", "Device.IP.Diagnostics.IPPing.DataBlockSize", NULL }
-};
-struct diagnostic_input seserverselection_diagnostics_array[SESERVERSELECT_NUMBER_INPUTS] = {
-	{ "Interface", "Device.IP.Diagnostics.ServerSelectionDiagnostics.Interface", NULL },
-	{ "Protocol", "Device.IP.Diagnostics.ServerSelectionDiagnostics.Protocol", NULL },
-	{ "HostList", "Device.IP.Diagnostics.ServerSelectionDiagnostics.HostList", NULL },
-	{ "ProtocolVersion", "Device.IP.Diagnostics.ServerSelectionDiagnostics.ProtocolVersion", NULL },
-	{ "NumberOfRepetitions", "Device.IP.Diagnostics.ServerSelectionDiagnostics.NumberOfRepetitions", NULL },
-	{ "Timeout", "Device.IP.Diagnostics.ServerSelectionDiagnostics.Timeout", NULL }
-};
+struct diagnostic_input ipping_diagnostics_array[IPPING_NUMBER_INPUTS] = { { "Host", "Device.IP.Diagnostics.IPPing.Host", NULL },
+									   { "NumberOfRepetitions", "Device.IP.Diagnostics.IPPing.NumberOfRepetitions", NULL },
+									   { "Timeout", "Device.IP.Diagnostics.IPPing.Timeout", NULL },
+									   { "Interface", "Device.IP.Diagnostics.IPPing.Interface", NULL },
+									   { "ProtocolVersion", "Device.IP.Diagnostics.IPPing.ProtocolVersion", NULL },
+									   { "DSCP", "Device.IP.Diagnostics.IPPing.DSCP", NULL },
+									   { "DataBlockSize", "Device.IP.Diagnostics.IPPing.DataBlockSize", NULL } };
+struct diagnostic_input seserverselection_diagnostics_array[SESERVERSELECT_NUMBER_INPUTS] = { { "Interface", "Device.IP.Diagnostics.ServerSelectionDiagnostics.Interface", NULL },
+											      { "Protocol", "Device.IP.Diagnostics.ServerSelectionDiagnostics.Protocol", NULL },
+											      { "HostList", "Device.IP.Diagnostics.ServerSelectionDiagnostics.HostList", NULL },
+											      { "ProtocolVersion", "Device.IP.Diagnostics.ServerSelectionDiagnostics.ProtocolVersion", NULL },
+											      { "NumberOfRepetitions", "Device.IP.Diagnostics.ServerSelectionDiagnostics.NumberOfRepetitions", NULL },
+											      { "Timeout", "Device.IP.Diagnostics.ServerSelectionDiagnostics.Timeout", NULL } };
 
-struct diagnostic_input traceroute_diagnostics_array[TRACEROUTE_NUMBER_INPUTS] = {
-	{ "Interface", "Device.IP.Diagnostics.TraceRoute.Interface", NULL },
-	{ "Host", "Device.IP.Diagnostics.TraceRoute.Host", NULL },
-	{ "NumberOfTries", "Device.IP.Diagnostics.TraceRoute.NumberOfTries", NULL },
-	{ "ProtocolVersion", "Device.IP.Diagnostics.TraceRoute.ProtocolVersion", NULL },
-	{ "Timeout", "Device.IP.Diagnostics.TraceRoute.Timeout", NULL },
-	{ "DataBlockSize", "Device.IP.Diagnostics.TraceRoute.DataBlockSize", NULL },
-	{ "DSCP", "Device.IP.Diagnostics.TraceRoute.DSCP", NULL },
-	{ "MaxHopCount", "Device.IP.Diagnostics.TraceRoute.MaxHopCount", NULL }
-};
+struct diagnostic_input traceroute_diagnostics_array[TRACEROUTE_NUMBER_INPUTS] = { { "Interface", "Device.IP.Diagnostics.TraceRoute.Interface", NULL },
+										   { "Host", "Device.IP.Diagnostics.TraceRoute.Host", NULL },
+										   { "NumberOfTries", "Device.IP.Diagnostics.TraceRoute.NumberOfTries", NULL },
+										   { "ProtocolVersion", "Device.IP.Diagnostics.TraceRoute.ProtocolVersion", NULL },
+										   { "Timeout", "Device.IP.Diagnostics.TraceRoute.Timeout", NULL },
+										   { "DataBlockSize", "Device.IP.Diagnostics.TraceRoute.DataBlockSize", NULL },
+										   { "DSCP", "Device.IP.Diagnostics.TraceRoute.DSCP", NULL },
+										   { "MaxHopCount", "Device.IP.Diagnostics.TraceRoute.MaxHopCount", NULL } };
 
 struct diagnostic_input udpecho_diagnostics_array[UDPECHO_NUMBER_INPUTS] = {
 	{ "Interface", "Device.IP.Diagnostics.UDPEchoDiagnostics.Interface", NULL },
@@ -113,13 +107,11 @@ struct diagnostic_input udpecho_diagnostics_array[UDPECHO_NUMBER_INPUTS] = {
 	//{"EnableIndividualPacketResults","Device.IP.Diagnostics.UDPEchoDiagnostics.EnableIndividualPacketResults",NULL}
 };
 
-struct diagnostic_input nslookup_diagnostics_array[NSLKUP_NUMBER_INPUTS] = {
-	{ "Interface", "Device.DNS.Diagnostics.NSLookupDiagnostics.Interface", NULL },
-	{ "HostName", "Device.DNS.Diagnostics.NSLookupDiagnostics.HostName", NULL },
-	{ "DNSServer", "Device.DNS.Diagnostics.NSLookupDiagnostics.DNSServer", NULL },
-	{ "NumberOfRepetitions", "Device.DNS.Diagnostics.NSLookupDiagnostics.NumberOfRepetitions", NULL },
-	{ "Timeout", "Device.DNS.Diagnostics.NSLookupDiagnostics.Timeout", NULL }
-};
+struct diagnostic_input nslookup_diagnostics_array[NSLKUP_NUMBER_INPUTS] = { { "Interface", "Device.DNS.Diagnostics.NSLookupDiagnostics.Interface", NULL },
+									     { "HostName", "Device.DNS.Diagnostics.NSLookupDiagnostics.HostName", NULL },
+									     { "DNSServer", "Device.DNS.Diagnostics.NSLookupDiagnostics.DNSServer", NULL },
+									     { "NumberOfRepetitions", "Device.DNS.Diagnostics.NSLookupDiagnostics.NumberOfRepetitions", NULL },
+									     { "Timeout", "Device.DNS.Diagnostics.NSLookupDiagnostics.Timeout", NULL } };
 
 static bool set_specific_diagnostic_object_parameter_structure_value(struct diagnostic_input (*diagnostics_array)[], int number_inputs, char *parameter, char *value)
 {
@@ -142,6 +134,7 @@ bool set_diagnostic_parameter_structure_value(char *parameter_name, char *value)
 	       set_specific_diagnostic_object_parameter_structure_value(&seserverselection_diagnostics_array, SESERVERSELECT_NUMBER_INPUTS, parameter_name, value);
 }
 
+void empty_ubus_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg __attribute__((unused))) {}
 static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name, struct diagnostic_input diagnostics_array[], int number_inputs)
 {
 	int e, i;
@@ -150,10 +143,9 @@ static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name,
 	for (i = 0; i < number_inputs; i++) {
 		if (diagnostics_array[i].value == NULL || diagnostics_array[i].value[0] == '\0')
 			continue;
-		cwmp_add_list_param_value(diagnostics_array[i].input_name, diagnostics_array[i].value, &diagnostics_param_value_list);
+		add_dm_parameter_to_list(&diagnostics_param_value_list, diagnostics_array[i].input_name, diagnostics_array[i].value, NULL, 0, false);
 	}
-
-	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{ { "path", {.str_val = diagnostics_object }, UBUS_String }, { "action", {.str_val = action_name }, UBUS_String }, { "input", {.param_value_list = &diagnostics_param_value_list }, UBUS_Obj_Obj } }, 3, &old_global_json_obj);
+	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{ { "path", {.str_val = diagnostics_object }, UBUS_String }, { "action", {.str_val = action_name }, UBUS_String }, { "input", {.param_value_list = &diagnostics_param_value_list }, UBUS_Obj_Obj } }, 3, empty_ubus_callback, NULL);
 	if (e)
 		return -1;
 	return 0;

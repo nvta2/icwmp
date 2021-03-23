@@ -20,11 +20,6 @@ struct cwmp_json_arg {
 };
 
 #define CWMP_JSON_ARGS (struct cwmp_json_arg[])
-#define FREE_JSON(jobj)                \
-	if (jobj) {                    \
-		json_object_put(jobj); \
-		jobj = NULL;           \
-	}
 int cwmp_handle_download_fault(char *msg);
 int cwmp_handle_upload_fault(char *msg);
 int cwmp_handle_dustate_change_fault(char *msg);

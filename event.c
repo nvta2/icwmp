@@ -145,7 +145,7 @@ int event_remove_all_event_container(struct session *session, int rem_from)
 			remove("/etc/icwmpd/.icwmpd_boot");
 		}
 		free(event_container->command_key);
-		free_dm_parameter_all_fromlist(&(event_container->head_dm_parameter));
+		cwmp_free_all_dm_parameter_list(&(event_container->head_dm_parameter));
 		list_del(&(event_container->list));
 		free(event_container);
 	}
@@ -162,7 +162,7 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 		event_container = list_entry(ilist, struct event_container, list);
 		if (EVENT_CONST[event_container->code].RETRY == 0) {
 			free(event_container->command_key);
-			free_dm_parameter_all_fromlist(&(event_container->head_dm_parameter));
+			cwmp_free_all_dm_parameter_list(&(event_container->head_dm_parameter));
 			list_del(&(event_container->list));
 			free(event_container);
 		}
@@ -217,7 +217,7 @@ int cwmp_root_cause_event_bootstrap(struct cwmp *cwmp)
 		}
 
 		char buf[64] = "Device.ManagementServer.URL";
-		add_dm_parameter_tolist(&(event_container->head_dm_parameter), buf, NULL, NULL);
+		add_dm_parameter_to_list(&(event_container->head_dm_parameter), buf, NULL, NULL, 0, false);
 		cwmp_save_event_container(event_container);
 		save_acs_bkp_config(cwmp);
 		cwmp_scheduleInform_remove_all();

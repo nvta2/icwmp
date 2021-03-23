@@ -809,7 +809,7 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 				if (c && c->type == MXML_OPAQUE) {
 					if (c->value.opaque != NULL) {
 						if (event_container_save != NULL) {
-							add_dm_parameter_tolist(&(event_container_save->head_dm_parameter), c->value.opaque, NULL, NULL);
+							add_dm_parameter_to_list(&(event_container_save->head_dm_parameter), c->value.opaque, NULL, NULL, 0, false);
 						}
 					}
 				}

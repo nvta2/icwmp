@@ -550,23 +550,24 @@ static int xml_prepare_parameters_inform(struct cwmp_dm_parameter *dm_parameter,
 {
 	mxml_node_t *node, *b;
 	b = mxmlFindElementOpaque(parameter_list, parameter_list, dm_parameter->name, MXML_DESCEND);
-	if (b && dm_parameter->data != NULL) {
+	if (b && dm_parameter->value != NULL) {
 		node = b->parent->parent;
 		b = mxmlFindElement(node, node, "Value", NULL, NULL, MXML_DESCEND_FIRST);
 		if (!b)
 			return 0;
-		if (b->child && strcmp(dm_parameter->data, b->child->value.opaque) == 0)
+		if (b->child && strcmp(dm_parameter->value, b->child->value.opaque) == 0)
 			return 0;
 		mxmlDelete(b);
 		(*size)--;
 
 		goto create_value;
-	} else if (b && dm_parameter->data == NULL) {
+	} else if (b && dm_parameter->value == NULL) {
 		return 0;
-	} else if (!b && dm_parameter->data == NULL) {
-		json_object *parameters = NULL;
-		cwmp_get_parameter_values(dm_parameter->name, &parameters);
-		FREE_JSON(str_json_parse_object)
+	} else if (!b && dm_parameter->value == NULL) {
+		LIST_HEAD(list_specific_inform);
+		char *err = cwmp_get_parameter_values(dm_parameter->name, &list_specific_inform);
+		cwmp_free_all_dm_parameter_list(&list_specific_inform);
+		FREE(err);
 		return 0;
 	}
 	node = mxmlNewElement(parameter_list, "ParameterValueStruct");
@@ -589,7 +590,7 @@ create_value:
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(b, "xsi:type", (dm_parameter->type && dm_parameter->type[0] != '\0') ? dm_parameter->type : "xsd:string");
 #endif
-	b = mxmlNewOpaque(b, dm_parameter->data);
+	b = mxmlNewOpaque(b, dm_parameter->value);
 	if (!b)
 		return -1;
 
@@ -624,7 +625,7 @@ static int xml_prepare_lwnotifications(mxml_node_t *parameter_list)
 #ifdef ACS_MULTI
 		mxmlElementSetAttr(b, "xsi:type", lw_notification->type);
 #endif
-		b = mxmlNewOpaque(b, lw_notification->data);
+		b = mxmlNewOpaque(b, lw_notification->value);
 		if (!b)
 			goto error;
 	}
@@ -733,7 +734,7 @@ char *xml_get_cwmp_version(int version)
 
 int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *session, struct rpc *this)
 {
-	struct cwmp_dm_parameter *dm_parameter, cwmp_dm_param = { 0 };
+	struct cwmp_dm_parameter *dm_parameter;
 	struct event_container *event_container;
 	mxml_node_t *tree, *b, *node, *parameter_list;
 	char *c = NULL;
@@ -838,28 +839,21 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 	if (!b)
 		goto error;
 
-	json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL, *param_type = NULL;
 	size_t inform_parameters_nbre = sizeof(forced_inform_parameters) / sizeof(forced_inform_parameters[0]);
 	size_t i;
+	struct cwmp_dm_parameter *cwmp_dm_param = NULL;
+	LIST_HEAD(list_inform);
 	for (i = 0; i < inform_parameters_nbre; i++) {
-		char *fault = cwmp_get_parameter_values(forced_inform_parameters[i], &parameters);
-		if (parameters == NULL) {
+		char *fault = cwmp_get_parameter_values(forced_inform_parameters[i], &list_inform);
+		if (fault != NULL) {
 			FREE(fault);
 			continue;
 		}
-		param_obj = json_object_array_get_idx(parameters, 0);
-		json_object_object_get_ex(param_obj, "parameter", &param_name);
-		json_object_object_get_ex(param_obj, "value", &param_value);
-		json_object_object_get_ex(param_obj, "type", &param_type);
-		cwmp_dm_param.name = strdup(param_name ? (char *)json_object_get_string(param_name) : "");
-		cwmp_dm_param.data = strdup(param_value ? (char *)json_object_get_string(param_value) : "");
-		cwmp_dm_param.type = strdup(param_type ? (char *)json_object_get_string(param_type) : "");
-		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
-			goto error;
-		FREE(cwmp_dm_param.name);
-		FREE(cwmp_dm_param.data);
-		FREE(cwmp_dm_param.type);
-		FREE_JSON(str_json_parse_object)
+		list_for_each_entry (cwmp_dm_param, &list_inform, list) {
+			if (xml_prepare_parameters_inform(cwmp_dm_param, parameter_list, &size))
+				goto error;
+		}
+		cwmp_free_all_dm_parameter_list(&list_inform);
 	}
 	if (cwmp_asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;
@@ -1247,10 +1241,8 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	mxml_node_t *n, *parameter_list, *b;
 	char *parameter_name = NULL;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
-	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *param_value = NULL;
 #ifdef ACS_MULTI
 	char *c = NULL;
-	struct json_object *param_type = NULL;
 #endif
 
 	b = session->body_in;
@@ -1269,7 +1261,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(parameter_list, "xsi:type", "soap_enc:Array");
 #endif
-
+	LIST_HEAD(parameters_list);
 	while (b) {
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "string")) {
 			parameter_name = b->value.opaque;
@@ -1279,14 +1271,14 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 			parameter_name = "";
 		}
 		if (parameter_name) {
-			char *err = cwmp_get_parameter_values(parameter_name, &parameters);
+			char *err = cwmp_get_parameter_values(parameter_name, &parameters_list);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
 				FREE(err);
 				goto fault;
 			}
-			foreach_jsonobj_in_array(param_obj, parameters)
-			{
+			struct cwmp_dm_parameter *param_value = NULL;
+			list_for_each_entry (param_value, &parameters_list, list) {
 				n = mxmlNewElement(parameter_list, "ParameterValueStruct");
 				if (!n)
 					goto fault;
@@ -1295,8 +1287,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 				if (!n)
 					goto fault;
 
-				json_object_object_get_ex(param_obj, "parameter", &param_name);
-				n = mxmlNewOpaque(n, json_object_get_string(param_name));
+				n = mxmlNewOpaque(n, param_value->name);
 				if (!n)
 					goto fault;
 
@@ -1306,21 +1297,19 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 					goto fault;
 
 #ifdef ACS_MULTI
-				json_object_object_get_ex(param_obj, "type", &param_type);
-				mxmlElementSetAttr(n, "xsi:type", json_object_get_string(param_type));
+				mxmlElementSetAttr(n, "xsi:type", param_value->type);
 #endif
 
-				json_object_object_get_ex(param_obj, "value", &param_value);
-				n = mxmlNewOpaque(n, param_value ? json_object_get_string(param_value) : "");
+				n = mxmlNewOpaque(n, param_value->value);
 				if (!n)
 					goto fault;
 
 				counter++;
 			}
+			cwmp_free_all_dm_parameter_list(&parameters_list);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 		parameter_name = NULL;
-		FREE_JSON(str_json_parse_object)
 	}
 
 #ifdef ACS_MULTI
@@ -1338,7 +1327,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	return 0;
 
 fault:
-	FREE_JSON(str_json_parse_object)
+	cwmp_free_all_dm_parameter_list(&parameters_list);
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
@@ -1356,7 +1345,7 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 	char *parameter_name = NULL;
 	char *NextLevel = NULL;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
-	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *writable = NULL;
+	LIST_HEAD(parameters_list);
 #ifdef ACS_MULTI
 	char *c = NULL;
 #endif
@@ -1389,16 +1378,15 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
 	if (parameter_name && NextLevel) {
-		char *err = cwmp_get_parameter_names(parameter_name, strcmp(NextLevel, "true") == 0 || strcmp(NextLevel, "1") == 0 ? true : false, &parameters);
+		char *err = cwmp_get_parameter_names(parameter_name, strcmp(NextLevel, "true") == 0 || strcmp(NextLevel, "1") == 0 ? true : false, &parameters_list);
 		if (err) {
 			fault_code = cwmp_get_fault_code_by_string(err);
 			FREE(err);
 			goto fault;
 		}
 	}
-
-	foreach_jsonobj_in_array(param_obj, parameters)
-	{
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &parameters_list, list) {
 		n = mxmlNewElement(parameter_list, "ParameterInfoStruct");
 		if (!n)
 			goto fault;
@@ -1407,8 +1395,7 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 		if (!n)
 			goto fault;
 
-		json_object_object_get_ex(param_obj, "parameter", &param_name);
-		n = mxmlNewOpaque(n, json_object_get_string(param_name));
+		n = mxmlNewOpaque(n, param_value->name);
 		if (!n)
 			goto fault;
 
@@ -1417,14 +1404,13 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 		if (!n)
 			goto fault;
 
-		json_object_object_get_ex(param_obj, "writable", &writable);
-		n = mxmlNewOpaque(n, json_object_get_string(writable));
+		n = mxmlNewOpaque(n, param_value->writable ? "1" : "0");
 		if (!n)
 			goto fault;
 
 		counter++;
 	}
-
+	cwmp_free_all_dm_parameter_list(&parameters_list);
 #ifdef ACS_MULTI
 	b = mxmlFindElement(session->tree_out, session->tree_out, "ParameterList", NULL, NULL, MXML_DESCEND);
 	if (!b)
@@ -1436,11 +1422,10 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
 	FREE(c);
 #endif
-	FREE_JSON(str_json_parse_object)
 	return 0;
 
 fault:
-	FREE_JSON(str_json_parse_object)
+	cwmp_free_all_dm_parameter_list(&parameters_list);
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
@@ -1458,7 +1443,7 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 	mxml_node_t *n, *parameter_list, *b;
 	char *parameter_name = NULL;
 	int counter = 0, fault_code = FAULT_CPE_INTERNAL_ERROR;
-	struct json_object *parameters = NULL, *param_obj = NULL, *param_name = NULL, *notification = NULL;
+	LIST_HEAD(parameters_list);
 #ifdef ACS_MULTI
 	char *c = NULL;
 #endif
@@ -1487,14 +1472,14 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 			parameter_name = "";
 		}
 		if (parameter_name) {
-			char *err = cwmp_get_parameter_attributes(parameter_name, &parameters);
+			char *err = cwmp_get_parameter_attributes(parameter_name, &parameters_list);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
 				FREE(err);
 				goto fault;
 			}
-			foreach_jsonobj_in_array(param_obj, parameters)
-			{
+			struct cwmp_dm_parameter *param_value = NULL;
+			list_for_each_entry (param_value, &parameters_list, list) {
 				n = mxmlNewElement(parameter_list, "ParameterAttributeStruct");
 				if (!n)
 					goto fault;
@@ -1503,8 +1488,7 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 				if (!n)
 					goto fault;
 
-				json_object_object_get_ex(param_obj, "parameter", &param_name);
-				n = mxmlNewOpaque(n, json_object_get_string(param_name));
+				n = mxmlNewOpaque(n, param_value->name);
 				if (!n)
 					goto fault;
 
@@ -1513,8 +1497,10 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 				if (!n)
 					goto fault;
 
-				json_object_object_get_ex(param_obj, "value", &notification);
-				n = mxmlNewOpaque(n, json_object_get_string(notification));
+				char notification[2];
+				sprintf(notification, "%d", param_value->notification);
+				notification[1] = '\0';
+				n = mxmlNewOpaque(n, notification);
 				if (!n)
 					goto fault;
 
@@ -1529,6 +1515,7 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 
 				counter++;
 			}
+			cwmp_free_all_dm_parameter_list(&parameters_list);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 		parameter_name = NULL;
@@ -1544,11 +1531,10 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 	mxmlElementSetAttr(b, "soap_enc:arrayType", c);
 	FREE(c);
 #endif
-	FREE_JSON(str_json_parse_object)
 	return 0;
 
 fault:
-	FREE_JSON(str_json_parse_object)
+	cwmp_free_all_dm_parameter_list(&parameters_list);
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
@@ -1616,6 +1602,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 				cwmp_asprintf(&c, "%s %s", parameter_value, v);
 				FREE(parameter_value);
 				parameter_value = strdup(c);
+				//FREE(c);
 			}
 			b = n->last_child;
 		}
@@ -1623,7 +1610,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			parameter_value = strdup("");
 		}
 		if (parameter_name && parameter_value) {
-			cwmp_add_list_param_value(parameter_name, parameter_value, &list_set_param_value);
+			add_dm_parameter_to_list(&list_set_param_value, parameter_name, parameter_value, NULL, 0, false);
 			FREE(parameter_name);
 			FREE(parameter_value);
 		}
@@ -1638,30 +1625,21 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 	if (b && b->type == MXML_OPAQUE && b->value.opaque)
 		parameter_key = b->value.opaque;
-	json_object *faults_array = NULL;
 	int flag = 0;
 	if (!transaction_started) {
 		if (!cwmp_transaction_start("cwmp"))
 			goto fault;
 		transaction_started = true;
 	}
-	cwmp_set_multiple_parameters_values(list_set_param_value, parameter_key, &flag, &faults_array);
-	if (faults_array != NULL) {
-		json_object *fault_obj = NULL, *param_name = NULL, *fault_value = NULL;
-		foreach_jsonobj_in_array(fault_obj, faults_array)
-		{
-			json_object_object_get_ex(fault_obj, "path", &param_name);
-			json_object_object_get_ex(fault_obj, "fault", &fault_value);
-			cwmp_add_list_fault_param((char *)json_object_get_string(param_name), atoi(json_object_get_string(fault_value)), rpc->list_set_value_fault);
-		}
-		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+	fault_code = cwmp_set_multiple_parameters_values(list_set_param_value, parameter_key, &flag, rpc->list_set_value_fault);
+	if (fault_code != FAULT_CPE_NO_FAULT)
 		goto fault;
-	}
-	struct cwmp_param_value *param_value;
-	list_for_each_entry (param_value, &list_set_param_value, list)
-		set_diagnostic_parameter_structure_value(param_value->param, param_value->value);
 
-	cwmp_free_all_list_param_value(&list_set_param_value);
+	struct cwmp_dm_parameter *param_value;
+	list_for_each_entry (param_value, &list_set_param_value, list)
+		set_diagnostic_parameter_structure_value(param_value->name, param_value->value);
+
+	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 
 	b = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!b)
@@ -1680,13 +1658,12 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 		goto fault;
 
 	cwmp_set_end_session(flag | END_SESSION_TRANSACTION_COMMIT | END_SESSION_SET_NOTIFICATION_UPDATE);
-	//FREE_JSON(str_json_parse_object)
 	return 0;
 
 fault:
-	//FREE_JSON(str_json_parse_object)
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
+	cwmp_free_all_list_param_fault(rpc->list_set_value_fault);
 	if (transaction_started) {
 		cwmp_transaction_abort();
 		transaction_started = false;
@@ -2476,21 +2453,21 @@ int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct tr
 
 int lookup_vcf_name(char *instance, char **value)
 {
-	json_object *parameters = NULL, *param_obj = NULL, *value_obj = NULL;
 	char *vcf_name_parameter = NULL;
-
+	char *err = NULL;
+	LIST_HEAD(vcf_parameters);
 	cwmp_asprintf(&vcf_name_parameter, "Device.DeviceInfo.VendorConfigFile.%s.Name", instance);
-	if (cwmp_get_parameter_values(vcf_name_parameter, &parameters) != NULL) {
+	if ((err = cwmp_get_parameter_values(vcf_name_parameter, &vcf_parameters)) != NULL) {
 		FREE(vcf_name_parameter);
-		FREE_JSON(str_json_parse_object)
+		FREE(err);
 		return -1;
 	}
-
-	param_obj = json_object_array_get_idx(parameters, 0);
-	json_object_object_get_ex(param_obj, "value", &value_obj);
-	*value = (char *)json_object_get_string(value_obj);
-	FREE(vcf_name_parameter);
-	FREE_JSON(str_json_parse_object)
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &vcf_parameters, list) {
+		*value = strdup(param_value->value);
+		break;
+	}
+	cwmp_free_all_dm_parameter_list(&vcf_parameters);
 	return 0;
 }
 
@@ -2527,6 +2504,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	p = calloc(1, sizeof(struct transfer_complete));
 	if (p == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
+		FREE(name);
 		return error;
 	}
 
@@ -2538,7 +2516,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	}
 
 	*ptransfer_complete = p;
-
+	FREE(name);
 	return error;
 }
 
@@ -3022,52 +3000,36 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 	return NULL;
 }
 
-static char *get_software_module_object_eq(char *param1, char *val1, char *param2, char *val2, json_object **parameters)
+static char *get_software_module_object_eq(char *param1, char *val1, char *param2, char *val2, struct list_head *sw_parameters)
 {
 	char *err = NULL;
 	char *sw_parameter_name = NULL;
-	json_object *swdu_get_obj = NULL;
 
 	if (!param2)
 		cwmp_asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"].", param1, val1);
 	else
 		cwmp_asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"&& %s==\\\"%s\\\"].", param1, val1, param2, val2);
-	err = cwmp_get_parameter_values(sw_parameter_name, &swdu_get_obj);
+
+	err = cwmp_get_parameter_values(sw_parameter_name, sw_parameters);
+	FREE(sw_parameter_name);
 	if (err) {
-		FREE(sw_parameter_name);
 		FREE(err);
-		FREE_JSON(str_json_parse_object)
 		return NULL;
 	}
-	json_object_object_get_ex(swdu_get_obj, "parameters", parameters);
-	json_object *param_obj = NULL;
-	if (*parameters)
-		param_obj = json_object_array_get_idx(*parameters, 0);
-	if (!param_obj) {
-		FREE(sw_parameter_name);
-		FREE_JSON(str_json_parse_object)
-		return NULL;
-	}
-	json_object *first_param = NULL;
-	json_object_object_get_ex(param_obj, "parameter", &first_param);
-	if (!first_param) {
-		FREE(sw_parameter_name);
-		FREE_JSON(str_json_parse_object)
-		return NULL;
-	}
-	char *first_param_name = strdup(json_object_get_string(first_param));
+	struct cwmp_dm_parameter *param_value = NULL;
 	char instance[8];
-	snprintf(instance, (size_t)(strchr(first_param_name + strlen("Device.SoftwareModules.DeploymentUnit."), '.') - first_param_name - strlen("Device.SoftwareModules.DeploymentUnit.") + 1), "%s", (char *)(first_param_name + strlen("Device.SoftwareModules.DeploymentUnit.")));
-	FREE_JSON(str_json_parse_object)
+	list_for_each_entry (param_value, sw_parameters, list) {
+		snprintf(instance, (size_t)(strchr(param_value->name + strlen("Device.SoftwareModules.DeploymentUnit."), '.') - param_value->name - strlen("Device.SoftwareModules.DeploymentUnit.") + 1), "%s", (char *)(param_value->name + strlen("Device.SoftwareModules.DeploymentUnit.")));
+		break;
+	}
 	return strdup(instance);
 }
 
 static int get_deployment_unit_name_version(char *uuid, char **name, char **version, char **env)
 {
-	json_object *du_obj = NULL, *param_obj = NULL, *arrobj = NULL, *value_obj = NULL;
 	char *sw_by_uuid_instance = NULL, *name_param = NULL, *version_param = NULL, *environment_param = NULL;
-
-	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &arrobj);
+	LIST_HEAD(sw_parameters);
+	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &sw_parameters);
 	if (!sw_by_uuid_instance)
 		return 0;
 
@@ -3075,89 +3037,81 @@ static int get_deployment_unit_name_version(char *uuid, char **name, char **vers
 	cwmp_asprintf(&version_param, "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
 	cwmp_asprintf(&environment_param, "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
 
-	foreach_jsonobj_in_array(du_obj, arrobj)
-	{
-		json_object_object_get_ex(du_obj, "parameter", &param_obj);
-		if (!param_obj)
-			continue;
-
-		json_object_object_get_ex(du_obj, "value", &value_obj);
-
-		if (strcmp(json_object_get_string(param_obj), name_param) == 0) {
-			*name = strdup(value_obj ? json_object_get_string(value_obj) : "");
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &sw_parameters, list) {
+		if (strcmp(param_value->name, name_param) == 0) {
+			*name = strdup(param_value->value);
 			continue;
 		}
-		if (strcmp(json_object_get_string(param_obj), version_param) == 0) {
-			*version = strdup(value_obj ? json_object_get_string(value_obj) : "");
+		if (strcmp(param_value->name, version_param) == 0) {
+			*version = strdup(param_value->value);
 			continue;
 		}
-		if (strcmp(json_object_get_string(param_obj), environment_param) == 0) {
-			*env = strdup(value_obj ? json_object_get_string(value_obj) : "");
+		if (strcmp(param_value->name, environment_param) == 0) {
+			*env = strdup(param_value->value);
 			continue;
 		}
 	}
+	cwmp_free_all_dm_parameter_list(&sw_parameters);
+	FREE(name_param);
+	FREE(version_param);
+	FREE(environment_param);
 	return 1;
 }
 
 static char *get_softwaremodules_uuid(char *url)
 {
-	json_object *du_obj = NULL, *param_obj = NULL, *arrobj = NULL, *value_obj = NULL;
 	char *sw_by_url_instance = NULL, *uuid_param = NULL, *uuid = NULL;
 
-	sw_by_url_instance = get_software_module_object_eq("URL", url, NULL, NULL, &arrobj);
+	LIST_HEAD(sw_parameters);
+
+	sw_by_url_instance = get_software_module_object_eq("URL", url, NULL, NULL, &sw_parameters);
 	if (!sw_by_url_instance)
 		return NULL;
 
 	cwmp_asprintf(&uuid_param, "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
 
-	foreach_jsonobj_in_array(du_obj, arrobj)
-	{
-		json_object_object_get_ex(du_obj, "parameter", &param_obj);
-		if (!param_obj)
-			continue;
-
-		json_object_object_get_ex(du_obj, "value", &value_obj);
-
-		if (strcmp(json_object_get_string(param_obj), uuid_param) == 0) {
-			uuid = strdup(value_obj ? json_object_get_string(value_obj) : "");
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &sw_parameters, list) {
+		if (strcmp(param_value->name, uuid_param) == 0) {
+			uuid = strdup(param_value->value);
 			break;
 		}
 	}
+	cwmp_free_all_dm_parameter_list(&sw_parameters);
+	FREE(uuid_param);
 	return uuid;
 }
 
 static char *get_softwaremodules_url(char *uuid)
 {
-	json_object *du_obj = NULL, *param_obj = NULL, *arrobj = NULL, *value_obj = NULL;
 	char *sw_by_uuid_instance = NULL, *url_param = NULL, *url = NULL;
 
-	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &arrobj);
+	LIST_HEAD(sw_parameters);
+	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &sw_parameters);
 	if (!sw_by_uuid_instance)
 		return NULL;
 
 	cwmp_asprintf(&url_param, "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
 
-	foreach_jsonobj_in_array(du_obj, arrobj)
-	{
-		json_object_object_get_ex(du_obj, "parameter", &param_obj);
-		if (!param_obj)
-			continue;
-
-		json_object_object_get_ex(du_obj, "value", &value_obj);
-
-		if (strcmp(json_object_get_string(param_obj), url_param) == 0) {
-			url = strdup(value_obj ? json_object_get_string(value_obj) : "");
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &sw_parameters, list) {
+		if (strcmp(param_value->name, url_param) == 0) {
+			url = strdup(param_value->value);
 			break;
 		}
 	}
+	cwmp_free_all_dm_parameter_list(&sw_parameters);
+	FREE(url_param);
 	return url;
 }
 
 static char *get_deployment_unit_reference(char *package_name, char *package_env)
 {
-	json_object *arrobj = NULL;
+	LIST_HEAD(sw_parameters);
 	char *sw_by_name_env_instance = NULL, *deployment_unit_ref = NULL;
-	sw_by_name_env_instance = get_software_module_object_eq("Name", package_name, "ExecutionEnvRef", package_env, &arrobj);
+	sw_by_name_env_instance = get_software_module_object_eq("Name", package_name, "ExecutionEnvRef", package_env, &sw_parameters);
+	cwmp_free_all_dm_parameter_list(&sw_parameters);
 	if (!sw_by_name_env_instance)
 		return NULL;
 
@@ -3167,10 +3121,9 @@ static char *get_deployment_unit_reference(char *package_name, char *package_env
 
 static bool environment_exists(char *environment_path)
 {
-	json_object *sw_env_get_obj = NULL;
-
-	char *err = cwmp_get_parameter_values(environment_path, &sw_env_get_obj);
-	FREE_JSON(str_json_parse_object)
+	LIST_HEAD(environment_list);
+	char *err = cwmp_get_parameter_values(environment_path, &environment_list);
+	cwmp_free_all_dm_parameter_list(&environment_list);
 	if (err) {
 		FREE(err);
 		return false;
@@ -3181,32 +3134,24 @@ static bool environment_exists(char *environment_path)
 
 static char *get_exec_env_name(char *environment_path)
 {
-	json_object *du_obj = NULL, *param_obj = NULL, *sw_env_get_obj = NULL, *value_obj = NULL;
 	char *env_param = NULL, *env_name = "";
 
-	char *err = cwmp_get_parameter_values(environment_path, &sw_env_get_obj);
+	LIST_HEAD(environment_list);
+	char *err = cwmp_get_parameter_values(environment_path, &environment_list);
 	if (err) {
 		FREE(err);
-		FREE_JSON(str_json_parse_object)
-		return "";
+		return strdup("");
 	}
-
+	struct cwmp_dm_parameter *param_value = NULL;
 	cwmp_asprintf(&env_param, "%sName", environment_path);
-
-	foreach_jsonobj_in_array(du_obj, sw_env_get_obj)
-	{
-		json_object_object_get_ex(du_obj, "parameter", &param_obj);
-		if (!param_obj)
-			continue;
-
-		json_object_object_get_ex(du_obj, "value", &value_obj);
-
-		if (strcmp(json_object_get_string(param_obj), env_param) == 0) {
-			env_name = strdup(value_obj ? json_object_get_string(value_obj) : "");
+	list_for_each_entry (param_value, &environment_list, list) {
+		if (strcmp(param_value->name, env_param) == 0) {
+			env_name = strdup(param_value->value);
 			break;
 		}
 	}
-	FREE_JSON(str_json_parse_object)
+	cwmp_free_all_dm_parameter_list(&environment_list);
+	FREE(env_param);
 	return env_name;
 }
 

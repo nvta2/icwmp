@@ -15,8 +15,6 @@
 
 #include <sys/file.h>
 #include <pthread.h>
-#include <libubus.h>
-#include <libubox/blobmsg_json.h>
 
 #include "ubus.h"
 #include "session.h"
@@ -30,7 +28,6 @@
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
-static json_object *json_res = NULL;
 
 static const char *arr_session_status[] = {
 		[SESSION_WAITING] = "waiting", [SESSION_RUNNING] = "running", [SESSION_FAILURE] = "failure", [SESSION_SUCCESS] = "success",
@@ -311,35 +308,21 @@ void ubus_exit(void)
 		ubus_free(ctx);
 }
 
-static void receive_ubus_call_result_data(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
-{
-	const char *str;
-	if (!msg)
-		return;
-	str = blobmsg_format_json_indent(msg, true, -1);
-	if (!str) {
-		json_res = NULL;
-		return;
-	}
-	json_res = json_tokener_parse(str);
-	free((char *)str);
-}
-
-int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_arg u_args[], int u_args_size, json_object **json_ret)
+int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_arg u_args[], int u_args_size, void (*ubus_callback)(struct ubus_request *req, int type, struct blob_attr *msg), void *callback_arg)
 {
 	uint32_t id;
 	int i = 0;
 	int rc = 0;
-	struct ubus_context *ubus_ctx = NULL;
 	struct blob_buf b = { 0 };
 
-	json_res = NULL;
+	struct ubus_context *ubus_ctx = NULL;
 
 	if (ubus_ctx == NULL) {
 		ubus_ctx = ubus_connect(NULL);
 		if (ubus_ctx == NULL)
 			return -1;
 	}
+
 	blob_buf_init(&b, 0);
 	for (i = 0; i < u_args_size; i++) {
 		if (u_args[i].type == UBUS_String)
@@ -368,25 +351,25 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 			}
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_List_Param) {
-			struct cwmp_param_value *param_value;
+			struct cwmp_dm_parameter *param_value;
 			void *a, *t;
 			a = blobmsg_open_array(&b, u_args[i].key);
 			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
-				if (!param_value->param)
+				if (!param_value->name)
 					break;
 				t = blobmsg_open_table(&b, "");
-				blobmsg_add_string(&b, "path", param_value->param);
+				blobmsg_add_string(&b, "path", param_value->name);
 				blobmsg_add_string(&b, "value", param_value->value);
 				blobmsg_close_table(&b, t);
 			}
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_Obj_Obj) {
-			struct cwmp_param_value *param_value;
+			struct cwmp_dm_parameter *param_value;
 			json_object *input_json_obj = json_object_new_object();
 			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
-				if (!param_value->param)
+				if (!param_value->name)
 					break;
-				json_object_object_add(input_json_obj, param_value->param, json_object_new_string(param_value->value));
+				json_object_object_add(input_json_obj, param_value->name, json_object_new_string(param_value->value));
 			}
 			blobmsg_add_json_element(&b, u_args[i].key, input_json_obj);
 		} else if (u_args[i].type == UBUS_Bool)
@@ -394,16 +377,13 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 	}
 	blobmsg_add_string(&b, "proto", "cwmp");
 	if (!ubus_lookup_id(ubus_ctx, obj, &id))
-		rc = ubus_invoke(ubus_ctx, id, method, b.head, receive_ubus_call_result_data, NULL, 10000);
+		rc = ubus_invoke(ubus_ctx, id, method, b.head, ubus_callback, callback_arg, 20000);
 	else
 		rc = -1;
-
-	*json_ret = json_res;
-
+	blob_buf_free(&b);
 	if (ubus_ctx) {
 		ubus_free(ubus_ctx);
 		ubus_ctx = NULL;
 	}
-	blob_buf_free(&b);
 	return rc;
 }

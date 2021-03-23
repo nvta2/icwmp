@@ -15,367 +15,426 @@
 bool transaction_started = false;
 int transaction_id = 0;
 
-json_object *old_global_json_obj = NULL;
-json_object *actual_global_json_obj = NULL;
-json_object *old_list_notify = NULL;
-json_object *actual_list_notify = NULL;
-json_object *str_json_parse_object = NULL;
+enum get_results_types
+{
+	LIST,
+	FAULT
+};
+
+struct object_result {
+	char **instance;
+	char fault[5];
+	bool status;
+};
+
+struct list_params_result {
+	struct list_head *parameters_list;
+	char fault[5];
+	enum get_results_types type;
+};
+
+struct setm_values_res {
+	bool status;
+	int *flag;
+	struct list_head *faults_list;
+};
+/*
+ * Common functions
+ */
+struct blob_attr *get_parameters_array(struct blob_attr *msg)
+{
+	struct blob_attr *parameters = NULL;
+	struct blob_attr *cur;
+	int rem;
+
+	blobmsg_for_each_attr(cur, msg, rem)
+	{
+		if (blobmsg_type(cur) == BLOBMSG_TYPE_ARRAY) {
+			parameters = cur;
+			break;
+		}
+	}
+	return parameters;
+}
+
+char *get_status(struct blob_attr *msg)
+{
+	char *status = NULL;
+	const struct blobmsg_policy p[1] = { { "status", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
+	if (tb[0])
+		status = blobmsg_get_string(tb[0]);
+	return status;
+}
+
+int get_fault(struct blob_attr *msg)
+{
+	int fault = FAULT_CPE_NO_FAULT;
+	const struct blobmsg_policy p[1] = { { "fault", BLOBMSG_TYPE_INT32 } };
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
+	if (tb[0])
+		fault = blobmsg_get_u32(tb[0]);
+	return fault;
+}
+
+void get_parameters_list_from_parameters_blob_array(struct blob_attr *parameters, struct list_head *parameters_list)
+{
+	const struct blobmsg_policy p[5] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_STRING }, { "writable", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, parameters, rem)
+	{
+		struct blob_attr *tb[5] = { NULL, NULL, NULL, NULL, NULL };
+		blobmsg_parse(p, 5, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
+			continue;
+		int notification = 0;
+		bool writable = 0;
+		if (tb[3] && strncmp(blobmsg_get_string(tb[3]), "1", 1) == 0)
+			notification = 1;
+		if (tb[3] && strncmp(blobmsg_get_string(tb[3]), "2", 1) == 0)
+			notification = 2;
+		if (tb[4] && (strncmp(blobmsg_get_string(tb[4]), "1", 1) == 0 || strcasecmp(blobmsg_get_string(tb[4]), "true") == 0))
+			writable = true;
+		add_dm_parameter_to_list(parameters_list, blobmsg_get_string(tb[0]), tb[1] ? blobmsg_get_string(tb[1]) : "", tb[2] ? blobmsg_get_string(tb[2]) : "", notification, writable);
+	}
+}
+
+int get_single_fault_from_blob_attr(struct blob_attr *msg)
+{
+	int fault_code = FAULT_CPE_NO_FAULT;
+	fault_code = get_fault(msg);
+	if (fault_code != FAULT_CPE_NO_FAULT)
+		return fault_code;
+	struct blob_attr *faults_array = get_parameters_array(msg);
+	if (faults_array == NULL)
+		return FAULT_CPE_NO_FAULT;
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, faults_array, rem)
+	{
+		fault_code = get_fault(cur);
+		if (fault_code != FAULT_CPE_NO_FAULT)
+			break;
+	}
+	return fault_code;
+}
 
 /*
  * Transaction Functions
  */
-int cwmp_transaction_start(char *app)
+
+void ubus_transaction_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
+{
+	bool *status = (bool *)req->priv;
+	const struct blobmsg_policy p[2] = { { "status", BLOBMSG_TYPE_BOOL }, { "transaction_id", BLOBMSG_TYPE_INT32 } };
+	struct blob_attr *tb[2] = { NULL, NULL };
+	blobmsg_parse(p, 2, tb, blobmsg_data(msg), blobmsg_len(msg));
+	*status = blobmsg_get_u8(tb[0]);
+	if (*status == true && tb[1])
+		transaction_id = blobmsg_get_u32(tb[1]);
+}
+
+void ubus_transaction_status_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
+{
+	bool *status = (bool *)req->priv;
+	char *status_str = NULL;
+	const struct blobmsg_policy p[2] = { { "status", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *tb[2] = { NULL, NULL };
+	blobmsg_parse(p, 2, tb, blobmsg_data(msg), blobmsg_len(msg));
+	status_str = blobmsg_get_string(tb[0]);
+	if (strcmp(status_str, "on-going") == 0)
+		*status = true;
+	else
+		*status = false;
+}
+
+bool cwmp_transaction_start(char *app)
 {
 	CWMP_LOG(INFO, "Starting transaction ...");
-	json_object *transaction_ret = NULL, *status_obj = NULL, *transaction_id_obj = NULL;
-	int e = cwmp_ubus_call("usp.raw", "transaction_start", CWMP_UBUS_ARGS{ { "app", {.str_val = app }, UBUS_String } }, 1, &transaction_ret);
+	bool status = false;
+	int e = cwmp_ubus_call("usp.raw", "transaction_start", CWMP_UBUS_ARGS{ { "app", {.str_val = app }, UBUS_String } }, 1, ubus_transaction_callback, &status);
 	if (e != 0) {
-		FREE_JSON(transaction_ret)
 		CWMP_LOG(INFO, "Transaction start failed: Ubus err code: %d", e);
-		return 0;
+		status = false;
 	}
-	json_object_object_get_ex(transaction_ret, "status", &status_obj);
-	if (strcmp((char *)json_object_get_string(status_obj), "true") != 0) {
-		json_object *error = NULL;
-		json_object_object_get_ex(transaction_ret, "error", &error);
-		CWMP_LOG(INFO, "Transaction start failed: %s\n", (char *)json_object_get_string(error));
-		FREE_JSON(transaction_ret)
-		return 0;
-	}
-	json_object_object_get_ex(transaction_ret, "transaction_id", &transaction_id_obj);
-	if (transaction_id_obj == NULL) {
-		FREE_JSON(transaction_ret)
-		return 0;
-	}
-	transaction_id = atoi((char *)json_object_get_string(transaction_id_obj));
-	FREE_JSON(transaction_ret)
-	return 1;
+	return status;
 }
 
-int cwmp_transaction_commit()
+bool cwmp_transaction_commit()
 {
 	CWMP_LOG(INFO, "Transaction Commit ...");
-	json_object *transaction_ret = NULL, *status_obj = NULL;
-	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, &transaction_ret);
+	bool status = false;
+	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_callback, &status);
 	if (e != 0) {
-		FREE_JSON(transaction_ret)
-		CWMP_LOG(INFO, "Transaction commit failed: Ubus err code: %d", e)
-		return 0;
+		CWMP_LOG(INFO, "Transaction commit failed: Ubus err code: %d", e);
+		status = false;
 	}
-	json_object_object_get_ex(transaction_ret, "status", &status_obj);
-	if (strcmp((char *)json_object_get_string(status_obj), "true") != 0) {
-		json_object *error = NULL;
-		json_object_object_get_ex(transaction_ret, "error", &error);
-		CWMP_LOG(INFO, "Transaction commit failed: %s\n", (char *)json_object_get_string(error));
-		transaction_id = 0;
-		FREE_JSON(transaction_ret)
-		return 0;
-	}
-	FREE_JSON(transaction_ret)
 	transaction_id = 0;
-	return 1;
+	return status;
 }
 
-int cwmp_transaction_abort()
+bool cwmp_transaction_abort()
 {
 	CWMP_LOG(INFO, "Transaction Abort ...");
-	json_object *transaction_ret = NULL, *status_obj = NULL;
-	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, &transaction_ret);
+	bool status = false;
+	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_callback, &status);
 	if (e != 0) {
-		FREE_JSON(transaction_ret)
 		CWMP_LOG(INFO, "Transaction abort failed: Ubus err code: %d", e);
-		return 0;
+		status = false;
 	}
-	json_object_object_get_ex(transaction_ret, "status", &status_obj);
-	if (strcmp((char *)json_object_get_string(status_obj), "true") != 0) {
-		json_object *error = NULL;
-		json_object_object_get_ex(transaction_ret, "error", &error);
-		CWMP_LOG(INFO, "Transaction abort failed: %s\n", (char *)json_object_get_string(error));
-		FREE_JSON(transaction_ret)
-		return 0;
-	}
-	return 1;
+	return status;
 }
 
-int cwmp_transaction_status()
+bool cwmp_transaction_status()
 {
 	CWMP_LOG(INFO, "Transaction Status");
-	json_object *status_obj = NULL, *transaction_ret = NULL;
-	int e = cwmp_ubus_call("usp.raw", "transaction_status", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, &transaction_ret);
+	bool status = false;
+	int e = cwmp_ubus_call("usp.raw", "transaction_status", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_status_callback, &status);
 	if (e != 0) {
 		CWMP_LOG(INFO, "Transaction status failed: Ubus err code: %d", e);
-		return 0;
+		return false;
 	}
-	json_object_object_get_ex(transaction_ret, "status", &status_obj);
-	if (!status_obj || strcmp((char *)json_object_get_string(status_obj), "on-going") != 0) {
+	if (!status)
 		CWMP_LOG(INFO, "Transaction with id: %d is not available anymore\n", transaction_id);
-		FREE_JSON(transaction_ret)
-		return 0;
-	}
-	return 1;
+	return status;
 }
 
 /*
- * RPC Methods Functions
+ * Get parameter Values/Names/Notify
  */
-char *cwmp_get_parameter_values(char *parameter_name, json_object **parameters)
+void ubus_get_parameter_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
 {
-	char *fault = NULL;
-	int e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String } }, 1, &str_json_parse_object);
-	if (e < 0 || str_json_parse_object == NULL) {
-		*parameters = NULL;
-		return "9002";
+	struct blob_attr *parameters = get_parameters_array(msg);
+	struct list_params_result *result = (struct list_params_result *)req->priv;
+	if (parameters == NULL) {
+		int fault_code = get_fault(msg);
+		snprintf(result->fault, 5, "%d", fault_code);
+		result->type = FAULT;
+		return;
 	}
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(str_json_parse_object, "fault", &fault_code);
-	if (fault_code != NULL) {
-		*parameters = NULL;
-		fault = strdup((char *)json_object_get_string(fault_code));
-		return fault;
-	}
-	json_object_object_get_ex(str_json_parse_object, "parameters", parameters);
-	return NULL;
+	result->type = LIST;
+	get_parameters_list_from_parameters_blob_array(parameters, result->parameters_list);
 }
 
-char *cwmp_set_parameter_value(char *parameter_name, char *value, char *parameter_key, int *flag)
+char *cwmp_get_parameter_values(char *parameter_name, struct list_head *parameters_list)
 {
-	json_object *set_res;
-	char *fault = NULL;
-	int e = cwmp_ubus_call("usp.raw", "set", CWMP_UBUS_ARGS{ { "path", {.str_val = parameter_name }, UBUS_String }, { "value", {.str_val = value }, UBUS_String }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3,
-			       &set_res);
-
-	if (e < 0 || set_res == NULL)
-		return "9002";
-
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(set_res, "fault", &fault_code);
-	if (fault_code != NULL) {
-		fault = strdup((char *)json_object_get_string(fault_code));
-		return fault;
-	}
-	json_object *status = NULL;
-	json_object_object_get_ex(set_res, "status", &status);
-	char *status_str = NULL;
-	if (status) {
-		status_str = (char *)json_object_get_string(status);
-		if (status_str && strcmp(status_str, "true") == 0) {
-			json_object *flag_obj = NULL;
-			json_object_object_get_ex(set_res, "flag", &flag_obj);
-			*flag = flag_obj ? atoi((char *)json_object_get_string(flag_obj)) : 0;
-			FREE_JSON(set_res)
-			return NULL;
-		}
-	}
-	json_object *parameters = NULL;
-	json_object_object_get_ex(set_res, "parameters", &parameters);
-
-	if (!parameters) {
-		FREE_JSON(set_res)
+	int e;
+	struct list_params_result get_result = {.parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String } }, 1, ubus_get_parameter_callback, &get_result);
+	if (e < 0) {
+		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
 	}
-	json_object *param_obj = json_object_array_get_idx(parameters, 0);
 
-	json_object_object_get_ex(param_obj, "status", &status);
-	status_str = (char *)json_object_get_string(status);
-	if (status_str && strcmp(status_str, "false") == 0) {
-		json_object *fault = NULL;
-		json_object_object_get_ex(param_obj, "fault", &fault);
-		char *fault_code = strdup(fault ? (char *)json_object_get_string(fault) : "");
-		FREE_JSON(set_res)
-		return fault_code;
-	}
-	FREE_JSON(set_res)
+	if (get_result.type == FAULT)
+		return strdup(get_result.fault);
 	return NULL;
 }
 
-char *cwmp_set_multiple_parameters_values(struct list_head parameters_values_list, char *parameter_key, int *flag, json_object **faults_array)
+char *cwmp_get_parameter_names(char *object_name, bool next_level, struct list_head *parameters_list)
 {
-	int e = cwmp_ubus_call("usp.raw", "setm_values", CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = &parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3,
-			       &str_json_parse_object);
-	if (e < 0 || str_json_parse_object == NULL)
-		return "9002";
+	int e;
+	struct list_params_result get_result = {.parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "next-level", {.bool_val = next_level }, UBUS_Bool } }, 2, ubus_get_parameter_callback, &get_result);
+	if (e < 0) {
+		CWMP_LOG(INFO, "object_names ubus method failed: Ubus err code: %d", e);
+		return strdup("9002");
+	}
 
-	json_object *status = NULL;
-	json_object_object_get_ex(str_json_parse_object, "status", &status);
-	char *status_str = NULL;
-	if (status) {
-		status_str = (char *)json_object_get_string(status);
-		if (status_str && strcmp(status_str, "true") == 0) {
-			json_object *flag_obj = NULL;
-			json_object_object_get_ex(str_json_parse_object, "flag", &flag_obj);
-			*flag = flag_obj ? atoi((char *)json_object_get_string(flag_obj)) : 0;
-			free(status_str);
-			status_str = NULL;
-			return NULL;
-		}
-		if (status_str) {
-			free(status_str);
-			status_str = NULL;
+	if (get_result.type == FAULT) {
+		CWMP_LOG(INFO, "Get parameter_values failed: fault_code: %s", get_result.fault);
+		return strdup(get_result.fault);
+	}
+
+	return NULL;
+}
+
+int cwmp_update_enabled_list_notify(int instance_mode, struct list_head *parameters_list)
+{
+	int e;
+	struct list_params_result list_notify_result = {.parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = instance_mode }, UBUS_Integer } }, 1, ubus_get_parameter_callback, &list_notify_result);
+	if (e < 0)
+		CWMP_LOG(INFO, "list_notify ubus method failed: Ubus err code: %d", e);
+	return e;
+}
+
+/*
+ * Set multiple parameter values
+ */
+
+void ubus_setm_values_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	struct setm_values_res *set_result = (struct setm_values_res *)req->priv;
+	const struct blobmsg_policy p[2] = { { "status", BLOBMSG_TYPE_BOOL }, { "flag", BLOBMSG_TYPE_INT64 } };
+	struct blob_attr *tb[2] = { NULL, NULL };
+	blobmsg_parse(p, 2, tb, blobmsg_data(msg), blobmsg_len(msg));
+	if (tb[0]) {
+		set_result->status = blobmsg_get_u8(tb[0]);
+		if (set_result->status) {
+			int *flag = set_result->flag;
+			*flag = tb[1] ? blobmsg_get_u64(tb[1]) : 0;
+			return;
 		}
 	}
-	json_object_object_get_ex(str_json_parse_object, "parameters", faults_array);
-	return "Fault";
+	set_result->status = false;
+	struct blob_attr *faults_params = get_parameters_array(msg);
+	const struct blobmsg_policy pfault[3] = { { "path", BLOBMSG_TYPE_STRING }, { "fault", BLOBMSG_TYPE_INT32 }, { "status", BLOBMSG_TYPE_BOOL } };
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, faults_params, rem)
+	{
+		struct blob_attr *tb[3] = { NULL, NULL, NULL };
+		blobmsg_parse(pfault, 3, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0] || !tb[1])
+			continue;
+		cwmp_add_list_fault_param(blobmsg_get_string(tb[0]), blobmsg_get_u32(tb[1]), set_result->faults_list);
+	}
+}
+
+int cwmp_set_multiple_parameters_values(struct list_head parameters_values_list, char *parameter_key, int *flag, struct list_head *faults_list)
+{
+	int e;
+	struct setm_values_res set_result = {.flag = flag, .faults_list = faults_list };
+	e = cwmp_ubus_call("usp.raw", "setm_values", CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = &parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, ubus_setm_values_callback,
+			   &set_result);
+
+	if (e < 0) {
+		CWMP_LOG(INFO, "setm_values ubus method failed: Ubus err code: %d", e);
+		return FAULT_CPE_INTERNAL_ERROR;
+	}
+	if (set_result.status == false) {
+		CWMP_LOG(INFO, "Set parameter_values failed");
+		return FAULT_CPE_INVALID_ARGUMENTS;
+	}
+
+	return FAULT_CPE_NO_FAULT;
+}
+
+/*
+ * Add Delete object
+ */
+
+void ubus_objects_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	int fault_code = get_single_fault_from_blob_attr(msg);
+	struct object_result *result = (struct object_result *)req->priv;
+	if (fault_code != FAULT_CPE_NO_FAULT) {
+		snprintf(result->fault, 5, "%d", fault_code);
+		result->status = false;
+		return;
+	}
+	struct blob_attr *parameters = get_parameters_array(msg);
+	const struct blobmsg_policy p[2] = { { "status", BLOBMSG_TYPE_BOOL }, { "instance", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, parameters, rem)
+	{
+		struct blob_attr *tb[2] = { NULL, NULL };
+		blobmsg_parse(p, 2, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
+			continue;
+		result->status = blobmsg_get_u8(tb[0]);
+		if (tb[1]) {
+			char **instance = result->instance;
+			*instance = strdup(blobmsg_get_string(tb[1]));
+		}
+		break;
+	}
 }
 
 char *cwmp_add_object(char *object_name, char *key, char **instance)
 {
-	json_object *add_res;
-	char *err = NULL;
+	int e;
+	struct object_result add_result = {.instance = instance };
+	e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, ubus_objects_callback, &add_result);
 
-	int e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, &add_res);
-	if (e < 0 || add_res == NULL) {
-		FREE_JSON(add_res)
-		return "9002";
+	if (e < 0) {
+		CWMP_LOG(INFO, "add_object ubus method failed: Ubus err code: %d", e);
+		return strdup("9002");
 	}
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(add_res, "fault", &fault_code);
-	if (fault_code != NULL) {
-		err = strdup((char *)json_object_get_string(fault_code));
-		FREE_JSON(add_res)
-		return err;
+	if (add_result.status == false) {
+		CWMP_LOG(INFO, "AddObject failed");
+		return strdup(add_result.fault);
 	}
-
-	json_object *parameters = NULL;
-	json_object_object_get_ex(add_res, "parameters", &parameters);
-	if (parameters == NULL) {
-		FREE_JSON(add_res)
-		return "9002";
-	}
-	json_object *param_obj = json_object_array_get_idx(parameters, 0);
-	json_object *fault = NULL;
-	json_object_object_get_ex(param_obj, "fault", &fault);
-	if (fault) {
-		err = strdup((char *)json_object_get_string(fault));
-		FREE_JSON(add_res)
-		return err;
-	}
-	json_object *instance_obj = NULL;
-	json_object_object_get_ex(param_obj, "instance", &instance_obj);
-	*instance = strdup((char *)json_object_get_string(instance_obj));
-	FREE_JSON(add_res)
 	return NULL;
 }
 
 char *cwmp_delete_object(char *object_name, char *key)
 {
-	json_object *del_res;
-	char *err = NULL;
+	int e;
+	struct object_result add_result = {.instance = NULL };
+	e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, ubus_objects_callback, &add_result);
+	if (e < 0) {
+		CWMP_LOG(INFO, "del_object ubus method failed: Ubus err code: %d", e);
+		return strdup("9002");
+	}
 
-	int e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, &del_res);
-	if (e < 0 || del_res == NULL) {
-		FREE_JSON(del_res)
-		return "9002";
+	if (add_result.status == false) {
+		CWMP_LOG(INFO, "DeleteObject failed");
+		return strdup(add_result.fault);
 	}
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(del_res, "fault", &fault_code);
-	if (fault_code != NULL) {
-		err = strdup((char *)json_object_get_string(fault_code));
-		FREE_JSON(del_res)
-		return err;
-	}
-	json_object *parameters = NULL;
-	json_object_object_get_ex(del_res, "parameters", &parameters);
-	json_object *param_obj = json_object_array_get_idx(parameters, 0);
-	json_object *status = NULL;
-	json_object_object_get_ex(param_obj, "status", &status);
-	char *status_str = (char *)json_object_get_string(status);
-	if (status_str && strcmp(status_str, "false") == 0) {
-		json_object *fault = NULL;
-		json_object_object_get_ex(param_obj, "fault", &fault);
-		err = strdup((char *)json_object_get_string(fault));
-		FREE_JSON(del_res)
-		return err;
-	}
-	FREE_JSON(del_res)
+
 	return NULL;
 }
 
-char *cwmp_get_parameter_names(char *object_name, bool next_level, json_object **parameters)
-{
-	char *err = NULL;
+/*
+ * GET SET Parameter Attributes
+ */
 
-	int e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "next-level", {.bool_val = next_level }, UBUS_Bool } }, 2, &str_json_parse_object);
-	if (e < 0 || str_json_parse_object == NULL)
-		return "9002";
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(str_json_parse_object, "fault", &fault_code);
-	if (fault_code != NULL) {
-		*parameters = NULL;
-		err = strdup((char *)json_object_get_string(fault_code));
-		return err;
+void ubus_parameter_attributes_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	int fault_code = get_single_fault_from_blob_attr(msg);
+	struct list_params_result *result = (struct list_params_result *)req->priv;
+	if (fault_code != FAULT_CPE_NO_FAULT) {
+		snprintf(result->fault, 5, "%d", fault_code);
+		result->type = FAULT;
+		return;
 	}
-	json_object_object_get_ex(str_json_parse_object, "parameters", parameters);
-	return NULL;
+	result->type = LIST;
+	if (result->parameters_list != NULL) {
+		struct blob_attr *parameters = get_parameters_array(msg);
+		get_parameters_list_from_parameters_blob_array(parameters, result->parameters_list);
+	}
 }
 
-char *cwmp_get_parameter_attributes(char *parameter_name, json_object **parameters)
+char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list)
 {
-	char *err = NULL;
+	int e;
+	struct list_params_result get_result = {.parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str } }, 1, ubus_parameter_attributes_callback, &get_result);
+	if (e < 0) {
+		CWMP_LOG(INFO, "getm_attributes ubus method failed: Ubus err code: %d", e);
+		return strdup("9002");
+	}
 
-	int e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str } }, 1, &str_json_parse_object);
-	if (e < 0 || str_json_parse_object == NULL)
-		return "9002";
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(str_json_parse_object, "fault", &fault_code);
-	if (fault_code != NULL) {
-		*parameters = NULL;
-		err = strdup((char *)json_object_get_string(fault_code));
-		return err;
+	if (get_result.type == FAULT) {
+		CWMP_LOG(INFO, "GetParameterAttributes failed");
+		return strdup(get_result.fault);
 	}
-	json_object_object_get_ex(str_json_parse_object, "parameters", parameters);
-	json_object *fault = NULL, *param_obj = NULL;
-	foreach_jsonobj_in_array(param_obj, *parameters)
-	{
-		json_object_object_get_ex(param_obj, "fault", &fault);
-		if (fault) {
-			err = strdup((char *)json_object_get_string(fault));
-			break;
-		}
-	}
-	return err;
+
+	return NULL;
 }
 
 char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 {
-	json_object *set_attribute_res;
-	char *err = NULL;
-	int e = cwmp_ubus_call("usp.raw", "setm_attributes",
-			       CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.param_value = { "path", parameter_name } }, {.param_value = { "notify-type", notification } }, {.param_value = { "notify", "1" } } } }, UBUS_Array_Obj }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } },
-			       2, &set_attribute_res);
-	if (e < 0 || set_attribute_res == NULL) {
-		FREE_JSON(set_attribute_res)
-		return "9002";
-	}
-	json_object *parameters = NULL;
-	json_object_object_get_ex(set_attribute_res, "parameters", &parameters);
-	json_object *param_obj = json_object_array_get_idx(parameters, 0);
-	json_object *fault_code = NULL;
-	json_object_object_get_ex(param_obj, "fault", &fault_code);
-	if (fault_code != NULL)
-		err = strdup((char *)json_object_get_string(fault_code));
-	FREE_JSON(set_attribute_res)
-	return err;
-}
-
-/*
- * Init Notify Function
- */
-int cwmp_update_enabled_list_notify(int instance_mode, int notify_type)
-{
 	int e;
-	CWMP_LOG(DEBUG, "Get List Notify for %s paramters values", notify_type == OLD_LIST_NOTIFY ? "old" : "actual");
-	if (notify_type == OLD_LIST_NOTIFY) {
-		FREE_JSON(old_global_json_obj)
-		e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = instance_mode }, UBUS_Integer } }, 1, &old_global_json_obj);
-		if (e)
-			return e;
-		json_object_object_get_ex(old_global_json_obj, "parameters", &old_list_notify);
-	} else {
-		FREE_JSON(actual_global_json_obj)
-		e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = instance_mode }, UBUS_Integer } }, 1, &actual_global_json_obj);
-		if (e)
-			return e;
-		json_object_object_get_ex(actual_global_json_obj, "parameters", &actual_list_notify);
+	struct list_params_result set_result = {.parameters_list = NULL };
+	e = cwmp_ubus_call("usp.raw", "setm_attributes",
+			   CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.param_value = { "path", parameter_name } }, {.param_value = { "notify-type", notification } }, {.param_value = { "notify", "1" } } } }, UBUS_Array_Obj }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 2,
+			   ubus_parameter_attributes_callback, &set_result);
+	if (e < 0) {
+		CWMP_LOG(INFO, "setm_attributes ubus method failed: Ubus err code: %d", e);
+		return strdup("9002");
 	}
-	return 0;
+
+	if (set_result.type == FAULT) {
+		CWMP_LOG(INFO, "SetParameterAttributes failed");
+		return strdup(set_result.fault);
+	}
+
+	return NULL;
 }

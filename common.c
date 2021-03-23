@@ -77,7 +77,10 @@ int global_env_init(int argc, char **argv, struct env *env)
 	return CWMP_OK;
 }
 
-void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type)
+/*
+ * List dm_paramter
+ */
+void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_val, char *param_type, int notification, bool writable)
 {
 	struct cwmp_dm_parameter *dm_parameter;
 	struct list_head *ilist;
@@ -86,10 +89,11 @@ void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *par
 		dm_parameter = list_entry(ilist, struct cwmp_dm_parameter, list);
 		cmp = strcmp(dm_parameter->name, param_name);
 		if (cmp == 0) {
-			if (param_data && strcmp(dm_parameter->data, param_data) != 0) {
-				free(dm_parameter->data);
-				dm_parameter->data = strdup(param_data);
+			if (param_val && strcmp(dm_parameter->value, param_val) != 0) {
+				free(dm_parameter->value);
+				dm_parameter->value = strdup(param_val);
 			}
+			dm_parameter->notification = notification;
 			return;
 		} else if (cmp > 0) {
 			break;
@@ -99,30 +103,35 @@ void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *par
 	_list_add(&dm_parameter->list, ilist->prev, ilist);
 	if (param_name)
 		dm_parameter->name = strdup(param_name);
-	if (param_data)
-		dm_parameter->data = strdup(param_data);
+	if (param_val)
+		dm_parameter->value = strdup(param_val);
 	if (param_type)
 		dm_parameter->type = strdup(param_type ? param_type : "xsd:string");
+	dm_parameter->notification = notification;
+	dm_parameter->writable = writable;
 }
 
-void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter)
+void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter)
 {
 	list_del(&dm_parameter->list);
 	free(dm_parameter->name);
-	free(dm_parameter->data);
+	free(dm_parameter->value);
 	free(dm_parameter->type);
 	free(dm_parameter);
 }
 
-void free_dm_parameter_all_fromlist(struct list_head *list)
+void cwmp_free_all_dm_parameter_list(struct list_head *list)
 {
 	struct cwmp_dm_parameter *dm_parameter;
 	while (list->next != list) {
 		dm_parameter = list_entry(list->next, struct cwmp_dm_parameter, list);
-		delete_dm_parameter_fromlist(dm_parameter);
+		delete_dm_parameter_from_list(dm_parameter);
 	}
 }
 
+/*
+ * List Fault parameter
+ */
 void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault)
 {
 	struct cwmp_param_fault *param_fault;
@@ -142,55 +151,36 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault)
 	free(param_fault);
 }
 
-void cwmp_add_list_param_value(char *param, char *value, struct list_head *list_param_value)
+void cwmp_free_all_list_param_fault(struct list_head *list_param_fault)
 {
-	struct cwmp_param_value *param_value = NULL;
-	if (param == NULL)
-		param = "";
-
-	param_value = calloc(1, sizeof(struct cwmp_param_value));
-	list_add_tail(&param_value->list, list_param_value);
-	param_value->param = strdup(param);
-	param_value->value = strdup(value ? value : "");
-}
-
-void cwmp_del_list_param_value(struct cwmp_param_value *param_value)
-{
-	list_del(&param_value->list);
-	free(param_value->param);
-	free(param_value->value);
-	free(param_value);
-}
-
-void cwmp_free_all_list_param_value(struct list_head *list_param_value)
-{
-	struct cwmp_param_value *param_value;
-	while (list_param_value->next != list_param_value) {
-		param_value = list_entry(list_param_value->next, struct cwmp_param_value, list);
-		cwmp_del_list_param_value(param_value);
+	struct cwmp_param_fault *param_fault;
+	while (list_param_fault->next != list_param_fault) {
+		param_fault = list_entry(list_param_fault->next, struct cwmp_param_fault, list);
+		cwmp_del_list_fault_param(param_fault);
 	}
 }
+///////////////////////////////////////////////////////////
 
 int cwmp_asprintf(char **s, const char *format, ...)
 {
-        int size;
-        char *str = NULL;
-        va_list arg, argcopy;
+	int size;
+	char *str = NULL;
+	va_list arg, argcopy;
 
-        va_start(arg,format);
-        va_copy(argcopy, arg);
-        size = vsnprintf(NULL, 0, format, argcopy);
-        if (size < 0)
-                return -1;
-        va_end(argcopy);
-        str = (char *)calloc(sizeof(char), size+1);
-        vsnprintf(str, size+1, format, arg);
-        va_end(arg);
-        *s = strdup(str);
-        FREE(str);
-        if (*s == NULL)
-                return -1;
-        return 0;
+	va_start(arg, format);
+	va_copy(argcopy, arg);
+	size = vsnprintf(NULL, 0, format, argcopy);
+	if (size < 0)
+		return -1;
+	va_end(argcopy);
+	str = (char *)calloc(sizeof(char), size + 1);
+	vsnprintf(str, size + 1, format, arg);
+	va_end(arg);
+	*s = strdup(str);
+	FREE(str);
+	if (*s == NULL)
+		return -1;
+	return 0;
 }
 
 bool folder_exists(const char *path)

@@ -19,6 +19,7 @@
 #include <libubox/list.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 #ifndef CWMP_VERSION
 #define CWMP_VERSION "3.0.0"
@@ -127,7 +128,7 @@ typedef struct cwmp {
 	int count_handle_notify;
 	int retry_count_session;
 	struct list_head *head_event_container;
-	FILE* pid_file;
+	FILE *pid_file;
 	time_t start_time;
 	struct session_status session_status;
 	unsigned int cwmp_id;
@@ -183,17 +184,13 @@ struct cwmp_param_fault {
 	int fault;
 };
 
-struct cwmp_param_value {
-	struct list_head list;
-	char *param;
-	char *value;
-};
-
 struct cwmp_dm_parameter {
 	struct list_head list;
 	char *name;
-	char *data;
+	char *value;
 	char *type;
+	int notification;
+	bool writable;
 };
 
 enum amd_version_enum
@@ -440,15 +437,13 @@ typedef struct opfault {
 
 extern struct cwmp cwmp_main;
 int cwmp_exit(void);
-void add_dm_parameter_tolist(struct list_head *head, char *param_name, char *param_data, char *param_type);
-void delete_dm_parameter_fromlist(struct cwmp_dm_parameter *dm_parameter);
-void free_dm_parameter_all_fromlist(struct list_head *list);
+void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type, int notification, bool writable);
+void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter);
+void cwmp_free_all_dm_parameter_list(struct list_head *list);
 int global_env_init(int argc, char **argv, struct env *env);
 void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault);
 void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
-void cwmp_add_list_param_value(char *param, char *value, struct list_head *list_param_value);
-void cwmp_del_list_param_value(struct cwmp_param_value *param_value);
-void cwmp_free_all_list_param_value(struct list_head *list_param_value);
+void cwmp_free_all_list_param_fault(struct list_head *list_param_fault);
 int cwmp_asprintf(char **s, const char *format, ...);
 bool folder_exists(const char *path);
 
