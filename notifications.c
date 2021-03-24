@@ -163,6 +163,13 @@ void add_list_value_change(char *param_name, char *param_data, char *param_type)
 	pthread_mutex_unlock(&(mutex_value_change));
 }
 
+void clean_list_value_change()
+{
+	pthread_mutex_lock(&(mutex_value_change));
+	cwmp_free_all_dm_parameter_list(&list_value_change);
+	pthread_mutex_unlock(&(mutex_value_change));
+}
+
 void send_active_value_change(void)
 {
 	struct cwmp *cwmp = &cwmp_main;

@@ -39,6 +39,7 @@ void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *
 void *thread_periodic_check_notify(void *v);
 void send_active_value_change(void);
 void add_list_value_change(char *param_name, char *param_data, char *param_type);
+void clean_list_value_change();
 void add_lw_list_value_change(char *param_name, char *param_data, char *param_type);
 char *calculate_lwnotification_cnonce();
 void cwmp_lwnotification();
