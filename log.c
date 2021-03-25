@@ -80,7 +80,7 @@ extern char *__progname;
 
 int log_set_on_syslog(char *value)
 {
-	if (strcmp(value, "enable") == 0) {
+	if ((strcasecmp(value, "TRUE") == 0) || (strcmp(value, "1") == 0) || (strcasecmp(value, "enable") == 0)) {
 		char ident[256];
 
 		enable_log_syslog = true;
@@ -89,9 +89,7 @@ int log_set_on_syslog(char *value)
 		snprintf(ident, sizeof(ident), "%s[%d]", __progname, getpid());
 		ident[sizeof(ident) - 1] = '\0';
 		openlog(ident, LOG_NDELAY, LOG_LOCAL1);
-	}
-
-	if (strcmp(value, "disable") == 0) {
+	} else {
 		enable_log_syslog = false;
 	}
 	return 1;
