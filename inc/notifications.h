@@ -13,6 +13,9 @@
 #define NOTIFICATIONS_H_
 #include <sys/socket.h>
 #include <pthread.h>
+#include <libubox/blobmsg_json.h>
+#include <libubus.h>
+
 #include "common.h"
 #include "event.h"
 #include "datamodel_interface.h"
@@ -32,9 +35,8 @@ extern struct list_head list_value_change;
 extern pthread_mutex_t mutex_value_change;
 
 #define DM_ENABLED_NOTIFY "/etc/icwmpd/.dm_enabled_notify"
-
-int cwmp_update_enabled_notify_file();
-int check_value_change(void);
+void ubus_check_value_change_callback(struct ubus_request *req, int type, struct blob_attr *msg);
+void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type, struct blob_attr *msg);
 void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p);
 void *thread_periodic_check_notify(void *v);
 void send_active_value_change(void);

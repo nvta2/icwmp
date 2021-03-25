@@ -561,15 +561,8 @@ static int xml_prepare_parameters_inform(struct cwmp_dm_parameter *dm_parameter,
 		(*size)--;
 
 		goto create_value;
-	} else if (b && dm_parameter->value == NULL) {
+	} else if (dm_parameter->value == NULL)
 		return 0;
-	} else if (!b && dm_parameter->value == NULL) {
-		LIST_HEAD(list_specific_inform);
-		char *err = cwmp_get_parameter_values(dm_parameter->name, &list_specific_inform);
-		cwmp_free_all_dm_parameter_list(&list_specific_inform);
-		FREE(err);
-		return 0;
-	}
 	node = mxmlNewElement(parameter_list, "ParameterValueStruct");
 	if (!node)
 		return -1;
@@ -841,19 +834,19 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 
 	size_t inform_parameters_nbre = sizeof(forced_inform_parameters) / sizeof(forced_inform_parameters[0]);
 	size_t i;
-	struct cwmp_dm_parameter *cwmp_dm_param = NULL;
+	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
 	LIST_HEAD(list_inform);
 	for (i = 0; i < inform_parameters_nbre; i++) {
-		char *fault = cwmp_get_parameter_values(forced_inform_parameters[i], &list_inform);
+		char *fault = cwmp_get_single_parameter_value(forced_inform_parameters[i], &cwmp_dm_param);
 		if (fault != NULL) {
 			FREE(fault);
 			continue;
 		}
-		list_for_each_entry (cwmp_dm_param, &list_inform, list) {
-			if (xml_prepare_parameters_inform(cwmp_dm_param, parameter_list, &size))
-				goto error;
-		}
-		cwmp_free_all_dm_parameter_list(&list_inform);
+		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
+			goto error;
+		FREE(cwmp_dm_param.name);
+		FREE(cwmp_dm_param.value);
+		FREE(cwmp_dm_param.type);
 	}
 	if (cwmp_asprintf(&c, "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;

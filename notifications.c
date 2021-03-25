@@ -13,98 +13,114 @@
 #include <openssl/evp.h>
 #include <netdb.h>
 #include <libubox/list.h>
+
 #include "notifications.h"
+#include "ubus.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
 pthread_mutex_t mutex_value_change = PTHREAD_MUTEX_INITIALIZER;
 
-int cwmp_update_enabled_notify_file()
+void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
 {
-	struct cwmp *cwmp = &cwmp_main;
 	FILE *fp;
-	LIST_HEAD(list_notify);
-	int e = cwmp_update_enabled_list_notify(cwmp->conf.instance_mode, &list_notify);
-	if (e)
-		return 0;
-	remove(DM_ENABLED_NOTIFY);
+	int *int_ret = (int *)req->priv;
 
+	*int_ret = get_fault(msg);
+	if (*int_ret) {
+		*int_ret = 0;
+		return;
+	}
+	remove(DM_ENABLED_NOTIFY);
 	fp = fopen(DM_ENABLED_NOTIFY, "a");
 	if (fp == NULL) {
-		cwmp_free_all_dm_parameter_list(&list_notify);
-		return 0;
+		*int_ret = 0;
+		return;
 	}
-	struct cwmp_dm_parameter *param_value = NULL;
-	list_for_each_entry (param_value, &list_notify, list) {
+	struct blob_attr *parameters = get_parameters_array(msg);
+	const struct blobmsg_policy p[5] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, parameters, rem)
+	{
+		struct blob_attr *tb[4] = { NULL, NULL, NULL, NULL };
+		blobmsg_parse(p, 4, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
+			continue;
 		char *notif_line = NULL;
-		cwmp_asprintf(&notif_line, "parameter:%s notifcation:%d type:%s value:%s", param_value->name, param_value->notification, param_value->type, param_value->value);
+		cwmp_asprintf(&notif_line, "parameter:%s notifcation:%s type:%s value:%s", blobmsg_get_string(tb[0]), tb[3] ? blobmsg_get_string(tb[3]) : "", tb[2] ? blobmsg_get_string(tb[2]) : "", tb[1] ? blobmsg_get_string(tb[1]) : "");
 		fprintf(fp, "%s\n", notif_line);
 		FREE(notif_line);
 	}
 	fclose(fp);
-	cwmp_free_all_dm_parameter_list(&list_notify);
-	return 1;
 }
 
-void get_parameter_value_from_parameters_list(struct list_head *list_notif, char *parameter_name, struct cwmp_dm_parameter **ret_dm_param)
+void get_parameter_value_from_parameters_list(struct blob_attr *list_notif, char *parameter_name, char **value, char **type)
 {
-	struct cwmp_dm_parameter *param_value = NULL;
-	list_for_each_entry (param_value, list_notif, list) {
-		if (param_value->name && strcmp(param_value->name, parameter_name) != 0) {
+	const struct blobmsg_policy p[5] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, list_notif, rem)
+	{
+		struct blob_attr *tb[3] = { NULL, NULL, NULL };
+		blobmsg_parse(p, 3, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
 			continue;
-		}
-		*ret_dm_param = (struct cwmp_dm_parameter *)calloc(1, sizeof(struct cwmp_dm_parameter));
-		(*ret_dm_param)->name = strdup(param_value->name);
-		(*ret_dm_param)->value = strdup(param_value->value);
-		(*ret_dm_param)->type = strdup(param_value->type);
+		if (strcmp(parameter_name, blobmsg_get_string(tb[0])) != 0)
+			continue;
+		*value = strdup(tb[1] ? blobmsg_get_string(tb[1]) : "");
+		*type = strdup(tb[2] ? blobmsg_get_string(tb[2]) : "");
 		break;
 	}
 }
 
-int check_value_change(void)
+void ubus_check_value_change_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
 {
 	FILE *fp;
 	char buf[1280];
+	char *dm_value = NULL, *dm_type = NULL;
+	int *int_ret = (int *)req->priv;
 
-	struct cwmp *cwmp = &cwmp_main;
-	struct cwmp_dm_parameter *dm_parameter = NULL;
-	int is_notify = 0;
+	*int_ret = get_fault(msg);
+	if (*int_ret) {
+		*int_ret = 0;
+		return;
+	}
+
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
-	if (fp == NULL)
-		return false;
-	LIST_HEAD(list_notify);
-	cwmp_update_enabled_list_notify(cwmp->conf.instance_mode, &list_notify);
+	if (fp == NULL) {
+		*int_ret = 0;
+		return;
+	}
+
+	struct blob_attr *list_notify = get_parameters_array(msg);
 	while (fgets(buf, 1280, fp) != NULL) {
 		int len = strlen(buf);
 		if (len)
 			buf[len - 1] = '\0';
 		char parameter[128] = { 0 }, notification[2] = { 0 }, value[1024] = { 0 }, type[32] = { 0 };
 		sscanf(buf, "parameter:%s notifcation:%s type:%s value:%s\n", parameter, notification, type, value);
-		get_parameter_value_from_parameters_list(&list_notify, parameter, &dm_parameter);
-		if (dm_parameter == NULL)
+		get_parameter_value_from_parameters_list(list_notify, parameter, &dm_value, &dm_type);
+		if (dm_value == NULL && dm_type == NULL)
 			continue;
-		if ((strlen(notification) > 0) && (notification[0] >= '1') && (dm_parameter->value != NULL) && (strcmp(dm_parameter->value, value) != 0)) {
+		if ((strlen(notification) > 0) && (notification[0] >= '1') && (dm_value != NULL) && (strcmp(dm_value, value) != 0)) {
 			if (notification[0] == '1' || notification[0] == '2')
-				add_list_value_change(parameter, dm_parameter->value, dm_parameter->type);
+				add_list_value_change(parameter, dm_value, dm_type);
 			if (notification[0] >= '3')
-				add_lw_list_value_change(parameter, dm_parameter->value, dm_parameter->type);
+				add_lw_list_value_change(parameter, dm_value, dm_type);
 
 			if (notification[0] == '1')
-				is_notify |= NOTIF_PASSIVE;
+				*int_ret |= NOTIF_PASSIVE;
 			if (notification[0] == '2')
-				is_notify |= NOTIF_ACTIVE;
+				*int_ret |= NOTIF_ACTIVE;
 
 			if (notification[0] == '5' || notification[0] == '6')
-				is_notify |= NOTIF_LW_ACTIVE;
+				*int_ret |= NOTIF_LW_ACTIVE;
 		}
-		FREE(dm_parameter->name);
-		FREE(dm_parameter->value);
-		FREE(dm_parameter->type);
-		FREE(dm_parameter);
+		FREE(dm_value);
+		FREE(dm_type);
 	}
 	fclose(fp);
-	cwmp_free_all_dm_parameter_list(&list_notify);
-	return is_notify;
 }
 
 void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p)

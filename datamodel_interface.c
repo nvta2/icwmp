@@ -11,6 +11,7 @@
 #include "datamodel_interface.h"
 #include "log.h"
 #include "ubus.h"
+#include "notifications.h"
 
 bool transaction_started = false;
 int transaction_id = 0;
@@ -201,6 +202,52 @@ bool cwmp_transaction_status()
 		CWMP_LOG(INFO, "Transaction with id: %d is not available anymore\n", transaction_id);
 	return status;
 }
+/*
+ * Get single _parameter value
+ */
+
+void ubus_get_single_parameter_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	struct blob_attr *parameters = get_parameters_array(msg);
+	struct cwmp_dm_parameter *result = (struct cwmp_dm_parameter *)req->priv;
+	if (parameters == NULL) {
+		int fault_code = get_fault(msg);
+		result->name = NULL;
+		result->type = NULL;
+		cwmp_asprintf(&result->value, "%d", fault_code);
+		return;
+	}
+	const struct blobmsg_policy p[3] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *cur;
+	int rem;
+	blobmsg_for_each_attr(cur, parameters, rem)
+	{
+		struct blob_attr *tb[3] = { NULL, NULL, NULL };
+		blobmsg_parse(p, 3, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
+			continue;
+		result->name = strdup(blobmsg_get_string(tb[0]));
+		result->value = strdup(tb[1] ? blobmsg_get_string(tb[1]) : "");
+		result->type = strdup(tb[2] ? blobmsg_get_string(tb[2]) : "");
+		break;
+	}
+}
+
+char *cwmp_get_single_parameter_value(char *parameter_name, struct cwmp_dm_parameter *dm_parameter)
+{
+	int e;
+	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String } }, 1, ubus_get_single_parameter_callback, dm_parameter);
+	if (e < 0) {
+		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
+		return strdup("9002");
+	}
+
+	if (dm_parameter->name == NULL) {
+		CWMP_LOG(INFO, "Get parameter_values failed: fault_code: %s", dm_parameter->value); // the value is the fault
+		return dm_parameter->value;
+	}
+	return NULL;
+}
 
 /*
  * Get parameter Values/Names/Notify
@@ -250,16 +297,6 @@ char *cwmp_get_parameter_names(char *object_name, bool next_level, struct list_h
 	}
 
 	return NULL;
-}
-
-int cwmp_update_enabled_list_notify(int instance_mode, struct list_head *parameters_list)
-{
-	int e;
-	struct list_params_result list_notify_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = instance_mode }, UBUS_Integer } }, 1, ubus_get_parameter_callback, &list_notify_result);
-	if (e < 0)
-		CWMP_LOG(INFO, "list_notify ubus method failed: Ubus err code: %d", e);
-	return e;
 }
 
 /*
@@ -437,4 +474,25 @@ char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 	}
 
 	return NULL;
+}
+
+/*
+ * Notifications functions
+ */
+int cwmp_update_enabled_notify_file(void)
+{
+	int e, fault;
+	struct cwmp *cwmp = &cwmp_main;
+	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer } }, 1, cwmp_update_enabled_notify_file_callback, &fault);
+	if (e || fault)
+		return 0;
+	return 1;
+}
+
+int check_value_change(void)
+{
+	struct cwmp *cwmp = &cwmp_main;
+	int ret = 0;
+	cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer } }, 1, ubus_check_value_change_callback, &ret);
+	return ret;
 }
