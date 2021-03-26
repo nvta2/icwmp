@@ -375,7 +375,6 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 		} else if (u_args[i].type == UBUS_Bool)
 			blobmsg_add_u8(&b, u_args[i].key, u_args[i].val.bool_val);
 	}
-	blobmsg_add_string(&b, "proto", "cwmp");
 	if (!ubus_lookup_id(ubus_ctx, obj, &id))
 		rc = ubus_invoke(ubus_ctx, id, method, b.head, ubus_callback, callback_arg, 20000);
 	else

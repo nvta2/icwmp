@@ -236,7 +236,7 @@ void ubus_get_single_parameter_callback(struct ubus_request *req, int type __att
 char *cwmp_get_single_parameter_value(char *parameter_name, struct cwmp_dm_parameter *dm_parameter)
 {
 	int e;
-	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String } }, 1, ubus_get_single_parameter_callback, dm_parameter);
+	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_single_parameter_callback, dm_parameter);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
@@ -270,7 +270,7 @@ char *cwmp_get_parameter_values(char *parameter_name, struct list_head *paramete
 {
 	int e;
 	struct list_params_result get_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String } }, 1, ubus_get_parameter_callback, &get_result);
+	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
@@ -285,7 +285,7 @@ char *cwmp_get_parameter_names(char *object_name, bool next_level, struct list_h
 {
 	int e;
 	struct list_params_result get_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "next-level", {.bool_val = next_level }, UBUS_Bool } }, 2, ubus_get_parameter_callback, &get_result);
+	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "next-level", {.bool_val = next_level }, UBUS_Bool }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 3, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "object_names ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
@@ -336,8 +336,9 @@ int cwmp_set_multiple_parameters_values(struct list_head parameters_values_list,
 {
 	int e;
 	struct setm_values_res set_result = {.flag = flag, .faults_list = faults_list };
-	e = cwmp_ubus_call("usp.raw", "setm_values", CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = &parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, ubus_setm_values_callback,
-			   &set_result);
+	e = cwmp_ubus_call("usp.raw", "setm_values",
+			   CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = &parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+			   ubus_setm_values_callback, &set_result);
 
 	if (e < 0) {
 		CWMP_LOG(INFO, "setm_values ubus method failed: Ubus err code: %d", e);
@@ -387,7 +388,8 @@ char *cwmp_add_object(char *object_name, char *key, char **instance)
 {
 	int e;
 	struct object_result add_result = {.instance = instance };
-	e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, ubus_objects_callback, &add_result);
+	e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+			   ubus_objects_callback, &add_result);
 
 	if (e < 0) {
 		CWMP_LOG(INFO, "add_object ubus method failed: Ubus err code: %d", e);
@@ -404,7 +406,8 @@ char *cwmp_delete_object(char *object_name, char *key)
 {
 	int e;
 	struct object_result add_result = {.instance = NULL };
-	e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 3, ubus_objects_callback, &add_result);
+	e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+			   ubus_objects_callback, &add_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "del_object ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
@@ -442,7 +445,8 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 {
 	int e;
 	struct list_params_result get_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str } }, 1, ubus_parameter_attributes_callback, &get_result);
+	e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2,
+			   ubus_parameter_attributes_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "getm_attributes ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
@@ -460,9 +464,10 @@ char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 {
 	int e;
 	struct list_params_result set_result = {.parameters_list = NULL };
-	e = cwmp_ubus_call("usp.raw", "setm_attributes",
-			   CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.param_value = { "path", parameter_name } }, {.param_value = { "notify-type", notification } }, {.param_value = { "notify", "1" } } } }, UBUS_Array_Obj }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 2,
-			   ubus_parameter_attributes_callback, &set_result);
+	e = cwmp_ubus_call("usp.raw", "setm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.param_value = { "path", parameter_name } }, {.param_value = { "notify-type", notification } }, {.param_value = { "notify", "1" } } } }, UBUS_Array_Obj },
+									 { "transaction_id", {.int_val = transaction_id }, UBUS_Integer },
+									 { "proto", {.str_val = "cwmp" }, UBUS_String } },
+			   3, ubus_parameter_attributes_callback, &set_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "setm_attributes ubus method failed: Ubus err code: %d", e);
 		return strdup("9002");
@@ -483,7 +488,7 @@ int cwmp_update_enabled_notify_file(void)
 {
 	int e, fault;
 	struct cwmp *cwmp = &cwmp_main;
-	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer } }, 1, cwmp_update_enabled_notify_file_callback, &fault);
+	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, cwmp_update_enabled_notify_file_callback, &fault);
 	if (e || fault)
 		return 0;
 	return 1;
@@ -493,6 +498,6 @@ int check_value_change(void)
 {
 	struct cwmp *cwmp = &cwmp_main;
 	int ret = 0;
-	cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer } }, 1, ubus_check_value_change_callback, &ret);
+	cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_check_value_change_callback, &ret);
 	return ret;
 }
