@@ -1,27 +1,10 @@
-# README #
+# CWMP Agent
 
 icwmp is a client implementation of [TR-069/CWMP](https://cwmp-data-models.broadband-forum.org/) protocol.
 
-## Build Instructions ##
+It is written in C programming language and depends on a number of librairies of OpenWrt for building and running.
 
-icwmp is written in C programming language and depends on a number of librairies of OpenWrt for building and running.
-
-## Project Components ##
-
-The package is composed of the following components:
-
-- [ICWMP](https://dev.iopsys.eu/iopsys/icwmp/blob/master/README.md) daemon written in C programming language and it's in charge of communication with ACS using the protocol TR-069/CWMP.
-- [STUN](https://dev.iopsys.eu/iopsys/icwmp/blob/master/stun/stun.md) daemon written in C for TR-069 stun connection request feature. the TR-069 stun is described in TR-069(Annex G) and in TR111(Part 2).
-- [XMPP](https://dev.iopsys.eu/iopsys/icwmp/blob/master/xmpp/xmpp.md) daemon written in C for TR-069 xmpp connection request feature. the TR-069 xmpp is described in TR-069(Annex K).
-- [BulkData](https://dev.iopsys.eu/iopsys/icwmp/blob/master/bulkdata/bulkdata.md) daemon written in C for collecting data from device to the data server collector. the TR-069 bulkdata is described in TR-069(Annex N) and TR157 Amendment 10(Annex A).
-- [TWAMP](https://dev.iopsys.eu/iopsys/icwmp/blob/master/twamp/twamp.md) daemon written in C. It is an implementation of the Two-Way Active Measurement Protocol (TWAMP) reflector measuring network as described in TR-390.
-- [UDP Echo Server](https://dev.iopsys.eu/iopsys/icwmp/blob/master/udpechoserver/udpechoserver.md) daemon written in C to support the UDP Echo Service. It's described in TR143.
-
-**NOTE: The [STUN](https://dev.iopsys.eu/iopsys/icwmp/blob/master/stun/stun.md), [XMPP](https://dev.iopsys.eu/iopsys/icwmp/blob/master/xmpp/xmpp.md), [BulkData](https://dev.iopsys.eu/iopsys/icwmp/blob/master/bulkdata/bulkdata.md), [TWAMP](https://dev.iopsys.eu/iopsys/icwmp/blob/master/twamp/twamp.md) and [UDP Echo Server](https://dev.iopsys.eu/iopsys/icwmp/blob/master/udpechoserver/udpechoserver.md) are described in details in their relative sub packages.**
-
-**NOTE: Below the detailed description about the icwmp.**
-
-## Good To know ##
+## Good to Know
 
 The icwmp client is :
 * tested with several ACS such as **Axiros**, **AVSytem**, **GenieACS**, **OpenACS**, etc...
@@ -30,7 +13,7 @@ The icwmp client is :
 * supports all types of connection requests such as **HTTP**, **XMPP**, **STUN**.
 * supports integrated file transfer such as **HTTP**, **HTTPS**, **FTP**.
 
-## Configuration File ##
+## Configuration File
 
 The icwmp UCI configuration is located in **'/etc/config/cwmp'**, and contains 3 sections: **'acs'**, **'cpe'** and **'lwn'**.
 
@@ -54,7 +37,7 @@ config lwn 'lwn'
 	option port ''
 ```
 
-### cwmp asc section ###
+### cwmp asc section
 
 It defines **acs configuration** (like acs url, acs username, etc...). The possible options for **acs** section are listed in the table below.
 
@@ -79,7 +62,7 @@ It defines **acs configuration** (like acs url, acs username, etc...). The possi
 | `dhcp_url`                  | string  | the **url** of ACS server received from the DHCP server Option 43 when **'dhcp_discovery'** option is enabled. This option is updated automatically by the daemon. |
 | `ip_version`					| string | ip_version of ConnectionRequestURL
 
-### cwmp cpe section ###
+### cwmp cpe section
 
 It defines **device configuration** (such as interface, manufacturer, etc...). The possible options for **cpe** section are listed in the table below.
 
@@ -109,7 +92,7 @@ It defines **device configuration** (such as interface, manufacturer, etc...). T
 | `log_to_syslog`         | boolean  | If set to **1**, the cwmp log will be appended to busybox syslog. |
 | `periodic_notify_enable` | boolean  | If set to **1**, icwmp will be able to detect parameter value change at any time. |
 
-### cwmp lwn section ###
+### cwmp lwn section
 
 It defines **lightweight notification configuration** (like enable, hostname, etc...). The possible options for **lwn** section are listed in the table below.
 
@@ -119,11 +102,11 @@ It defines **lightweight notification configuration** (like enable, hostname, et
 | `hostname` | string  | The hostname or address to be used when sending the UDP Lightweight Notifications. |
 | `port`     | integer | The port number to be used when sending UDP Lightweight Notifications.             |
 
-## RPCs Method supported ##
+## RPCs Method supported
 
 the folowing tables provides a summary of all methods, and indicates the conditions under which implementation of each RPC method defined in Annex A is `REQUIRED` or `OPTIONAL`.
 
-### Methods for CPE responding ###
+### Methods for CPE responding
 
 | Method name              | CPE requirement | Supported |
 | ------------------------ | --------------- | --------- |
@@ -149,7 +132,7 @@ the folowing tables provides a summary of all methods, and indicates the conditi
 | `GetOptions`             | OPTIONAL        | No        |
 
 
-### Methods for CPE calling ###
+### Methods for CPE calling
 
 | Method name                       | CPE requirement | Supported |
 | --------------------------------- | --------------- | --------- |
@@ -163,7 +146,7 @@ the folowing tables provides a summary of all methods, and indicates the conditi
 | `Kicked`                          | OPTIONAL        | No        |
 
 
-## Concepts and Workflow ##
+## Concepts and Workflow
 
 As indicated in the TR069 standard, the icwmpd starts automatically when the system is started. Then it connects to the ACS, that can be set manually by the admin or found by dhcp discovery. And later  it could start other sessions due to event causes.
 
@@ -188,7 +171,7 @@ In addition icwmpd has a log file '/var/log/icwmpd.log', that describes the work
 
 You could set the uci config `cwmp.cpe.log_severity` option to `'DEBUG'` in order to show in details the cwmp log.
 
-## ICWMP UBUS ##
+## icwmp uBus
 
 icwmpd must be launched on startup after ubusd. It exposes the CWMP functionality over ubus. The icwmpd registers `tr069` namespaces with ubus, that has the shown below functionalities:
 
@@ -287,7 +270,7 @@ root@iopsys:~# ubus call tr069 command '{"command":"exit"}'
 root@iopsys:~# 
 ```
 
-## ICWMP CLI ##
+## icwmp CLI
 
 icwmpd offers a cli tool which its options are described with `--help` option as below:
 
@@ -367,7 +350,7 @@ root@iopsys:~# icwmp get Device.Time.
 root@iopsys:~# 
 ```
 
-## Dependencies ##
+## Dependencies
 
 To successfully build icwmp, the following libraries are needed:
 
