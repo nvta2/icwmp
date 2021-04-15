@@ -253,13 +253,6 @@ end:
 
 int run_session_end_func()
 {
-	if (end_session_flag & END_SESSION_EXTERNAL_ACTION) {
-		CWMP_LOG(INFO, "Executing external commands: end session request");
-		external_init();
-		external_simple("end_session", NULL, 0);
-		external_exit();
-	}
-
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
 		cwmp_apply_acs_changes();
@@ -311,26 +304,20 @@ int run_session_end_func()
 
 	if (end_session_flag & END_SESSION_REBOOT) {
 		CWMP_LOG(INFO, "Executing Reboot: end session request");
-		external_init();
-		external_simple("reboot", commandKey, 0);
+		cwmp_reboot(commandKey);
 		FREE(commandKey);
-		external_exit();
 		exit(EXIT_SUCCESS);
 	}
 
 	if (end_session_flag & END_SESSION_X_FACTORY_RESET_SOFT) {
 		CWMP_LOG(INFO, "Executing factory reset soft: end session request");
-		external_init();
-		external_simple("factory_reset_soft", NULL, 0);
-		external_exit();
+		cwmp_factory_reset();
 		exit(EXIT_SUCCESS);
 	}
 
 	if (end_session_flag & END_SESSION_FACTORY_RESET) {
 		CWMP_LOG(INFO, "Executing factory reset: end session request");
-		external_init();
-		external_simple("factory_reset", NULL, 0);
-		external_exit();
+		cwmp_factory_reset();
 		exit(EXIT_SUCCESS);
 	}
 
@@ -386,7 +373,7 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 		uci_get_value(UCI_CPE_EXEC_DOWNLOAD, &exec_download);
 		if (strcmp(exec_download, "1") == 0) {
 			CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
-			uci_set_value("cwmp.cpe.exec_download=0");
+			uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "0", CWMP_CMD_SET);
 		}
 		error = cwmp_schedule_rpc(cwmp, session);
 		CWMP_LOG(INFO, "End session");

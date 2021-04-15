@@ -12,14 +12,14 @@ icwmpd_SOURCES =			\
 	../md5.c				\
 	../digestauth.c			\
 	../event.c				\
-	../external.c			\
 	../http.c				\
-	../cwmp_json.c			\
 	../netlink.c			\
 	../ubus.c				\
 	../datamodel_interface.c \
+	../cwmp_cli.c			\
 	../notifications.c		\
 	../cwmp_zlib.c			\
+	../cwmp_du_state.c		\
 	../xml.c				\
 	../diagnostic.c			\
 	../cwmp.c	

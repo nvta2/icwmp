@@ -307,6 +307,14 @@ int get_global_config(struct config *conf)
 	} else {
 		return error;
 	}
+	if ((error = uci_get_value(UCI_CPE_DEFAULT_WAN_IFACE, &value)) == CWMP_OK) {
+		if (value != NULL)
+			conf->default_wan_iface = strdup(value);
+		else
+			conf->default_wan_iface = strdup("wan");
+	} else {
+		return error;
+	}
 	if ((error = uci_get_value(UCI_CPE_CRPATH_PATH, &value)) == CWMP_OK) {
 		if (conf->connection_request_path != NULL) {
 			free(conf->connection_request_path);

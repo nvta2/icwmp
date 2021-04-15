@@ -93,9 +93,9 @@ void get_parameters_list_from_parameters_blob_array(struct blob_attr *parameters
 			continue;
 		int notification = 0;
 		bool writable = 0;
-		if (tb[3] && strncmp(blobmsg_get_string(tb[3]), "1", 1) == 0)
+		if (tb[1] && strncmp(blobmsg_get_string(tb[1]), "1", 1) == 0)
 			notification = 1;
-		if (tb[3] && strncmp(blobmsg_get_string(tb[3]), "2", 1) == 0)
+		else if (tb[1] && strncmp(blobmsg_get_string(tb[1]), "2", 1) == 0)
 			notification = 2;
 		if (tb[4] && (strncmp(blobmsg_get_string(tb[4]), "1", 1) == 0 || strcasecmp(blobmsg_get_string(tb[4]), "true") == 0))
 			writable = true;
@@ -332,12 +332,12 @@ void ubus_setm_values_callback(struct ubus_request *req, int type __attribute__(
 	}
 }
 
-int cwmp_set_multiple_parameters_values(struct list_head parameters_values_list, char *parameter_key, int *flag, struct list_head *faults_list)
+int cwmp_set_multiple_parameters_values(struct list_head *parameters_values_list, char *parameter_key, int *flag, struct list_head *faults_list)
 {
 	int e;
 	struct setm_values_res set_result = {.flag = flag, .faults_list = faults_list };
 	e = cwmp_ubus_call("usp.raw", "setm_values",
-			   CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = &parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+			   CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
 			   ubus_setm_values_callback, &set_result);
 
 	if (e < 0) {

@@ -24,7 +24,6 @@
 #include "cwmp_time.h"
 #include "event.h"
 #include "backupSession.h"
-#include "cwmp_json.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;

@@ -24,7 +24,6 @@
 #include "xml.h"
 #include "backupSession.h"
 #include "http.h"
-#include "external.h"
 #include "diagnostic.h"
 #include "config.h"
 #include "ubus.h"

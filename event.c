@@ -20,7 +20,6 @@
 #include <pthread.h>
 #include "backupSession.h"
 #include "log.h"
-#include "external.h"
 #include "event.h"
 #include "session.h"
 #include "xml.h"

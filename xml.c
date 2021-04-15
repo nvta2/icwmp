@@ -12,19 +12,19 @@
  *	  Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
  *	  Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
  */
-
 #include "xml.h"
 #include "http.h"
 #include "cwmp_time.h"
 #include "cwmp_zlib.h"
 #include "notifications.h"
-#include "external.h"
 #include "messages.h"
 #include "backupSession.h"
 #include "log.h"
 #include "datamodel_interface.h"
 #include "cwmp_uci.h"
 #include "diagnostic.h"
+#include "ubus.h"
+#include "cwmp_du_state.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_upload);
@@ -1624,7 +1624,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			goto fault;
 		transaction_started = true;
 	}
-	fault_code = cwmp_set_multiple_parameters_values(list_set_param_value, parameter_key, &flag, rpc->list_set_value_fault);
+	fault_code = cwmp_set_multiple_parameters_values(&list_set_param_value, parameter_key, &flag, rpc->list_set_value_fault);
 	if (fault_code != FAULT_CPE_NO_FAULT)
 		goto fault;
 
@@ -2343,37 +2343,59 @@ error:
 
 int cwmp_launch_download(struct download *pdownload, struct transfer_complete **ptransfer_complete)
 {
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	char *download_startTime;
 	struct transfer_complete *p;
-	char *fault_code;
-	char file_size[128];
 
 	download_startTime = mix_get_time();
 
 	bkp_session_delete_download(pdownload);
 	bkp_session_save();
 
-	sprintf(file_size, "%d", pdownload->file_size);
-	external_download(pdownload->url, file_size, pdownload->file_type, pdownload->username, pdownload->password, 0);
-	external_handle_action(cwmp_handle_download_fault);
-	external_fetch_download_fault_resp(&fault_code);
-
-	if (fault_code != NULL) {
-		if (fault_code[0] == '9') {
-			for (i = 1; i < __FAULT_CPE_MAX; i++) {
-				if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-					error = i;
-					break;
-				}
-			}
-		}
-		free(fault_code);
+	if (flashsize < pdownload->file_size) {
+		error = FAULT_CPE_DOWNLOAD_FAILURE;
+		goto end_download;
 	}
-	/*else {
-    	error = FAULT_CPE_INTERNAL_ERROR;
-    }*/
 
+	int http_code = download_file(ICWMP_DOWNLOAD_FILE, pdownload->url, pdownload->username, pdownload->password);
+	if (http_code == 404)
+		error = FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER;
+	else if (http_code == 401)
+		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION;
+	else if (http_code != 200)
+		error = FAULT_CPE_DOWNLOAD_FAILURE;
+
+	if (error != FAULT_CPE_NO_FAULT)
+		goto end_download;
+
+	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, FIRMWARE_UPGRADE_IMAGE);
+		if (cwmp_check_image() == 0) {
+			long int file_size = get_file_size(FIRMWARE_UPGRADE_IMAGE);
+			if (file_size > flashsize) {
+				error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+				remove(FIRMWARE_UPGRADE_IMAGE);
+				goto end_download;
+			} else {
+				error = FAULT_CPE_NO_FAULT;
+				goto end_download;
+			}
+		} else {
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+			remove(FIRMWARE_UPGRADE_IMAGE);
+		}
+	} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, "/tmp/web_content.ipk");
+		error = FAULT_CPE_NO_FAULT;
+	} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, "/tmp/vendor_configuration_file.cfg");
+		error = FAULT_CPE_NO_FAULT;
+	} else {
+		remove(ICWMP_DOWNLOAD_FILE);
+		error = FAULT_CPE_NO_FAULT;
+	}
+
+end_download:
 	p = calloc(1, sizeof(struct transfer_complete));
 	if (p == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -2394,37 +2416,59 @@ int cwmp_launch_download(struct download *pdownload, struct transfer_complete **
 
 int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct transfer_complete **ptransfer_complete)
 {
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	char *download_startTime;
 	struct transfer_complete *p;
-	char *fault_code;
-	char file_size[128];
 
 	download_startTime = mix_get_time();
 
 	bkp_session_delete_schedule_download(pdownload);
 	bkp_session_save();
 
-	sprintf(file_size, "%d", pdownload->file_size);
-	external_download(pdownload->url, file_size, pdownload->file_type, pdownload->username, pdownload->password, pdownload->timewindowstruct[0].windowstart);
-	external_handle_action(cwmp_handle_download_fault);
-	external_fetch_download_fault_resp(&fault_code);
-
-	if (fault_code != NULL) {
-		if (fault_code[0] == '9') {
-			for (i = 1; i < __FAULT_CPE_MAX; i++) {
-				if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-					error = i;
-					break;
-				}
-			}
-		}
-		free(fault_code);
+	if (flashsize < pdownload->file_size) {
+		error = FAULT_CPE_DOWNLOAD_FAILURE;
+		goto end_download;
 	}
-	/*else {
-    	error = FAULT_CPE_INTERNAL_ERROR;
-    }*/
 
+	int http_code = download_file(ICWMP_DOWNLOAD_FILE, pdownload->url, pdownload->username, pdownload->password);
+	if (http_code == 404)
+		error = FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER;
+	else if (http_code == 401)
+		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION;
+	else if (http_code != 200)
+		error = FAULT_CPE_DOWNLOAD_FAILURE;
+
+	if (error != FAULT_CPE_NO_FAULT)
+		goto end_download;
+
+	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, FIRMWARE_UPGRADE_IMAGE);
+		if (cwmp_check_image() == 0) {
+			long int file_size = get_file_size(FIRMWARE_UPGRADE_IMAGE);
+			if (file_size > flashsize) {
+				error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+				remove(FIRMWARE_UPGRADE_IMAGE);
+				goto end_download;
+			} else {
+				error = FAULT_CPE_NO_FAULT;
+				goto end_download;
+			}
+		} else {
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+			remove(FIRMWARE_UPGRADE_IMAGE);
+		}
+	} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, "/tmp/web_content.ipk");
+		error = FAULT_CPE_NO_FAULT;
+	} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, "/tmp/vendor_configuration_file.cfg");
+		error = FAULT_CPE_NO_FAULT;
+	} else {
+		remove(ICWMP_DOWNLOAD_FILE);
+		error = FAULT_CPE_NO_FAULT;
+	}
+
+end_download:
 	p = calloc(1, sizeof(struct transfer_complete));
 	if (p == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -2464,40 +2508,81 @@ int lookup_vcf_name(char *instance, char **value)
 	return 0;
 }
 
+int lookup_vlf_name(char *instance, char **value)
+{
+	char *vlf_name_parameter = NULL;
+	char *err = NULL;
+	LIST_HEAD(vlf_parameters);
+	cwmp_asprintf(&vlf_name_parameter, "Device.DeviceInfo.VendorLogFile.%s.Name", instance);
+	if ((err = cwmp_get_parameter_values(vlf_name_parameter, &vlf_parameters)) != NULL) {
+		FREE(vlf_name_parameter);
+		FREE(err);
+		return -1;
+	}
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &vlf_parameters, list) {
+		*value = strdup(param_value->value);
+		break;
+	}
+	cwmp_free_all_dm_parameter_list(&vlf_parameters);
+	return 0;
+}
+
 int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptransfer_complete)
 {
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	char *upload_startTime;
 	struct transfer_complete *p;
-	char *fault_code;
 	char *name = "";
 	upload_startTime = mix_get_time();
-
+	char *file_path = NULL;
 	bkp_session_delete_upload(pupload);
 	bkp_session_save();
 
-	if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
-		lookup_vcf_name(pupload->f_instance, &name);
-	}
-	external_upload(pupload->url, pupload->file_type, pupload->username, pupload->password, name);
-	external_handle_action(cwmp_handle_upload_fault);
-	external_fetch_upload_fault_resp(&fault_code);
-
-	if (fault_code != NULL) {
-		if (fault_code[0] == '9') {
-			for (i = 1; i < __FAULT_CPE_MAX; i++) {
-				if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-					error = i;
-					break;
-				}
+	if (pupload->file_type[0] == '1' || pupload->file_type[0] == '3') {
+		if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
+			lookup_vcf_name(pupload->f_instance, &name);
+			if (name && strlen(name) > 0) {
+				cwmp_asprintf(&file_path, "/tmp/%s", name);
+				cwmp_uci_export_package(name, file_path);
+				FREE(name);
+			} else {
+				error = FAULT_CPE_UPLOAD_FAILURE;
+				goto end_upload;
 			}
+		} else {
+			file_path = strdup("/tmp/all_configs");
+			cwmp_uci_export(file_path);
 		}
-		free(fault_code);
+	} else {
+		if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
+			lookup_vlf_name(pupload->f_instance, &name);
+			if (name && strlen(name) > 0) {
+				cwmp_asprintf(&file_path, "/tmp/%s", name);
+				copy(name, file_path);
+				FREE(name);
+			} else
+				error = FAULT_CPE_UPLOAD_FAILURE;
+
+		} else
+			error = FAULT_CPE_UPLOAD_FAILURE;
 	}
+	if (error != FAULT_CPE_NO_FAULT || file_path == NULL || strlen(file_path) <= 0) {
+		error = FAULT_CPE_UPLOAD_FAILURE;
+		goto end_upload;
+	}
+
+	if (upload_file(file_path, pupload->url, pupload->username, pupload->password) == 200)
+		error = FAULT_CPE_NO_FAULT;
+	else
+		error = FAULT_CPE_UPLOAD_FAILURE;
+	remove(file_path);
+	FREE(file_path);
+
+end_upload:
 	p = calloc(1, sizeof(struct transfer_complete));
 	if (p == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
-		FREE(name);
 		return error;
 	}
 
@@ -2509,7 +2594,6 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	}
 
 	*ptransfer_complete = p;
-	FREE(name);
 	return error;
 }
 
@@ -2519,10 +2603,9 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 	struct download *pdownload;
 	struct timespec download_timeout = { 0, 0 };
 	time_t current_time, stime;
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
 	long int time_of_grace = 3600, timeout;
-	char *fault_code;
 
 	for (;;) {
 		if (list_download.next != &(list_download)) {
@@ -2558,7 +2641,6 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 			}
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
-				external_init();
 				CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
 				error = cwmp_launch_download(pdownload, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
@@ -2572,33 +2654,39 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 					}
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					external_apply("download", pdownload->file_type, 0);
-					external_handle_action(cwmp_handle_download_fault);
-					external_fetch_download_fault_resp(&fault_code);
-					if (fault_code != NULL) {
-						if (fault_code[0] == '9') {
-							for (i = 1; i < __FAULT_CPE_MAX; i++) {
-								if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-									error = i;
-									break;
-								}
-							}
-						}
-						free(fault_code);
-						if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
-							if (pdownload->file_type[0] == '3') {
-								CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
-							}
-							exit(EXIT_SUCCESS);
-						}
-						bkp_session_delete_transfer_complete(ptransfer_complete);
-						ptransfer_complete->fault_code = error;
-						bkp_session_insert_transfer_complete(ptransfer_complete);
-						bkp_session_save();
-						cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
+						uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
+						cwmp_apply_firmware();
+						sleep(70);
+						error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+					} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
+						int err = opkg_install_package("/tmp/web_content.ipk");
+						if (err == -1)
+							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+						else
+							error = FAULT_CPE_NO_FAULT;
+					} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
+						int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+						if (err == CWMP_OK)
+							error = FAULT_CPE_NO_FAULT;
+						else if (err == CWMP_GEN_ERR)
+							error = FAULT_CPE_INTERNAL_ERROR;
+						else if (err == -1)
+							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 					}
+
+					if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
+						if (pdownload->file_type[0] == '3') {
+							CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
+						}
+						exit(EXIT_SUCCESS);
+					}
+					bkp_session_delete_transfer_complete(ptransfer_complete);
+					ptransfer_complete->fault_code = error;
+					bkp_session_insert_transfer_complete(ptransfer_complete);
+					bkp_session_save();
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
-				external_exit();
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_download);
@@ -2627,9 +2715,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec download_timeout = { 0, 0 };
 	time_t current_time;
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
-	char *fault_code;
 	int min_time = 0;
 	struct schedule_download *current_download = NULL;
 	struct schedule_download *p, *_p;
@@ -2711,7 +2798,6 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 		} else if (min_time <= current_time) {
 			if ((min_time == current_download->timewindowstruct[0].windowstart && (current_download->timewindowstruct[0].windowmode)[0] == '2') || (min_time == current_download->timewindowstruct[1].windowstart && (current_download->timewindowstruct[1].windowmode)[0] == '2')) {
 				pthread_mutex_lock(&mutex_schedule_download);
-				external_init();
 				ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
 				ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 				error = cwmp_launch_schedule_download(current_download, &ptransfer_complete);
@@ -2721,40 +2807,49 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					external_exit();
 					pthread_mutex_unlock(&mutex_schedule_download);
 					if (pthread_mutex_trylock(&(cwmp->mutex_session_send)) == 0) {
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						pthread_mutex_lock(&mutex_schedule_download);
-						external_init();
 						if (current_download->file_type[0] == '1') {
 							ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
 						}
 						bkp_session_insert_transfer_complete(ptransfer_complete);
 						bkp_session_save();
-						external_apply("download", current_download->file_type, current_download->timewindowstruct[0].windowstart);
-						external_handle_action(cwmp_handle_download_fault);
-						external_fetch_download_fault_resp(&fault_code);
-						if (fault_code != NULL) {
-							if (fault_code[0] == '9') {
-								for (i = 1; i < __FAULT_CPE_MAX; i++) {
-									if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-										error = i;
-										break;
-									}
-								}
-							}
-							free(fault_code);
-							if ((error == FAULT_CPE_NO_FAULT) && (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6')) {
-								exit(EXIT_SUCCESS);
-							}
-							bkp_session_delete_transfer_complete(ptransfer_complete);
-							ptransfer_complete->fault_code = error;
-							bkp_session_insert_transfer_complete(ptransfer_complete);
-							bkp_session_save();
-							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+
+						if (strcmp(current_download->file_type, "1 Firmware Upgrade Image") == 0) {
+							uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
+							cwmp_apply_firmware();
+							sleep(70);
+							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+						} else if (strcmp(current_download->file_type, "2 Web Content") == 0) {
+							int err = opkg_install_package("/tmp/web_content.ipk");
+							if (err == -1)
+								error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+							else
+								error = FAULT_CPE_NO_FAULT;
+						} else if (strcmp(current_download->file_type, "3 Vendor Configuration File") == 0) {
+							int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+							if (err == CWMP_OK)
+								error = FAULT_CPE_NO_FAULT;
+							else if (err == CWMP_GEN_ERR)
+								error = FAULT_CPE_INTERNAL_ERROR;
+							else if (err == -1)
+								error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 						}
-						external_exit();
+
+						if ((error == FAULT_CPE_NO_FAULT) && (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6')) {
+							if (current_download->file_type[0] == '3') {
+								CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
+							}
+							exit(EXIT_SUCCESS);
+						}
+						bkp_session_delete_transfer_complete(ptransfer_complete);
+						ptransfer_complete->fault_code = error;
+						bkp_session_insert_transfer_complete(ptransfer_complete);
+						bkp_session_save();
+						cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+
 						pthread_mutex_unlock(&mutex_schedule_download);
 						pthread_mutex_unlock(&mutex_apply_schedule_download);
 						pthread_mutex_unlock(&(cwmp->mutex_session_send));
@@ -2775,7 +2870,6 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 			} //AT ANY TIME OR WHEN IDLE
 			else {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
-				external_init();
 				CWMP_LOG(INFO, "Launch download file %s", current_download->url);
 				error = cwmp_launch_schedule_download(current_download, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
@@ -2789,30 +2883,39 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					}
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					external_apply("download", current_download->file_type, 0);
-					external_handle_action(cwmp_handle_download_fault);
-					external_fetch_download_fault_resp(&fault_code);
-					if (fault_code != NULL) {
-						if (fault_code[0] == '9') {
-							for (i = 1; i < __FAULT_CPE_MAX; i++) {
-								if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-									error = i;
-									break;
-								}
-							}
-						}
-						free(fault_code);
-						if ((error == FAULT_CPE_NO_FAULT) && (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6')) {
-							exit(EXIT_SUCCESS);
-						}
-						bkp_session_delete_transfer_complete(ptransfer_complete);
-						ptransfer_complete->fault_code = error;
-						bkp_session_insert_transfer_complete(ptransfer_complete);
-						bkp_session_save();
-						cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					if (strcmp(current_download->file_type, "1 Firmware Upgrade Image") == 0) {
+						uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
+						cwmp_apply_firmware();
+						sleep(70);
+						error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+					} else if (strcmp(current_download->file_type, "2 Web Content") == 0) {
+						int err = opkg_install_package("/tmp/web_content.ipk");
+						if (err == -1)
+							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+						else
+							error = FAULT_CPE_NO_FAULT;
+					} else if (strcmp(current_download->file_type, "3 Vendor Configuration File") == 0) {
+						int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+						if (err == CWMP_OK)
+							error = FAULT_CPE_NO_FAULT;
+						else if (err == CWMP_GEN_ERR)
+							error = FAULT_CPE_INTERNAL_ERROR;
+						else if (err == -1)
+							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 					}
+
+					if ((error == FAULT_CPE_NO_FAULT) && (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6')) {
+						if (current_download->file_type[0] == '3') {
+							CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
+						}
+						exit(EXIT_SUCCESS);
+					}
+					bkp_session_delete_transfer_complete(ptransfer_complete);
+					ptransfer_complete->fault_code = error;
+					bkp_session_insert_transfer_complete(ptransfer_complete);
+					bkp_session_save();
+					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
-				external_exit();
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_schedule_download);
@@ -2845,9 +2948,8 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec apply_timeout = { 0, 0 };
 	time_t current_time;
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
-	char *fault_code;
 	int min_time = 0;
 	struct apply_schedule_download *apply_download = NULL;
 	struct apply_schedule_download *p, *_p;
@@ -2929,7 +3031,6 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 		} else if (min_time <= current_time) {
 			pthread_mutex_lock(&(cwmp->mutex_session_send));
 			pthread_mutex_lock(&mutex_schedule_download);
-			external_init();
 			bkp_session_delete_apply_schedule_download(apply_download);
 			bkp_session_save();
 			ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
@@ -2943,29 +3044,40 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 			ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
 			bkp_session_insert_transfer_complete(ptransfer_complete);
 			bkp_session_save();
-			external_apply("download", apply_download->file_type, apply_download->timeintervals[0].windowstart);
-			external_handle_action(cwmp_handle_download_fault);
-			external_fetch_download_fault_resp(&fault_code);
-			if (fault_code != NULL) {
-				if (fault_code[0] == '9') {
-					for (i = 1; i < __FAULT_CPE_MAX; i++) {
-						if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
-							error = i;
-							break;
-						}
-					}
-				}
-				free(fault_code);
-				if ((error == FAULT_CPE_NO_FAULT) && (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3' || apply_download->file_type[0] == '6')) {
-					exit(EXIT_SUCCESS);
-				}
-				bkp_session_delete_transfer_complete(ptransfer_complete);
-				ptransfer_complete->fault_code = error;
-				bkp_session_insert_transfer_complete(ptransfer_complete);
-				bkp_session_save();
-				cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+
+			if (strcmp(apply_download->file_type, "1 Firmware Upgrade Image") == 0) {
+				uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
+				cwmp_apply_firmware();
+				sleep(70);
+				error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+			} else if (strcmp(apply_download->file_type, "2 Web Content") == 0) {
+				int err = opkg_install_package("/tmp/web_content.ipk");
+				if (err == -1)
+					error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+				else
+					error = FAULT_CPE_NO_FAULT;
+			} else if (strcmp(apply_download->file_type, "3 Vendor Configuration File") == 0) {
+				int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+				if (err == CWMP_OK)
+					error = FAULT_CPE_NO_FAULT;
+				else if (err == CWMP_GEN_ERR)
+					error = FAULT_CPE_INTERNAL_ERROR;
+				else if (err == -1)
+					error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 			}
-			external_exit();
+
+			if ((error == FAULT_CPE_NO_FAULT) && (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3' || apply_download->file_type[0] == '6')) {
+				if (apply_download->file_type[0] == '3') {
+					CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
+				}
+				exit(EXIT_SUCCESS);
+			}
+			bkp_session_delete_transfer_complete(ptransfer_complete);
+			ptransfer_complete->fault_code = error;
+			bkp_session_insert_transfer_complete(ptransfer_complete);
+			bkp_session_save();
+			cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+
 			pthread_mutex_unlock(&mutex_schedule_download);
 			pthread_mutex_unlock(&(cwmp->mutex_session_send));
 			pthread_cond_signal(&(cwmp->threshold_session_send));
@@ -3154,9 +3266,9 @@ static int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass,
 	char *fault_code;
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
-	external_change_du_state_install(url, uuid, user, pass, env);
-	external_handle_action(cwmp_handle_dustate_change_fault);
-	external_fetch_du_change_state_fault_resp(&fault_code, package_version, package_name, package_uuid, package_env);
+
+	cwmp_du_install(url, uuid, user, pass, env, package_version, package_name, package_uuid, package_env, &fault_code);
+
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -3177,9 +3289,8 @@ static int cwmp_launch_du_update(char *uuid, char *url, char *user, char *pass, 
 	char *fault_code;
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
-	external_change_du_state_update(uuid, url, user, pass);
-	external_handle_action(cwmp_handle_dustate_change_fault);
-	external_fetch_du_change_state_fault_resp(&fault_code, package_version, package_name, package_uuid, package_env);
+
+	cwmp_du_update(url, uuid, user, pass, package_version, package_name, package_uuid, package_env, &fault_code);
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -3200,9 +3311,9 @@ static int cwmp_launch_du_uninstall(char *package_name, char *package_env, struc
 	char *fault_code;
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
-	external_change_du_state_uninstall(package_name, package_env);
-	external_handle_action(cwmp_handle_uninstall_fault);
-	external_fetch_uninstall_fault_resp(&fault_code);
+
+	cwmp_du_uninstall(package_name, package_env, &fault_code);
+
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
@@ -3280,7 +3391,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					list_for_each_entry_safe (p, q, &pchange_du_state->list_operation, list) {
 						res = calloc(1, sizeof(struct opresult));
 						list_add_tail(&(res->list), &(pdu_state_change_complete->list_opresult));
-						external_init();
 
 						switch (p->type) {
 						case DU_INSTALL:
@@ -3392,8 +3502,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 							FREE(package_env);
 							break;
 						}
-
-						external_exit();
 					}
 
 					bkp_session_delete_change_du_state(pchange_du_state);
@@ -3468,7 +3576,6 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 			}
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
-				external_init();
 				CWMP_LOG(INFO, "Launch upload file %s", pupload->url);
 				error = cwmp_launch_upload(pupload, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
@@ -3483,7 +3590,6 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 					bkp_session_save();
 					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
-				external_exit();
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_upload);

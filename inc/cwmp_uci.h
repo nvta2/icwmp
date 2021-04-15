@@ -24,6 +24,7 @@
 #define UCI_ACS_PASSWD_PATH "cwmp.acs.passwd"
 #define UCI_ACS_PARAMETERKEY_PATH "cwmp.acs.ParameterKey"
 #define UCI_ACS_SSL_CAPATH "cwmp.acs.ssl_capath"
+#define UCI_ACS_IP_VERSION "cwmp.acs.ip_version"
 #define UCI_HTTPS_SSL_CAPATH "cwmp.acs.https_ssl_capath"
 #define UCI_ACS_INSECURE_ENABLE "cwmp.acs.insecure_enable"
 #define UCI_ACS_IPV6_ENABLE "cwmp.acs.ipv6_enable"
@@ -38,6 +39,7 @@
 #define UCI_CPE_INTERFACE_PATH "cwmp.cpe.interface"
 #define UCI_CPE_UBUS_SOCKET_PATH "cwmp.cpe.ubus_socket"
 #define UCI_CPE_PORT_PATH "cwmp.cpe.port"
+#define UCI_CPE_DEFAULT_WAN_IFACE "cwmp.cpe.default_wan_interface"
 #define UCI_CPE_CRPATH_PATH "cwmp.cpe.path"
 #define UCI_CPE_LOG_FILE_NAME "cwmp.cpe.log_file_name"
 #define UCI_CPE_LOG_MAX_SIZE "cwmp.cpe.log_max_size"
@@ -50,6 +52,8 @@
 #define UCI_CPE_EXEC_DOWNLOAD "cwmp.cpe.exec_download"
 #define UCI_CPE_NOTIFY_PERIODIC_ENABLE "cwmp.cpe.periodic_notify_enable"
 #define UCI_CPE_NOTIFY_PERIOD "cwmp.cpe.periodic_notify_interval"
+#define UCI_CPE_IP "cwmp.cpe.ip"
+#define UCI_CPE_IPV6 "cwmp.cpe.ipv6"
 #define LW_NOTIFICATION_ENABLE "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT "cwmp.lwn.port"
@@ -63,8 +67,6 @@
 typedef enum uci_config_action {
 	CWMP_CMD_SET,
 	CWMP_CMD_SET_STATE,
-	CWMP_CMD_ADD_LIST,
-	CWMP_CMD_DEL,
 } uci_config_action;
 
 enum uci_paths_types
@@ -75,6 +77,23 @@ enum uci_paths_types
 	UCI_VARSTATE_CONFIG,
 };
 
+enum uci_val_type
+{
+	UCI_INT,
+	UCI_STRING
+};
+
+union mult_uci_value {
+	int int_value;
+	char *str_value;
+};
+
+struct cwmp_uci_value {
+	union mult_uci_value value;
+	enum uci_val_type type;
+};
+
+#define CWMP_UCI_ARG (struct cwmp_uci_value)
 enum cwmp_uci_cmp
 {
 	CWMP_CMP_SECTION,
@@ -107,16 +126,20 @@ void cwmp_uci_exit(void);
 int cwmp_uci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value);
 int cwmp_uci_get_option_value_list(char *package, char *section, char *option, struct list_head *list);
 int uci_get_state_value(char *cmd, char **value);
-int uci_set_state_value(char *cmd);
-int uci_set_value(char *cmd);
+int uci_set_value(char *cmd, char *value, uci_config_action action);
 int uci_get_value(char *cmd, char **value);
 char *cwmp_db_get_value_string(char *package, char *section, char *option);
 struct uci_section *cwmp_uci_walk_section(char *package, char *stype, void *arg1, void *arg2, int cmp, int (*filter)(struct uci_section *s, void *value), struct uci_section *prev_section, int walk);
 int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, char **value);
 int cwmp_uci_get_option_value_string(char *package, char *section, char *option, int uci_type, char **value);
+int cwmp_commit_package(char *package);
+int cwmp_uci_import(char *package_name, const char *input_path);
+int cwmp_uci_export_package(char *package, const char *output_path);
+int cwmp_uci_export(const char *output_path);
 
 #define cwmp_uci_path_foreach_option_eq(package, stype, option, val, section) \
 	for (section = cwmp_uci_walk_section(package, stype, option, val, CWMP_CMP_OPTION_EQUAL, NULL, NULL, CWMP_GET_FIRST_SECTION); section != NULL; section = cwmp_uci_walk_section(package, stype, option, val, CWMP_CMP_OPTION_EQUAL, NULL, section, CWMP_GET_NEXT_SECTION))
 
-#define cwmp_uci_path_foreach_sections(package, stype, section) for (section = cwmp_uci_walk_section(package, stype, NULL, NULL, CMP_SECTION, NULL, NULL, GET_FIRST_SECTION); section != NULL; section = cwmp_uci_walk_section(package, stype, NULL, NULL, CMP_SECTION, NULL, section, GET_NEXT_SECTION))
+#define cwmp_uci_foreach_sections(package, stype, section) \
+	for (section = cwmp_uci_walk_section(package, stype, NULL, NULL, CWMP_CMP_SECTION, NULL, NULL, CWMP_GET_FIRST_SECTION); section != NULL; section = cwmp_uci_walk_section(package, stype, NULL, NULL, CWMP_CMP_SECTION, NULL, section, CWMP_GET_NEXT_SECTION))
 #endif

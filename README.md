@@ -41,6 +41,7 @@ config lwn 'lwn'
 
 It defines **acs configuration** (like acs url, acs username, etc...). The possible options for **acs** section are listed in the table below.
 
+
 | Name                        |  Type   | Description                     |
 | --------------------------- | ------- | ------------------------------- |
 | `url`                       | string  | the **url** of ACS server. |
@@ -61,6 +62,7 @@ It defines **acs configuration** (like acs url, acs username, etc...). The possi
 | `http_disable_100continue`  | boolean | if set to **1**, disables the http 100 continue behaviour. |
 | `dhcp_url`                  | string  | the **url** of ACS server received from the DHCP server Option 43 when **'dhcp_discovery'** option is enabled. This option is updated automatically by the daemon. |
 | `ip_version`					| string | ip_version of ConnectionRequestURL
+
 
 ### cwmp cpe section
 
@@ -216,16 +218,6 @@ root@iopsys:~# ubus call tr069 status
 root@iopsys:~#
 ```
 
-- To trigger a new session of notify when a parameter is changed, then use the `notify` ubus method:
-
-```
-root@iopsys:~# ubus call tr069 notify
-{
-	"status": 1
-}
-root@iopsys:~#
-```
-
 - To trigger a new session to ACS with the event `'6 CONNECTION REQUEST'` or `'8 DIAGNOSTICS COMPLETE'`, etc.., use the `inform` ubus method with the appropriate `event` argument:
 
 ```
@@ -269,85 +261,38 @@ root@iopsys:~# ubus call tr069 command '{"command":"exit"}'
 }
 root@iopsys:~# 
 ```
+## icwmpd command line
 
-## icwmp CLI
-
-icwmpd offers a cli tool which its options are described with `--help` option as below:
+icwmpd command line options are described with `--help` option as below:
 
 ```
 root@iopsys:~# icwmpd --help
 Usage: icwmpd [OPTIONS]
  -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event
  -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS
+ -c, --cli                              	     CWMP CLI
  -h, --help                                          Display this help text
  -v, --version                                       Display the version
-root@iopsys:~# 
 ```
 
-There's an icwmp cli that can be called via the script `'icwmp'` as follow:
+## icwmpd CLI
+
+The icwmpd CLI is the -c (--cli) option of the icwmpd command line. 
+
+Different options of this CLI are described with help command as below:
 
 ```
-root@iopsys:~# icwmp get Device.Time.
-{
-	"parameters": [
-		{
-			"parameter": "Device.Time.CurrentLocalTime",
-			"value": "2021-03-14T00:19:45Z",
-			"type": "xsd:dateTime"
-		},
-		{
-			"parameter": "Device.Time.Enable",
-			"value": "1",
-			"type": "xsd:boolean"
-		},
-		{
-			"parameter": "Device.Time.LocalTimeZone",
-			"value": "CET-1CEST,M3.5.0,M10.5.0/3",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.NTPServer1",
-			"value": "ntp1.sth.netnod.se",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.NTPServer2",
-			"value": "ntp1.gbg.netnod.se",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.NTPServer3",
-			"value": "",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.NTPServer4",
-			"value": "",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.NTPServer5",
-			"value": "",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.Status",
-			"value": "Synchronized",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.X_IOPSYS_EU_LocalTimeZoneName",
-			"value": "Europe/Stockholm",
-			"type": "xsd:string"
-		},
-		{
-			"parameter": "Device.Time.X_IOPSYS_EU_SourceInterface",
-			"value": "",
-			"type": "xsd:string"
-		}
-	]
-}
-root@iopsys:~# 
+root@iopsys:~# icwmpd -c help
+Valid commands:
+	help 									=> show this help
+	get [path-expr] 						=> get parameter values
+	get_names [path-expr] [next-level] 		=> get parameter names
+	set [path-expr] [value] 				=> set parameter value
+	add [object] 							=> add object
+	del [object] 							=> delete object
+	get_notif [path-expr]					=> get parameter notifications
+	set_notif [path-expr] [notification]	=> set parameter notifications
+
 ```
 
 ## Dependencies

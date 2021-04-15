@@ -8,36 +8,32 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
+#include <stdio.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <curl/curl.h>
+#include <unistd.h>
+#include <sys/reboot.h>
+#include <fcntl.h>
 
 #include "common.h"
+#include "cwmp_uci.h"
+#include "ubus.h"
+#include "log.h"
+#include "cwmp_cli.h"
 
+#define CURL_TIMEOUT 20
 char *commandKey = NULL;
+long int flashsize = 256000000;
 
-struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' },
-				      { "get-rpc-methods", no_argument, NULL, 'g' },
-				      { "command-input", no_argument, NULL, 'c' },
-				      { "shell-cli", required_argument, NULL, 'm' },
-				      { "alias-based-addressing", no_argument, NULL, 'a' },
-				      { "instance-mode-number", no_argument, NULL, 'N' },
-				      { "instance-mode-alias", no_argument, NULL, 'A' },
-				      { "upnp", no_argument, NULL, 'U' },
-				      { "user-acl", required_argument, NULL, 'u' },
-				      { "amendment", required_argument, NULL, 'M' },
-				      { "time-tracking", no_argument, NULL, 't' },
-				      { "evaluating-test", no_argument, NULL, 'E' },
-				      { "file", required_argument, NULL, 'f' },
-				      { "wep", required_argument, NULL, 'w' },
-				      { "help", no_argument, NULL, 'h' },
-				      { "version", no_argument, NULL, 'v' },
-				      { NULL, 0, NULL, 0 } };
+struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
 
 static void show_help(void)
 {
 	printf("Usage: icwmpd [OPTIONS]\n");
 	printf(" -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event\n");
 	printf(" -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS\n");
+	printf(" -c, --cli                              	     CWMP CLI\n");
 	printf(" -h, --help                                          Display this help text\n");
 	printf(" -v, --version                                       Display the version\n");
 }
@@ -55,7 +51,7 @@ int global_env_init(int argc, char **argv, struct env *env)
 {
 	int c, option_index = 0;
 
-	while ((c = getopt_long(argc, argv, "bghv", cwmp_long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "bgchv", cwmp_long_options, &option_index)) != -1) {
 		switch (c) {
 		case 'b':
 			env->boot = CWMP_START_BOOT;
@@ -64,7 +60,9 @@ int global_env_init(int argc, char **argv, struct env *env)
 		case 'g':
 			env->periodic = CWMP_START_PERIODIC;
 			break;
-
+		case 'c':
+			execute_cwmp_cli_command(argv[2], argv + 3);
+			exit(0);
 		case 'h':
 			show_help();
 			exit(0);
@@ -159,27 +157,27 @@ void cwmp_free_all_list_param_fault(struct list_head *list_param_fault)
 		cwmp_del_list_fault_param(param_fault);
 	}
 }
-///////////////////////////////////////////////////////////
 
 int cwmp_asprintf(char **s, const char *format, ...)
 {
 	int size;
 	char *str = NULL;
 	va_list arg, argcopy;
-
 	va_start(arg, format);
 	va_copy(argcopy, arg);
 	size = vsnprintf(NULL, 0, format, argcopy);
-	if (size < 0)
+	if (size < 0) {
 		return -1;
+	}
 	va_end(argcopy);
 	str = (char *)calloc(sizeof(char), size + 1);
 	vsnprintf(str, size + 1, format, arg);
 	va_end(arg);
 	*s = strdup(str);
 	FREE(str);
-	if (*s == NULL)
+	if (*s == NULL) {
 		return -1;
+	}
 	return 0;
 }
 
@@ -188,4 +186,301 @@ bool folder_exists(const char *path)
 	struct stat folder_stat;
 
 	return (stat(path, &folder_stat) == 0 && S_ISDIR(folder_stat.st_mode));
+}
+
+size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+	size_t written = fwrite(ptr, size, nmemb, stream);
+	return written;
+}
+
+int download_file(const char *file_path, const char *url, const char *username, const char *password)
+{
+	int res_code = 0;
+	CURL *curl = curl_easy_init();
+	if (curl) {
+		char *userpass = NULL;
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+		if (username != NULL && strlen(username) > 0) {
+			cwmp_asprintf(&userpass, "%s:%s", username, password);
+			curl_easy_setopt(curl, CURLOPT_USERPWD, userpass);
+		}
+		if (strncmp(url, "https://", 8) == 0)
+			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
+		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
+		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 10000L);
+		curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+		curl_easy_setopt(curl, CURLOPT_FTP_SKIP_PASV_IP, 1L);
+		FILE *fp = fopen(file_path, "wb");
+		if (fp) {
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+			curl_easy_perform(curl);
+			fclose(fp);
+		}
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_code);
+
+		curl_easy_cleanup(curl);
+		FREE(userpass);
+	}
+
+	return res_code;
+}
+
+struct transfer_status {
+	CURL *easy;
+	int halted;
+	int counter; /* count write callback invokes */
+	int please; /* number of times xferinfo is called while halted */
+};
+
+int upload_file(const char *file_path, const char *url, const char *username, const char *password)
+{
+	int res_code = 0;
+
+	CURL *curl = curl_easy_init();
+	if (curl) {
+		char *userpass = NULL;
+
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
+		cwmp_asprintf(&userpass, "%s:%s", username, password);
+		curl_easy_setopt(curl, CURLOPT_USERPWD, userpass);
+
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, CURL_TIMEOUT);
+		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+		FILE *fp = fopen(file_path, "rb");
+		if (fp) {
+			curl_easy_setopt(curl, CURLOPT_READDATA, fp);
+			curl_easy_perform(curl);
+			fclose(fp);
+		}
+
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_code);
+		curl_easy_cleanup(curl);
+		FREE(userpass);
+	}
+
+	return res_code;
+}
+
+void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
+{
+	struct uci_section *s;
+	char *network = NULL;
+
+	cwmp_uci_init(UCI_STANDARD_CONFIG);
+	cwmp_uci_foreach_sections("firewall", "zone", s)
+	{
+		cwmp_uci_get_value_by_section_string(s, "network", &network);
+		char *net = strtok(network, " ");
+		while (net != NULL) {
+			if (strcmp(net, if_wan) == 0) {
+				cwmp_uci_get_value_by_section_string(s, "name", zone_name);
+				FREE(network);
+				goto end;
+			}
+			net = strtok(NULL, " ");
+		}
+		FREE(network);
+	}
+
+end:
+	cwmp_uci_exit();
+}
+
+/*
+ * updated firewall.cwmp file
+ */
+int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_type)
+{
+	FILE *fp;
+
+	remove(FIREWALL_CWMP);
+	fp = fopen(FIREWALL_CWMP, "a");
+	if (fp == NULL)
+		return -1;
+	fprintf(fp, "zone_name=%s\n", zone_name);
+	fprintf(fp, "port=%d\n", port);
+	fprintf(fp, "if [ \"$zone_name\" = \"\" ]; then\n");
+	fprintf(fp, "	exit 0\n");
+	fprintf(fp, "elif [ \"$zone_name\" = \"icwmp\" ]; then\n");
+	fprintf(fp, "	iptables -nL zone_icwmp_input 2> /dev/null\n");
+	fprintf(fp, "	if [ $? != 0 ]; then\n");
+	fprintf(fp, "		iptables -N zone_icwmp_input\n");
+	fprintf(fp, "		iptables -t filter -A INPUT -j zone_icwmp_input\n");
+	fprintf(fp, "		iptables -I zone_icwmp_input -p tcp --dport $port -j REJECT\n");
+	fprintf(fp, "	else\n");
+	fprintf(fp, "		iptables -F zone_icwmp_input\n");
+	fprintf(fp, "		iptables -I zone_icwmp_input -p tcp --dport $port -j REJECT\n");
+	fprintf(fp, "	fi\n");
+	fprintf(fp, "else\n");
+	fprintf(fp, "	iptables -F zone_icwmp_input 2> /dev/null\n");
+	fprintf(fp, "	iptables -t filter -D INPUT -j zone_icwmp_input 2> /dev/null\n");
+	fprintf(fp, "	iptables -X zone_icwmp_input 2> /dev/null\n");
+	fprintf(fp, "fi\n");
+	if (ip_type == 0)
+		fprintf(fp, "iptables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n", zone_name, ip_addr, port);
+	else
+		fprintf(fp, "ip6tables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n", zone_name, ip_addr, port);
+	fclose(fp);
+	return 0;
+}
+
+/*
+ * Reboot
+ */
+void cwmp_reboot(char *command_key)
+{
+	uci_set_value(UCI_ACS_PARAMETERKEY_PATH, command_key, CWMP_CMD_SET);
+	cwmp_commit_package("cwmp");
+
+	sync();
+	reboot(RB_AUTOBOOT);
+}
+
+/*
+ * FactoryReset
+ */
+void cwmp_factory_reset() //use the ubus rpc-sys factory
+{
+	cwmp_ubus_call("rpc-sys", "factory", CWMP_UBUS_ARGS{ {} }, 0, NULL, NULL);
+}
+
+long int get_file_size(char *file_name)
+{
+	FILE *fp = fopen(file_name, "r");
+
+	if (fp == NULL) {
+		CWMP_LOG(INFO, "File Not Found!");
+		return -1;
+	}
+
+	fseek(fp, 0L, SEEK_END);
+	long int res = ftell(fp);
+
+	fclose(fp);
+
+	return res;
+}
+
+void ubus_check_image_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	int *code = (int *)req->priv;
+	const struct blobmsg_policy p[2] = { { "code", BLOBMSG_TYPE_INT32 }, { "stdout", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *tb[2] = { NULL, NULL };
+	blobmsg_parse(p, 2, tb, blobmsg_data(msg), blobmsg_len(msg));
+
+	*code = tb[0] ? blobmsg_get_u32(tb[0]) : 1;
+}
+
+/*
+ * Check if the downloaded image can be applied
+ */
+int cwmp_check_image()
+{
+	int code, e;
+	e = cwmp_ubus_call("rpc-sys", "upgrade_test", CWMP_UBUS_ARGS{ {} }, 0, ubus_check_image_callback, &code);
+	if (e != 0) {
+		CWMP_LOG(INFO, "rpc-sys upbrade_test ubus method failed: Ubus err code: %d", e);
+		code = 1;
+	}
+	return code;
+}
+
+/*
+ * Apply the new firmware
+ */
+void cwmp_apply_firmware()
+{
+	int e;
+	e = cwmp_ubus_call("rpc-sys", "upgrade_start", CWMP_UBUS_ARGS{ { "keep", {.bool_val = true }, UBUS_Bool } }, 1, NULL, NULL);
+	if (e != 0) {
+		CWMP_LOG(INFO, "rpc-sys upgrade_start ubus method failed: Ubus err code: %d", e);
+	}
+}
+
+int opkg_install_package(char *package_path)
+{
+	FILE *fp;
+	char path[1035];
+	char *cmd = NULL;
+	cwmp_asprintf(&cmd, "opkg --force-depends --force-maintainer install %s", package_path);
+	if (cmd == NULL)
+		return -1;
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
+		FREE(cmd);
+		CWMP_LOG(INFO, "Failed to run command");
+		return -1;
+	}
+
+	/* Read the output a line at a time - output it. */
+	while (fgets(path, sizeof(path), fp) != NULL) {
+		if (strstr(path, "Installing") != NULL) {
+			FREE(cmd);
+			return 0;
+		}
+	}
+
+	/* close */
+	pclose(fp);
+	FREE(cmd);
+	return -1;
+}
+
+int copy(const char *from, const char *to)
+{
+	int fd_to, fd_from;
+	char buf[4096];
+	ssize_t nread;
+	int saved_errno;
+
+	fd_from = open(from, O_RDONLY);
+	if (fd_from < 0)
+		return -1;
+
+	fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+	if (fd_to < 0)
+		goto out_error;
+
+	while ((nread = read(fd_from, buf, sizeof buf)) > 0) {
+		char *out_ptr = buf;
+		ssize_t nwritten;
+
+		do {
+			nwritten = write(fd_to, out_ptr, nread);
+
+			if (nwritten >= 0) {
+				nread -= nwritten;
+				out_ptr += nwritten;
+			} else if (errno != EINTR) {
+				goto out_error;
+			}
+		} while (nread > 0);
+	}
+
+	if (nread == 0) {
+		if (close(fd_to) < 0) {
+			fd_to = -1;
+			goto out_error;
+		}
+		close(fd_from);
+
+		/* Success! */
+		return 0;
+	}
+
+out_error:
+	saved_errno = errno;
+
+	close(fd_from);
+	if (fd_to >= 0)
+		close(fd_to);
+
+	errno = saved_errno;
+	return -1;
 }

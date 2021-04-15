@@ -50,6 +50,9 @@
 #define DEFAULT_ACSURL "http://192.168.1.1:8080/openacs/acs"
 
 extern char *commandKey;
+#define FIREWALL_CWMP "/etc/firewall.cwmp"
+#define ICWMP_DOWNLOAD_FILE "/tmp/icwmp_download"
+#define FIRMWARE_UPGRADE_IMAGE "/tmp/firmware.bin"
 
 typedef struct env {
 	unsigned short boot;
@@ -70,6 +73,7 @@ typedef struct config {
 	char *ipv6;
 	char *interface;
 	char *ubus_socket;
+	char *default_wan_iface;
 	char *connection_request_path;
 	int connection_request_port;
 	int period;
@@ -436,6 +440,8 @@ typedef struct opfault {
 } opfault;
 
 extern struct cwmp cwmp_main;
+extern long int flashsize;
+
 int cwmp_exit(void);
 void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type, int notification, bool writable);
 void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter);
@@ -446,7 +452,17 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
 void cwmp_free_all_list_param_fault(struct list_head *list_param_fault);
 int cwmp_asprintf(char **s, const char *format, ...);
 bool folder_exists(const char *path);
-
+void cwmp_reboot(char *command_key);
+void cwmp_factory_reset();
+void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name);
+int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_type);
+int download_file(const char *file_path, const char *url, const char *username, const char *password);
+int upload_file(const char *file_path, const char *url, const char *username, const char *password);
+long int get_file_size(char *file_name);
+int cwmp_check_image();
+void cwmp_apply_firmware();
+int opkg_install_package(char *package_path);
+int copy(const char *from, const char *to);
 #ifndef FREE
 #define FREE(x)                   \
 	do {                      \

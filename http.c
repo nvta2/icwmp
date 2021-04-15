@@ -18,13 +18,13 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include "external.h"
 #include "log.h"
 #include "config.h"
 #include "event.h"
 #include "http.h"
 #include "digestauth.h"
 #include "cwmp_uci.h"
+#include "ubus.h"
 
 #define REALM "authenticate@cwmp"
 #define OPAQUE "11733b200778ce33060f31c9af70a870ba96ddd4"
@@ -45,7 +45,6 @@ int http_client_init(struct cwmp *cwmp)
 	char *acs_var_stat = NULL;
 	unsigned char buf[sizeof(struct in6_addr)];
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
-	char *uci_cmd = NULL;
 
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
@@ -90,9 +89,7 @@ int http_client_init(struct cwmp *cwmp)
 		curl_easy_perform(curl);
 		int tmp = inet_pton(AF_INET, ip, buf);
 
-		cwmp_asprintf(&uci_cmd, "cwmp.acs.ip_version=%d", (tmp == 1) ? 4 : 6);
-		uci_set_value(uci_cmd);
-		free(uci_cmd);
+		uci_set_value(UCI_ACS_IP_VERSION, (tmp == 1) ? "4" : "6", CWMP_CMD_SET);
 	}
 	return 0;
 }
@@ -231,9 +228,15 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 				else
 					tmp = inet_pton(AF_INET6, ip, buf);
 			}
-			external_init();
-			external_simple("allow_cr_ip", ip_acs, tmp);
-			external_exit();
+			char *zone_name = NULL;
+			get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
+			update_firewall_cwmp_file(cwmp->conf.connection_request_port, zone_name ? zone_name : "wan", ip_acs, tmp);
+			FREE(zone_name);
+
+			/*
+			 * Restart firewall service
+			 */
+			cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", {.str_val = "firewall" }, UBUS_String } }, 1, NULL, NULL);
 		}
 	}
 
@@ -387,9 +390,10 @@ void http_server_init(void)
 		}
 		break;
 	}
-	char buf[64];
-	sprintf(buf, UCI_CPE_PORT_PATH "=%d", cr_port);
-	uci_set_state_value(buf);
+	char cr_port_str[6];
+	snprintf(cr_port_str, 6, "%hu", cr_port);
+	cr_port_str[5] = '\0';
+	uci_set_value(UCI_CPE_PORT_PATH, cr_port_str, CWMP_CMD_SET);
 	connection_request_port_value_change(&cwmp_main, cr_port);
 	CWMP_LOG(INFO, "Connection Request server initiated with the port: %d", cr_port);
 }
