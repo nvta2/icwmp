@@ -452,6 +452,7 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
 void cwmp_free_all_list_param_fault(struct list_head *list_param_fault);
 int cwmp_asprintf(char **s, const char *format, ...);
 bool folder_exists(const char *path);
+bool file_exists(const char *path);
 void cwmp_reboot(char *command_key);
 void cwmp_factory_reset();
 void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name);
@@ -463,6 +464,8 @@ int cwmp_check_image();
 void cwmp_apply_firmware();
 int opkg_install_package(char *package_path);
 int copy(const char *from, const char *to);
+int icwmp_rand(void);
+void icwmp_srand(unsigned int seed);
 #ifndef FREE
 #define FREE(x)                   \
 	do {                      \

@@ -99,7 +99,7 @@ void ubus_check_value_change_callback(struct ubus_request *req, int type __attri
 		if (len)
 			buf[len - 1] = '\0';
 		char parameter[128] = { 0 }, notification[2] = { 0 }, value[1024] = { 0 }, type[32] = { 0 };
-		sscanf(buf, "parameter:%s notifcation:%s type:%s value:%s\n", parameter, notification, type, value);
+		sscanf(buf, "parameter:%128s notifcation:%2s type:%32s value:%1024s\n", parameter, notification, type, value);
 		get_parameter_value_from_parameters_list(list_notify, parameter, &dm_value, &dm_type);
 		if (dm_value == NULL && dm_type == NULL)
 			continue;
@@ -245,9 +245,9 @@ char *calculate_lwnotification_cnonce()
 {
 	int i;
 	char *cnonce = malloc(33 * sizeof(char));
-	srand((unsigned int)time(NULL));
+	icwmp_srand((unsigned int)time(NULL));
 	for (i = 0; i < 4; i++) {
-		sprintf(&(cnonce[i * 8]), "%08x", rand());
+		sprintf(&(cnonce[i * 8]), "%08x", icwmp_rand());
 	}
 	cnonce[i * 8] = '\0';
 	return cnonce;

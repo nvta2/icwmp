@@ -483,7 +483,7 @@ const char *whitespace_cb(mxml_node_t *node, int where)
 	case MXML_WS_BEFORE_OPEN:
 		tab_space[0] = '\0';
 		while ((node = node->parent))
-			strcat(tab_space, CWMP_MXML_TAB_SPACE);
+			strncat(tab_space, CWMP_MXML_TAB_SPACE, strlen(CWMP_MXML_TAB_SPACE));
 		return tab_space;
 	case MXML_WS_AFTER_OPEN:
 		return ((!node->child || node->child->type == MXML_ELEMENT) ? "\n" : NULL);
@@ -720,7 +720,7 @@ char *xml_get_cwmp_version(int version)
 			sprintf(tmp, "1.%d", k);
 		else
 			sprintf(tmp, ", 1.%d", k);
-		strcat(versions, tmp);
+		strncat(versions, tmp, strlen(tmp));
 	}
 	return versions;
 }

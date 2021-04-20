@@ -25,6 +25,7 @@
 #define CURL_TIMEOUT 20
 char *commandKey = NULL;
 long int flashsize = 256000000;
+static unsigned long int next_rand_seed = 1;
 
 struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
 
@@ -483,4 +484,22 @@ out_error:
 
 	errno = saved_errno;
 	return -1;
+}
+
+bool file_exists(const char *path)
+{
+	struct stat buffer;
+
+	return stat(path, &buffer) == 0;
+}
+
+int icwmp_rand(void) // RAND_MAX assumed to be 32767
+{
+	next_rand_seed = next_rand_seed * 1103515245 + 12345;
+	return (unsigned int)(next_rand_seed / 65536) % 32768;
+}
+
+void icwmp_srand(unsigned int seed) //
+{
+	next_rand_seed = seed;
 }
