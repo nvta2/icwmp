@@ -369,7 +369,14 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_PERIODIC_INFORM_TIME_PATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			struct tm tm;
-			strptime(value, "%Y-%m-%dT%H:%M:%SZ", &tm);
+			int year = 0, month = 0, day = 0, hour = 0, min = 0, sec = 0;
+			sscanf(value, "%4d-%2d-%2dT%2d:%2d:%2d", &year, &month, &day, &hour, &min, &sec);
+			tm.tm_year = year - 1900; /* years since 1900 */
+			tm.tm_mon = month - 1;
+			tm.tm_mday = day;
+			tm.tm_hour = hour;
+			tm.tm_min = min;
+			tm.tm_sec = sec;
 			conf->time = mktime(&tm);
 		} else
 			conf->time = 0;
