@@ -12,11 +12,16 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+
 #include "backupSession.h"
 #include "xml.h"
 #include "log.h"
 #include "notifications.h"
 #include "event.h"
+#include "download.h"
+#include "cwmp_du_state.h"
+#include "upload.h"
+#include "sched_inform.h"
 
 static mxml_node_t *bkp_tree = NULL;
 pthread_mutex_t mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;

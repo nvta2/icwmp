@@ -76,4 +76,6 @@ int cwmp_get_int_event_code(char *code);
 bool event_exist_in_list(struct cwmp *cwmp, int event);
 int cwmp_root_cause_events(struct cwmp *cwmp);
 int cwmp_root_cause_transfer_complete(struct cwmp *cwmp, struct transfer_complete *p);
+int cwmp_root_cause_changedustate_complete(struct cwmp *cwmp, struct du_state_change_complete *p);
+void cwmp_root_cause_event_ipdiagnostic(void);
 #endif /* SRC_INC_EVENT_H_ */

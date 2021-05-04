@@ -300,7 +300,45 @@ enum fault_cpe_idx
 	__FAULT_CPE_MAX
 };
 
-enum
+enum fault_code_enum
+{
+	FAULT_9000 = 9000, // Method not supported
+	FAULT_9001, // Request denied
+	FAULT_9002, // Internal error
+	FAULT_9003, // Invalid arguments
+	FAULT_9004, // Resources exceeded
+	FAULT_9005, // Invalid parameter name
+	FAULT_9006, // Invalid parameter type
+	FAULT_9007, // Invalid parameter value
+	FAULT_9008, // Attempt to set a non-writable parameter
+	FAULT_9009, // Notification request rejected
+	FAULT_9010, // Download failure
+	FAULT_9011, // Upload failure
+	FAULT_9012, // File transfer server authentication failure
+	FAULT_9013, // Unsupported protocol for file transfer
+	FAULT_9014, // Download failure: unable to join multicast group
+	FAULT_9015, // Download failure: unable to contact file server
+	FAULT_9016, // Download failure: unable to access file
+	FAULT_9017, // Download failure: unable to complete download
+	FAULT_9018, // Download failure: file corrupted
+	FAULT_9019, // Download failure: file authentication failure
+	FAULT_9020, // Download failure: unable to complete download
+	FAULT_9021, // Cancelation of file transfer not permitted
+	FAULT_9022, // Invalid UUID format
+	FAULT_9023, // Unknown Execution Environment
+	FAULT_9024, // Disabled Execution Environment
+	FAULT_9025, // Diployment Unit to Execution environment mismatch
+	FAULT_9026, // Duplicate Deployment Unit
+	FAULT_9027, // System Ressources Exceeded
+	FAULT_9028, // Unknown Deployment Unit
+	FAULT_9029, // Invalid Deployment Unit State
+	FAULT_9030, // Invalid Deployment Unit Update: Downgrade not permitted
+	FAULT_9031, // Invalid Deployment Unit Update: Version not specified
+	FAULT_9032, // Invalid Deployment Unit Update: Version already exist
+	__FAULT_MAX
+};
+
+enum client_server_faults
 {
 	FAULT_CPE_TYPE_CLIENT,
 	FAULT_CPE_TYPE_SERVER
@@ -441,6 +479,7 @@ typedef struct opfault {
 
 extern struct cwmp cwmp_main;
 extern long int flashsize;
+extern struct FAULT_CPE FAULT_CPE_ARRAY[];
 
 int cwmp_exit(void);
 void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type, int notification, bool writable);
@@ -466,6 +505,8 @@ int opkg_install_package(char *package_path);
 int copy(const char *from, const char *to);
 int icwmp_rand(void);
 void icwmp_srand(unsigned int seed);
+int cwmp_get_fault_code(int fault_code);
+int cwmp_get_fault_code_by_string(char *fault_code);
 #ifndef FREE
 #define FREE(x)                   \
 	do {                      \

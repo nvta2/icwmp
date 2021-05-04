@@ -29,6 +29,35 @@ static unsigned long int next_rand_seed = 1;
 
 struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
 
+struct FAULT_CPE FAULT_CPE_ARRAY[] = {[FAULT_CPE_METHOD_NOT_SUPPORTED] = { "9000", FAULT_9000, FAULT_CPE_TYPE_SERVER, "Method not supported" },
+				      [FAULT_CPE_REQUEST_DENIED] = { "9001", FAULT_9001, FAULT_CPE_TYPE_SERVER, "Request denied (no reason specified)" },
+				      [FAULT_CPE_INTERNAL_ERROR] = { "9002", FAULT_9002, FAULT_CPE_TYPE_SERVER, "Internal error" },
+				      [FAULT_CPE_INVALID_ARGUMENTS] = { "9003", FAULT_9003, FAULT_CPE_TYPE_CLIENT, "Invalid arguments" },
+				      [FAULT_CPE_RESOURCES_EXCEEDED] = { "9004", FAULT_9004, FAULT_CPE_TYPE_SERVER, "Resources exceeded" },
+				      [FAULT_CPE_INVALID_PARAMETER_NAME] = { "9005", FAULT_9005, FAULT_CPE_TYPE_CLIENT, "Invalid parameter name" },
+				      [FAULT_CPE_INVALID_PARAMETER_TYPE] = { "9006", FAULT_9006, FAULT_CPE_TYPE_CLIENT, "Invalid parameter type" },
+				      [FAULT_CPE_INVALID_PARAMETER_VALUE] = { "9007", FAULT_9007, FAULT_CPE_TYPE_CLIENT, "Invalid parameter value" },
+				      [FAULT_CPE_NON_WRITABLE_PARAMETER] = { "9008", FAULT_9008, FAULT_CPE_TYPE_CLIENT, "Attempt to set a non-writable parameter" },
+				      [FAULT_CPE_NOTIFICATION_REJECTED] = { "9009", FAULT_9009, FAULT_CPE_TYPE_SERVER, "Notification request rejected" },
+				      [FAULT_CPE_DOWNLOAD_FAILURE] = { "9010", FAULT_9010, FAULT_CPE_TYPE_SERVER, "Download failure" },
+				      [FAULT_CPE_UPLOAD_FAILURE] = { "9011", FAULT_9011, FAULT_CPE_TYPE_SERVER, "Upload failure" },
+				      [FAULT_CPE_FILE_TRANSFER_AUTHENTICATION_FAILURE] = { "9012", FAULT_9012, FAULT_CPE_TYPE_SERVER, "File transfer server authentication failure" },
+				      [FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL] = { "9013", FAULT_9013, FAULT_CPE_TYPE_SERVER, "Unsupported protocol for file transfer" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_MULTICAST_GROUP] = { "9014", FAULT_9014, FAULT_CPE_TYPE_SERVER, "Download failure: unable to join multicast group" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER] = { "9015", FAULT_9015, FAULT_CPE_TYPE_SERVER, "Download failure: unable to contact file server" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_ACCESS_FILE] = { "9016", FAULT_9016, FAULT_CPE_TYPE_SERVER, "Download failure: unable to access file" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD] = { "9017", FAULT_9017, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED] = { "9018", FAULT_9018, FAULT_CPE_TYPE_SERVER, "Download failure: file corrupted" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION] = { "9019", FAULT_9019, FAULT_CPE_TYPE_SERVER, "Download failure: file authentication failure" },
+				      [FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW] = { "9020", FAULT_9020, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download" },
+				      [FAULT_CPE_DUPLICATE_DEPLOYMENT_UNIT] = { "9026", FAULT_9026, FAULT_CPE_TYPE_SERVER, "Duplicate deployment unit" },
+				      [FAULT_CPE_SYSTEM_RESOURCES_EXCEEDED] = { "9027", FAULT_9027, FAULT_CPE_TYPE_SERVER, "System ressources exceeded" },
+				      [FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT] = { "9028", FAULT_9028, FAULT_CPE_TYPE_SERVER, "Unknown deployment unit" },
+				      [FAULT_CPE_INVALID_DEPLOYMENT_UNIT_STATE] = { "9029", FAULT_9029, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit state" },
+				      [FAULT_CPE_INVALID_DOWNGRADE_REJECTED] = { "9030", FAULT_9030, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Downgrade not permitted" },
+				      [FAULT_CPE_INVALID_UPDATE_VERSION_UNSPECIFIED] = { "9031", FAULT_9031, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Version not specified" },
+				      [FAULT_CPE_INVALID_UPDATE_VERSION_EXIST] = { "9031", FAULT_9032, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Version already exist" } };
+
 static void show_help(void)
 {
 	printf("Usage: icwmpd [OPTIONS]\n");
@@ -195,41 +224,6 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
 	return written;
 }
 
-int download_file(const char *file_path, const char *url, const char *username, const char *password)
-{
-	int res_code = 0;
-	CURL *curl = curl_easy_init();
-	if (curl) {
-		char *userpass = NULL;
-		curl_easy_setopt(curl, CURLOPT_URL, url);
-		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-		if (username != NULL && strlen(username) > 0) {
-			cwmp_asprintf(&userpass, "%s:%s", username, password);
-			curl_easy_setopt(curl, CURLOPT_USERPWD, userpass);
-		}
-		if (strncmp(url, "https://", 8) == 0)
-			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
-		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 10000L);
-		curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
-		curl_easy_setopt(curl, CURLOPT_FTP_SKIP_PASV_IP, 1L);
-		FILE *fp = fopen(file_path, "wb");
-		if (fp) {
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-			curl_easy_perform(curl);
-			fclose(fp);
-		}
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_code);
-
-		curl_easy_cleanup(curl);
-		FREE(userpass);
-	}
-
-	return res_code;
-}
-
 struct transfer_status {
 	CURL *easy;
 	int halted;
@@ -368,42 +362,6 @@ long int get_file_size(char *file_name)
 	return res;
 }
 
-void ubus_check_image_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
-{
-	int *code = (int *)req->priv;
-	const struct blobmsg_policy p[2] = { { "code", BLOBMSG_TYPE_INT32 }, { "stdout", BLOBMSG_TYPE_STRING } };
-	struct blob_attr *tb[2] = { NULL, NULL };
-	blobmsg_parse(p, 2, tb, blobmsg_data(msg), blobmsg_len(msg));
-
-	*code = tb[0] ? blobmsg_get_u32(tb[0]) : 1;
-}
-
-/*
- * Check if the downloaded image can be applied
- */
-int cwmp_check_image()
-{
-	int code, e;
-	e = cwmp_ubus_call("rpc-sys", "upgrade_test", CWMP_UBUS_ARGS{ {} }, 0, ubus_check_image_callback, &code);
-	if (e != 0) {
-		CWMP_LOG(INFO, "rpc-sys upbrade_test ubus method failed: Ubus err code: %d", e);
-		code = 1;
-	}
-	return code;
-}
-
-/*
- * Apply the new firmware
- */
-void cwmp_apply_firmware()
-{
-	int e;
-	e = cwmp_ubus_call("rpc-sys", "upgrade_start", CWMP_UBUS_ARGS{ { "keep", {.bool_val = true }, UBUS_Bool } }, 1, NULL, NULL);
-	if (e != 0) {
-		CWMP_LOG(INFO, "rpc-sys upgrade_start ubus method failed: Ubus err code: %d", e);
-	}
-}
-
 int opkg_install_package(char *package_path)
 {
 	FILE *fp;
@@ -502,4 +460,34 @@ int icwmp_rand(void) // RAND_MAX assumed to be 32767
 void icwmp_srand(unsigned int seed) //
 {
 	next_rand_seed = seed;
+}
+
+int cwmp_get_fault_code(int fault_code)
+{
+	int i;
+
+	for (i = 1; i < __FAULT_CPE_MAX; i++) {
+		if (FAULT_CPE_ARRAY[i].ICODE == fault_code)
+			break;
+	}
+
+	if (i == __FAULT_CPE_MAX)
+		i = FAULT_CPE_INTERNAL_ERROR;
+
+	return i;
+}
+
+int cwmp_get_fault_code_by_string(char *fault_code)
+{
+	int i;
+
+	for (i = 1; i < __FAULT_CPE_MAX; i++) {
+		if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0)
+			break;
+	}
+
+	if (i == __FAULT_CPE_MAX)
+		i = FAULT_CPE_INTERNAL_ERROR;
+
+	return i;
 }

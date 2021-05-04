@@ -30,6 +30,10 @@
 #include "log.h"
 #include "notifications.h"
 #include "cwmp_uci.h"
+#include "cwmp_du_state.h"
+#include "download.h"
+#include "upload.h"
+#include "sched_inform.h"
 
 int cwmp_rpc_cpe_handle_message(struct session *session, struct rpc *rpc_cpe);
 #endif /* _CWMP_H__ */

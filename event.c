@@ -18,11 +18,16 @@
 #include <openssl/engine.h>*/
 
 #include <pthread.h>
+
 #include "backupSession.h"
 #include "log.h"
 #include "event.h"
 #include "session.h"
 #include "xml.h"
+#include "cwmp_du_state.h"
+#include "download.h"
+#include "upload.h"
+#include "sched_inform.h"
 
 const struct EVENT_CONST_STRUCT EVENT_CONST[] = {[EVENT_IDX_0BOOTSTRAP] = { "0 BOOTSTRAP", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL | EVENT_RETRY_AFTER_REBOOT },
 						 [EVENT_IDX_1BOOT] = { "1 BOOT", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL },

@@ -20,6 +20,9 @@ icwmpd_SOURCES =			\
 	../notifications.c		\
 	../cwmp_zlib.c			\
 	../cwmp_du_state.c		\
+	../download.c			\
+	../upload.c				\
+	../sched_inform.c		\
 	../xml.c				\
 	../diagnostic.c			\
 	../cwmp.c	

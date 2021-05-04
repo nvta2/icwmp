@@ -13,10 +13,15 @@
 #include "event.h"
 #include "backupSession.h"
 #include "config.h"
+#include "xml.h"
 
 unsigned int end_session_flag = 0;
 
-void cwmp_set_end_session(unsigned int flag) { end_session_flag |= flag; }
+void cwmp_set_end_session(unsigned int flag)
+{ //
+	end_session_flag |= flag;
+}
+
 struct rpc *cwmp_add_session_rpc_cpe(struct session *session, int type)
 {
 	struct rpc *rpc_cpe;
@@ -104,4 +109,107 @@ struct session *cwmp_add_queue_session(struct cwmp *cwmp)
 	}
 
 	return session;
+}
+
+int cwmp_session_rpc_destructor(struct rpc *rpc)
+{
+	list_del(&(rpc->list));
+	free(rpc);
+	return CWMP_OK;
+}
+
+int cwmp_session_destructor(struct session *session)
+{
+	struct rpc *rpc;
+
+	while (session->head_rpc_acs.next != &(session->head_rpc_acs)) {
+		rpc = list_entry(session->head_rpc_acs.next, struct rpc, list);
+		if (rpc_acs_methods[rpc->type].extra_clean != NULL)
+			rpc_acs_methods[rpc->type].extra_clean(session, rpc);
+		cwmp_session_rpc_destructor(rpc);
+	}
+
+	while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
+		rpc = list_entry(session->head_rpc_cpe.next, struct rpc, list);
+		cwmp_session_rpc_destructor(rpc);
+	}
+
+	if (session->list.next != NULL && session->list.prev != NULL)
+		list_del(&(session->list));
+
+	free(session);
+
+	return CWMP_OK;
+}
+
+int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *session)
+{
+	struct list_head *ilist, *jlist;
+	struct rpc *rpc_acs, *queue_rpc_acs, *rpc_cpe;
+	struct event_container *event_container_old, *event_container_new;
+	struct session *session_queue;
+	bool dup;
+
+	pthread_mutex_lock(&(cwmp->mutex_session_queue));
+	cwmp->retry_count_session++;
+	cwmp->session_send = NULL;
+	if (cwmp->head_session_queue.next == &(cwmp->head_session_queue)) {
+		list_add_tail(&(session->list), &(cwmp->head_session_queue));
+		session->hold_request = 0;
+		session->digest_auth = 0;
+		cwmp->head_event_container = &(session->head_event_container);
+		if (session->head_rpc_acs.next != &(session->head_rpc_acs)) {
+			rpc_acs = list_entry(session->head_rpc_acs.next, struct rpc, list);
+			if (rpc_acs->type != RPC_ACS_INFORM) {
+				if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL) {
+					pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+					return CWMP_MEM_ERR;
+				}
+			}
+		} else {
+			if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL) {
+				pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+				return CWMP_MEM_ERR;
+			}
+		}
+		while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
+			rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
+			cwmp_session_rpc_destructor(rpc_cpe);
+		}
+		bkp_session_move_inform_to_inform_queue();
+		bkp_session_save();
+		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+		return CWMP_OK;
+	}
+	list_for_each (ilist, &(session->head_event_container)) {
+		event_container_old = list_entry(ilist, struct event_container, list);
+		event_container_new = cwmp_add_event_container(cwmp, event_container_old->code, event_container_old->command_key);
+		if (event_container_new == NULL) {
+			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+			return CWMP_MEM_ERR;
+		}
+		list_splice_init(&(event_container_old->head_dm_parameter), &(event_container_new->head_dm_parameter));
+		cwmp_save_event_container(event_container_new);
+	}
+	session_queue = list_entry(cwmp->head_event_container, struct session, head_event_container);
+	list_for_each (ilist, &(session->head_rpc_acs)) {
+		rpc_acs = list_entry(ilist, struct rpc, list);
+		dup = false;
+		list_for_each (jlist, &(session_queue->head_rpc_acs)) {
+			queue_rpc_acs = list_entry(jlist, struct rpc, list);
+			if (queue_rpc_acs->type == rpc_acs->type && (rpc_acs->type == RPC_ACS_INFORM || rpc_acs->type == RPC_ACS_GET_RPC_METHODS)) {
+				dup = true;
+				break;
+			}
+		}
+		if (dup) {
+			continue;
+		}
+		ilist = ilist->prev;
+		list_del(&(rpc_acs->list));
+		list_add_tail(&(rpc_acs->list), &(session_queue->head_rpc_acs));
+	}
+	cwmp_session_destructor(session);
+	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+	return CWMP_OK;
 }

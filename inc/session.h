@@ -64,4 +64,7 @@ struct rpc *cwmp_add_session_rpc_acs(struct session *session, int type);
 int cwmp_apply_acs_changes();
 int cwmp_move_session_to_session_send(struct cwmp *cwmp, struct session *session);
 struct rpc *cwmp_add_session_rpc_acs_head(struct session *session, int type);
+int cwmp_session_rpc_destructor(struct rpc *rpc);
+int cwmp_session_destructor(struct session *session);
+int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *session);
 #endif /* SRC_INC_SESSION_H_ */
