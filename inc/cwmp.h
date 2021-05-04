@@ -19,6 +19,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+
 #include "common.h"
 #include "session.h"
 #include "xml.h"
@@ -36,4 +37,5 @@
 #include "sched_inform.h"
 
 int cwmp_rpc_cpe_handle_message(struct session *session, struct rpc *rpc_cpe);
+
 #endif /* _CWMP_H__ */

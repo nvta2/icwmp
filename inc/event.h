@@ -12,6 +12,7 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 #include "common.h"
+
 typedef struct event_container {
 	struct list_head list;
 	int code; /* required element of type xsd:string */

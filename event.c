@@ -138,6 +138,7 @@ int cwmp_root_cause_event_boot(struct cwmp *cwmp)
 	}
 	return CWMP_OK;
 }
+
 int event_remove_all_event_container(struct session *session, int rem_from)
 {
 	struct event_container *event_container;

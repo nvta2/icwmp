@@ -23,5 +23,6 @@ int get_instance_mode_config();
 int get_session_timeout_config();
 int cwmp_config_reload(struct cwmp *cwmp);
 int global_conf_init(struct config *conf);
+int get_global_config(struct config *conf);
 int cwmp_get_deviceid(struct cwmp *cwmp);
 #endif

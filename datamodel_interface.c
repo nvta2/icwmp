@@ -198,8 +198,9 @@ bool cwmp_transaction_status()
 		CWMP_LOG(INFO, "Transaction status failed: Ubus err code: %d", e);
 		return false;
 	}
-	if (!status)
+	if (!status) {
 		CWMP_LOG(INFO, "Transaction with id: %d is not available anymore\n", transaction_id);
+	}
 	return status;
 }
 /*

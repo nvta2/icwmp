@@ -47,7 +47,7 @@ void *thread_exit_program(void *v __attribute__((unused)))
 {
 	CWMP_LOG(INFO, "EXIT ICWMP");
 	pthread_mutex_lock(&mutex_backup_session);
-	cwmp_exit();
+	//cwmp_exit();
 	exit(EXIT_SUCCESS);
 }
 

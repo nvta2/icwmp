@@ -15,17 +15,21 @@
 #include <unistd.h>
 #include <sys/reboot.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <sys/file.h>
 
 #include "common.h"
 #include "cwmp_uci.h"
 #include "ubus.h"
 #include "log.h"
 #include "cwmp_cli.h"
+#include "cwmp_du_state.h"
 
 #define CURL_TIMEOUT 20
 char *commandKey = NULL;
 long int flashsize = 256000000;
 static unsigned long int next_rand_seed = 1;
+struct cwmp cwmp_main = { 0 };
 
 struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
 

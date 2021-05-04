@@ -12,8 +12,6 @@
 
 #include "cwmp.h"
 
-struct cwmp cwmp_main = { 0 };
-
 int cwmp_get_retry_interval(struct cwmp *cwmp)
 {
 	int retry_count = 0;

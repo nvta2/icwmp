@@ -368,7 +368,7 @@ int get_global_config(struct config *conf)
 	}
 	if ((error = uci_get_value(UCI_PERIODIC_INFORM_TIME_PATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
-			struct tm tm;
+			struct tm tm = { 0 };
 			int year = 0, month = 0, day = 0, hour = 0, min = 0, sec = 0;
 			sscanf(value, "%4d-%2d-%2dT%2d:%2d:%2d", &year, &month, &day, &hour, &min, &sec);
 			tm.tm_year = year - 1900; /* years since 1900 */

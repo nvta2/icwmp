@@ -4,7 +4,22 @@ include:
 
 stages:
     - static_code_analysis
-   
+    - unit_test
+    
 variables:
   DEBUG: 'TRUE'
   SOURCE_FOLDER: "."
+
+run_unit_test:
+   stage: unit_test
+   image: iopsys/code-analysis-dev:latest
+   allow_failure: false
+   script:
+   - "./gitlab-ci/install-dependencies.sh"
+   - "./gitlab-ci/setup.sh"
+   - "./gitlab-ci/unit-test.sh"
+   artifacts:
+      when: always
+      paths:
+         - timestamp.log
+         - unit-test-coverage.xml
