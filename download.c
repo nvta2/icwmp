@@ -106,7 +106,7 @@ void cwmp_apply_firmware()
 	}
 }
 
-int cwmp_launch_download(struct download *pdownload, struct transfer_complete **ptransfer_complete)
+int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struct transfer_complete **ptransfer_complete)
 {
 	int error = FAULT_CPE_NO_FAULT;
 	char *download_startTime;
@@ -114,7 +114,7 @@ int cwmp_launch_download(struct download *pdownload, struct transfer_complete **
 
 	download_startTime = mix_get_time();
 
-	bkp_session_delete_download(pdownload);
+	ltype == TYPE_DOWNLOAD ? bkp_session_delete_download(pdownload) : bkp_session_delete_schedule_download(pdownload);
 	bkp_session_save();
 
 	if (flashsize < pdownload->file_size) {
@@ -170,87 +170,72 @@ end_download:
 	p->command_key = pdownload->command_key ? strdup(pdownload->command_key) : strdup("");
 	p->start_time = strdup(download_startTime);
 	p->complete_time = strdup(mix_get_time());
+	p->type = ltype;
 	if (error != FAULT_CPE_NO_FAULT) {
 		p->fault_code = error;
 	}
-
 	*ptransfer_complete = p;
 
 	return error;
 }
 
-int cwmp_launch_schedule_download(struct schedule_download *pdownload, struct transfer_complete **ptransfer_complete)
+int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct transfer_complete *ptransfer_complete)
 {
 	int error = FAULT_CPE_NO_FAULT;
-	char *download_startTime;
-	struct transfer_complete *p;
-
-	download_startTime = mix_get_time();
-
-	bkp_session_delete_schedule_download(pdownload);
+	if (pdownload->file_type[0] == '1') {
+		ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
+	}
+	bkp_session_insert_transfer_complete(ptransfer_complete);
 	bkp_session_save();
-
-	if (flashsize < pdownload->file_size) {
-		error = FAULT_CPE_DOWNLOAD_FAILURE;
-		goto end_download;
-	}
-
-	int http_code = download_file(ICWMP_DOWNLOAD_FILE, pdownload->url, pdownload->username, pdownload->password);
-	if (http_code == 404)
-		error = FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER;
-	else if (http_code == 401)
-		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION;
-	else if (http_code != 200)
-		error = FAULT_CPE_DOWNLOAD_FAILURE;
-
-	if (error != FAULT_CPE_NO_FAULT)
-		goto end_download;
-
 	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
-		rename(ICWMP_DOWNLOAD_FILE, FIRMWARE_UPGRADE_IMAGE);
-		if (cwmp_check_image() == 0) {
-			long int file_size = get_file_size(FIRMWARE_UPGRADE_IMAGE);
-			if (file_size > flashsize) {
-				error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-				remove(FIRMWARE_UPGRADE_IMAGE);
-				goto end_download;
-			} else {
-				error = FAULT_CPE_NO_FAULT;
-				goto end_download;
-			}
-		} else {
-			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-			remove(FIRMWARE_UPGRADE_IMAGE);
-		}
+		uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
+		cwmp_apply_firmware();
+		sleep(70);
+		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 	} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
-		rename(ICWMP_DOWNLOAD_FILE, "/tmp/web_content.ipk");
-		error = FAULT_CPE_NO_FAULT;
+		int err = opkg_install_package("/tmp/web_content.ipk");
+		if (err == -1)
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+		else
+			error = FAULT_CPE_NO_FAULT;
 	} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
-		rename(ICWMP_DOWNLOAD_FILE, "/tmp/vendor_configuration_file.cfg");
-		error = FAULT_CPE_NO_FAULT;
-	} else {
-		remove(ICWMP_DOWNLOAD_FILE);
-		error = FAULT_CPE_NO_FAULT;
+		int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+		if (err == CWMP_OK)
+			error = FAULT_CPE_NO_FAULT;
+		else if (err == CWMP_GEN_ERR)
+			error = FAULT_CPE_INTERNAL_ERROR;
+		else if (err == -1)
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 	}
 
-end_download:
-	p = calloc(1, sizeof(struct transfer_complete));
-	if (p == NULL) {
-		error = FAULT_CPE_INTERNAL_ERROR;
-		return error;
+	if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
+		if (pdownload->file_type[0] == '3') {
+			CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
+		}
+		return FAULT_CPE_NO_FAULT;
 	}
-
-	p->command_key = strdup(pdownload->command_key);
-	p->start_time = strdup(download_startTime);
-	p->complete_time = strdup(mix_get_time());
-	p->type = TYPE_SCHEDULE_DOWNLOAD;
-	if (error != FAULT_CPE_NO_FAULT) {
-		p->fault_code = error;
-	}
-
-	*ptransfer_complete = p;
-
+	bkp_session_delete_transfer_complete(ptransfer_complete);
+	ptransfer_complete->fault_code = error;
+	bkp_session_insert_transfer_complete(ptransfer_complete);
+	bkp_session_save();
+	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 	return error;
+}
+
+struct transfer_complete *set_download_error_transfer_complete(struct cwmp *cwmp, struct download *pdownload, enum load_type ltype)
+{
+	struct transfer_complete *ptransfer_complete;
+	ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
+	if (ptransfer_complete != NULL) {
+		ptransfer_complete->command_key = strdup(pdownload->command_key);
+		ptransfer_complete->start_time = strdup(mix_get_time());
+		ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
+		ptransfer_complete->fault_code = ltype == TYPE_DOWNLOAD ? FAULT_CPE_DOWNLOAD_FAILURE : FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
+		ptransfer_complete->type = ltype;
+		bkp_session_insert_transfer_complete(ptransfer_complete);
+		cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+	}
+	return ptransfer_complete;
 }
 
 void *thread_cwmp_rpc_cpe_download(void *v)
@@ -275,19 +260,8 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 			if ((timeout >= 0) && (timeout > time_of_grace)) {
 				pthread_mutex_lock(&mutex_download);
 				bkp_session_delete_download(pdownload);
-				ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
-				if (ptransfer_complete != NULL) {
-					error = FAULT_CPE_DOWNLOAD_FAILURE;
-
-					ptransfer_complete->command_key = strdup(pdownload->command_key);
-					ptransfer_complete->start_time = strdup(mix_get_time());
-					ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
-					ptransfer_complete->fault_code = error;
-
-					ptransfer_complete->type = TYPE_DOWNLOAD;
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-				}
+				error = FAULT_CPE_DOWNLOAD_FAILURE;
+				ptransfer_complete = set_download_error_transfer_complete(cwmp, pdownload, TYPE_DOWNLOAD);
 				list_del(&(pdownload->list));
 				if (pdownload->scheduled_time != 0)
 					count_download_queue--;
@@ -298,50 +272,17 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
-				error = cwmp_launch_download(pdownload, &ptransfer_complete);
+				error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
+
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
 					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					if (pdownload->file_type[0] == '1') {
-						ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
-					}
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
-						uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
-						cwmp_apply_firmware();
-						sleep(70);
-						error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-					} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
-						int err = opkg_install_package("/tmp/web_content.ipk");
-						if (err == -1)
-							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-						else
-							error = FAULT_CPE_NO_FAULT;
-					} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
-						int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
-						if (err == CWMP_OK)
-							error = FAULT_CPE_NO_FAULT;
-						else if (err == CWMP_GEN_ERR)
-							error = FAULT_CPE_INTERNAL_ERROR;
-						else if (err == -1)
-							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-					}
-
-					if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
-						if (pdownload->file_type[0] == '3') {
-							CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
-						}
+					error = apply_downloaded_file(cwmp, pdownload, ptransfer_complete);
+					if (error == FAULT_CPE_NO_FAULT)
 						exit(EXIT_SUCCESS);
-					}
-					bkp_session_delete_transfer_complete(ptransfer_complete);
-					ptransfer_complete->fault_code = error;
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));
@@ -366,7 +307,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 	return NULL;
 }
 
-int cwmp_add_apply_schedule_download(struct schedule_download *schedule_download, char *start_time)
+int cwmp_add_apply_schedule_download(struct download *schedule_download, char *start_time)
 {
 	int i = 0;
 	int error = FAULT_CPE_NO_FAULT;
@@ -408,8 +349,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
 	int min_time = 0;
-	struct schedule_download *current_download = NULL;
-	struct schedule_download *p, *_p;
+	struct download *current_download = NULL;
+	struct download *p, *_p;
 
 	for (;;) {
 		current_time = time(NULL);
@@ -425,17 +366,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					} else {
 						pthread_mutex_lock(&mutex_schedule_download);
 						bkp_session_delete_schedule_download(p);
-						ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
-						if (ptransfer_complete != NULL) {
-							error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key = strdup(p->command_key);
-							ptransfer_complete->start_time = strdup(mix_get_time());
-							ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
-							ptransfer_complete->fault_code = error;
-							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
-							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-						}
+						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
+						ptransfer_complete = set_download_error_transfer_complete(cwmp, p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						if (p->timewindowstruct[0].windowstart != 0)
 							count_download_queue--;
@@ -458,17 +390,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					} else {
 						pthread_mutex_lock(&mutex_schedule_download);
 						bkp_session_delete_schedule_download(p);
-						ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
-						if (ptransfer_complete != NULL) {
-							error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key = strdup(p->command_key);
-							ptransfer_complete->start_time = strdup(mix_get_time());
-							ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
-							ptransfer_complete->fault_code = error;
-							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
-							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-						}
+						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
+						ptransfer_complete = set_download_error_transfer_complete(cwmp, p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						if (p->timewindowstruct[0].windowstart != 0)
 							count_download_queue--;
@@ -490,7 +413,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 				pthread_mutex_lock(&mutex_schedule_download);
 				ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
 				ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
-				error = cwmp_launch_schedule_download(current_download, &ptransfer_complete);
+				error = cwmp_launch_download(current_download, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
@@ -501,44 +424,9 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					if (pthread_mutex_trylock(&(cwmp->mutex_session_send)) == 0) {
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						pthread_mutex_lock(&mutex_schedule_download);
-						if (current_download->file_type[0] == '1') {
-							ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
-						}
-						bkp_session_insert_transfer_complete(ptransfer_complete);
-						bkp_session_save();
-
-						if (strcmp(current_download->file_type, "1 Firmware Upgrade Image") == 0) {
-							uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
-							cwmp_apply_firmware();
-							sleep(70);
-							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-						} else if (strcmp(current_download->file_type, "2 Web Content") == 0) {
-							int err = opkg_install_package("/tmp/web_content.ipk");
-							if (err == -1)
-								error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-							else
-								error = FAULT_CPE_NO_FAULT;
-						} else if (strcmp(current_download->file_type, "3 Vendor Configuration File") == 0) {
-							int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
-							if (err == CWMP_OK)
-								error = FAULT_CPE_NO_FAULT;
-							else if (err == CWMP_GEN_ERR)
-								error = FAULT_CPE_INTERNAL_ERROR;
-							else if (err == -1)
-								error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-						}
-
-						if ((error == FAULT_CPE_NO_FAULT) && (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6')) {
-							if (current_download->file_type[0] == '3') {
-								CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
-							}
+						error = apply_downloaded_file(cwmp, current_download, ptransfer_complete);
+						if (error == FAULT_CPE_NO_FAULT)
 							exit(EXIT_SUCCESS);
-						}
-						bkp_session_delete_transfer_complete(ptransfer_complete);
-						ptransfer_complete->fault_code = error;
-						bkp_session_insert_transfer_complete(ptransfer_complete);
-						bkp_session_save();
-						cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 
 						pthread_mutex_unlock(&mutex_schedule_download);
 						pthread_mutex_unlock(&mutex_apply_schedule_download);
@@ -561,50 +449,16 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 			else {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				CWMP_LOG(INFO, "Launch download file %s", current_download->url);
-				error = cwmp_launch_schedule_download(current_download, &ptransfer_complete);
+				error = cwmp_launch_download(current_download, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
 					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					if (current_download->file_type[0] == '1') {
-						ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
-					}
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					if (strcmp(current_download->file_type, "1 Firmware Upgrade Image") == 0) {
-						uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
-						cwmp_apply_firmware();
-						sleep(70);
-						error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-					} else if (strcmp(current_download->file_type, "2 Web Content") == 0) {
-						int err = opkg_install_package("/tmp/web_content.ipk");
-						if (err == -1)
-							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-						else
-							error = FAULT_CPE_NO_FAULT;
-					} else if (strcmp(current_download->file_type, "3 Vendor Configuration File") == 0) {
-						int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
-						if (err == CWMP_OK)
-							error = FAULT_CPE_NO_FAULT;
-						else if (err == CWMP_GEN_ERR)
-							error = FAULT_CPE_INTERNAL_ERROR;
-						else if (err == -1)
-							error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-					}
-
-					if ((error == FAULT_CPE_NO_FAULT) && (current_download->file_type[0] == '1' || current_download->file_type[0] == '3' || current_download->file_type[0] == '6')) {
-						if (current_download->file_type[0] == '3') {
-							CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
-						}
+					error = apply_downloaded_file(cwmp, current_download, ptransfer_complete);
+					if (error == FAULT_CPE_NO_FAULT)
 						exit(EXIT_SUCCESS);
-					}
-					bkp_session_delete_transfer_complete(ptransfer_complete);
-					ptransfer_complete->fault_code = error;
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 				}
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));
@@ -658,17 +512,8 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 					} else {
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						bkp_session_delete_apply_schedule_download(p);
-						ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
-						if (ptransfer_complete != NULL) {
-							error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key = strdup(p->command_key);
-							ptransfer_complete->start_time = strdup(mix_get_time());
-							ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
-							ptransfer_complete->fault_code = error;
-							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
-							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-						}
+						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
+						ptransfer_complete = set_download_error_transfer_complete(cwmp, (struct download *)p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						if (p->timeintervals[0].windowstart != 0)
 							count_download_queue--;
@@ -691,17 +536,8 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 					} else {
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						bkp_session_delete_apply_schedule_download(p);
-						ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
-						if (ptransfer_complete != NULL) {
-							error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-							ptransfer_complete->command_key = strdup(p->command_key);
-							ptransfer_complete->start_time = strdup(mix_get_time());
-							ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
-							ptransfer_complete->fault_code = error;
-							ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
-							bkp_session_insert_transfer_complete(ptransfer_complete);
-							cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-						}
+						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
+						ptransfer_complete = set_download_error_transfer_complete(cwmp, (struct download *)p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						/*if(p->timewindowintervals[0].windowstart != 0)
 				            count_download_queue--;*/
@@ -818,7 +654,7 @@ int cwmp_free_download_request(struct download *download)
 	return CWMP_OK;
 }
 
-int cwmp_free_schedule_download_request(struct schedule_download *schedule_download)
+int cwmp_free_schedule_download_request(struct download *schedule_download)
 {
 	if (schedule_download != NULL) {
 		if (schedule_download->command_key != NULL)
@@ -885,11 +721,11 @@ int cwmp_scheduledDownload_remove_all()
 
 int cwmp_scheduled_Download_remove_all()
 {
-	struct schedule_download *schedule_download;
+	struct download *schedule_download;
 
 	pthread_mutex_lock(&mutex_schedule_download);
 	while (list_schedule_download.next != &(list_schedule_download)) {
-		schedule_download = list_entry(list_schedule_download.next, struct schedule_download, list);
+		schedule_download = list_entry(list_schedule_download.next, struct download, list);
 		list_del(&(schedule_download->list));
 		bkp_session_delete_schedule_download(schedule_download);
 		if (schedule_download->timewindowstruct[0].windowstart != 0)

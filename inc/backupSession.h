@@ -53,11 +53,11 @@ void bkp_session_insert_transfer_complete(struct transfer_complete *ptransfer_co
 void bkp_session_delete_transfer_complete(struct transfer_complete *ptransfer_complete);
 int save_acs_bkp_config(struct cwmp *cwmp);
 
-void bkp_session_insert_schedule_download(struct schedule_download *pschedule_download);
+void bkp_session_insert_schedule_download(struct download *pschedule_download);
 void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *papply_schedule_download);
 void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *papply_schedule_download);
 void bkp_session_delete_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete);
-void bkp_session_delete_schedule_download(struct schedule_download *pschedule_download);
+void bkp_session_delete_schedule_download(struct download *pschedule_download);
 void bkp_session_insert_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete);
 void bkp_tree_clean(void);
 #endif /* _BACKUPSESSION_H__ */

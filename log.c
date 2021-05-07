@@ -139,7 +139,8 @@ void puts_log(int severity, const char *fmt, ...)
 	i += vsprintf(buf + i, (const char *)fmt, args);
 	if (enable_log_file) {
 		strncpy(buf_file, buf, strlen(buf));
-		strcat(buf_file, "\n");
+		buf_file[strlen(buf)] = '\n';
+		buf_file[strlen(buf) + 1] = '\0';
 		fputs(buf_file, pLog);
 	}
 	va_end(args);

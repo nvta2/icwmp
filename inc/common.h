@@ -370,6 +370,14 @@ typedef struct schedule_inform {
 	char *commandKey;
 } schedule_inform;
 
+typedef struct timewindow {
+	time_t windowstart;
+	time_t windowend;
+	char *windowmode;
+	char *usermessage;
+	int maxretries;
+} timewindow;
+
 typedef struct download {
 	struct list_head list;
 	time_t scheduled_time;
@@ -379,33 +387,14 @@ typedef struct download {
 	char *url;
 	char *username;
 	char *password;
+	struct timewindow timewindowstruct[2];
 } download;
-
-typedef struct timewindow {
-	time_t windowstart;
-	time_t windowend;
-	char *windowmode;
-	char *usermessage;
-	int maxretries;
-} timewindow;
 
 typedef struct timeinterval {
 	time_t windowstart;
 	time_t windowend;
 	int maxretries;
 } timeinterval;
-
-typedef struct schedule_download {
-	struct list_head list;
-	//time_t                              scheduled_time;
-	int file_size;
-	char *command_key;
-	char *file_type;
-	char *url;
-	char *username;
-	char *password;
-	struct timewindow timewindowstruct[2];
-} schedule_download;
 
 typedef struct apply_schedule_download {
 	struct list_head list;

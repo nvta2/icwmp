@@ -20,7 +20,7 @@ extern pthread_cond_t threshold_apply_schedule_download;
 extern int count_download_queue;
 
 int cwmp_free_download_request(struct download *download);
-int cwmp_free_schedule_download_request(struct schedule_download *schedule_download);
+int cwmp_free_schedule_download_request(struct download *schedule_download);
 int cwmp_free_apply_schedule_download_request(struct apply_schedule_download *apply_schedule_download);
 int cwmp_scheduledDownload_remove_all();
 int cwmp_scheduled_Download_remove_all();
