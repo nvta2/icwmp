@@ -1545,7 +1545,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 			goto fault;
 		transaction_started = true;
 	}
-	fault_code = cwmp_set_multiple_parameters_values(&list_set_param_value, parameter_key, &flag, rpc->list_set_value_fault);
+	fault_code = cwmp_set_multiple_parameters_values(&list_set_param_value, parameter_key ? parameter_key : "", &flag, rpc->list_set_value_fault);
 	if (fault_code != FAULT_CPE_NO_FAULT)
 		goto fault;
 
