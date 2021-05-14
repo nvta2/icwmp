@@ -194,12 +194,15 @@ bool cwmp_transaction_status()
 	CWMP_LOG(INFO, "Transaction Status");
 	bool status = false;
 	int e = cwmp_ubus_call("usp.raw", "transaction_status", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_status_callback, &status);
+
 	if (e != 0) {
 		CWMP_LOG(INFO, "Transaction status failed: Ubus err code: %d", e);
 		return false;
 	}
-	if (!status)
+	if (!status) {
 		CWMP_LOG(INFO, "Transaction with id: %d is not available anymore\n", transaction_id);
+	}
+
 	return status;
 }
 /*

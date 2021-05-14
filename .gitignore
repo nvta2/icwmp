@@ -27,4 +27,8 @@ missing
 .dirstamp
 .git_update
 .pkgdir/
+/config.guess
+/config.sub
+/libtool
+/ltmain.sh
 

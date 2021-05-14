@@ -1,0 +1,333 @@
+{
+    "cwmp": [
+    {
+        "section": "acs",
+        "description": "This section configure the ACS parameters, used by cwmp client",
+        "multi": false,
+        "options": [
+        {
+            "name": "url",
+            "type": "string",
+            "required": "yes",
+            "default": "",
+            "description": "URL of ACS server"
+        },
+        {
+            "name": "userid",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "Username for ACS server connection"
+        },
+        {
+            "name": "passwd",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "Password for ACS server connection"
+        },
+        {
+            "name": "periodic_inform_enable",
+            "type": "boolean",
+            "required": "no",
+            "default": "",
+            "description": "If set to **1**, the CPE must periodically open session with ACS by sending Inform message to the ACS."
+        },
+        {
+            "name": "periodic_inform_interval",
+            "type": "uinteger",
+            "required": "no",
+            "default": "",
+            "description": "The duration in seconds of the interval for which the CPE must attempt to connect with the ACS and call the Inform method."
+        },
+        {
+            "name": "periodic_inform_time",
+            "type": "uinteger",
+            "required": "no",
+            "default": "",
+            "description": "An absolute time reference to determine when the CPE will initiate the periodic Inform method calls."
+        },
+        {
+            "name": "ParameterKey",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "Provides the ACS a reliable and extensible means to track changes made by the ACS."
+        },
+        {
+            "name": "dhcp_discovery",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "if set to **enable**, the CPE will get the url of ACS from DHCP server Option 43."
+        },
+        {
+            "name": "compression",
+            "type": "boolean",
+            "required": "no",
+            "default": "",
+            "description": "if set to **1**, the CPE must use the HTTP Compression when communicating with the ACS."
+        },
+        {
+            "name": "retry_min_wait_interval",
+            "type": "uinteger",
+            "required": "no",
+            "default": "",
+            "description": "The min wait interval of rerty session (in seconds) as described in the standard."
+        },
+        {
+            "name": "retry_interval_multiplier",
+            "type": "uinteger",
+            "required": "no",
+            "default": "",
+            "description": "The retry interval mulpilier of rerty session as described in the standard."
+        },
+        {
+            "name": "https_ssl_capath",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "The path of ssl certicafications files. the ssl certification is for Upload and Downlod methods."
+        },
+        {
+            "name": "ipv6_enable",
+            "type": "boolean",
+            "required": "no",
+            "default": "",
+            "description": "Enables IPv6 in cwmp"
+        },
+        {
+            "name": "ssl_capath",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "The path of ssl certicafications files. the ssl certification is  for TR-069 sessions."
+        },
+        {
+            "name": "insecure_enable",
+            "type": "boolean",
+            "required": "no",
+            "default": "",
+            "description": "if set to **1**, the CPE checks the validity of the ACS certificates."
+        },
+        {
+            "name": "http_disable_100continue",
+            "type": "boolean",
+            "required": "no",
+            "default": "",
+            "description": "if set to **1**, disables the http 100 continue behaviour."
+        },
+        {
+            "name": "dhcp_url",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "the **url** of ACS server received from the DHCP server Option 43 when **'dhcp_discovery'** option is enabled. This option is updated automatically by the daemon."
+        },
+        {
+            "name": "ip_version",
+            "type": "string",
+            "required": "no",
+            "default": "",
+            "description": "ip_version of ConnectionRequestURL"
+        }
+        ]
+    },
+    {
+        "section": "cpe",
+        "description": "CWMP client configuration",
+        "multi": false,
+        "options": [
+	{
+		"name": "interface",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the device interface to use for connecting to ACS."
+	},
+	{
+		"name": "default_wan_interface",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the default wan interface of the device."
+	},
+	{
+		"name": "log_to_console",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "If set to **1**, the log messages will be shown in the console."
+	},
+	{
+		"name": "log_to_file",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "If set to **1**, the log messages will be saved in the log file."
+	},
+	{
+		"name": "log_severity",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the log type to use, by default **'INFO'**. The possible types are **'EMERG', 'ALERT', 'CRITIC' ,'ERROR', 'WARNING', 'NOTICE', 'INFO' and 'DEBUG'**."
+	},
+	{
+		"name": "log_file_name",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the path of the log file, by default **'/var/log/icwmpd.log'**."
+	},
+	{
+		"name": "log_max_size",
+		"type": "uinteger",
+		"required":"no",
+		"default": "",
+		"description": "Size of the log file. The default value is **102400**."
+	},
+	{
+		"name": "userid",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "The username of the device used in a connection request from ACS to CPE."
+	},
+	{
+		"name": "passwd",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "The password of the device when sending a connection request from ACS to CPE."
+	},
+	{
+		"name": "port",
+		"type": "uinteger",
+		"required":"no",
+		"default": "",
+		"description": "The port used for connection request."
+	},
+	{
+		"name": "ubus_socket",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the path of the ubus socket file, by default **'NULL'**."
+	},
+	{
+		"name": "provisioning_code",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the primary service provider and other provisioning information, which may be used by the ACS to determine service provider-specific customization and provisioning parameters."
+	},
+	{
+		"name": "amd_version",
+		"type": "uinteger",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the amendment version to use. The default amendment version is **'5'**."
+	},
+	{
+		"name": "instance_mode",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the instance mode to use, by default **'InstanceNumber'**. Two instance modes are supported: **'InstanceNumber' and 'InstanceNumber'**."
+	},
+	{
+		"name": "session_timeout",
+		"type": "uinteger",
+		"required":"no",
+		"default": "",
+		"description": "Represents the number of seconds that should be used by the ACS as the amount of time to wait before timing out a CWMP session due to the CPE not responding, by default **60**."
+	},
+	{
+		"name": "notification",
+		"type": "boolean",
+		"required":"no",
+		"default": "",
+		"description": "If set to **1**, it enables the notification feature."
+	},
+	{
+		"name": "exec_download",
+		"type": "boolean",
+		"required":"no",
+		"default": "",
+		"description": "If set to **1**, Specifies if Download method is executed."
+	},
+	{
+		"name": "manufacturer",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the manafacturer of the device, by default **iopsys**. If set, its value will be the value of **Device.DeviceInfo.Manufacturer** parameter."
+	},
+	{
+		"name": "manufacturer_oui",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the manafacturer oui of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ManufacturerOUI** parameter."
+	},
+	{
+		"name": "model_name",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the model name of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ModelName** parameter."
+	},
+	{
+		"name": "product_class",
+		"type": "string",
+		"required":"no",
+		"default": "",
+		"description": "Specifies the product class of the device, by default empty. If set, its value will be the value of **Device.DeviceInfo.ProductClass** parameter."
+	},
+	{
+		"name": "log_to_syslog",
+		"type": "boolean",
+		"required":"no",
+		"default": "",
+		"description": "If set to **1**, the cwmp log will be appended to busybox syslog."
+	},
+	{
+		"name": "periodic_notify_enable",
+		"type": "boolean",
+		"required":"no",
+		"default": "",
+		"description": "If set to **1**, icwmp will be able to detect parameter value change at any time."
+	}
+        ]
+    },
+    {
+        "section": "lwn",
+        "description": "Lightweight notification configuration",
+        "multi": false,
+        "options":[
+        {
+            "name": "enable",
+            "type": "boolean",
+            "required": "no",
+            "default": "",
+            "description": "if set to **1**, the Lightweight Notifications will be enabled. "
+        },
+        {
+            "name": "hostname",
+            "type": "host",
+            "required": "no",
+            "default": "",
+            "description": "The hostname or address to be used when sending the UDP Lightweight Notifications."
+        },
+        {
+            "name": "port",
+            "type": "port",
+            "required": "no",
+            "default": "",
+            "description": "The port number to be used when sending UDP Lightweight Notifications."
+        }
+        ]
+    }
+    ]
+}

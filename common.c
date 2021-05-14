@@ -27,11 +27,12 @@ char *commandKey = NULL;
 long int flashsize = 256000000;
 static unsigned long int next_rand_seed = 1;
 
-struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
+struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, {"ubus_socket", required_argument, NULL, 's'}, { NULL, 0, NULL, 0 } };
 
 static void show_help(void)
 {
 	printf("Usage: icwmpd [OPTIONS]\n");
+	printf(" -s, --ubus_socket                                    Ubus socket path for IPC\n");
 	printf(" -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event\n");
 	printf(" -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS\n");
 	printf(" -c, --cli                              	     CWMP CLI\n");
@@ -48,11 +49,11 @@ static void show_version()
 #endif
 }
 
-int global_env_init(int argc, char **argv, struct env *env)
+int global_env_init(int argc, char **argv, struct env *env, struct config *conf)
 {
 	int c, option_index = 0;
 
-	while ((c = getopt_long(argc, argv, "bgchv", cwmp_long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "bgchvs:", cwmp_long_options, &option_index)) != -1) {
 		switch (c) {
 		case 'b':
 			env->boot = CWMP_START_BOOT;
@@ -67,7 +68,9 @@ int global_env_init(int argc, char **argv, struct env *env)
 		case 'h':
 			show_help();
 			exit(0);
-
+		case 's':
+			conf->ubus_socket = strdup(optarg);
+			break;
 		case 'v':
 			show_version();
 			exit(0);

@@ -37,7 +37,6 @@
 #define UCI_CPE_USERID_PATH "cwmp.cpe.userid"
 #define UCI_CPE_PASSWD_PATH "cwmp.cpe.passwd"
 #define UCI_CPE_INTERFACE_PATH "cwmp.cpe.interface"
-#define UCI_CPE_UBUS_SOCKET_PATH "cwmp.cpe.ubus_socket"
 #define UCI_CPE_PORT_PATH "cwmp.cpe.port"
 #define UCI_CPE_DEFAULT_WAN_IFACE "cwmp.cpe.default_wan_interface"
 #define UCI_CPE_CRPATH_PATH "cwmp.cpe.path"
