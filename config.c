@@ -12,7 +12,7 @@
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#undef
+#endif
 #include "config.h"
 #include "cwmp_uci.h"
 #include "log.h"
