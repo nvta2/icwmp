@@ -50,7 +50,7 @@ void *thread_exit_program(void *v __attribute__((unused)))
 	exit(EXIT_SUCCESS);
 }
 
-static void add_kv_string_to_blob(struct blob_buf *bb, char *key, char *val)
+static void add_kv_string_to_blob(struct blob_buf *bb, const char *key, const char *val)
 {
 	if (val) {
 		blobmsg_add_string(bb, key, val);
@@ -84,7 +84,7 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
 			cwmp_set_end_session(END_SESSION_RELOAD);
 			blobmsg_add_u32(&b, "status", 0);
-			add_kv_string_to_blob(&b, "info", "Session running, reload at the end of the session");
+			blobmsg_add_string(&b, "info", "Session running, reload at the end of the session");
 		} else {
 			pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 			cwmp_apply_acs_changes();
@@ -182,15 +182,15 @@ static int cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj 
 	blobmsg_close_table(&b, c);
 
 	c = blobmsg_open_table(&b, "last_session");
-	add_kv_string_to_blob(&b, "status", cwmp_main.session_status.last_start_time ? arr_session_status[cwmp_main.session_status.last_status] : "N/A");
-	add_kv_string_to_blob(&b, "start_time", cwmp_main.session_status.last_start_time ? mix_get_time_of(cwmp_main.session_status.last_start_time) : "N/A");
-	add_kv_string_to_blob(&b, "end_time", cwmp_main.session_status.last_end_time ? mix_get_time_of(cwmp_main.session_status.last_end_time) : "N/A");
+	blobmsg_add_string(&b, "status", (cwmp_main.session_status.last_start_time ? arr_session_status[cwmp_main.session_status.last_status] : "N/A"));
+	blobmsg_add_string(&b, "start_time", (cwmp_main.session_status.last_start_time ? mix_get_time_of(cwmp_main.session_status.last_start_time) : "N/A"));
+	blobmsg_add_string(&b, "end_time", (cwmp_main.session_status.last_end_time ? mix_get_time_of(cwmp_main.session_status.last_end_time) : "N/A"));
 	blobmsg_close_table(&b, c);
 
 	c = blobmsg_open_table(&b, "next_session");
-	add_kv_string_to_blob(&b, "status", arr_session_status[SESSION_WAITING]);
+	blobmsg_add_string(&b, "status", arr_session_status[SESSION_WAITING]);
 	ntime = get_session_status_next_time();
-	add_kv_string_to_blob(&b, "start_time", ntime ? mix_get_time_of(ntime) : "N/A");
+	blobmsg_add_string(&b, "start_time", (ntime ? mix_get_time_of(ntime) : "N/A"));
 	add_kv_string_to_blob(&b, "end_time", "N/A");
 	blobmsg_close_table(&b, c);
 
