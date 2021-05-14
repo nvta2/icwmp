@@ -10,7 +10,9 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#undef
 #include "config.h"
 #include "cwmp_uci.h"
 #include "log.h"
