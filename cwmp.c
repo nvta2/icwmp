@@ -440,6 +440,8 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	struct env env;
 
 	memset(&env, 0, sizeof(struct env));
+	if ((error = global_env_init(argc, argv, &env)))
+		return error;
 
 	/* Only One instance should run*/
 	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
@@ -454,10 +456,6 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 		} else
 			exit(EXIT_SUCCESS);
 	}
-
-	if ((error = global_env_init(argc, argv, &env, &cwmp->conf)))
-		return error;
-
 
 	pthread_mutex_init(&cwmp->mutex_periodic, NULL);
 	pthread_mutex_init(&cwmp->mutex_session_queue, NULL);
@@ -513,8 +511,6 @@ int main(int argc, char **argv)
 	pthread_t periodic_check_notify;
 
 	struct sigaction act = { 0 };
-
-	memset(&cwmp_main, 0, sizeof(struct cwmp));
 
 	if ((error = cwmp_init(argc, argv, cwmp)))
 		return error;

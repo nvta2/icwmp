@@ -446,7 +446,7 @@ int cwmp_exit(void);
 void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type, int notification, bool writable);
 void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter);
 void cwmp_free_all_dm_parameter_list(struct list_head *list);
-int global_env_init(int argc, char **argv, struct env *env, struct config *conf);
+int global_env_init(int argc, char **argv, struct env *env);
 void cwmp_add_list_fault_param(char *param, int fault, struct list_head *list_set_value_fault);
 void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault);
 void cwmp_free_all_list_param_fault(struct list_head *list_param_fault);

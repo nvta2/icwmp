@@ -10,13 +10,9 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include "config.h"
 #include "cwmp_uci.h"
 #include "log.h"
-#include <time.h>
 
 pthread_mutex_t mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
@@ -261,6 +257,18 @@ int get_global_config(struct config *conf)
 				free(conf->cpe_passwd);
 			}
 			conf->cpe_passwd = strdup("");
+		}
+	} else {
+		return error;
+	}
+
+	if ((error = uci_get_value(UCI_CPE_UBUS_SOCKET_PATH, &value)) == CWMP_OK) {
+		if (value != NULL) {
+			if (conf->ubus_socket != NULL) {
+				free(conf->ubus_socket);
+			}
+			conf->ubus_socket = value;
+			value = NULL;
 		}
 	} else {
 		return error;
