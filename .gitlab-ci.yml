@@ -5,6 +5,7 @@ include:
 stages:
     - static_code_analysis
     - unit_test
+    - api_test
     
 variables:
   DEBUG: 'TRUE'
@@ -23,3 +24,21 @@ run_unit_test:
       paths:
          - timestamp.log
          - unit-test-coverage.xml
+
+run_api_test:
+    stage: api_test
+    image: iopsys/code-analysis-dev:latest
+    allow_failure: true
+    script:
+    - "./gitlab-ci/install-dependencies.sh"
+    - "./gitlab-ci/setup.sh"
+    - "./gitlab-ci/functional-api-test.sh"
+
+    artifacts:
+        when: always
+        reports:
+            junit: ./report/tap.xml
+        paths:
+            - timestamp.log
+            - api-test-coverage.xml
+            - memory-report.xml

@@ -7,6 +7,14 @@ source ./gitlab-ci/shared.sh
 trap cleanup EXIT
 trap cleanup SIGINT
 
+echo "Starting dependent services"
+supervisorctl status all
+supervisorctl update
+supervisorctl restart all
+supervisorctl stop icwmpd
+sleep 3
+supervisorctl status all
+
 echo "Compiling icmwp"
 autoreconf -i
 ./configure --enable-acs=multi --enable-acs=hdm --enable-icwmp-test
@@ -19,12 +27,6 @@ cp bin/.libs/libicwmp.a /usr/lib
 cp bin/.libs/libicwmp.so* /usr/lib
 mkdir /usr/include/libicwmp
 cp inc/*.h /usr/include/libicwmp
-
-echo "Starting dependent services"
-supervisorctl status all
-supervisorctl update
-sleep 3
-supervisorctl status all
 
 echo "Running the unit test cases"
 make clean -C test/cmocka/
