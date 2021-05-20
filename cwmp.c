@@ -391,6 +391,13 @@ int cwmp_exit(void)
 	return 0;
 }
 
+static void cwmp_sigterm_exit(int signo __attribute__((unused)))
+{
+	CWMP_LOG(INFO, "Catch of SIGTERM: icwmp exit");
+	cwmp_exit();
+	exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char **argv)
 {
 	struct cwmp *cwmp = &cwmp_main;
@@ -410,6 +417,11 @@ int main(int argc, char **argv)
 
 	if ((error = cwmp_init(argc, argv, cwmp)))
 		return error;
+
+	if (signal(SIGTERM, cwmp_sigterm_exit) == SIG_ERR) {
+		CWMP_LOG(INFO, "An error occurred while setting a signal handler.");
+		return EXIT_FAILURE;
+	}
 
 	CWMP_LOG(INFO, "STARTING ICWMP with PID :%d", getpid());
 	cwmp->start_time = time(NULL);
