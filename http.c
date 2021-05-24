@@ -220,7 +220,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
 	if (ip && ip[0] != '\0') {
 		if (ip_acs[0] == '\0' || strcmp(ip_acs, ip) != 0) {
-			strncpy(ip_acs, ip, strlen(ip));
+			CWMP_STRNCPY(ip_acs, ip, sizeof(ip_acs));
 			if (cwmp->conf.ipv6_enable) {
 				tmp = inet_pton(AF_INET, ip, buf);
 				if (tmp == 1)
@@ -307,7 +307,7 @@ static void http_cr_new_client(int client, bool service_available)
 			method_is_get = true;
 		if (!strncasecmp(buffer, "Authorization: Digest ", strlen("Authorization: Digest "))) {
 			auth_digest_checked = true;
-			strncpy(auth_digest_buffer, buffer, strlen(buffer));
+			CWMP_STRNCPY(auth_digest_buffer, buffer, BUFSIZ);
 		}
 
 		if (buffer[0] == '\r' || buffer[0] == '\n') {

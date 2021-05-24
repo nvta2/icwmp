@@ -654,18 +654,18 @@ error:
 
 char *xml_get_cwmp_version(int version)
 {
+	static char versions[60];
+	unsigned pos = 0;
 	int k;
-	char tmp[15] = "";
-	static char versions[60] = "";
-	versions[0] = '\0';
 
+	versions[0] = '\0';
 	for (k = 0; k < version; k++) {
-		if (k == 0)
-			sprintf(tmp, "1.%d", k);
-		else
-			sprintf(tmp, ", 1.%d", k);
-		strncat(versions, tmp, strlen(tmp));
+		pos += snprintf(&versions[pos], sizeof(versions) - pos, "1.%d, ", k);
 	}
+
+	if (pos)
+		versions[pos - 2] = 0;
+
 	return versions;
 }
 

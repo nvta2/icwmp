@@ -272,7 +272,7 @@ int cwmp_uci_get_value_common(char *cmd, char **value, bool state)
 		return CWMP_GEN_ERR;
 	}
 	if (state) {
-		strncpy(state_path, VARSTATE_CONFIG, strlen(VARSTATE_CONFIG));
+		CWMP_STRNCPY(state_path, VARSTATE_CONFIG, sizeof(state_path));
 		uci_add_delta_path(c, c->savedir);
 		uci_set_savedir(c, state_path);
 	}
@@ -351,7 +351,7 @@ int uci_set_value(char *path, char *value, uci_config_action action)
 	}
 
 	if (action == CWMP_CMD_SET_STATE) {
-		strncpy(state_path, VARSTATE_CONFIG, strlen(VARSTATE_CONFIG));
+		CWMP_STRNCPY(state_path, VARSTATE_CONFIG, sizeof(state_path));
 		uci_add_delta_path(c, c->savedir);
 		uci_set_savedir(c, state_path);
 	}

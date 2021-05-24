@@ -512,4 +512,10 @@ void icwmp_cleanmem();
 	} while (0)
 #endif
 
+#define CWMP_STRNCPY(DST, SRC, SIZE) \
+do { \
+	strncpy(DST, SRC, SIZE-1); \
+	DST[SIZE-1] = '\0'; \
+} while(0)
+
 #endif

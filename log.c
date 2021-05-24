@@ -42,9 +42,9 @@ int log_set_severity_idx(char *value)
 int log_set_log_file_name(char *value)
 {
 	if (value != NULL) {
-		strncpy(log_file_name, value, strlen(value));
+		CWMP_STRNCPY(log_file_name, value, sizeof(log_file_name));
 	} else {
-		strncpy(log_file_name, DEFAULT_LOG_FILE_NAME, strlen(DEFAULT_LOG_FILE_NAME));
+		CWMP_STRNCPY(log_file_name, DEFAULT_LOG_FILE_NAME, sizeof(log_file_name));
 	}
 	return 1;
 }
@@ -121,7 +121,7 @@ void puts_log(int severity, const char *fmt, ...)
 	Tm = localtime(&tv.tv_sec);
 	i = snprintf(buf, sizeof(buf), "%02d-%02d-%4d, %02d:%02d:%02d %s ", Tm->tm_mday, Tm->tm_mon + 1, Tm->tm_year + 1900, Tm->tm_hour, Tm->tm_min, Tm->tm_sec, SEVERITY_NAMES[severity]);
 	if (strlen(log_file_name) == 0) {
-		strncpy(log_file_name, DEFAULT_LOG_FILE_NAME, strlen(DEFAULT_LOG_FILE_NAME));
+		CWMP_STRNCPY(log_file_name, DEFAULT_LOG_FILE_NAME, sizeof(log_file_name));
 	}
 	if (enable_log_file) {
 		if (stat(log_file_name, &st) == 0) {
@@ -138,7 +138,7 @@ void puts_log(int severity, const char *fmt, ...)
 	va_start(args, fmt);
 	i += vsprintf(buf + i, (const char *)fmt, args);
 	if (enable_log_file) {
-		strncpy(buf_file, buf, strlen(buf));
+		CWMP_STRNCPY(buf_file, buf, sizeof(buf_file));
 		buf_file[strlen(buf)] = '\n';
 		buf_file[strlen(buf) + 1] = '\0';
 		fputs(buf_file, pLog);
@@ -184,7 +184,7 @@ void puts_log_xmlmsg(int severity, char *msg, int msgtype)
 	Tm = localtime(&tv.tv_sec);
 	snprintf(buf, sizeof(buf), "%02d-%02d-%4d, %02d:%02d:%02d %s ", Tm->tm_mday, Tm->tm_mon + 1, Tm->tm_year + 1900, Tm->tm_hour, Tm->tm_min, Tm->tm_sec, SEVERITY_NAMES[severity]);
 	if (strlen(log_file_name) == 0) {
-		strncpy(log_file_name, DEFAULT_LOG_FILE_NAME, strlen(DEFAULT_LOG_FILE_NAME));
+		CWMP_STRNCPY(log_file_name, DEFAULT_LOG_FILE_NAME, sizeof(log_file_name));
 	}
 
 	if (msgtype == XML_MSG_IN) {
