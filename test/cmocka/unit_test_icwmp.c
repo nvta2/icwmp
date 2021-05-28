@@ -221,7 +221,6 @@ void dm_add_object_test(void **state)
 	 */
 	cwmp_transaction_start("cwmp");
 	fault = cwmp_add_object("Device.WiFi.SSID.", "add_ssid", &instance);
-	//printf("%s:%s line %d %s\n", __FILE__, __FUNCTION__, __LINE__, instance);
 	assert_non_null(instance);
 	assert_null(fault);
 	cwmp_transaction_commit();

@@ -4,6 +4,9 @@
 #define DOWNLOAD_PROTOCOL_HTTP "http://"
 #define DOWNLOAD_PROTOCOL_HTTPS "https://"
 #define DOWNLOAD_PROTOCOL_FTP "ftp://"
+#define ICWMP_DOWNLOAD_FILE "/tmp/icwmp_download"
+#define FIRMWARE_UPGRADE_IMAGE "/tmp/firmware.bin"
+
 #define MAX_DOWNLOAD_QUEUE 10
 
 extern struct list_head list_download;

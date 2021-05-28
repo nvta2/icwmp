@@ -85,6 +85,7 @@ void ubus_check_image_callback(struct ubus_request *req, int type __attribute__(
 int cwmp_check_image()
 {
 	int code, e;
+	CWMP_LOG(INFO, "Check downloaded image ...");
 	e = cwmp_ubus_call("rpc-sys", "upgrade_test", CWMP_UBUS_ARGS{ {} }, 0, ubus_check_image_callback, &code);
 	if (e != 0) {
 		CWMP_LOG(INFO, "rpc-sys upbrade_test ubus method failed: Ubus err code: %d", e);
@@ -94,15 +95,77 @@ int cwmp_check_image()
 }
 
 /*
+ * Get available bank
+ */
+void ubus_get_available_bank_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	int *bank_id = (int *)req->priv;
+	struct blob_attr *banks = NULL;
+	struct blob_attr *cur;
+	int rem;
+
+	blobmsg_for_each_attr(cur, msg, rem)
+	{
+		if (blobmsg_type(cur) == BLOBMSG_TYPE_ARRAY) {
+			banks = cur;
+			break;
+		}
+	}
+
+	const struct blobmsg_policy p[8] = { { "name", BLOBMSG_TYPE_STRING },  { "id", BLOBMSG_TYPE_INT32 },	 { "active", BLOBMSG_TYPE_BOOL },  { "upgrade", BLOBMSG_TYPE_BOOL },
+					     { "fwver", BLOBMSG_TYPE_STRING }, { "swver", BLOBMSG_TYPE_STRING }, { "fwver", BLOBMSG_TYPE_STRING }, { "status", BLOBMSG_TYPE_STRING } };
+
+	blobmsg_for_each_attr(cur, banks, rem)
+	{
+		struct blob_attr *tb[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+		blobmsg_parse(p, 8, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
+			continue;
+
+		if (blobmsg_get_bool(tb[2]) == false) {
+			*bank_id = blobmsg_get_u32(tb[1]);
+			break;
+		}
+	}
+}
+
+int get_available_bank_id()
+{
+	int bank_id = 0, e;
+	e = cwmp_ubus_call("fwbank", "dump", CWMP_UBUS_ARGS{ {} }, 0, ubus_get_available_bank_callback, &bank_id);
+	if (e != 0) {
+		CWMP_LOG(INFO, "fwbank dump ubus method failed: Ubus err code: %d", e);
+	}
+	return bank_id;
+}
+
+/*
  * Apply the new firmware
  */
-void cwmp_apply_firmware()
+int cwmp_apply_firmware()
 {
 	int e;
-	e = cwmp_ubus_call("rpc-sys", "upgrade_start", CWMP_UBUS_ARGS{ { "keep", {.bool_val = true }, UBUS_Bool } }, 1, NULL, NULL);
+	CWMP_LOG(INFO, "Apply downloaded image ...");
+	e = cwmp_ubus_call("rpc-sys", "upgrade_start", CWMP_UBUS_ARGS{ { "keep", { .bool_val = true }, UBUS_Bool } }, 1, NULL, NULL);
 	if (e != 0) {
 		CWMP_LOG(INFO, "rpc-sys upgrade_start ubus method failed: Ubus err code: %d", e);
 	}
+	return e;
+}
+
+int cwmp_apply_multiple_firmware()
+{
+	int e;
+	int bank_id = get_available_bank_id();
+	if (bank_id <= 0)
+		return -1;
+
+	e = cwmp_ubus_call("fwbank", "upgrade", CWMP_UBUS_ARGS{ { "path", { .str_val = FIRMWARE_UPGRADE_IMAGE }, UBUS_String }, { "auto_activate", { .bool_val = false }, UBUS_Bool }, { "bank", { .int_val = bank_id }, UBUS_Integer } }, 3, NULL, NULL);
+	if (e != 0) {
+		CWMP_LOG(INFO, "fwbank upgrade ubus method failed: Ubus err code: %d", e);
+		return -1;
+	}
+	return CWMP_OK;
 }
 
 int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struct transfer_complete **ptransfer_complete)
@@ -132,7 +195,7 @@ int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struc
 	if (error != FAULT_CPE_NO_FAULT)
 		goto end_download;
 
-	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
+	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0 || strcmp(pdownload->file_type, "6 Stored Firmware Image") == 0) {
 		rename(ICWMP_DOWNLOAD_FILE, FIRMWARE_UPGRADE_IMAGE);
 		if (cwmp_check_image() == 0) {
 			long int file_size = get_file_size(FIRMWARE_UPGRADE_IMAGE);
@@ -188,7 +251,8 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 	bkp_session_save();
 	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
 		uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
-		cwmp_apply_firmware();
+		if (cwmp_apply_firmware() != 0)
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 		sleep(70);
 		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 	} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
@@ -205,9 +269,17 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 			error = FAULT_CPE_INTERNAL_ERROR;
 		else if (err == -1)
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+	} else if (strcmp(pdownload->file_type, "6 Stored Firmware Image") == 0) {
+		int err = cwmp_apply_multiple_firmware();
+		if (err == CWMP_OK)
+			error = FAULT_CPE_NO_FAULT;
+		else
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 	}
 
 	if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
+		uci_set_value(UCI_ACS_PARAMETERKEY_PATH, pdownload->command_key ? pdownload->command_key : "", CWMP_CMD_SET);
+		cwmp_commit_package("cwmp");
 		if (pdownload->file_type[0] == '3') {
 			CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
 		}
@@ -280,8 +352,6 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					error = apply_downloaded_file(cwmp, pdownload, ptransfer_complete);
-					if (error == FAULT_CPE_NO_FAULT)
-						exit(EXIT_SUCCESS);
 				}
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));

@@ -51,8 +51,6 @@
 
 extern char *commandKey;
 #define FIREWALL_CWMP "/etc/firewall.cwmp"
-#define ICWMP_DOWNLOAD_FILE "/tmp/icwmp_download"
-#define FIRMWARE_UPGRADE_IMAGE "/tmp/firmware.bin"
 
 typedef struct env {
 	unsigned short boot;
@@ -490,7 +488,7 @@ int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_t
 int download_file(const char *file_path, const char *url, const char *username, const char *password);
 long int get_file_size(char *file_name);
 int cwmp_check_image();
-void cwmp_apply_firmware();
+int cwmp_apply_firmware();
 int opkg_install_package(char *package_path);
 int copy(const char *from, const char *to);
 int icwmp_rand(void);
@@ -505,12 +503,12 @@ int icwmp_asprintf(char **s, const char *format, ...);
 void icwmp_free(void *m);
 void icwmp_cleanmem();
 #ifndef FREE
-#define FREE(x)                   \
-	do {                      \
-		if (x) {          \
-			free(x);  \
-			x = NULL; \
-		}                 \
+#define FREE(x)                                                                                                                                                                                                                                                                                            \
+	do {                                                                                                                                                                                                                                                                                               \
+		if (x) {                                                                                                                                                                                                                                                                                   \
+			free(x);                                                                                                                                                                                                                                                                           \
+			x = NULL;                                                                                                                                                                                                                                                                          \
+		}                                                                                                                                                                                                                                                                                          \
 	} while (0)
 #endif
 

@@ -38,28 +38,29 @@ static const char *xsi_url = "http://www.w3.org/2001/XMLSchema-instance";
 
 static const char *cwmp_urls[] = { "urn:dslforum-org:cwmp-1-0", "urn:dslforum-org:cwmp-1-1", "urn:dslforum-org:cwmp-1-2", "urn:dslforum-org:cwmp-1-2", "urn:dslforum-org:cwmp-1-2", NULL };
 
-const struct rpc_cpe_method rpc_cpe_methods[] = {[RPC_CPE_GET_RPC_METHODS] = { "GetRPCMethods", cwmp_handle_rpc_cpe_get_rpc_methods, AMD_1 },
-						 [RPC_CPE_SET_PARAMETER_VALUES] = { "SetParameterValues", cwmp_handle_rpc_cpe_set_parameter_values, AMD_1 },
-						 [RPC_CPE_GET_PARAMETER_VALUES] = { "GetParameterValues", cwmp_handle_rpc_cpe_get_parameter_values, AMD_1 },
-						 [RPC_CPE_GET_PARAMETER_NAMES] = { "GetParameterNames", cwmp_handle_rpc_cpe_get_parameter_names, AMD_1 },
-						 [RPC_CPE_SET_PARAMETER_ATTRIBUTES] = { "SetParameterAttributes", cwmp_handle_rpc_cpe_set_parameter_attributes, AMD_1 },
-						 [RPC_CPE_GET_PARAMETER_ATTRIBUTES] = { "GetParameterAttributes", cwmp_handle_rpc_cpe_get_parameter_attributes, AMD_1 },
-						 [RPC_CPE_ADD_OBJECT] = { "AddObject", cwmp_handle_rpc_cpe_add_object, AMD_1 },
-						 [RPC_CPE_DELETE_OBJECT] = { "DeleteObject", cwmp_handle_rpc_cpe_delete_object, AMD_1 },
-						 [RPC_CPE_REBOOT] = { "Reboot", cwmp_handle_rpc_cpe_reboot, AMD_1 },
-						 [RPC_CPE_DOWNLOAD] = { "Download", cwmp_handle_rpc_cpe_download, AMD_1 },
-						 [RPC_CPE_UPLOAD] = { "Upload", cwmp_handle_rpc_cpe_upload, AMD_1 },
-						 [RPC_CPE_FACTORY_RESET] = { "FactoryReset", cwmp_handle_rpc_cpe_factory_reset, AMD_1 },
-						 [RPC_CPE_CANCEL_TRANSFER] = { "CancelTransfer", cwmp_handle_rpc_cpe_cancel_transfer, AMD_3 },
-						 [RPC_CPE_SCHEDULE_INFORM] = { "ScheduleInform", cwmp_handle_rpc_cpe_schedule_inform, AMD_1 },
-						 [RPC_CPE_SCHEDULE_DOWNLOAD] = { "ScheduleDownload", cwmp_handle_rpc_cpe_schedule_download, AMD_3 },
-						 [RPC_CPE_CHANGE_DU_STATE] = { "ChangeDUState", cwmp_handle_rpc_cpe_change_du_state, AMD_3 },
-						 [RPC_CPE_X_FACTORY_RESET_SOFT] = { "X_FactoryResetSoft", cwmp_handle_rpc_cpe_x_factory_reset_soft, AMD_1 },
-						 [RPC_CPE_FAULT] = { "Fault", cwmp_handle_rpc_cpe_fault, AMD_1 } };
+const struct rpc_cpe_method rpc_cpe_methods[] = { [RPC_CPE_GET_RPC_METHODS] = { "GetRPCMethods", cwmp_handle_rpc_cpe_get_rpc_methods, AMD_1 },
+						  [RPC_CPE_SET_PARAMETER_VALUES] = { "SetParameterValues", cwmp_handle_rpc_cpe_set_parameter_values, AMD_1 },
+						  [RPC_CPE_GET_PARAMETER_VALUES] = { "GetParameterValues", cwmp_handle_rpc_cpe_get_parameter_values, AMD_1 },
+						  [RPC_CPE_GET_PARAMETER_NAMES] = { "GetParameterNames", cwmp_handle_rpc_cpe_get_parameter_names, AMD_1 },
+						  [RPC_CPE_SET_PARAMETER_ATTRIBUTES] = { "SetParameterAttributes", cwmp_handle_rpc_cpe_set_parameter_attributes, AMD_1 },
+						  [RPC_CPE_GET_PARAMETER_ATTRIBUTES] = { "GetParameterAttributes", cwmp_handle_rpc_cpe_get_parameter_attributes, AMD_1 },
+						  [RPC_CPE_ADD_OBJECT] = { "AddObject", cwmp_handle_rpc_cpe_add_object, AMD_1 },
+						  [RPC_CPE_DELETE_OBJECT] = { "DeleteObject", cwmp_handle_rpc_cpe_delete_object, AMD_1 },
+						  [RPC_CPE_REBOOT] = { "Reboot", cwmp_handle_rpc_cpe_reboot, AMD_1 },
+						  [RPC_CPE_DOWNLOAD] = { "Download", cwmp_handle_rpc_cpe_download, AMD_1 },
+						  [RPC_CPE_UPLOAD] = { "Upload", cwmp_handle_rpc_cpe_upload, AMD_1 },
+						  [RPC_CPE_FACTORY_RESET] = { "FactoryReset", cwmp_handle_rpc_cpe_factory_reset, AMD_1 },
+						  [RPC_CPE_CANCEL_TRANSFER] = { "CancelTransfer", cwmp_handle_rpc_cpe_cancel_transfer, AMD_3 },
+						  [RPC_CPE_SCHEDULE_INFORM] = { "ScheduleInform", cwmp_handle_rpc_cpe_schedule_inform, AMD_1 },
+						  [RPC_CPE_SCHEDULE_DOWNLOAD] = { "ScheduleDownload", cwmp_handle_rpc_cpe_schedule_download, AMD_3 },
+						  [RPC_CPE_CHANGE_DU_STATE] = { "ChangeDUState", cwmp_handle_rpc_cpe_change_du_state, AMD_3 },
+						  [RPC_CPE_X_FACTORY_RESET_SOFT] = { "X_FactoryResetSoft", cwmp_handle_rpc_cpe_x_factory_reset_soft, AMD_1 },
+						  [RPC_CPE_FAULT] = { "Fault", cwmp_handle_rpc_cpe_fault, AMD_1 } };
 
-const struct rpc_acs_method rpc_acs_methods[] = {[RPC_ACS_INFORM] = { "Inform", cwmp_rpc_acs_prepare_message_inform, cwmp_rpc_acs_parse_response_inform, cwmp_rpc_acs_destroy_data_inform }, [RPC_ACS_GET_RPC_METHODS] = { "GetRPCMethods", cwmp_rpc_acs_prepare_get_rpc_methods, NULL, NULL },
-						 [RPC_ACS_TRANSFER_COMPLETE] = { "TransferComplete", cwmp_rpc_acs_prepare_transfer_complete, NULL, cwmp_rpc_acs_destroy_data_transfer_complete },
-						 [RPC_ACS_DU_STATE_CHANGE_COMPLETE] = { "DUStateChangeComplete", cwmp_rpc_acs_prepare_du_state_change_complete, NULL, cwmp_rpc_acs_destroy_data_du_state_change_complete }
+const struct rpc_acs_method rpc_acs_methods[] = { [RPC_ACS_INFORM] = { "Inform", cwmp_rpc_acs_prepare_message_inform, cwmp_rpc_acs_parse_response_inform, cwmp_rpc_acs_destroy_data_inform },
+						  [RPC_ACS_GET_RPC_METHODS] = { "GetRPCMethods", cwmp_rpc_acs_prepare_get_rpc_methods, NULL, NULL },
+						  [RPC_ACS_TRANSFER_COMPLETE] = { "TransferComplete", cwmp_rpc_acs_prepare_transfer_complete, NULL, cwmp_rpc_acs_destroy_data_transfer_complete },
+						  [RPC_ACS_DU_STATE_CHANGE_COMPLETE] = { "DUStateChangeComplete", cwmp_rpc_acs_prepare_du_state_change_complete, NULL, cwmp_rpc_acs_destroy_data_du_state_change_complete }
 
 };
 
@@ -68,10 +69,10 @@ char *forced_inform_parameters[] = {
 };
 
 static mxml_node_t * /* O - Element node or NULL */
-	mxmlFindElementOpaque(mxml_node_t *node, /* I - Current node */
-			      mxml_node_t *top, /* I - Top node */
-			      const char *text, /* I - Element text, if NULL return NULL */
-			      int descend) /* I - Descend into tree - MXML_DESCEND, MXML_NO_DESCEND, or MXML_DESCEND_FIRST */
+mxmlFindElementOpaque(mxml_node_t *node, /* I - Current node */
+		      mxml_node_t *top, /* I - Top node */
+		      const char *text, /* I - Element text, if NULL return NULL */
+		      int descend) /* I - Descend into tree - MXML_DESCEND, MXML_NO_DESCEND, or MXML_DESCEND_FIRST */
 {
 	if (!node || !top || !text)
 		return (NULL);
@@ -2386,7 +2387,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
 
-	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "6 CWMP CA SSL Certificate File")) {
+	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "6 Stored Firmware Image")) {
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	} else if (count_download_queue >= MAX_DOWNLOAD_QUEUE) {
 		error = FAULT_CPE_RESOURCES_EXCEEDED;
@@ -2551,7 +2552,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
-	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "4 Tone File") && strcmp(file_type, "5 Ringer File") && strcmp(file_type, "6 CWMP CA SSL Certificate File")) {
+	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "4 Tone File") && strcmp(file_type, "5 Ringer File") && strcmp(file_type, "6 Stored Firmware Image")) {
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	} else if ((strcmp(windowmode0, "1 At Any Time") && strcmp(windowmode0, "2 Immediately") && strcmp(windowmode0, "3 When Idle")) || (strcmp(windowmode1, "1 At Any Time") && strcmp(windowmode1, "2 Immediately") && strcmp(windowmode1, "3 When Idle"))) {
 		error = FAULT_CPE_REQUEST_DENIED;

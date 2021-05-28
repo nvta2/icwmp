@@ -347,6 +347,8 @@ int opkg_install_package(char *package_path)
 	char path[1035];
 	char cmd[512];
 
+	CWMP_LOG(INFO, "Apply downloaded config ...");
+
 	snprintf(cmd, sizeof(cmd), "opkg --force-depends --force-maintainer install %s", package_path);
 	if (cmd == NULL)
 		return -1;
