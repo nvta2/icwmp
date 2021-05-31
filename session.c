@@ -18,7 +18,7 @@
 unsigned int end_session_flag = 0;
 
 void cwmp_set_end_session(unsigned int flag)
-{ //
+{
 	end_session_flag |= flag;
 }
 

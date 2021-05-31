@@ -79,6 +79,8 @@ typedef struct config {
 	int period;
 	int periodic_notify_interval;
 	int compression;
+	int delay_reboot;
+	time_t schedule_reboot;
 	time_t time;
 	bool periodic_enable;
 	bool periodic_notify_enable;

@@ -18,11 +18,9 @@
 
 extern pthread_mutex_t mutex_config_load;
 
-int get_amd_version_config();
-int get_instance_mode_config();
-int get_session_timeout_config();
-int cwmp_config_reload(struct cwmp *cwmp);
-int global_conf_init(struct config *conf);
+int global_conf_init(struct cwmp *cwmp);
 int get_global_config(struct config *conf);
 int cwmp_get_deviceid(struct cwmp *cwmp);
+int cwmp_config_reload(struct cwmp *cwmp);
+
 #endif

@@ -27,6 +27,7 @@ icwmpd_SOURCES =			\
 	../sched_inform.c		\
 	../xml.c				\
 	../diagnostic.c			\
+	../reboot.c 			\
 	../cwmp.c	
 
 icwmpd_CFLAGS =			\
@@ -94,7 +95,8 @@ libicwmp_la_SOURCES =				\
 	../upload.c				\
 	../sched_inform.c		\
 	../xml.c				\
-	../diagnostic.c
+	../diagnostic.c 		\
+	../reboot.c
 
 libicwmp_la_CFLAGS=-I../inc
 libicwmp_la_LDFLAGS= $(AM_LIBS) -luci -lubox -lubus $(MICROXML_LIBS) $(LIBCURL_LIBS) -lpthread -lcrypto -lssl -ljson-c -lblobmsg_json -lz -lm

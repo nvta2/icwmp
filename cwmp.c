@@ -147,8 +147,13 @@ end:
 	return session->error;
 }
 
-int run_session_end_func()
+int run_session_end_func(void)
 {
+	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
+		cwmp_transaction_commit();
+		transaction_started = false;
+	}
+	
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
 		cwmp_apply_acs_changes();
@@ -157,10 +162,6 @@ int run_session_end_func()
 	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
 		CWMP_LOG(INFO, "SetParameterAttributes end session: update enabled notify file");
 		cwmp_update_enabled_notify_file();
-	}
-	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
-		cwmp_transaction_commit();
-		transaction_started = false;
 	}
 
 	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC) {
@@ -359,7 +360,7 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	memcpy(&(cwmp->env), &env, sizeof(struct env));
 	INIT_LIST_HEAD(&(cwmp->head_session_queue));
 
-	if ((error = global_conf_init(&(cwmp->conf))))
+	if ((error = global_conf_init(cwmp)))
 		return error;
 
 	cwmp_get_deviceid(cwmp);
