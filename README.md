@@ -37,7 +37,7 @@ config lwn 'lwn'
 	option port ''
 ```
 
-For more info on the `cwmp` UCI configuration see [link](./docs/api/uci.cwmp.md)
+For more info on the `cwmp` UCI configuration see [link](./docs/api/uci.cwmp.md) or [raw schema](./schemas/uci/cwmp.json)
 
 ## RPCs Method supported
 
@@ -112,6 +112,9 @@ You could set the uci config `cwmp.cpe.log_severity` option to `'DEBUG'` in orde
 
 icwmpd must be launched on startup after ubusd. It exposes the CWMP functionality over ubus. The icwmpd registers `tr069` namespaces with ubus, that has the shown below functionalities:
 
+For more info on the `tr069` ubus schema see [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
+
+### tr069 ubus examples
 ```bash
 root@iopsys:~# ubus -v list tr069
 'tr069' @04d3de4e

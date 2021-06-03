@@ -1,0 +1,206 @@
+{
+  "definitions": {
+    "command_t": {
+      "type": "string",
+      "description": "CWMP supported commands",
+      "enum": [
+        "reload_end_session",
+        "reload",
+        "reboot_end_session",
+        "action_end_session",
+        "exit"
+      ]
+    },
+    "event_t": {
+      "type": "string",
+      "description": "CWMP ubus supported events",
+      "enum": [
+        "1 BOOT",
+        "2 PERIODIC",
+        "3 SCHEDULED",
+        "4 VALUE CHANGE",
+        "6 CONNECTION REQUEST",
+        "8 DIAGNOSTICS COMPLETE"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://www.iopsys.eu/tr069.json",
+  "type": "object",
+  "title": "tr069",
+  "object": "tr069",
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "title": "Get CWMP running status",
+      "description": "List down cwmp status with last session, next session and session statistics details",
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "object",
+          "properties": {}
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "cwmp": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "start_time": {
+                  "type": "string"
+                },
+                "acs_url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "start_time",
+                "acs_url"
+              ]
+            },
+            "last_session": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "start_time": {
+                  "type": "string"
+                },
+                "end_time": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "start_time",
+                "end_time"
+              ]
+            },
+            "next_session": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "start_time": {
+                  "type": "string"
+                },
+                "end_time": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "start_time",
+                "end_time"
+              ]
+            },
+            "statistics": {
+              "type": "object",
+              "properties": {
+                "success_sessions": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "failure_sessions": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "total_sessions": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "success_sessions",
+                "failure_sessions",
+                "total_sessions"
+              ]
+            }
+          },
+          "required": [
+            "cwmp",
+            "last_session",
+            "next_session",
+            "statistics"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "output"
+      ]
+    },
+    "command": {
+      "title": "Ubus method to define cwmp client action",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": [
+            "command"
+          ],
+          "properties": {
+            "command": {
+              "$ref": "#/definitions/command_t"
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "integer"
+            },
+            "info": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ]
+        }
+      }
+    },
+    "inform": {
+      "title": "Ubus method to handle RPC",
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "GetRPCMethods": {
+              "type": "boolean",
+              "description": "If enabled, sends GetRPCMethods to acs"
+            },
+            "event": {
+              "$ref": "#/definitions/event_t"
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "integer"
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
