@@ -40,12 +40,12 @@ int download_file(const char *file_path, const char *url, const char *username, 
 	int res_code = 0;
 	CURL *curl = curl_easy_init();
 	if (curl) {
-		char *userpass = NULL;
+		char userpass[1024];
 		curl_easy_setopt(curl, CURLOPT_URL, url);
 		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
 		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 		if (username != NULL && strlen(username) > 0) {
-			cwmp_asprintf(&userpass, "%s:%s", username, password);
+			snprintf(userpass, sizeof(userpass), "%s:%s", username, password);
 			curl_easy_setopt(curl, CURLOPT_USERPWD, userpass);
 		}
 		if (strncmp(url, "https://", 8) == 0)
@@ -64,7 +64,6 @@ int download_file(const char *file_path, const char *url, const char *username, 
 		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_code);
 
 		curl_easy_cleanup(curl);
-		FREE(userpass);
 	}
 
 	return res_code;

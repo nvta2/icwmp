@@ -47,10 +47,9 @@ void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type
 		blobmsg_parse(p, 4, tb, blobmsg_data(cur), blobmsg_len(cur));
 		if (!tb[0])
 			continue;
-		char *notif_line = NULL;
-		cwmp_asprintf(&notif_line, "parameter:%s notifcation:%s type:%s value:%s", blobmsg_get_string(tb[0]), tb[3] ? blobmsg_get_string(tb[3]) : "", tb[2] ? blobmsg_get_string(tb[2]) : "", tb[1] ? blobmsg_get_string(tb[1]) : "");
+		char notif_line[1024];
+		snprintf(notif_line, sizeof(notif_line), "parameter:%s notifcation:%s type:%s value:%s", blobmsg_get_string(tb[0]), tb[3] ? blobmsg_get_string(tb[3]) : "", tb[2] ? blobmsg_get_string(tb[2]) : "", tb[1] ? blobmsg_get_string(tb[1]) : "");
 		fprintf(fp, "%s\n", notif_line);
-		FREE(notif_line);
 	}
 	fclose(fp);
 }
@@ -213,13 +212,12 @@ static void udplw_server_param(struct addrinfo **res)
 	struct addrinfo hints = { 0 };
 	struct cwmp *cwmp = &cwmp_main;
 	struct config *conf;
-	char *port;
+	char port[32];
 	conf = &(cwmp->conf);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
-	cwmp_asprintf(&port, "%d", conf->lw_notification_port);
+	snprintf(port, sizeof(port), "%d", conf->lw_notification_port);
 	getaddrinfo(conf->lw_notification_hostname, port, &hints, res);
-	//FREE(port);
 }
 
 static void message_compute_signature(char *msg_out, char *signature)
@@ -283,7 +281,7 @@ static void free_all_list_lw_notify()
 
 void cwmp_lwnotification()
 {
-	char *msg, *msg_out;
+	char msg[1024], *msg_out;
 	char signature[41];
 	struct addrinfo *servaddr;
 	struct cwmp *cwmp = &cwmp_main;
@@ -293,11 +291,10 @@ void cwmp_lwnotification()
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
 	message_compute_signature(msg_out, signature);
-	cwmp_asprintf(&msg, "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
+	snprintf(msg, sizeof(msg), "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
 
 	send_udp_message(servaddr, msg);
 	free_all_list_lw_notify();
 	//freeaddrinfo(servaddr); //To check
-	FREE(msg);
 	FREE(msg_out);
 }

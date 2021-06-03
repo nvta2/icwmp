@@ -215,7 +215,7 @@ void ubus_get_single_parameter_callback(struct ubus_request *req, int type __att
 		int fault_code = get_fault(msg);
 		result->name = NULL;
 		result->type = NULL;
-		cwmp_asprintf(&result->value, "%d", fault_code);
+		icwmp_asprintf(&result->value, "%d", fault_code);
 		return;
 	}
 	const struct blobmsg_policy p[3] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING } };
@@ -227,9 +227,9 @@ void ubus_get_single_parameter_callback(struct ubus_request *req, int type __att
 		blobmsg_parse(p, 3, tb, blobmsg_data(cur), blobmsg_len(cur));
 		if (!tb[0])
 			continue;
-		result->name = strdup(blobmsg_get_string(tb[0]));
-		result->value = strdup(tb[1] ? blobmsg_get_string(tb[1]) : "");
-		result->type = strdup(tb[2] ? blobmsg_get_string(tb[2]) : "");
+		result->name = icwmp_strdup(blobmsg_get_string(tb[0]));
+		result->value = icwmp_strdup(tb[1] ? blobmsg_get_string(tb[1]) : "");
+		result->type = icwmp_strdup(tb[2] ? blobmsg_get_string(tb[2]) : "");
 		break;
 	}
 }
@@ -240,7 +240,7 @@ char *cwmp_get_single_parameter_value(char *parameter_name, struct cwmp_dm_param
 	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_single_parameter_callback, dm_parameter);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 
 	if (dm_parameter->name == NULL) {
@@ -274,11 +274,13 @@ char *cwmp_get_parameter_values(char *parameter_name, struct list_head *paramete
 	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 
-	if (get_result.type == FAULT)
-		return strdup(get_result.fault);
+	if (get_result.type == FAULT) {
+		CWMP_LOG(INFO, "Get parameter_values failed: fault_code: %s", get_result.fault);
+		return icwmp_strdup(get_result.fault);
+	}
 	return NULL;
 }
 
@@ -289,12 +291,12 @@ char *cwmp_get_parameter_names(char *object_name, bool next_level, struct list_h
 	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "next-level", {.bool_val = next_level }, UBUS_Bool }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 3, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "object_names ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 
 	if (get_result.type == FAULT) {
-		CWMP_LOG(INFO, "Get parameter_values failed: fault_code: %s", get_result.fault);
-		return strdup(get_result.fault);
+		CWMP_LOG(INFO, "GetParameterNames failed: fault_code: %s", get_result.fault);
+		return icwmp_strdup(get_result.fault);
 	}
 
 	return NULL;
@@ -394,11 +396,11 @@ char *cwmp_add_object(char *object_name, char *key, char **instance)
 
 	if (e < 0) {
 		CWMP_LOG(INFO, "add_object ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 	if (add_result.status == false) {
 		CWMP_LOG(INFO, "AddObject failed");
-		return strdup(add_result.fault);
+		return icwmp_strdup(add_result.fault);
 	}
 	return NULL;
 }
@@ -411,12 +413,12 @@ char *cwmp_delete_object(char *object_name, char *key)
 			   ubus_objects_callback, &add_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "del_object ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 
 	if (add_result.status == false) {
 		CWMP_LOG(INFO, "DeleteObject failed");
-		return strdup(add_result.fault);
+		return icwmp_strdup(add_result.fault);
 	}
 
 	return NULL;
@@ -450,12 +452,12 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 			   ubus_parameter_attributes_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "getm_attributes ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 
 	if (get_result.type == FAULT) {
 		CWMP_LOG(INFO, "GetParameterAttributes failed");
-		return strdup(get_result.fault);
+		return icwmp_strdup(get_result.fault);
 	}
 
 	return NULL;
@@ -471,12 +473,12 @@ char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 			   3, ubus_parameter_attributes_callback, &set_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "setm_attributes ubus method failed: Ubus err code: %d", e);
-		return strdup("9002");
+		return "9002";
 	}
 
 	if (set_result.type == FAULT) {
 		CWMP_LOG(INFO, "SetParameterAttributes failed");
-		return strdup(set_result.fault);
+		return icwmp_strdup(set_result.fault);
 	}
 
 	return NULL;

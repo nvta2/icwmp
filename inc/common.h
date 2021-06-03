@@ -486,7 +486,6 @@ void cwmp_factory_reset();
 void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name);
 int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_type);
 int download_file(const char *file_path, const char *url, const char *username, const char *password);
-int upload_file(const char *file_path, const char *url, const char *username, const char *password);
 long int get_file_size(char *file_name);
 int cwmp_check_image();
 void cwmp_apply_firmware();
@@ -496,6 +495,13 @@ int icwmp_rand(void);
 void icwmp_srand(unsigned int seed);
 int cwmp_get_fault_code(int fault_code);
 int cwmp_get_fault_code_by_string(char *fault_code);
+void *icwmp_malloc(size_t size);
+void *icwmp_calloc(int n, size_t size);
+void *icwmp_realloc(void *n, size_t size);
+char *icwmp_strdup(const char *s);
+int icwmp_asprintf(char **s, const char *format, ...);
+void icwmp_free(void *m);
+void icwmp_cleanmem();
 #ifndef FREE
 #define FREE(x)                   \
 	do {                      \

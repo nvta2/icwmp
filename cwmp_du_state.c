@@ -106,19 +106,17 @@ int cwmp_du_uninstall(char *package_name, char *package_env, char **fault_code)
 static char *get_software_module_object_eq(char *param1, char *val1, char *param2, char *val2, struct list_head *sw_parameters)
 {
 	char *err = NULL;
-	char *sw_parameter_name = NULL;
+	char sw_parameter_name[128];
 
 	if (!param2)
-		cwmp_asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"].", param1, val1);
+		snprintf(sw_parameter_name, sizeof(sw_parameter_name), "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"].", param1, val1);
 	else
-		cwmp_asprintf(&sw_parameter_name, "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"&& %s==\\\"%s\\\"].", param1, val1, param2, val2);
+		snprintf(sw_parameter_name, sizeof(sw_parameter_name), "Device.SoftwareModules.DeploymentUnit.[%s==\\\"%s\\\"&& %s==\\\"%s\\\"].", param1, val1, param2, val2);
 
 	err = cwmp_get_parameter_values(sw_parameter_name, sw_parameters);
-	FREE(sw_parameter_name);
-	if (err) {
-		FREE(err);
+	if (err)
 		return NULL;
-	}
+
 	struct cwmp_dm_parameter *param_value = NULL;
 	char instance[8];
 	list_for_each_entry (param_value, sw_parameters, list) {
@@ -130,15 +128,15 @@ static char *get_software_module_object_eq(char *param1, char *val1, char *param
 
 static int get_deployment_unit_name_version(char *uuid, char **name, char **version, char **env)
 {
-	char *sw_by_uuid_instance = NULL, *name_param = NULL, *version_param = NULL, *environment_param = NULL;
+	char *sw_by_uuid_instance = NULL, name_param[128], version_param[128], environment_param[128];
 	LIST_HEAD(sw_parameters);
 	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &sw_parameters);
 	if (!sw_by_uuid_instance)
 		return 0;
 
-	cwmp_asprintf(&name_param, "Device.SoftwareModules.DeploymentUnit.%s.Name", sw_by_uuid_instance);
-	cwmp_asprintf(&version_param, "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
-	cwmp_asprintf(&environment_param, "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
+	snprintf(name_param, sizeof(name_param), "Device.SoftwareModules.DeploymentUnit.%s.Name", sw_by_uuid_instance);
+	snprintf(version_param, sizeof(version_param), "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
+	snprintf(environment_param, sizeof(environment_param), "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
 
 	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &sw_parameters, list) {
@@ -156,15 +154,12 @@ static int get_deployment_unit_name_version(char *uuid, char **name, char **vers
 		}
 	}
 	cwmp_free_all_dm_parameter_list(&sw_parameters);
-	FREE(name_param);
-	FREE(version_param);
-	FREE(environment_param);
 	return 1;
 }
 
 static char *get_softwaremodules_uuid(char *url)
 {
-	char *sw_by_url_instance = NULL, *uuid_param = NULL, *uuid = NULL;
+	char *sw_by_url_instance = NULL, uuid_param[128], *uuid = NULL;
 
 	LIST_HEAD(sw_parameters);
 
@@ -172,7 +167,7 @@ static char *get_softwaremodules_uuid(char *url)
 	if (!sw_by_url_instance)
 		return NULL;
 
-	cwmp_asprintf(&uuid_param, "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
+	snprintf(uuid_param, sizeof(uuid_param), "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
 
 	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &sw_parameters, list) {
@@ -182,20 +177,19 @@ static char *get_softwaremodules_uuid(char *url)
 		}
 	}
 	cwmp_free_all_dm_parameter_list(&sw_parameters);
-	FREE(uuid_param);
 	return uuid;
 }
 
 static char *get_softwaremodules_url(char *uuid)
 {
-	char *sw_by_uuid_instance = NULL, *url_param = NULL, *url = NULL;
+	char *sw_by_uuid_instance = NULL, url_param[128], *url = NULL;
 
 	LIST_HEAD(sw_parameters);
 	sw_by_uuid_instance = get_software_module_object_eq("UUID", uuid, NULL, NULL, &sw_parameters);
 	if (!sw_by_uuid_instance)
 		return NULL;
 
-	cwmp_asprintf(&url_param, "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
+	snprintf(url_param, sizeof(url_param), "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
 
 	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &sw_parameters, list) {
@@ -205,7 +199,6 @@ static char *get_softwaremodules_url(char *uuid)
 		}
 	}
 	cwmp_free_all_dm_parameter_list(&sw_parameters);
-	FREE(url_param);
 	return url;
 }
 
@@ -227,26 +220,23 @@ static bool environment_exists(char *environment_path)
 	LIST_HEAD(environment_list);
 	char *err = cwmp_get_parameter_values(environment_path, &environment_list);
 	cwmp_free_all_dm_parameter_list(&environment_list);
-	if (err) {
-		FREE(err);
+	if (err)
 		return false;
-	} else {
+	else
 		return true;
-	}
 }
 
 static char *get_exec_env_name(char *environment_path)
 {
-	char *env_param = NULL, *env_name = "";
+	char env_param[256], *env_name = "";
 
 	LIST_HEAD(environment_list);
 	char *err = cwmp_get_parameter_values(environment_path, &environment_list);
-	if (err) {
-		FREE(err);
+	if (err)
 		return strdup("");
-	}
+
 	struct cwmp_dm_parameter *param_value = NULL;
-	cwmp_asprintf(&env_param, "%sName", environment_path);
+	snprintf(env_param, sizeof(env_param), "%sName", environment_path);
 	list_for_each_entry (param_value, &environment_list, list) {
 		if (strcmp(param_value->name, env_param) == 0) {
 			env_name = strdup(param_value->value);
@@ -254,7 +244,6 @@ static char *get_exec_env_name(char *environment_path)
 		}
 	}
 	cwmp_free_all_dm_parameter_list(&environment_list);
-	FREE(env_param);
 	return env_name;
 }
 

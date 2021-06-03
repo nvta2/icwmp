@@ -46,7 +46,6 @@ void dm_get_parameter_values_test(void **state)
 		break;
 	}
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of non valid parameter path
@@ -55,7 +54,6 @@ void dm_get_parameter_values_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of valid multi-instance_object_path
@@ -63,7 +61,6 @@ void dm_get_parameter_values_test(void **state)
 	fault = cwmp_get_parameter_values("Device.WiFi.SSID.", &parameters_list);
 	assert_null(fault);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of valid not multi-instance_object_path
@@ -71,7 +68,6 @@ void dm_get_parameter_values_test(void **state)
 	fault = cwmp_get_parameter_values("Device.DeviceInfo.", &parameters_list);
 	assert_null(fault);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of non valid object path
@@ -80,7 +76,6 @@ void dm_get_parameter_values_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 }
 
 void dm_set_multiple_parameter_values_test(void **state)
@@ -230,7 +225,6 @@ void dm_add_object_test(void **state)
 	assert_non_null(instance);
 	assert_null(fault);
 	cwmp_transaction_commit();
-	FREE(fault);
 	FREE(instance);
 
 	/*
@@ -242,7 +236,6 @@ void dm_add_object_test(void **state)
 	assert_string_equal(fault, "9005");
 	assert_null(instance);
 	cwmp_transaction_commit();
-	FREE(fault);
 	FREE(instance);
 
 	/*
@@ -254,7 +247,6 @@ void dm_add_object_test(void **state)
 	assert_string_equal(fault, "9005");
 	assert_null(instance);
 	cwmp_transaction_commit();
-	FREE(fault);
 	FREE(instance);
 }
 
@@ -269,7 +261,6 @@ void dm_delete_object_test(void **state)
 	fault = cwmp_delete_object("Device.WiFi.SSID.2.", "del_ssid");
 	assert_null(fault);
 	cwmp_transaction_commit();
-	FREE(fault);
 
 	/*
 	 * Delete not valid path object
@@ -279,7 +270,6 @@ void dm_delete_object_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	cwmp_transaction_commit();
-	FREE(fault);
 
 	/*
 	 * Delte valid path not writable object
@@ -289,7 +279,6 @@ void dm_delete_object_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	cwmp_transaction_commit();
-	FREE(fault);
 }
 
 void dm_get_parameter_names_test(void **state)
@@ -309,7 +298,6 @@ void dm_get_parameter_names_test(void **state)
 	}
 	assert_int_not_equal(nbre_objs, 0);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 	nbre_objs = 0;
 
 	/*
@@ -322,7 +310,6 @@ void dm_get_parameter_names_test(void **state)
 	}
 	assert_int_not_equal(nbre_objs, 0);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 	nbre_objs = 0;
 
 	/*
@@ -331,7 +318,6 @@ void dm_get_parameter_names_test(void **state)
 	fault = cwmp_get_parameter_names("Device.Devicenfo.", true, &parameters_list);
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
-	FREE(fault);
 }
 
 void dm_set_parameter_attributes_test(void **state)
@@ -380,7 +366,6 @@ void dm_get_parameter_attributes_test(void **state)
 		break;
 	}
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of non valid parameter path
@@ -389,7 +374,6 @@ void dm_get_parameter_attributes_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of valid multi-instance_object_path
@@ -397,7 +381,6 @@ void dm_get_parameter_attributes_test(void **state)
 	fault = cwmp_get_parameter_attributes("Device.WiFi.SSID.", &parameters_list);
 	assert_null(fault);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of valid not multi-instance_object_path
@@ -405,7 +388,6 @@ void dm_get_parameter_attributes_test(void **state)
 	fault = cwmp_get_parameter_attributes("Device.DeviceInfo.", &parameters_list);
 	assert_null(fault);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 
 	/*
 	 * Test of non valid object path
@@ -414,7 +396,6 @@ void dm_get_parameter_attributes_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	FREE(fault);
 }
 
 /*
@@ -505,5 +486,7 @@ int main(void)
 		cmocka_unit_test(soap_inform_message_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	int ret = cmocka_run_group_tests(tests, NULL, NULL);
+	icwmp_cleanmem();
+	return ret;
 }

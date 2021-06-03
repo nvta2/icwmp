@@ -201,7 +201,6 @@ int run_session_end_func()
 	if (end_session_flag & END_SESSION_REBOOT) {
 		CWMP_LOG(INFO, "Executing Reboot: end session request");
 		cwmp_reboot(commandKey);
-		FREE(commandKey);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -217,6 +216,7 @@ int run_session_end_func()
 		exit(EXIT_SUCCESS);
 	}
 
+	icwmp_cleanmem();
 	end_session_flag = 0;
 	return CWMP_OK;
 }

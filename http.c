@@ -49,19 +49,19 @@ int http_client_init(struct cwmp *cwmp)
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
 		uci_get_state_value(UCI_DHCP_ACS_URL, &acs_var_stat);
 		if (acs_var_stat) {
-			if (cwmp_asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
+			if (icwmp_asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
 				free(acs_var_stat);
 				free(dhcp_dis);
 				return -1;
 			}
 		} else {
-			if (cwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
+			if (icwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
 				free(dhcp_dis);
 				return -1;
 			}
 		}
 	} else {
-		if (cwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
+		if (icwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
 			if (dhcp_dis)
 				free(dhcp_dis);
 			return -1;
@@ -96,7 +96,7 @@ int http_client_init(struct cwmp *cwmp)
 
 void http_client_exit(void)
 {
-	FREE(http_c.url);
+	icwmp_free(http_c.url);
 
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
@@ -231,7 +231,6 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 			char *zone_name = NULL;
 			get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
 			update_firewall_cwmp_file(cwmp->conf.connection_request_port, zone_name ? zone_name : "wan", ip_acs, tmp);
-			FREE(zone_name);
 
 			/*
 			 * Restart firewall service
@@ -290,7 +289,7 @@ static void http_cr_new_client(int client, bool service_available)
 	int8_t auth_status = 0;
 	bool auth_digest_checked = false;
 	bool method_is_get = false;
-	char *cr_http_get_head = NULL;
+	char cr_http_get_head[512];
 
 	pthread_mutex_lock(&mutex_config_load);
 	fp = fdopen(client, "r+");
@@ -302,7 +301,7 @@ static void http_cr_new_client(int client, bool service_available)
 		service_available = false;
 		goto http_end;
 	}
-	cwmp_asprintf(&cr_http_get_head, "GET %s HTTP/1.1", cwmp_main.conf.connection_request_path);
+	snprintf(cr_http_get_head, sizeof(cr_http_get_head), "GET %s HTTP/1.1", cwmp_main.conf.connection_request_path);
 	while (fgets(buffer, sizeof(buffer), fp)) {
 		if (!strncasecmp(buffer, cr_http_get_head, strlen(cr_http_get_head)))
 			method_is_get = true;
@@ -324,7 +323,6 @@ static void http_cr_new_client(int client, bool service_available)
 	else
 		auth_status = 0;
 http_end:
-	FREE(cr_http_get_head);
 	if (!service_available || !method_is_get) {
 		CWMP_LOG(INFO, "Receive Connection Request: Return 503 Service Unavailable");
 		fputs("HTTP/1.1 503 Service Unavailable\r\n", fp);

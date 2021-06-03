@@ -63,13 +63,13 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 	blob_buf_init(&b, 0);
 
 	char *cmd = blobmsg_data(tb[COMMAND_NAME]);
-	char *info;
+	char info[128];
 
 	if (!strcmp("reload_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
 		cwmp_set_end_session(END_SESSION_RELOAD);
 		blobmsg_add_u32(&b, "status", 0);
-		if (cwmp_asprintf(&info, "icwmpd config will reload at the end of the session") == -1)
+		if (snprintf(info, sizeof(info), "icwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
@@ -82,20 +82,20 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 			cwmp_apply_acs_changes();
 			pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
 			blobmsg_add_u32(&b, "status", 0);
-			if (cwmp_asprintf(&info, "icwmpd config reloaded") == -1)
+			if (snprintf(info, sizeof(info), "icwmpd config reloaded") == -1)
 				return -1;
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
 		cwmp_set_end_session(END_SESSION_REBOOT);
 		blobmsg_add_u32(&b, "status", 0);
-		if (cwmp_asprintf(&info, "icwmpd will reboot at the end of the session") == -1)
+		if (snprintf(info, sizeof(info), "icwmpd will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
 		blobmsg_add_u32(&b, "status", 0);
-		if (cwmp_asprintf(&info, "icwmpd will execute the scheduled action commands at the end of the session") == -1)
+		if (snprintf(info, sizeof(info), "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("exit", cmd)) {
 		pthread_t exit_thread;
@@ -109,10 +109,9 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 			CWMP_LOG(ERROR, "%s", piderr);
 		}
 		blobmsg_add_u32(&b, "status", 0);
-		if (cwmp_asprintf(&info, "icwmpd daemon stopped") == -1)
+		if (snprintf(info, sizeof(info), "icwmpd daemon stopped") == -1)
 			return -1;
 		blobmsg_add_string(&b, "info", info);
-		free(info);
 
 		ubus_send_reply(ctx, req, b.head);
 
@@ -129,12 +128,11 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 
 	} else {
 		blobmsg_add_u32(&b, "status", -1);
-		if (cwmp_asprintf(&info, "%s command is not supported", cmd) == -1)
+		if (snprintf(info, sizeof(info), "%s command is not supported", cmd) == -1)
 			return -1;
 	}
 
 	blobmsg_add_string(&b, "info", info);
-	free(info);
 
 	ubus_send_reply(ctx, req, b.head);
 

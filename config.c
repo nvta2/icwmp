@@ -325,10 +325,9 @@ int get_global_config(struct config *conf)
 			if (value[0] == '/')
 				conf->connection_request_path = strdup(value);
 			else {
-				char *cr_path = NULL;
-				cwmp_asprintf(&cr_path, "/%s", value);
+				char cr_path[512];
+				snprintf(cr_path, sizeof(cr_path), "/%s", value);
 				conf->connection_request_path = strdup(cr_path);
-				free(cr_path);
 			}
 		}
 	} else {

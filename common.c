@@ -25,11 +25,17 @@
 #include "cwmp_cli.h"
 #include "cwmp_du_state.h"
 
-#define CURL_TIMEOUT 20
 char *commandKey = NULL;
 long int flashsize = 256000000;
 static unsigned long int next_rand_seed = 1;
 struct cwmp cwmp_main = { 0 };
+
+LIST_HEAD(cwmp_memory_list);
+
+struct cwmp_mem {
+	struct list_head list;
+	char mem[0];
+};
 
 struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
 
@@ -235,37 +241,6 @@ struct transfer_status {
 	int please; /* number of times xferinfo is called while halted */
 };
 
-int upload_file(const char *file_path, const char *url, const char *username, const char *password)
-{
-	int res_code = 0;
-
-	CURL *curl = curl_easy_init();
-	if (curl) {
-		char *userpass = NULL;
-
-		curl_easy_setopt(curl, CURLOPT_URL, url);
-		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
-		cwmp_asprintf(&userpass, "%s:%s", username, password);
-		curl_easy_setopt(curl, CURLOPT_USERPWD, userpass);
-
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, CURL_TIMEOUT);
-		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-
-		FILE *fp = fopen(file_path, "rb");
-		if (fp) {
-			curl_easy_setopt(curl, CURLOPT_READDATA, fp);
-			curl_easy_perform(curl);
-			fclose(fp);
-		}
-
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_code);
-		curl_easy_cleanup(curl);
-		FREE(userpass);
-	}
-
-	return res_code;
-}
-
 void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
 {
 	struct uci_section *s;
@@ -370,28 +345,25 @@ int opkg_install_package(char *package_path)
 {
 	FILE *fp;
 	char path[1035];
-	char *cmd = NULL;
-	cwmp_asprintf(&cmd, "opkg --force-depends --force-maintainer install %s", package_path);
+	char cmd[512];
+
+	snprintf(cmd, sizeof(cmd), "opkg --force-depends --force-maintainer install %s", package_path);
 	if (cmd == NULL)
 		return -1;
 	fp = popen(cmd, "r");
 	if (fp == NULL) {
-		FREE(cmd);
 		CWMP_LOG(INFO, "Failed to run command");
 		return -1;
 	}
 
 	/* Read the output a line at a time - output it. */
 	while (fgets(path, sizeof(path), fp) != NULL) {
-		if (strstr(path, "Installing") != NULL) {
-			FREE(cmd);
+		if (strstr(path, "Installing") != NULL)
 			return 0;
-		}
 	}
 
 	/* close */
 	pclose(fp);
-	FREE(cmd);
 	return -1;
 }
 
@@ -494,4 +466,92 @@ int cwmp_get_fault_code_by_string(char *fault_code)
 		i = FAULT_CPE_INTERNAL_ERROR;
 
 	return i;
+}
+
+/*
+ * Memory mgmt
+ */
+
+void *icwmp_malloc(size_t size)
+{
+	struct cwmp_mem *m = malloc(sizeof(struct cwmp_mem) + size);
+	if (m == NULL)
+		return NULL;
+	list_add(&m->list, &cwmp_memory_list);
+	return (void *)m->mem;
+}
+
+void *icwmp_calloc(int n, size_t size)
+{
+	struct cwmp_mem *m = calloc(n, sizeof(struct cwmp_mem) + size);
+	if (m == NULL)
+		return NULL;
+	list_add(&m->list, &cwmp_memory_list);
+	return (void *)m->mem;
+}
+
+void *icwmp_realloc(void *n, size_t size)
+{
+	struct cwmp_mem *m = NULL;
+	if (n != NULL) {
+		m = container_of(n, struct cwmp_mem, mem);
+		list_del(&m->list);
+	}
+	struct cwmp_mem *new_m = realloc(m, sizeof(struct cwmp_mem) + size);
+	if (new_m == NULL) {
+		icwmp_free(m);
+		return NULL;
+	} else
+		m = new_m;
+	list_add(&m->list, &cwmp_memory_list);
+	return (void *)m->mem;
+}
+
+char *icwmp_strdup(const char *s)
+{
+	size_t len = strlen(s) + 1;
+	void *new = icwmp_malloc(len);
+	if (new == NULL)
+		return NULL;
+	return (char *)memcpy(new, s, len);
+}
+
+int icwmp_asprintf(char **s, const char *format, ...)
+{
+	int size;
+	char *str = NULL;
+	va_list arg;
+
+	va_start(arg, format);
+	size = vasprintf(&str, format, arg);
+	va_end(arg);
+
+	if (size < 0 || str == NULL)
+		return -1;
+
+	*s = icwmp_strdup(str);
+	free(str);
+	if (*s == NULL)
+		return -1;
+	return 0;
+}
+
+void icwmp_free(void *m)
+{
+	if (m == NULL)
+		return;
+	struct cwmp_mem *rm;
+	rm = container_of(m, struct cwmp_mem, mem);
+	list_del(&rm->list);
+	free(rm);
+}
+
+void icwmp_cleanmem()
+{
+	struct cwmp_mem *mem;
+	while (cwmp_memory_list.next != &cwmp_memory_list) {
+		mem = list_entry(cwmp_memory_list.next, struct cwmp_mem, list);
+		list_del(&mem->list);
+		free(mem);
+	}
 }

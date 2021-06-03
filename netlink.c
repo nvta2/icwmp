@@ -118,8 +118,7 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 
 			inet_ntop(AF_INET, &(addr), if_addr, INET_ADDRSTRLEN);
 
-			if (cwmp_main.conf.ip)
-				FREE(cwmp_main.conf.ip);
+			FREE(cwmp_main.conf.ip);
 			cwmp_main.conf.ip = strdup(if_addr);
 			uci_set_value(UCI_CPE_IP, cwmp_main.conf.ip, CWMP_CMD_SET_STATE);
 			connection_request_ip_value_change(&cwmp_main, IPv4);
@@ -137,8 +136,8 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 				rth = RTA_NEXT(rth, rtl);
 				continue;
 			}
-			if (cwmp_main.conf.ipv6)
-				FREE(cwmp_main.conf.ipv6);
+
+			FREE(cwmp_main.conf.ipv6);
 			cwmp_main.conf.ipv6 = strdup(pradd_v6);
 			uci_set_value(UCI_CPE_IPV6, cwmp_main.conf.ipv6, CWMP_CMD_SET_STATE);
 			connection_request_ip_value_change(&cwmp_main, IPv6);

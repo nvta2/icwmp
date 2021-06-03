@@ -438,8 +438,8 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 {
 	char *bip = NULL;
 	struct event_container *event_container;
-	char *ip_version = (version == IPv6) ? strdup("ipv6") : strdup("ip");
-	char *ip_value = (version == IPv6) ? strdup(cwmp->conf.ipv6) : strdup(cwmp->conf.ip);
+	char *ip_version = (version == IPv6) ? "ipv6" : "ip";
+	char *ip_value = (version == IPv6) ? cwmp->conf.ipv6 : cwmp->conf.ip;
 
 	if (version == IPv6)
 		cwmp_load_saved_session(cwmp, &bip, CR_IPv6);
@@ -449,8 +449,6 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 	if (bip == NULL) {
 		bkp_session_simple_insert_in_parent("connection_request", ip_version, ip_value);
 		bkp_session_save();
-		FREE(ip_version);
-		FREE(ip_value);
 		return;
 	}
 	if (strcmp(bip, ip_value) != 0) {
@@ -459,8 +457,6 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 		if (event_container == NULL) {
 			FREE(bip);
 			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-			FREE(ip_version);
-			FREE(ip_value);
 			return;
 		}
 		cwmp_save_event_container(event_container);
@@ -470,8 +466,6 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 		pthread_cond_signal(&(cwmp->threshold_session_send));
 	}
 	FREE(bip);
-	FREE(ip_version);
-	FREE(ip_value);
 }
 
 void connection_request_port_value_change(struct cwmp *cwmp, int port)
