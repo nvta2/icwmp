@@ -31,4 +31,5 @@ missing
 /config.sub
 /libtool
 /ltmain.sh
-
+*.gcno
+*.gcda

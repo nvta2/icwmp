@@ -42,3 +42,4 @@ run_api_test:
             - timestamp.log
             - api-test-coverage.xml
             - memory-report.xml
+            - api-result.log

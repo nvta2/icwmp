@@ -35,3 +35,18 @@ function exec_cmd()
 		exit 1
 	fi
 }
+
+function build_cwmp()
+{
+	COV_CFLAGS='-g -O0'
+	#COV_CFLAGS='-g -O0 -fprofile-arcs -ftest-coverage'
+	#COV_LDFLAGS='--coverage'
+
+	make clean >/dev/null 2>&1
+
+	# compile obuspa
+	autoreconf -i
+	./configure CFLAGS="$COV_CFLAGS" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug
+	make
+	check_ret $?
+}

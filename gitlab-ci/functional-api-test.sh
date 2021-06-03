@@ -9,30 +9,28 @@ trap cleanup SIGINT
 
 date +%s > timestamp.log
 echo "Compiling icmwp"
-autoreconf -i
-./configure --enable-acs=multi --enable-debug
-make clean
-make
-check_ret $?
+build_cwmp
 
 echo "Starting dependent services"
 supervisorctl status all
 supervisorctl update
 supervisorctl restart all
-ubus wait_for usp.raw
+exec_cmd ubus wait_for usp.raw tr069
 supervisorctl status all
 
 echo "Running the api test cases"
-ubus call tr069 status
+ubus-api-validator -f ./test/api/json/tr069.validation.json > ./api-result.log
+check_ret $?
 
-echo "Stop dependent services"
+echo "Stop all services"
 supervisorctl stop all
 
-#report part
-#GitLab-CI output
-gcovr -r .
 # Artefact
-gcovr -r . --xml -o ./api-test-coverage.xml
+#gcovr -r . --xml -o ./api-test-coverage.xml
+#GitLab-CI output
+#gcovr -r .
+#report part
+exec_cmd tap-junit --input ./api-result.log --output report
 
 echo "Checking memory leaks ..."
 grep -q "<kind>UninitCondition</kind>" memory-report.xml

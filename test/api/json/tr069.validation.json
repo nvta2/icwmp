@@ -1,0 +1,210 @@
+{
+    "object": "tr069",
+        "methods": [
+        {
+            "method": "hello",
+            "rc": 3
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "command",
+            "args": {
+            },
+            "rc": 2
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "false"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "1 BOOT"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "2 PERIODIC"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "3 SCHEDULED"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "4 VALUE CHANGE"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "6 CONNECTION REQUEST"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "8 DIAGNOSTICS COMPLETE"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true",
+		    "event": "1 BOOT"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true",
+		    "event": "2 PERIODIC"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true",
+		    "event": "3 SCHEDULED"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true",
+		    "event": "4 VALUE CHANGE"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true",
+		    "event": "6 CONNECTION REQUEST"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "GetRPCMethods": "true",
+		    "event": "8 DIAGNOSTICS COMPLETE"
+            },
+            "rc": 0
+        },
+        {
+            "method": "inform",
+            "args": {
+		    "event": "0 garbage"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "command",
+            "args": {
+		    "command": "reload_end_session"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "command",
+            "args": {
+		    "command": "action_end_session"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        },
+        {
+            "method": "command",
+            "args": {
+		    "command": "garbage"
+            },
+            "rc": 0
+        },
+        {
+            "method": "status",
+            "rc": 0
+        }
+    ]
+}
+
