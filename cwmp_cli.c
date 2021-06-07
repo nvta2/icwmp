@@ -74,11 +74,9 @@ void display_get_cmd_result(struct cmd_input in __attribute__((unused)), union c
 char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
 	int flag;
-	if (!transaction_started) {
+	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
 			return strdup(get_fault_message_by_fault_code("9002"));
-
-		transaction_started = true;
 	}
 	LIST_HEAD(list_set_param_value);
 	LIST_HEAD(faults_list);
@@ -89,17 +87,13 @@ char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 		list_for_each_entry (param_fault, &faults_list, list) {
 			char fault[5];
 			snprintf(fault, 5, "%d", param_fault->fault);
-			if (transaction_started) {
+			if (transaction_id)
 				cwmp_transaction_abort();
-				transaction_started = false;
-			}
 			return strdup(fault);
 		}
 	}
-	if (transaction_started) {
+	if (transaction_id)
 		cwmp_transaction_commit();
-		transaction_started = false;
-	}
 	return NULL;
 }
 
@@ -119,25 +113,19 @@ void display_set_cmd_result(struct cmd_input in, union cmd_result res __attribut
  */
 char *cmd_add_exec_func(struct cmd_input in, union cmd_result *res)
 {
-	if (!transaction_started) {
+	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
 			return strdup(get_fault_message_by_fault_code("9002"));
-
-		transaction_started = true;
 	}
 
 	char *fault = cwmp_add_object(in.first_input, in.second_input ? in.second_input : "add_obj", &(res->instance));
 	if (fault != NULL) {
-		if (transaction_started) {
+		if (transaction_id)
 			cwmp_transaction_abort();
-			transaction_started = false;
-		}
 		return strdup(fault);
 	}
-	if (transaction_started) {
+	if (transaction_id)
 		cwmp_transaction_commit();
-		transaction_started = false;
-	}
 	return NULL;
 }
 
@@ -159,25 +147,19 @@ void display_add_cmd_result(struct cmd_input in, union cmd_result res, char *fau
  */
 char *cmd_del_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
-	if (!transaction_started) {
+	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
 			return strdup(get_fault_message_by_fault_code("9002"));
-
-		transaction_started = true;
 	}
 
 	char *fault = cwmp_delete_object(in.first_input, in.second_input ? in.second_input : "del_obj");
 	if (fault != NULL) {
-		if (transaction_started) {
+		if (transaction_id)
 			cwmp_transaction_abort();
-			transaction_started = false;
-		}
 		return strdup(fault);
 	}
-	if (transaction_started) {
+	if (transaction_id)
 		cwmp_transaction_commit();
-		transaction_started = false;
-	}
 	return NULL;
 }
 
@@ -220,24 +202,18 @@ void display_get_notif_cmd_result(struct cmd_input in __attribute__((unused)), u
  */
 char *cmd_set_notif_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
-	if (!transaction_started) {
+	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
 			return strdup(get_fault_message_by_fault_code("9002"));
-
-		transaction_started = true;
 	}
 	char *fault = cwmp_set_parameter_attributes(in.first_input, in.second_input);
 	if (fault != NULL) {
-		if (transaction_started) {
+		if (transaction_id)
 			cwmp_transaction_abort();
-			transaction_started = false;
-		}
 		return strdup(fault);
 	}
-	if (transaction_started) {
+	if (transaction_id)
 		cwmp_transaction_commit();
-		transaction_started = false;
-	}
 	return NULL;
 }
 

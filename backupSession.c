@@ -788,7 +788,7 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 	int idx = -1, id = -1;
 	struct event_container *event_container_save = NULL;
 
-	struct backup_attributes bkp_attrs = {.index = &idx, .id = &id, .command_key = &command_key };
+	struct backup_attributes bkp_attrs = { .index = &idx, .id = &id, .command_key = &command_key };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
@@ -827,7 +827,7 @@ void load_schedule_inform(mxml_node_t *tree)
 	struct schedule_inform *schedule_inform = NULL;
 	struct list_head *ilist = NULL;
 
-	struct backup_attributes bkp_attrs = {.command_key = &command_key, .time = &scheduled_time };
+	struct backup_attributes bkp_attrs = { .command_key = &command_key, .time = &scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	list_for_each (ilist, &(list_schedule_inform)) {
@@ -852,13 +852,13 @@ void load_download(mxml_node_t *tree)
 
 	download_request = calloc(1, sizeof(struct download));
 
-	struct backup_attributes bkp_attrs = {.url = &download_request->url,
-					      .command_key = &download_request->command_key,
-					      .file_type = &download_request->file_type,
-					      .username = &download_request->username,
-					      .password = &download_request->password,
-					      .file_size = &download_request->file_size,
-					      .time = &download_request->scheduled_time };
+	struct backup_attributes bkp_attrs = { .url = &download_request->url,
+					       .command_key = &download_request->command_key,
+					       .file_type = &download_request->file_type,
+					       .username = &download_request->username,
+					       .password = &download_request->password,
+					       .file_size = &download_request->file_size,
+					       .time = &download_request->scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	list_for_each (ilist, &(list_download)) {
@@ -943,7 +943,7 @@ void load_upload(mxml_node_t *tree)
 
 	upload_request = calloc(1, sizeof(struct upload));
 
-	struct backup_attributes bkp_attrs = {.url = &upload_request->url, .command_key = &upload_request->command_key, .file_type = &upload_request->file_type, .username = &upload_request->username, .password = &upload_request->password, .time = &upload_request->scheduled_time };
+	struct backup_attributes bkp_attrs = { .url = &upload_request->url, .command_key = &upload_request->command_key, .file_type = &upload_request->file_type, .username = &upload_request->username, .password = &upload_request->password, .time = &upload_request->scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	list_for_each (ilist, &(list_upload)) {
@@ -966,7 +966,7 @@ void load_change_du_state(mxml_node_t *tree)
 	change_du_state_request = calloc(1, sizeof(struct change_du_state));
 	INIT_LIST_HEAD(&(change_du_state_request->list_operation));
 
-	struct backup_attributes bkp_attrs = {.command_key = &change_du_state_request->command_key, .time = &change_du_state_request->timeout };
+	struct backup_attributes bkp_attrs = { .command_key = &change_du_state_request->command_key, .time = &change_du_state_request->timeout };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
@@ -977,20 +977,20 @@ void load_change_du_state(mxml_node_t *tree)
 				elem = (operations *)calloc(1, sizeof(operations));
 				elem->type = DU_UPDATE;
 				list_add_tail(&(elem->list), &(change_du_state_request->list_operation));
-				struct backup_attributes update_bkp_attrs = {.uuid = &elem->uuid, .version = &elem->version, .url = &elem->url, .username = &elem->username, .password = &elem->password };
+				struct backup_attributes update_bkp_attrs = { .uuid = &elem->uuid, .version = &elem->version, .url = &elem->url, .username = &elem->username, .password = &elem->password };
 				load_specific_backup_attributes(b, &update_bkp_attrs);
 			} else if (strcmp(b->value.element.name, "install") == 0) {
 				elem = (operations *)calloc(1, sizeof(operations));
 				elem->type = DU_INSTALL;
 				list_add_tail(&(elem->list), &(change_du_state_request->list_operation));
 
-				struct backup_attributes install_bkp_attrs = {.uuid = &elem->uuid, .executionenvref = &elem->executionenvref, .url = &elem->url, .username = &elem->username, .password = &elem->password };
+				struct backup_attributes install_bkp_attrs = { .uuid = &elem->uuid, .executionenvref = &elem->executionenvref, .url = &elem->url, .username = &elem->username, .password = &elem->password };
 				load_specific_backup_attributes(b, &install_bkp_attrs);
 			} else if (strcmp(b->value.element.name, "uninstall") == 0) {
 				elem = (operations *)calloc(1, sizeof(operations));
 				elem->type = DU_UNINSTALL;
 				list_add_tail(&(elem->list), &(change_du_state_request->list_operation));
-				struct backup_attributes uninstall_bkp_attrs = {.uuid = &elem->uuid, .version = &elem->version, .executionenvref = &elem->executionenvref };
+				struct backup_attributes uninstall_bkp_attrs = { .uuid = &elem->uuid, .version = &elem->version, .executionenvref = &elem->executionenvref };
 				load_specific_backup_attributes(b, &uninstall_bkp_attrs);
 			}
 		}
@@ -1008,7 +1008,7 @@ void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
 	du_state_change_complete_request = calloc(1, sizeof(struct du_state_change_complete));
 	INIT_LIST_HEAD(&(du_state_change_complete_request->list_opresult));
 
-	struct backup_attributes bkp_attrs = {.command_key = &du_state_change_complete_request->command_key, .time = &du_state_change_complete_request->timeout };
+	struct backup_attributes bkp_attrs = { .command_key = &du_state_change_complete_request->command_key, .time = &du_state_change_complete_request->timeout };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
@@ -1019,15 +1019,15 @@ void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
 				elem = (opresult *)calloc(1, sizeof(opresult));
 				list_add_tail(&(elem->list), &(du_state_change_complete_request->list_opresult));
 
-				struct backup_attributes opresult_bkp_attrs = {.uuid = &elem->uuid,
-									       .version = &elem->version,
-									       .du_ref = &elem->du_ref,
-									       .current_state = &elem->current_state,
-									       .resolved = &elem->resolved,
-									       .start_time = &elem->start_time,
-									       .complete_time = &elem->complete_time,
-									       .fault = &elem->fault,
-									       .execution_unit_ref = &elem->execution_unit_ref };
+				struct backup_attributes opresult_bkp_attrs = { .uuid = &elem->uuid,
+										.version = &elem->version,
+										.du_ref = &elem->du_ref,
+										.current_state = &elem->current_state,
+										.resolved = &elem->resolved,
+										.start_time = &elem->start_time,
+										.complete_time = &elem->complete_time,
+										.fault = &elem->fault,
+										.execution_unit_ref = &elem->execution_unit_ref };
 				load_specific_backup_attributes(b, &opresult_bkp_attrs);
 			}
 		}
@@ -1042,12 +1042,12 @@ void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
 
 	ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
 
-	struct backup_attributes bkp_attrs = {.command_key = &ptransfer_complete->command_key,
-					      .start_time = &ptransfer_complete->start_time,
-					      .complete_time = &ptransfer_complete->complete_time,
-					      .old_software_version = &ptransfer_complete->old_software_version,
-					      .fault_code = &ptransfer_complete->fault_code,
-					      .type = &ptransfer_complete->type };
+	struct backup_attributes bkp_attrs = { .command_key = &ptransfer_complete->command_key,
+					       .start_time = &ptransfer_complete->start_time,
+					       .complete_time = &ptransfer_complete->complete_time,
+					       .old_software_version = &ptransfer_complete->old_software_version,
+					       .fault_code = &ptransfer_complete->fault_code,
+					       .type = &ptransfer_complete->type };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
 	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);

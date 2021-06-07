@@ -149,18 +149,13 @@ end:
 
 int run_session_end_func(void)
 {
-	if (end_session_flag & END_SESSION_TRANSACTION_COMMIT) {
-		cwmp_transaction_commit();
-		transaction_started = false;
-	}
-	
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
 		cwmp_apply_acs_changes();
 	}
 
 	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
-		CWMP_LOG(INFO, "SetParameterAttributes end session: update enabled notify file");
+		CWMP_LOG(INFO, "SetParameterAttributes/Values end session: update enabled notify file");
 		cwmp_update_enabled_notify_file();
 	}
 
@@ -199,20 +194,25 @@ int run_session_end_func(void)
 		cwmp_upload_diagnostics();
 	}
 
+	if (end_session_flag & END_SESSION_RESTART_SERVICES) {
+		CWMP_LOG(INFO, "Restart mofidied services");
+		icwmp_restart_services();
+	}
+
 	if (end_session_flag & END_SESSION_REBOOT) {
 		CWMP_LOG(INFO, "Executing Reboot: end session request");
 		cwmp_reboot(commandKey);
 		exit(EXIT_SUCCESS);
 	}
 
-	if (end_session_flag & END_SESSION_X_FACTORY_RESET_SOFT) {
-		CWMP_LOG(INFO, "Executing factory reset soft: end session request");
+	if (end_session_flag & END_SESSION_FACTORY_RESET) {
+		CWMP_LOG(INFO, "Executing factory reset: end session request");
 		cwmp_factory_reset();
 		exit(EXIT_SUCCESS);
 	}
 
-	if (end_session_flag & END_SESSION_FACTORY_RESET) {
-		CWMP_LOG(INFO, "Executing factory reset: end session request");
+	if (end_session_flag & END_SESSION_X_FACTORY_RESET_SOFT) {
+		CWMP_LOG(INFO, "Executing factory reset soft: end session request");
 		cwmp_factory_reset();
 		exit(EXIT_SUCCESS);
 	}
@@ -340,7 +340,7 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	memset(&env, 0, sizeof(struct env));
 	if ((error = global_env_init(argc, argv, &env)))
 		return error;
-
+	icwmp_init_list_services();
 	/* Only One instance should run*/
 	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
 	fcntl(fileno(cwmp->pid_file), F_SETFD, fcntl(fileno(cwmp->pid_file), F_GETFD) | FD_CLOEXEC);

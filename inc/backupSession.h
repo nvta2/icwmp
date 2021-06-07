@@ -22,7 +22,14 @@
 
 #define CWMP_BACKUP_SESSION "<cwmp></cwmp>"
 #define CWMP_BKP_FILE "/etc/icwmpd/.icwmpd_backup_session.xml"
-typedef enum backup_loading { ALL, ACS, CR_IP, CR_IPv6, CR_PORT } backup_loading;
+typedef enum backup_loading
+{
+	ALL,
+	ACS,
+	CR_IP,
+	CR_IPv6,
+	CR_PORT
+} backup_loading;
 
 struct search_keywords {
 	char *name;

@@ -49,6 +49,10 @@
 #define DEFAULT_SESSION_TIMEOUT 60
 #define DEFAULT_ACSURL "http://192.168.1.1:8080/openacs/acs"
 
+#define MAX_NBRE_SERVICES 256
+extern int nbre_services;
+extern char *list_services[MAX_NBRE_SERVICES];
+
 extern char *commandKey;
 #define FIREWALL_CWMP "/etc/firewall.cwmp"
 
@@ -155,7 +159,8 @@ enum cwmp_start
 
 enum cwmp_ret_err
 {
-	CWMP_OK, /* No Error */
+	CWMP_XML_ERR = -1,
+	CWMP_OK = 0, /* No Error */
 	CWMP_GEN_ERR, /* General Error */
 	CWMP_MEM_ERR, /* Memory Error */
 	CWMP_MUTEX_ERR,
@@ -502,6 +507,10 @@ char *icwmp_strdup(const char *s);
 int icwmp_asprintf(char **s, const char *format, ...);
 void icwmp_free(void *m);
 void icwmp_cleanmem();
+void icwmp_init_list_services();
+int icwmp_add_service(char *service);
+void icwmp_free_list_services();
+void icwmp_restart_services();
 #ifndef FREE
 #define FREE(x)                                                                                                                                                                                                                                                                                            \
 	do {                                                                                                                                                                                                                                                                                               \
@@ -512,10 +521,10 @@ void icwmp_cleanmem();
 	} while (0)
 #endif
 
-#define CWMP_STRNCPY(DST, SRC, SIZE) \
-do { \
-	strncpy(DST, SRC, SIZE-1); \
-	DST[SIZE-1] = '\0'; \
-} while(0)
+#define CWMP_STRNCPY(DST, SRC, SIZE)                                                                                                                                                                                                                                                                       \
+	do {                                                                                                                                                                                                                                                                                               \
+		strncpy(DST, SRC, SIZE - 1);                                                                                                                                                                                                                                                               \
+		DST[SIZE - 1] = '\0';                                                                                                                                                                                                                                                                      \
+	} while (0)
 
 #endif

@@ -3,7 +3,6 @@
 #include "common.h"
 
 #define DM_ROOT_OBJ "Device."
-extern bool transaction_started;
 extern int transaction_id;
 
 struct blob_attr *get_parameters_array(struct blob_attr *msg);

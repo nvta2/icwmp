@@ -13,7 +13,6 @@
 #include "ubus.h"
 #include "notifications.h"
 
-bool transaction_started = false;
 int transaction_id = 0;
 
 enum get_results_types
@@ -126,6 +125,44 @@ int get_single_fault_from_blob_attr(struct blob_attr *msg)
 /*
  * Transaction Functions
  */
+void ubus_transaction_commit_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
+{
+	bool *status = (bool *)req->priv;
+	const struct blobmsg_policy p[1] = { { "status", BLOBMSG_TYPE_BOOL } };
+	struct blob_attr *updated_services = NULL;
+	struct blob_attr *cur;
+	int rem;
+
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
+	if (!tb[0]) {
+		*status = false;
+		return;
+	}
+	*status = blobmsg_get_u8(tb[0]);
+	if (*status == false)
+		return;
+
+	blobmsg_for_each_attr(cur, msg, rem)
+	{
+		if (blobmsg_type(cur) == BLOBMSG_TYPE_ARRAY) {
+			updated_services = cur;
+			break;
+		}
+	}
+	if (updated_services) {
+		blobmsg_for_each_attr(cur, updated_services, rem)
+		{
+			char *service_name = blobmsg_get_string(cur);
+			if (!service_name || strlen(service_name) <= 0 || strcmp(service_name, "cwmp") == 0)
+				continue;
+			CWMP_LOG(INFO, "Detected service: %s will be restarted in the end session", service_name);
+			/*Add the service to the list*/
+			if (strcmp(service_name, "cwmp") != 0)
+				icwmp_add_service(service_name);
+		}
+	}
+}
 
 void ubus_transaction_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
 {
@@ -156,10 +193,13 @@ bool cwmp_transaction_start(char *app)
 {
 	CWMP_LOG(INFO, "Starting transaction ...");
 	bool status = false;
-	int e = cwmp_ubus_call("usp.raw", "transaction_start", CWMP_UBUS_ARGS{ { "app", {.str_val = app }, UBUS_String } }, 1, ubus_transaction_callback, &status);
+	int e = cwmp_ubus_call("usp.raw", "transaction_start", CWMP_UBUS_ARGS{ { "app", { .str_val = app }, UBUS_String } }, 1, ubus_transaction_callback, &status);
 	if (e != 0) {
 		CWMP_LOG(INFO, "Transaction start failed: Ubus err code: %d", e);
 		status = false;
+	}
+	if (!status) {
+		CWMP_LOG(INFO, "Transaction Start doesn't success\n");
 	}
 	return status;
 }
@@ -168,11 +208,15 @@ bool cwmp_transaction_commit()
 {
 	CWMP_LOG(INFO, "Transaction Commit ...");
 	bool status = false;
-	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_callback, &status);
+	int e = cwmp_ubus_call("usp.raw", "transaction_commit", CWMP_UBUS_ARGS{ { "transaction_id", { .int_val = transaction_id }, UBUS_Integer }, { "restart_services", { .bool_val = false }, UBUS_Bool } }, 2, ubus_transaction_commit_callback, &status);
 	if (e != 0) {
 		CWMP_LOG(INFO, "Transaction commit failed: Ubus err code: %d", e);
 		status = false;
 	}
+	if (!status) {
+		CWMP_LOG(INFO, "Transaction Commit with id: %d doesn't success\n", transaction_id);
+	}
+
 	transaction_id = 0;
 	return status;
 }
@@ -181,11 +225,15 @@ bool cwmp_transaction_abort()
 {
 	CWMP_LOG(INFO, "Transaction Abort ...");
 	bool status = false;
-	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_callback, &status);
+	int e = cwmp_ubus_call("usp.raw", "transaction_abort", CWMP_UBUS_ARGS{ { "transaction_id", { .int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_callback, &status);
 	if (e != 0) {
 		CWMP_LOG(INFO, "Transaction abort failed: Ubus err code: %d", e);
 		status = false;
 	}
+	if (!status) {
+		CWMP_LOG(INFO, "Transaction Abort of transaction with id: %d failed\n", transaction_id);
+	}
+	transaction_id = 0;
 	return status;
 }
 
@@ -193,7 +241,7 @@ bool cwmp_transaction_status()
 {
 	CWMP_LOG(INFO, "Transaction Status");
 	bool status = false;
-	int e = cwmp_ubus_call("usp.raw", "transaction_status", CWMP_UBUS_ARGS{ { "transaction_id", {.int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_status_callback, &status);
+	int e = cwmp_ubus_call("usp.raw", "transaction_status", CWMP_UBUS_ARGS{ { "transaction_id", { .int_val = transaction_id }, UBUS_Integer } }, 1, ubus_transaction_status_callback, &status);
 	if (e != 0) {
 		CWMP_LOG(INFO, "Transaction status failed: Ubus err code: %d", e);
 		return false;
@@ -237,7 +285,7 @@ void ubus_get_single_parameter_callback(struct ubus_request *req, int type __att
 char *cwmp_get_single_parameter_value(char *parameter_name, struct cwmp_dm_parameter *dm_parameter)
 {
 	int e;
-	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_single_parameter_callback, dm_parameter);
+	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", { .str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_single_parameter_callback, dm_parameter);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
 		return "9002";
@@ -270,8 +318,8 @@ void ubus_get_parameter_callback(struct ubus_request *req, int type __attribute_
 char *cwmp_get_parameter_values(char *parameter_name, struct list_head *parameters_list)
 {
 	int e;
-	struct list_params_result get_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", {.str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_parameter_callback, &get_result);
+	struct list_params_result get_result = { .parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", { .str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
 		return "9002";
@@ -287,8 +335,8 @@ char *cwmp_get_parameter_values(char *parameter_name, struct list_head *paramete
 char *cwmp_get_parameter_names(char *object_name, bool next_level, struct list_head *parameters_list)
 {
 	int e;
-	struct list_params_result get_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "next-level", {.bool_val = next_level }, UBUS_Bool }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 3, ubus_get_parameter_callback, &get_result);
+	struct list_params_result get_result = { .parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", { .str_val = object_name }, UBUS_String }, { "next-level", { .bool_val = next_level }, UBUS_Bool }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 3, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "object_names ubus method failed: Ubus err code: %d", e);
 		return "9002";
@@ -338,9 +386,9 @@ void ubus_setm_values_callback(struct ubus_request *req, int type __attribute__(
 int cwmp_set_multiple_parameters_values(struct list_head *parameters_values_list, char *parameter_key, int *flag, struct list_head *faults_list)
 {
 	int e;
-	struct setm_values_res set_result = {.flag = flag, .faults_list = faults_list };
+	struct setm_values_res set_result = { .flag = flag, .faults_list = faults_list };
 	e = cwmp_ubus_call("usp.raw", "setm_values",
-			   CWMP_UBUS_ARGS{ { "pv_tuple", {.param_value_list = parameters_values_list }, UBUS_List_Param }, { "key", {.str_val = parameter_key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+			   CWMP_UBUS_ARGS{ { "pv_tuple", { .param_value_list = parameters_values_list }, UBUS_List_Param }, { "key", { .str_val = parameter_key }, UBUS_String }, { "transaction_id", { .int_val = transaction_id }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 4,
 			   ubus_setm_values_callback, &set_result);
 
 	if (e < 0) {
@@ -390,8 +438,8 @@ void ubus_objects_callback(struct ubus_request *req, int type __attribute__((unu
 char *cwmp_add_object(char *object_name, char *key, char **instance)
 {
 	int e;
-	struct object_result add_result = {.instance = instance };
-	e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+	struct object_result add_result = { .instance = instance };
+	e = cwmp_ubus_call("usp.raw", "add_object", CWMP_UBUS_ARGS{ { "path", { .str_val = object_name }, UBUS_String }, { "key", { .str_val = key }, UBUS_String }, { "transaction_id", { .int_val = transaction_id }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 4,
 			   ubus_objects_callback, &add_result);
 
 	if (e < 0) {
@@ -408,8 +456,8 @@ char *cwmp_add_object(char *object_name, char *key, char **instance)
 char *cwmp_delete_object(char *object_name, char *key)
 {
 	int e;
-	struct object_result add_result = {.instance = NULL };
-	e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{ { "path", {.str_val = object_name }, UBUS_String }, { "key", {.str_val = key }, UBUS_String }, { "transaction_id", {.int_val = transaction_id }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 4,
+	struct object_result add_result = { .instance = NULL };
+	e = cwmp_ubus_call("usp.raw", "del_object", CWMP_UBUS_ARGS{ { "path", { .str_val = object_name }, UBUS_String }, { "key", { .str_val = key }, UBUS_String }, { "transaction_id", { .int_val = transaction_id }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 4,
 			   ubus_objects_callback, &add_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "del_object ubus method failed: Ubus err code: %d", e);
@@ -447,8 +495,8 @@ void ubus_parameter_attributes_callback(struct ubus_request *req, int type __att
 char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list)
 {
 	int e;
-	struct list_params_result get_result = {.parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2,
+	struct list_params_result get_result = { .parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", { .array_value = { { .str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2,
 			   ubus_parameter_attributes_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "getm_attributes ubus method failed: Ubus err code: %d", e);
@@ -466,10 +514,11 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 {
 	int e;
-	struct list_params_result set_result = {.parameters_list = NULL };
-	e = cwmp_ubus_call("usp.raw", "setm_attributes", CWMP_UBUS_ARGS{ { "paths", {.array_value = { {.param_value = { "path", parameter_name } }, {.param_value = { "notify-type", notification } }, {.param_value = { "notify", "1" } } } }, UBUS_Array_Obj },
-									 { "transaction_id", {.int_val = transaction_id }, UBUS_Integer },
-									 { "proto", {.str_val = "cwmp" }, UBUS_String } },
+	struct list_params_result set_result = { .parameters_list = NULL };
+	e = cwmp_ubus_call("usp.raw", "setm_attributes",
+			   CWMP_UBUS_ARGS{ { "paths", { .array_value = { { .param_value = { "path", parameter_name } }, { .param_value = { "notify-type", notification } }, { .param_value = { "notify", "1" } } } }, UBUS_Array_Obj },
+					   { "transaction_id", { .int_val = transaction_id }, UBUS_Integer },
+					   { "proto", { .str_val = "cwmp" }, UBUS_String } },
 			   3, ubus_parameter_attributes_callback, &set_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "setm_attributes ubus method failed: Ubus err code: %d", e);
@@ -491,7 +540,7 @@ int cwmp_update_enabled_notify_file(void)
 {
 	int e, fault;
 	struct cwmp *cwmp = &cwmp_main;
-	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, cwmp_update_enabled_notify_file_callback, &fault);
+	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", { .int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, cwmp_update_enabled_notify_file_callback, &fault);
 	if (e || fault)
 		return 0;
 	return 1;
@@ -501,6 +550,6 @@ int check_value_change(void)
 {
 	struct cwmp *cwmp = &cwmp_main;
 	int ret = 0;
-	cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", {.int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", {.str_val = "cwmp" }, UBUS_String } }, 2, ubus_check_value_change_callback, &ret);
+	cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", { .int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, ubus_check_value_change_callback, &ret);
 	return ret;
 }
