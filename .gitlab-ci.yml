@@ -6,6 +6,7 @@ stages:
     - static_code_analysis
     - unit_test
     - api_test
+    - functional_test
     
 variables:
   DEBUG: 'TRUE'
@@ -13,7 +14,7 @@ variables:
 
 run_unit_test:
    stage: unit_test
-   image: iopsys/code-analysis-dev:latest
+   image: iopsys/code-analysis:latest
    allow_failure: false
    script:
    - "./gitlab-ci/install-dependencies.sh"
@@ -27,8 +28,8 @@ run_unit_test:
 
 run_api_test:
     stage: api_test
-    image: iopsys/code-analysis-dev:latest
-    allow_failure: true
+    image: iopsys/code-analysis:latest
+    allow_failure: false
     script:
     - "./gitlab-ci/install-dependencies.sh"
     - "./gitlab-ci/setup.sh"
@@ -41,5 +42,25 @@ run_api_test:
         paths:
             - timestamp.log
             - api-test-coverage.xml
-            - memory-report.xml
-            - api-result.log
+            - api-test-memory-report.xml
+            - api-test-result.log
+
+run_functional_test:
+    stage: functional_test
+    image: iopsys/code-analysis:latest
+    allow_failure: false
+    script:
+    - "./gitlab-ci/install-dependencies.sh"
+    - "./gitlab-ci/setup.sh"
+    - "./gitlab-ci/functional-test.sh"
+
+    artifacts:
+        when: always
+        reports:
+            junit: ./report/tap.xml
+        paths:
+            - timestamp.log
+            - funl-test-coverage.xml
+            - funl-test-memory-report.xml
+            - funl-test-result.log
+            - funl-test-debug.log

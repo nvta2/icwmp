@@ -15,18 +15,8 @@ supervisorctl stop icwmpd
 ubus wait_for usp.raw
 supervisorctl status all
 
-echo "Compiling icmwp"
-autoreconf -i
-./configure --enable-acs=multi --enable-acs=hdm --enable-icwmp-test
-make clean
-make
-check_ret $?
-
-echo "Install libicwmp"
-cp bin/.libs/libicwmp.a /usr/lib
-cp bin/.libs/libicwmp.so* /usr/lib
-mkdir /usr/include/libicwmp
-cp inc/*.h /usr/include/libicwmp
+echo "Compiling libicmwp"
+build_libicwmp
 
 echo "Running the unit test cases"
 make clean -C test/cmocka/
@@ -39,9 +29,9 @@ supervisorctl status
 
 #report part
 #GitLab-CI output
-gcovr -r .
+gcovr -r . 2> /dev/null #throw away stderr
 # Artefact
-gcovr -r . --xml -o ./unit-test-coverage.xml
+gcovr -r . 2> /dev/null --xml -o ./unit-test-coverage.xml
 date +%s > timestamp.log
 
 echo "Unit test PASS"

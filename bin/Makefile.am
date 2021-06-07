@@ -38,7 +38,7 @@ icwmpd_CFLAGS =			\
 	$(MICROXML_CFLAGS)	\
 	$(LIBCURL_CFLAGS) 	\
 	-Wall -Wextra 		\
-	-Werror -Wformat
+	-Wformat
 
 icwmpd_LDFLAGS =		\
 	$(AM_LDFLAGS)		\

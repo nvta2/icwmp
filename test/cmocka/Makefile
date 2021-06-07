@@ -15,4 +15,4 @@ unit-test: $(UNIT_TESTS)
 	
 .PHONY: clean
 clean:
-	rm -fv *.o $(UNIT_TESTS) $(FUNCTIONAL_TESTS) $(FUNCTIONAL_API_TESTS)
+	rm -fv *.o $(UNIT_TESTS)

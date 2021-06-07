@@ -15,22 +15,23 @@
 struct cwmp cwmp_main_test = { 0 };
 struct cwmp *cwmp_test;
 
-void dm_get_parameter_values_test(void **state);
-void dm_set_multiple_parameter_values_test(void **state);
-void dm_add_object_test(void **state);
-void dm_delete_object_test(void **state);
-void dm_get_parameter_names_test(void **state);
-void dm_set_parameter_attributes_test(void **state);
-void dm_get_parameter_attributes_test(void **state);
-void get_config_test(void **state);
-void get_deviceid_test(void **state);
-void add_event_test(void **state);
-void soap_inform_message_test(void **state);
+static int group_setup(void **state)
+{
+	cwmp_test = &cwmp_main_test;
+	INIT_LIST_HEAD(&(cwmp_test->head_session_queue));
+	return 0;
+}
+
+static int group_teardown(void **state)
+{
+	icwmp_cleanmem();
+	return 0;
+}
 
 /*
  * datamodel interface tests
  */
-void dm_get_parameter_values_test(void **state)
+static void dm_get_parameter_values_test(void **state)
 {
 	char *fault = NULL;
 	LIST_HEAD(parameters_list);
@@ -78,7 +79,7 @@ void dm_get_parameter_values_test(void **state)
 	cwmp_free_all_dm_parameter_list(&parameters_list);
 }
 
-void dm_set_multiple_parameter_values_test(void **state)
+static void dm_set_multiple_parameter_values_test(void **state)
 {
 	int flag = 0;
 	int fault = 0;
@@ -211,7 +212,7 @@ void dm_set_multiple_parameter_values_test(void **state)
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 }
 
-void dm_add_object_test(void **state)
+static void dm_add_object_test(void **state)
 {
 	char *instance = NULL;
 	char *fault;
@@ -249,7 +250,7 @@ void dm_add_object_test(void **state)
 	FREE(instance);
 }
 
-void dm_delete_object_test(void **state)
+static void dm_delete_object_test(void **state)
 {
 	char *fault = NULL;
 
@@ -280,7 +281,7 @@ void dm_delete_object_test(void **state)
 	cwmp_transaction_commit();
 }
 
-void dm_get_parameter_names_test(void **state)
+static void dm_get_parameter_names_test(void **state)
 {
 	char *fault = NULL;
 	LIST_HEAD(parameters_list);
@@ -319,7 +320,7 @@ void dm_get_parameter_names_test(void **state)
 	assert_string_equal(fault, "9005");
 }
 
-void dm_set_parameter_attributes_test(void **state)
+static void dm_set_parameter_attributes_test(void **state)
 {
 	char *fault = NULL;
 
@@ -348,7 +349,7 @@ void dm_set_parameter_attributes_test(void **state)
 	cwmp_transaction_commit();
 }
 
-void dm_get_parameter_attributes_test(void **state)
+static void dm_get_parameter_attributes_test(void **state)
 {
 	char *fault = NULL;
 	LIST_HEAD(parameters_list);
@@ -400,21 +401,21 @@ void dm_get_parameter_attributes_test(void **state)
 /*
  * SOAP TESTS
  */
-void get_config_test(void **state)
+static void get_config_test(void **state)
 {
 	struct cwmp *cwmp_test = &cwmp_main_test;
 	int error = get_global_config(&(cwmp_test->conf));
 	assert_int_equal(error, CWMP_OK);
 }
 
-void get_deviceid_test(void **state)
+static void get_deviceid_test(void **state)
 {
 	struct cwmp *cwmp_test = &cwmp_main_test;
 	int error = cwmp_get_deviceid(cwmp_test);
 	assert_int_equal(error, CWMP_OK);
 }
 
-void add_event_test(void **state)
+static void add_event_test(void **state)
 {
 	struct event_container *event_container;
 	event_container = cwmp_add_event_container(cwmp_test, EVENT_IDX_1BOOT, "");
@@ -422,7 +423,7 @@ void add_event_test(void **state)
 	assert_string_equal(EVENT_CONST[event_container->code].CODE, "1 BOOT");
 }
 
-void soap_inform_message_test(void **state)
+static void soap_inform_message_test(void **state)
 {
 	struct session *session;
 	mxml_node_t *env = NULL, *n = NULL, *device_id = NULL, *cwmp_inform = NULL;
@@ -469,8 +470,6 @@ void soap_inform_message_test(void **state)
 
 int main(void)
 {
-	cwmp_test = &cwmp_main_test;
-	INIT_LIST_HEAD(&(cwmp_test->head_session_queue));
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(dm_get_parameter_values_test), //
 		cmocka_unit_test(dm_set_multiple_parameter_values_test),
@@ -485,7 +484,5 @@ int main(void)
 		cmocka_unit_test(soap_inform_message_test),
 	};
 
-	int ret = cmocka_run_group_tests(tests, NULL, NULL);
-	icwmp_cleanmem();
-	return ret;
+	return cmocka_run_group_tests(tests, group_setup, group_teardown);
 }

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. /usr/share/libubox/jshn.sh
+
+case "$1" in
+        list)
+                echo '{ "upgrade_test" : {}, "upgrade_start" : {} }'
+        ;;
+        call)
+                case "$2" in
+                        upgrade_test)
+                                cat /tmp/rpc_sys.data 2>/dev/null
+                        ;;
+                        upgrade_start)
+                                cat /tmp/rpc_sys.data 2>/dev/null
+                        ;;
+                esac
+        ;;
+esac

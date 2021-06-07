@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. /usr/share/libubox/jshn.sh
+
+case "$1" in
+        list)
+                echo '{ "status" : {} }'
+        ;;
+        call)
+                case "$2" in
+                        status)
+                                cat /tmp/network.interface.data 2>/dev/null
+                        ;;
+                esac
+        ;;
+esac
+
