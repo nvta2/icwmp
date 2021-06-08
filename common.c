@@ -522,14 +522,18 @@ int icwmp_asprintf(char **s, const char *format, ...)
 {
 	int size;
 	char *str = NULL;
-	va_list arg;
+	va_list arg, argcopy;
 
 	va_start(arg, format);
-	size = vasprintf(&str, format, arg);
-	va_end(arg);
+	va_copy(argcopy, arg);
+	size = vsnprintf(NULL, 0, format, argcopy);
+	va_end(argcopy);
 
-	if (size < 0 || str == NULL)
+	if (size < 0)
 		return -1;
+	str = (char *)calloc(sizeof(char), size + 1);
+	vsnprintf(str, size + 1, format, arg);
+	va_end(arg);
 
 	*s = icwmp_strdup(str);
 	free(str);
