@@ -254,12 +254,12 @@ void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
 		while (net != NULL) {
 			if (strcmp(net, if_wan) == 0) {
 				cwmp_uci_get_value_by_section_string(s, "name", zone_name);
-				FREE(network);
+				icwmp_free(network);
 				goto end;
 			}
 			net = strtok(NULL, " ");
 		}
-		FREE(network);
+		icwmp_free(network);
 	}
 
 end:
