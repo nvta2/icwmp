@@ -51,19 +51,18 @@ int http_client_init(struct cwmp *cwmp)
 		if (acs_var_stat) {
 			if (icwmp_asprintf(&http_c.url, "%s", acs_var_stat) == -1) {
 				free(acs_var_stat);
-				free(dhcp_dis);
+				FREE(dhcp_dis);
 				return -1;
 			}
 		} else {
 			if (icwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
-				free(dhcp_dis);
+				FREE(dhcp_dis);
 				return -1;
 			}
 		}
 	} else {
 		if (icwmp_asprintf(&http_c.url, "%s", cwmp->conf.acsurl) == -1) {
-			if (dhcp_dis)
-				free(dhcp_dis);
+			FREE(dhcp_dis);
 			return -1;
 		}
 	}
@@ -197,6 +196,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 	}
+	FREE(cwmp->conf.interface);
 	uci_get_value(UCI_CPE_INTERFACE_PATH, &(cwmp->conf.interface));
 	curl_easy_setopt(curl, CURLOPT_INTERFACE, cwmp->conf.interface);
 	*msg_in = (char *)calloc(1, sizeof(char));
@@ -235,7 +235,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 			/*
 			 * Restart firewall service
 			 */
-			cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", {.str_val = "firewall" }, UBUS_String } }, 1, NULL, NULL);
+			cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", { .str_val = "firewall" }, UBUS_String } }, 1, NULL, NULL);
 		}
 	}
 

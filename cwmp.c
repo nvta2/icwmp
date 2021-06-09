@@ -272,6 +272,7 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 			CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
 			uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "0", CWMP_CMD_SET);
 		}
+		FREE(exec_download);
 		error = cwmp_schedule_rpc(cwmp, session);
 		CWMP_LOG(INFO, "End session");
 		if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0))) {
