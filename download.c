@@ -189,8 +189,9 @@ int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struc
 		error = FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER;
 	else if (http_code == 401)
 		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION;
-	else if (http_code != 200)
+	else if (http_code != 200) {
 		error = FAULT_CPE_DOWNLOAD_FAILURE;
+	}
 
 	if (error != FAULT_CPE_NO_FAULT)
 		goto end_download;
@@ -277,7 +278,7 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 	}
 
-	if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3' || pdownload->file_type[0] == '6')) {
+	if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3')) {
 		uci_set_value(UCI_ACS_PARAMETERKEY_PATH, pdownload->command_key ? pdownload->command_key : "", CWMP_CMD_SET);
 		cwmp_commit_package("cwmp");
 		if (pdownload->file_type[0] == '3') {
@@ -285,8 +286,10 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 		}
 		return FAULT_CPE_NO_FAULT;
 	}
-	bkp_session_delete_transfer_complete(ptransfer_complete);
-	ptransfer_complete->fault_code = error;
+	if (error != FAULT_CPE_NO_FAULT) {
+		bkp_session_delete_transfer_complete(ptransfer_complete);
+		ptransfer_complete->fault_code = error;
+	}
 	bkp_session_insert_transfer_complete(ptransfer_complete);
 	bkp_session_save();
 	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
@@ -344,7 +347,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
 				error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
-
+				sleep(3);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
@@ -352,7 +355,11 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					error = apply_downloaded_file(cwmp, pdownload, ptransfer_complete);
+					if (error || pdownload->file_type[0] == '6')
+						bkp_session_delete_transfer_complete(ptransfer_complete);
 				}
+				if (pdownload->file_type[0] == '6')
+					sleep(30);
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_download);
@@ -661,14 +668,16 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 					error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 			}
 
-			if ((error == FAULT_CPE_NO_FAULT) && (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3' || apply_download->file_type[0] == '6')) {
+			if ((error == FAULT_CPE_NO_FAULT) && (apply_download->file_type[0] == '1' || apply_download->file_type[0] == '3')) {
 				if (apply_download->file_type[0] == '3') {
 					CWMP_LOG(INFO, "Download and apply new vendor config file is done successfully");
 				}
 				exit(EXIT_SUCCESS);
 			}
-			bkp_session_delete_transfer_complete(ptransfer_complete);
-			ptransfer_complete->fault_code = error;
+			if (error != FAULT_CPE_NO_FAULT) {
+				bkp_session_delete_transfer_complete(ptransfer_complete);
+				ptransfer_complete->fault_code = error;
+			}
 			bkp_session_insert_transfer_complete(ptransfer_complete);
 			bkp_session_save();
 			cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);

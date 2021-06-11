@@ -253,7 +253,6 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 			cwmp_update_enabled_notify_file();
 		cwmp_prepare_value_change(cwmp);
 		clean_list_value_change();
-		cwmp_load_saved_session(cwmp, NULL, ALL);
 		if ((error = cwmp_move_session_to_session_send(cwmp, session))) {
 			CWMP_LOG(EMERG, "FATAL error in the mutex process in the session scheduler!");
 			exit(EXIT_FAILURE);
