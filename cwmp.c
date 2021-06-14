@@ -148,7 +148,7 @@ end:
 }
 
 int run_session_end_func(void)
-{
+{	
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
 		cwmp_apply_acs_changes();
@@ -387,6 +387,8 @@ int cwmp_exit(void)
 	FREE(cwmp->conf.cpe_userid);
 	FREE(cwmp->conf.cpe_passwd);
 	FREE(cwmp->conf.ubus_socket);
+	FREE(cwmp->conf.connection_request_path);
+	FREE(cwmp->conf.default_wan_iface);
 	bkp_tree_clean();
 	ubus_exit();
 	uloop_done();

@@ -106,12 +106,10 @@ int get_global_config(struct config *conf)
 
 	if ((((error == CWMP_OK) && (value != NULL) && (strcmp(value, "enable") == 0)) || ((error2 == CWMP_OK) && ((value2 == NULL) || (value2[0] == 0)))) && ((error3 == CWMP_OK) && (value3 != NULL) && (value3[0] != 0))) {
 		FREE(conf->acsurl);
-		conf->acsurl = value3;
-		value3 = NULL;
+		conf->acsurl = strdup(value3);
 	} else if ((error2 == CWMP_OK) && (value2 != NULL) && (value2[0] != 0)) {
 		FREE(conf->acsurl);
-		conf->acsurl = value2;
-		value2 = NULL;
+		conf->acsurl = strdup(value2);
 	}
 
 	FREE(value);
@@ -121,8 +119,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_ACS_USERID_PATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->acs_userid);
-			conf->acs_userid = value;
-			value = NULL;
+			conf->acs_userid = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - acs username: %s", conf->acs_userid ? conf->acs_userid : "");
@@ -133,8 +131,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_ACS_PASSWD_PATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->acs_passwd);
-			conf->acs_passwd = value;
-			value = NULL;
+			conf->acs_passwd = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - acs password: %s", conf->acs_passwd ? conf->acs_passwd : "");
@@ -211,8 +209,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_ACS_SSL_CAPATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->acs_ssl_capath);
-			conf->acs_ssl_capath = value;
-			value = NULL;
+			conf->acs_ssl_capath = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - acs ssl cpath: %s", conf->acs_ssl_capath ? conf->acs_ssl_capath : "");
@@ -223,8 +221,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_HTTPS_SSL_CAPATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->https_ssl_capath);
-			conf->https_ssl_capath = value;
-			value = NULL;
+			conf->https_ssl_capath = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - https ssl cpath: %s", conf->https_ssl_capath ? conf->https_ssl_capath : "");
@@ -273,8 +271,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_ACS_SSL_VERSION, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->acs_ssl_version);
-			conf->acs_ssl_version = value;
-			value = NULL;
+			conf->acs_ssl_version = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - acs ssl version: %s", conf->acs_ssl_version ? conf->acs_ssl_version : "");
@@ -285,8 +283,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_CPE_INTERFACE_PATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->interface);
-			conf->interface = value;
-			value = NULL;
+			conf->interface = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - cpe interface: %s", conf->interface ? conf->interface : "");
@@ -297,8 +295,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_CPE_USERID_PATH, &value)) == CWMP_OK) {
 		FREE(conf->cpe_userid);
 		if (value != NULL) {
-			conf->cpe_userid = value;
-			value = NULL;
+			conf->cpe_userid = strdup(value);
+			FREE(value);
 		} else {
 			conf->cpe_userid = strdup("");
 		}
@@ -311,8 +309,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_CPE_PASSWD_PATH, &value)) == CWMP_OK) {
 		FREE(conf->cpe_passwd);
 		if (value != NULL) {
-			conf->cpe_passwd = value;
-			value = NULL;
+			conf->cpe_passwd = strdup(value);
+			FREE(value);
 		} else {
 			conf->cpe_passwd = strdup("");
 		}
@@ -325,8 +323,8 @@ int get_global_config(struct config *conf)
 	if ((error = uci_get_value(UCI_CPE_UBUS_SOCKET_PATH, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			FREE(conf->ubus_socket);
-			conf->ubus_socket = value;
-			value = NULL;
+			conf->ubus_socket = strdup(value);
+			FREE(value);
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - ubus socket: %s", conf->ubus_socket ? conf->ubus_socket : "");
@@ -626,7 +624,6 @@ int cwmp_get_deviceid(struct cwmp *cwmp)
 int cwmp_config_reload(struct cwmp *cwmp)
 {
 	memset(&cwmp->env, 0, sizeof(struct env));
-	memset(&cwmp->conf, 0, sizeof(struct config));
 
 	return global_conf_init(cwmp);
 }
