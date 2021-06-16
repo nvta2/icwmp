@@ -63,7 +63,7 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 	blob_buf_init(&b, 0);
 
 	char *cmd = blobmsg_data(tb[COMMAND_NAME]);
-	char info[128];
+	char info[128] = {0};
 
 	if (!strcmp("reload_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
@@ -76,7 +76,8 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
 			cwmp_set_end_session(END_SESSION_RELOAD);
 			blobmsg_add_u32(&b, "status", 0);
-			blobmsg_add_string(&b, "info", "Session running, reload at the end of the session");
+			if (snprintf(info, sizeof(info), "Session running, reload at the end of the session") == -1)
+				return -1;
 		} else {
 			pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 			cwmp_apply_acs_changes();
