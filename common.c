@@ -566,13 +566,15 @@ void icwmp_cleanmem()
 /*
  * Services Management
  */
-
 void icwmp_init_list_services()
 {
 	int i;
+
+	nbre_services = 0;
 	for (i = 0; i < MAX_NBRE_SERVICES; i++)
 		list_services[i] = NULL;
 }
+
 int icwmp_add_service(char *service)
 {
 	if (nbre_services >= MAX_NBRE_SERVICES)
@@ -585,10 +587,7 @@ void icwmp_free_list_services()
 {
 	int i = 0;
 	for (i = 0; i < nbre_services; i++) {
-		if (list_services[i] != NULL) {
-			FREE(list_services[i]);
-			list_services[i] = NULL;
-		}
+		FREE(list_services[i]);
 	}
 	nbre_services = 0;
 }
@@ -597,8 +596,9 @@ void icwmp_restart_services()
 {
 	int i;
 	for (i = 0; i < nbre_services; i++) {
-		if (list_services[i] == NULL || strlen(list_services[i]) <= 0)
+		if (strlen(list_services[i]) == 0)
 			continue;
+
 		cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", { .str_val = list_services[i] }, UBUS_String } }, 1, NULL, NULL);
 	}
 	icwmp_free_list_services();
