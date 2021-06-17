@@ -12,7 +12,7 @@ supervisorctl status all
 supervisorctl update
 supervisorctl restart all
 supervisorctl stop icwmpd
-sleep 3
+ubus wait_for usp.raw
 supervisorctl status all
 
 echo "Compiling icmwp"
