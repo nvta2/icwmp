@@ -16,8 +16,7 @@ extern pthread_mutex_t mutex_schedule_inform;
 extern pthread_cond_t threshold_schedule_inform;
 extern int count_schedule_inform_queue;
 
-extern pthread_mutex_t mutex_schedule_inform;
-extern pthread_cond_t threshold_schedule_inform;
 void *thread_cwmp_rpc_cpe_scheduleInform(void *v);
 int cwmp_scheduleInform_remove_all();
+
 #endif

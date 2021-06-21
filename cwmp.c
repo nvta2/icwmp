@@ -10,9 +10,42 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include "cwmp.h"
+#include <pthread.h>
+#include <libubox/uloop.h>
+#include <sys/file.h>
+#include <math.h>
+#include <unistd.h>
+#include <fcntl.h>
 
-int cwmp_get_retry_interval(struct cwmp *cwmp)
+#include "common.h"
+#include "session.h"
+#include "xml.h"
+#include "backupSession.h"
+#include "http.h"
+#include "diagnostic.h"
+#include "config.h"
+#include "ubus.h"
+#include "log.h"
+#include "notifications.h"
+#include "cwmp_uci.h"
+#include "cwmp_du_state.h"
+#include "download.h"
+#include "upload.h"
+#include "sched_inform.h"
+
+static pthread_t periodic_event_thread;
+static pthread_t scheduleInform_thread;
+static pthread_t change_du_state_thread;
+static pthread_t download_thread;
+static pthread_t schedule_download_thread;
+static pthread_t apply_schedule_download_thread;
+static pthread_t upload_thread;
+static pthread_t ubus_thread;
+static pthread_t http_cr_server_thread;
+static pthread_t periodic_check_notify;
+static pthread_t signal_handler_thread;
+
+static int cwmp_get_retry_interval(struct cwmp *cwmp)
 {
 	int retry_count = 0;
 	double min = 0;
@@ -29,6 +62,20 @@ int cwmp_get_retry_interval(struct cwmp *cwmp)
 	icwmp_srand(time(NULL));
 	retry_count = icwmp_rand() % ((int)max + 1 - (int)min) + (int)min;
 	return (retry_count);
+}
+
+static int cwmp_rpc_cpe_handle_message(struct session *session, struct rpc *rpc_cpe)
+{
+	if (xml_prepare_msg_out(session))
+		return -1;
+
+	if (rpc_cpe_methods[rpc_cpe->type].handler(session, rpc_cpe))
+		return -1;
+
+	if (xml_set_cwmp_id_rpc_cpe(session))
+		return -1;
+
+	return 0;
 }
 
 static void cwmp_prepare_value_change(struct cwmp *cwmp)
@@ -49,35 +96,36 @@ end:
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 }
 
-int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
+static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 {
 	struct list_head *ilist;
 	struct rpc *rpc_acs, *rpc_cpe;
 
-	if (http_client_init(cwmp)) {
+	if (http_client_init(cwmp) || thread_end) {
 		CWMP_LOG(INFO, "Initializing http client failed");
 		goto retry;
 	}
 
 	while (1) {
 		list_for_each (ilist, &(session->head_rpc_acs)) {
+
 			rpc_acs = list_entry(ilist, struct rpc, list);
-			if (!rpc_acs->type)
+			if (!rpc_acs->type || thread_end)
 				goto retry;
 
 			CWMP_LOG(INFO, "Preparing the %s RPC message to send to the ACS", rpc_acs_methods[rpc_acs->type].name);
-			if (rpc_acs_methods[rpc_acs->type].prepare_message(cwmp, session, rpc_acs))
+			if (rpc_acs_methods[rpc_acs->type].prepare_message(cwmp, session, rpc_acs) || thread_end)
 				goto retry;
 
-			if (xml_set_cwmp_id(session))
+			if (xml_set_cwmp_id(session) || thread_end)
 				goto retry;
 
 			CWMP_LOG(INFO, "Send the %s RPC message to the ACS", rpc_acs_methods[rpc_acs->type].name);
-			if (xml_send_message(cwmp, session, rpc_acs))
+			if (xml_send_message(cwmp, session, rpc_acs) || thread_end)
 				goto retry;
 
 			CWMP_LOG(INFO, "Get the %sResponse message from the ACS", rpc_acs_methods[rpc_acs->type].name);
-			if (rpc_acs_methods[rpc_acs->type].parse_response)
+			if (rpc_acs_methods[rpc_acs->type].parse_response || thread_end)
 				if (rpc_acs_methods[rpc_acs->type].parse_response(cwmp, session, rpc_acs))
 					goto retry;
 
@@ -87,40 +135,41 @@ int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 			cwmp_session_rpc_destructor(rpc_acs);
 			MXML_DELETE(session->tree_in);
 			MXML_DELETE(session->tree_out);
-			if (session->hold_request)
+			if (session->hold_request || thread_end)
 				break;
 		}
 		CWMP_LOG(INFO, "Send empty message to the ACS");
-		if (xml_send_message(cwmp, session, NULL))
+		if (xml_send_message(cwmp, session, NULL) || thread_end)
 			goto retry;
-		if (!session->tree_in)
+		if (!session->tree_in || thread_end)
 			goto next;
 
 		CWMP_LOG(INFO, "Receive request from the ACS");
-		if (xml_handle_message(session))
+		if (xml_handle_message(session) || thread_end)
 			goto retry;
 
 		while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
+
 			rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
-			if (!rpc_cpe->type)
+			if (!rpc_cpe->type || thread_end)
 				goto retry;
 
 			CWMP_LOG(INFO, "Preparing the %s%s message", rpc_cpe_methods[rpc_cpe->type].name, (rpc_cpe->type != RPC_CPE_FAULT) ? "Response" : "");
-			if (cwmp_rpc_cpe_handle_message(session, rpc_cpe))
+			if (cwmp_rpc_cpe_handle_message(session, rpc_cpe) || thread_end)
 				goto retry;
 			MXML_DELETE(session->tree_in);
 
 			CWMP_LOG(INFO, "Send the %s%s message to the ACS", rpc_cpe_methods[rpc_cpe->type].name, (rpc_cpe->type != RPC_CPE_FAULT) ? "Response" : "");
-			if (xml_send_message(cwmp, session, rpc_cpe))
+			if (xml_send_message(cwmp, session, rpc_cpe) || thread_end)
 				goto retry;
 			MXML_DELETE(session->tree_out);
 
 			cwmp_session_rpc_destructor(rpc_cpe);
-			if (!session->tree_in)
+			if (!session->tree_in || thread_end)
 				break;
 
 			CWMP_LOG(INFO, "Receive request from the ACS");
-			if (xml_handle_message(session))
+			if (xml_handle_message(session) || thread_end)
 				goto retry;
 		}
 
@@ -148,7 +197,7 @@ end:
 }
 
 int run_session_end_func(void)
-{	
+{
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
 		cwmp_apply_acs_changes();
@@ -195,7 +244,7 @@ int run_session_end_func(void)
 	}
 
 	if (end_session_flag & END_SESSION_RESTART_SERVICES) {
-		CWMP_LOG(INFO, "Restart mofidied services");
+		CWMP_LOG(INFO, "Restart modified services");
 		icwmp_restart_services();
 	}
 
@@ -222,7 +271,7 @@ int run_session_end_func(void)
 	return CWMP_OK;
 }
 
-void cwmp_schedule_session(struct cwmp *cwmp)
+static void cwmp_schedule_session(struct cwmp *cwmp)
 {
 	struct list_head *ilist;
 	struct session *session;
@@ -240,10 +289,23 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 			t = cwmp_get_retry_interval(cwmp);
 			time_to_wait.tv_sec = time(NULL) + t;
 			CWMP_LOG(INFO, "Waiting the next session");
+
+			if (thread_end) {
+				pthread_mutex_unlock(&(cwmp->mutex_session_send));
+				return;
+			}
+
 			pthread_cond_timedwait(&(cwmp->threshold_session_send), &(cwmp->mutex_session_send), &time_to_wait);
+	
+			if (thread_end) {
+				pthread_mutex_unlock(&(cwmp->mutex_session_send));
+				return;
+			}
+
 			ilist = (&(cwmp->head_session_queue))->next;
 			retry = false;
 		}
+
 		session = list_entry(ilist, struct session, list);
 		if (file_exists(DM_ENABLED_NOTIFY)) {
 			if (!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
@@ -275,6 +337,15 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 		FREE(exec_download);
 		error = cwmp_schedule_rpc(cwmp, session);
 		CWMP_LOG(INFO, "End session");
+
+		if (thread_end) {
+			event_remove_all_event_container(session, RPC_SEND);
+			run_session_end_func();
+			cwmp_session_destructor(session);
+			pthread_mutex_unlock(&(cwmp->mutex_session_send));
+			return;
+		}
+
 		if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0))) {
 			run_session_end_func();
 			error = cwmp_move_session_to_session_queue(cwmp, session);
@@ -300,39 +371,19 @@ void cwmp_schedule_session(struct cwmp *cwmp)
 	}
 }
 
-int cwmp_rpc_cpe_handle_message(struct session *session, struct rpc *rpc_cpe)
+static void *thread_uloop_run(void *v __attribute__((unused)))
 {
-	if (xml_prepare_msg_out(session))
-		return -1;
-
-	if (rpc_cpe_methods[rpc_cpe->type].handler(session, rpc_cpe))
-		return -1;
-
-	if (xml_set_cwmp_id_rpc_cpe(session))
-		return -1;
-
-	return 0;
-}
-
-void *thread_uloop_run(void *v __attribute__((unused)))
-{
-	ubus_init(&cwmp_main);
+	cwmp_ubus_init(&cwmp_main);
 	return NULL;
 }
 
-void *thread_http_cr_server_listen(void *v __attribute__((unused)))
+static void *thread_http_cr_server_listen(void *v __attribute__((unused)))
 {
 	http_server_listen();
 	return NULL;
 }
 
-void signal_handler(int signal_num __attribute__((unused)))
-{
-	close(cwmp_main.cr_socket_desc);
-	_exit(EXIT_SUCCESS);
-}
-
-int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
+static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 {
 	int error;
 	struct env env;
@@ -340,6 +391,7 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	memset(&env, 0, sizeof(struct env));
 	if ((error = global_env_init(argc, argv, &env)))
 		return error;
+
 	icwmp_init_list_services();
 	/* Only One instance should run*/
 	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
@@ -354,6 +406,8 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 		} else
 			exit(EXIT_SUCCESS);
 	}
+	if (cwmp->pid_file)
+		fclose(cwmp->pid_file);
 
 	pthread_mutex_init(&cwmp->mutex_periodic, NULL);
 	pthread_mutex_init(&cwmp->mutex_session_queue, NULL);
@@ -368,10 +422,8 @@ int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	return CWMP_OK;
 }
 
-int cwmp_exit(void)
+static void cwmp_free(struct cwmp *cwmp)
 {
-	struct cwmp *cwmp = &cwmp_main;
-
 	FREE(cwmp->deviceid.manufacturer);
 	FREE(cwmp->deviceid.serialnumber);
 	FREE(cwmp->deviceid.productclass);
@@ -390,27 +442,41 @@ int cwmp_exit(void)
 	FREE(cwmp->conf.connection_request_path);
 	FREE(cwmp->conf.default_wan_iface);
 	bkp_tree_clean();
-	ubus_exit();
-	uloop_done();
-	return 0;
+	cwmp_ubus_exit();
+}
+
+static void *thread_cwmp_signal_handler_thread(void *arg)
+{
+	sigset_t *set = (sigset_t *)arg;
+	int s, signal_num;
+
+	for (;;) {
+		s = sigwait(set, &signal_num);
+		if (s == -1) {
+			CWMP_LOG(ERROR, "Error in sigwait");
+		} else {
+			CWMP_LOG(INFO, "Catch of Signal(%d)", signal_num);
+
+			if (signal_num == SIGINT || signal_num == SIGTERM) {
+
+				signal_exit = true;
+
+				if (!ubus_exit)
+					cwmp_ubus_call("tr069", "command", CWMP_UBUS_ARGS{ { "command", { .str_val = "exit" }, UBUS_String } }, 1, NULL, NULL);
+
+				break;
+			}
+		}
+	}
+
+	return NULL;
 }
 
 int main(int argc, char **argv)
 {
 	struct cwmp *cwmp = &cwmp_main;
+	sigset_t set;
 	int error;
-	pthread_t periodic_event_thread;
-	pthread_t scheduleInform_thread;
-	pthread_t change_du_state_thread;
-	pthread_t download_thread;
-	pthread_t schedule_download_thread;
-	pthread_t apply_schedule_download_thread;
-	pthread_t upload_thread;
-	pthread_t ubus_thread;
-	pthread_t http_cr_server_thread;
-	pthread_t periodic_check_notify;
-
-	struct sigaction act = { 0 };
 
 	if ((error = cwmp_init(argc, argv, cwmp)))
 		return error;
@@ -426,9 +492,10 @@ int main(int argc, char **argv)
 
 	http_server_init();
 
-	act.sa_handler = signal_handler;
-	sigaction(SIGINT, &act, 0);
-	sigaction(SIGTERM, &act, 0);
+	sigemptyset(&set);
+	sigaddset(&set, SIGINT);
+	sigaddset(&set, SIGTERM);
+	sigprocmask(SIG_BLOCK, &set, NULL);
 
 	error = pthread_create(&http_cr_server_thread, NULL, &thread_http_cr_server_listen, NULL);
 	if (error < 0) {
@@ -447,7 +514,7 @@ int main(int argc, char **argv)
 
 	error = pthread_create(&periodic_check_notify, NULL, &thread_periodic_check_notify, (void *)cwmp);
 	if (error < 0) {
-		CWMP_LOG(ERROR, "Error when creating the download thread!");
+		CWMP_LOG(ERROR, "Error when creating the periodic check notify thread!");
 	}
 	error = pthread_create(&scheduleInform_thread, NULL, &thread_cwmp_rpc_cpe_scheduleInform, (void *)cwmp);
 	if (error < 0) {
@@ -479,10 +546,16 @@ int main(int argc, char **argv)
 		CWMP_LOG(ERROR, "Error when creating the download thread!");
 	}
 
+	error = pthread_create(&signal_handler_thread, NULL, &thread_cwmp_signal_handler_thread, (void *)&set);
+	if (error < 0) {
+		CWMP_LOG(ERROR, "Error when creating the signal handler thread!");
+	}
+
 	cwmp_schedule_session(cwmp);
 
-	pthread_join(ubus_thread, NULL);
+	/* Join all threads */
 	pthread_join(periodic_event_thread, NULL);
+	pthread_join(periodic_check_notify, NULL);
 	pthread_join(scheduleInform_thread, NULL);
 	pthread_join(download_thread, NULL);
 	pthread_join(upload_thread, NULL);
@@ -490,8 +563,12 @@ int main(int argc, char **argv)
 	pthread_join(apply_schedule_download_thread, NULL);
 	pthread_join(change_du_state_thread, NULL);
 	pthread_join(http_cr_server_thread, NULL);
+	pthread_join(ubus_thread, NULL);
+	pthread_join(signal_handler_thread, NULL);
+
+	/* Free all memory allocation */
+	cwmp_free(cwmp);
 
 	CWMP_LOG(INFO, "EXIT ICWMP");
-	cwmp_exit();
 	return CWMP_OK;
 }

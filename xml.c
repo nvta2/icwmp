@@ -1557,6 +1557,7 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	return 0;
 
 fault:
+	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		ret = CWMP_XML_ERR;
 

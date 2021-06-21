@@ -30,6 +30,10 @@ void *thread_cwmp_rpc_cpe_scheduleInform(void *v)
 	bool add_event_same_time = false;
 
 	for (;;) {
+
+		if (thread_end)
+			break;
+
 		if (list_schedule_inform.next != &(list_schedule_inform)) {
 			schedule_inform = list_entry(list_schedule_inform.next, struct schedule_inform, list);
 			stime = schedule_inform->scheduled_time;

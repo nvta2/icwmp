@@ -323,6 +323,10 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 	long int time_of_grace = 3600, timeout;
 
 	for (;;) {
+
+		if (thread_end)
+			break;
+		
 		if (list_download.next != &(list_download)) {
 			pdownload = list_entry(list_download.next, struct download, list);
 			stime = pdownload->scheduled_time;
@@ -429,6 +433,10 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 	struct download *p, *_p;
 
 	for (;;) {
+
+		if (thread_end)
+			break;
+
 		current_time = time(NULL);
 		if (list_schedule_download.next != &(list_schedule_download)) {
 			list_for_each_entry_safe (p, _p, &(list_schedule_download), list) {
@@ -575,6 +583,10 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 	struct apply_schedule_download *p, *_p;
 
 	for (;;) {
+
+		if (thread_end)
+			break;
+
 		current_time = time(NULL);
 		if (list_apply_schedule_download.next != &(list_apply_schedule_download)) {
 			list_for_each_entry_safe (p, _p, &(list_apply_schedule_download), list) {

@@ -369,6 +369,10 @@ void *thread_event_periodic(void *v)
 			pthread_cond_wait(&(cwmp->threshold_periodic), &(cwmp->mutex_periodic));
 		}
 		pthread_mutex_unlock(&(cwmp->mutex_periodic));
+
+		if (thread_end)
+			break;
+
 		if (periodic_interval != cwmp->conf.period || periodic_enable != cwmp->conf.periodic_enable || periodic_time != cwmp->conf.time) {
 			periodic_enable = cwmp->conf.periodic_enable;
 			periodic_interval = cwmp->conf.period;
@@ -386,7 +390,7 @@ void *thread_event_periodic(void *v)
 		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 		pthread_cond_signal(&(cwmp->threshold_session_send));
 	}
-	return CWMP_OK;
+	return NULL;
 }
 
 bool event_exist_in_list(struct cwmp *cwmp, int event)

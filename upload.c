@@ -171,6 +171,10 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 	long int time_of_grace = 3600, timeout;
 
 	for (;;) {
+
+		if (thread_end)
+			break;
+
 		if (list_upload.next != &(list_upload)) {
 			pupload = list_entry(list_upload.next, struct upload, list);
 			stime = pupload->scheduled_time;

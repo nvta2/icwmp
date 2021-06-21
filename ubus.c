@@ -11,10 +11,7 @@
  *	Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
 
-/*#include <unistd.h>*/
-
-#include <sys/file.h>
-#include <pthread.h>
+#include <sys/socket.h>
 
 #include "ubus.h"
 #include "session.h"
@@ -25,12 +22,19 @@
 #include "event.h"
 #include "backupSession.h"
 #include "sched_inform.h"
+#include "cwmp_du_state.h"
+#include "download.h"
+#include "upload.h"
+#include "http.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
 
 static const char *arr_session_status[] = {
-		[SESSION_WAITING] = "waiting", [SESSION_RUNNING] = "running", [SESSION_FAILURE] = "failure", [SESSION_SUCCESS] = "success",
+		[SESSION_WAITING] = "waiting",
+		[SESSION_RUNNING] = "running",
+		[SESSION_FAILURE] = "failure",
+		[SESSION_SUCCESS] = "success",
 };
 
 enum command
@@ -42,14 +46,6 @@ enum command
 static const struct blobmsg_policy command_policy[] = {
 		[COMMAND_NAME] = {.name = "command", .type = BLOBMSG_TYPE_STRING },
 };
-
-void *thread_exit_program(void *v __attribute__((unused)))
-{
-	CWMP_LOG(INFO, "EXIT ICWMP");
-	pthread_mutex_lock(&mutex_backup_session);
-	//cwmp_exit();
-	exit(EXIT_SUCCESS);
-}
 
 static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)), struct ubus_request_data *req, const char *method __attribute__((unused)), struct blob_attr *msg)
 {
@@ -99,34 +95,31 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		if (snprintf(info, sizeof(info), "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("exit", cmd)) {
-		pthread_t exit_thread;
-		int error;
-		CWMP_LOG(INFO, "triggered ubus exit");
-		int rc = flock(fileno(cwmp_main.pid_file), LOCK_UN | LOCK_NB);
-		fclose(cwmp_main.pid_file);
-		if (rc) {
-			char *piderr = "PID file unlock failed!";
-			fprintf(stderr, "%s\n", piderr);
-			CWMP_LOG(ERROR, "%s", piderr);
-		}
-		blobmsg_add_u32(&b, "status", 0);
+		ubus_exit = true;
+		thread_end = true;
+		
+		if (cwmp_main.session_status.last_status == SESSION_RUNNING)
+			http_set_timeout();
+
+		pthread_cond_signal(&(cwmp_main.threshold_session_send));
+		pthread_cond_signal(&(cwmp_main.threshold_periodic));
+		pthread_cond_signal(&(cwmp_main.threshold_notify_periodic));
+		pthread_cond_signal(&threshold_schedule_inform);
+		pthread_cond_signal(&threshold_download);
+		pthread_cond_signal(&threshold_change_du_state);
+		pthread_cond_signal(&threshold_schedule_download);
+		pthread_cond_signal(&threshold_apply_schedule_download);
+		pthread_cond_signal(&threshold_upload);
+
+		uloop_end();
+
+		shutdown(cwmp_main.cr_socket_desc, SHUT_RDWR);
+
+		if (!signal_exit)
+			kill(getpid(), SIGTERM);
+
 		if (snprintf(info, sizeof(info), "icwmpd daemon stopped") == -1)
 			return -1;
-		blobmsg_add_string(&b, "info", info);
-
-		ubus_send_reply(ctx, req, b.head);
-
-		blob_buf_free(&b);
-		FILE *socke_file = fdopen(cwmp_main.cr_socket_desc, "r+");
-		fclose(socke_file);
-		CWMP_LOG(INFO, "Close connection request server socket");
-		error = pthread_create(&exit_thread, NULL, &thread_exit_program, NULL);
-		if (error < 0) {
-			CWMP_LOG(ERROR, "Error when creating the exit thread!");
-			return -1;
-		}
-		return 0;
-
 	} else {
 		blobmsg_add_u32(&b, "status", -1);
 		if (snprintf(info, sizeof(info), "%s command is not supported", cmd) == -1)
@@ -134,9 +127,7 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 	}
 
 	blobmsg_add_string(&b, "info", info);
-
 	ubus_send_reply(ctx, req, b.head);
-
 	blob_buf_free(&b);
 
 	return 0;
@@ -205,7 +196,8 @@ enum enum_inform
 };
 
 static const struct blobmsg_policy inform_policy[] = {
-		[INFORM_GET_RPC_METHODS] = {.name = "GetRPCMethods", .type = BLOBMSG_TYPE_BOOL }, [INFORM_EVENT] = {.name = "event", .type = BLOBMSG_TYPE_STRING },
+		[INFORM_GET_RPC_METHODS] = {.name = "GetRPCMethods", .type = BLOBMSG_TYPE_BOOL },
+		[INFORM_EVENT] = {.name = "event", .type = BLOBMSG_TYPE_STRING },
 };
 
 static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)), struct ubus_request_data *req, const char *method __attribute__((unused)), struct blob_attr *msg)
@@ -264,7 +256,9 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 }
 
 static const struct ubus_method freecwmp_methods[] = {
-	UBUS_METHOD("command", cwmp_handle_command, command_policy), UBUS_METHOD_NOARG("status", cwmp_handle_status), UBUS_METHOD("inform", cwmp_handle_inform, inform_policy),
+	UBUS_METHOD("command", cwmp_handle_command, command_policy),
+	UBUS_METHOD_NOARG("status", cwmp_handle_status),
+	UBUS_METHOD("inform", cwmp_handle_inform, inform_policy),
 };
 
 static struct ubus_object_type main_object_type = UBUS_OBJECT_TYPE("freecwmpd", freecwmp_methods);
@@ -276,7 +270,7 @@ static struct ubus_object main_object = {
 	.n_methods = ARRAYSIZEOF(freecwmp_methods),
 };
 
-int ubus_init(struct cwmp *cwmp)
+int cwmp_ubus_init(struct cwmp *cwmp)
 {
 	uloop_init();
 
@@ -297,14 +291,18 @@ int ubus_init(struct cwmp *cwmp)
 
 	if (ubus_add_object(ctx, &main_object))
 		return -1;
+
 	uloop_run();
+	uloop_done();
 	return 0;
 }
 
-void ubus_exit(void)
+void cwmp_ubus_exit(void)
 {
-	if (ctx)
+	if (ctx) {
+		ubus_remove_object(ctx, &main_object);
 		ubus_free(ctx);
+	}
 }
 
 int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_arg u_args[], int u_args_size, void (*ubus_callback)(struct ubus_request *req, int type, struct blob_attr *msg), void *callback_arg)

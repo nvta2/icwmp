@@ -31,13 +31,19 @@
 
 static struct http_client http_c;
 
-static CURL *curl;
+static CURL *curl = NULL;
 
 #ifdef DUMMY_MODE
 char *fc_cookies = "./ext/tmp/icwmp_cookies";
 #else
 char *fc_cookies = "/tmp/icwmp_cookies";
 #endif
+
+void http_set_timeout(void)
+{
+	if (curl)
+		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1);
+}
 
 int http_client_init(struct cwmp *cwmp)
 {
@@ -103,7 +109,10 @@ void http_client_exit(void)
 	}
 	if (file_exists(fc_cookies))
 		remove(fc_cookies);
-	curl_easy_cleanup(curl);
+	if (curl) {
+		curl_easy_cleanup(curl);
+		curl = NULL;
+	}
 	curl_global_cleanup();
 }
 
@@ -196,8 +205,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 	}
-	FREE(cwmp->conf.interface);
-	uci_get_value(UCI_CPE_INTERFACE_PATH, &(cwmp->conf.interface));
+
 	curl_easy_setopt(curl, CURLOPT_INTERFACE, cwmp->conf.interface);
 	*msg_in = (char *)calloc(1, sizeof(char));
 
@@ -272,7 +280,7 @@ error:
 	return -1;
 }
 
-void http_success_cr()
+void http_success_cr(void)
 {
 	CWMP_LOG(INFO, "Connection Request thread: add connection request event in the queue");
 	pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
@@ -411,6 +419,10 @@ void http_server_listen(void)
 	//Accept and incoming connection
 	c = sizeof(struct sockaddr_in);
 	while ((client_sock = accept(cwmp_main.cr_socket_desc, (struct sockaddr *)&client, (socklen_t *)&c))) {
+		
+		if (thread_end)
+			return;
+
 		current_time = time(NULL);
 		service_available = true;
 		if ((restrict_start_time == 0) || ((current_time - restrict_start_time) > CONNECTION_REQUEST_RESTRICT_PERIOD)) {

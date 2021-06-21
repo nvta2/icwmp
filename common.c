@@ -26,11 +26,14 @@
 #include "cwmp_du_state.h"
 
 char *commandKey = NULL;
+bool thread_end = false;
+bool signal_exit = false;
+bool ubus_exit = false;
 long int flashsize = 256000000;
 static unsigned long int next_rand_seed = 1;
 struct cwmp cwmp_main = { 0 };
-int nbre_services = 0;
-char *list_services[MAX_NBRE_SERVICES] = { 0 };
+static int nbre_services = 0;
+static char *list_services[MAX_NBRE_SERVICES] = { 0 };
 LIST_HEAD(cwmp_memory_list);
 
 struct cwmp_mem {
@@ -602,5 +605,4 @@ void icwmp_restart_services()
 		cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", { .str_val = list_services[i] }, UBUS_String } }, 1, NULL, NULL);
 	}
 	icwmp_free_list_services();
-	icwmp_init_list_services();
 }

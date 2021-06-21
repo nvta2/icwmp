@@ -154,7 +154,15 @@ void *thread_periodic_check_notify(void *v)
 			pthread_mutex_lock(&(cwmp->mutex_notify_periodic));
 			current_time = time(NULL);
 			periodic_timeout.tv_sec = current_time + periodic_interval;
+
+			if (thread_end)
+				break;
+
 			pthread_cond_timedwait(&(cwmp->threshold_notify_periodic), &(cwmp->mutex_notify_periodic), &periodic_timeout);
+
+			if (thread_end)
+				break;
+
 			pthread_mutex_lock(&(cwmp->mutex_session_send));
 			is_notify = check_value_change();
 			if (is_notify > 0)
@@ -168,7 +176,7 @@ void *thread_periodic_check_notify(void *v)
 		} else
 			break;
 	}
-	return CWMP_OK;
+	return NULL;
 }
 
 void add_list_value_change(char *param_name, char *param_data, char *param_type)

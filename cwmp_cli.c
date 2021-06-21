@@ -12,6 +12,7 @@ struct fault_resp {
 };
 
 const struct fault_resp faults_array[] = { { FAULT_CPE_INTERNAL_ERROR, "9002", "Internal error" }, //Internal error
+					   { FAULT_CPE_INVALID_PARAMETER_NAME, "9003", "Invalid arguments" }, //Invalid arguments
 					   { FAULT_CPE_INVALID_PARAMETER_NAME, "9005", "Invalid parameter name" }, //Invalid parameter name
 					   { FAULT_CPE_INVALID_PARAMETER_VALUE, "9007", "Invalid parameter value" }, //Invalid Parameter value
 					   { FAULT_CPE_NON_WRITABLE_PARAMETER, "9008", "Attempt to set a non-writable parameter" }, //Non writable parameter
@@ -58,7 +59,7 @@ void display_get_cmd_result(struct cmd_input in __attribute__((unused)), union c
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		FREE(fault);
+		icwmp_free(fault);
 		return;
 	}
 	struct cwmp_dm_parameter *param_value = NULL;
@@ -82,15 +83,18 @@ char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 	LIST_HEAD(faults_list);
 	add_dm_parameter_to_list(&list_set_param_value, in.first_input, in.second_input, NULL, 0, false);
 	int fault_idx = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_key", &flag, &faults_list);
+	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 	if (fault_idx != FAULT_CPE_NO_FAULT) {
 		struct cwmp_param_fault *param_fault = NULL;
+		char fault[5] = {0};
 		list_for_each_entry (param_fault, &faults_list, list) {
-			char fault[5];
-			snprintf(fault, 5, "%d", param_fault->fault);
+			snprintf(fault, sizeof(fault), "%d", param_fault->fault);
 			if (transaction_id)
 				cwmp_transaction_abort();
-			return strdup(fault);
+			break;
 		}
+		cwmp_free_all_list_param_fault(&faults_list);
+		return strdup(fault);
 	}
 	if (transaction_id)
 		cwmp_transaction_commit();
@@ -115,14 +119,14 @@ char *cmd_add_exec_func(struct cmd_input in, union cmd_result *res)
 {
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return strdup(get_fault_message_by_fault_code("9002"));
+			return icwmp_strdup(get_fault_message_by_fault_code("9002"));
 	}
 
 	char *fault = cwmp_add_object(in.first_input, in.second_input ? in.second_input : "add_obj", &(res->instance));
 	if (fault != NULL) {
 		if (transaction_id)
 			cwmp_transaction_abort();
-		return strdup(fault);
+		return fault;
 	}
 	if (transaction_id)
 		cwmp_transaction_commit();
@@ -133,13 +137,15 @@ void display_add_cmd_result(struct cmd_input in, union cmd_result res, char *fau
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		FREE(fault);
+		icwmp_free(fault);
 		return;
 	}
 	if (in.first_input[strlen(in.first_input) - 1] == '.')
 		fprintf(stdout, "Added %s%s.\n", in.first_input, res.instance);
 	else
 		fprintf(stdout, "Added %s.%s.\n", in.first_input, res.instance);
+	FREE(res.instance);
+	icwmp_free_list_services();
 }
 
 /*
@@ -149,14 +155,14 @@ char *cmd_del_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 {
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return strdup(get_fault_message_by_fault_code("9002"));
+			return icwmp_strdup(get_fault_message_by_fault_code("9002"));
 	}
 
 	char *fault = cwmp_delete_object(in.first_input, in.second_input ? in.second_input : "del_obj");
 	if (fault != NULL) {
 		if (transaction_id)
 			cwmp_transaction_abort();
-		return strdup(fault);
+		return fault;
 	}
 	if (transaction_id)
 		cwmp_transaction_commit();
@@ -167,10 +173,11 @@ void display_del_cmd_result(struct cmd_input in, union cmd_result res __attribut
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		FREE(fault);
+		icwmp_strdup(fault);
 		return;
 	}
 	fprintf(stdout, "Deleted %s\n", in.first_input);
+	icwmp_free_list_services();
 }
 
 /*
@@ -187,7 +194,7 @@ void display_get_notif_cmd_result(struct cmd_input in __attribute__((unused)), u
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		FREE(fault);
+		icwmp_free(fault);
 		return;
 	}
 	struct cwmp_dm_parameter *param_value = NULL;
@@ -204,13 +211,13 @@ char *cmd_set_notif_exec_func(struct cmd_input in, union cmd_result *res __attri
 {
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return strdup(get_fault_message_by_fault_code("9002"));
+			return icwmp_strdup(get_fault_message_by_fault_code("9002"));
 	}
 	char *fault = cwmp_set_parameter_attributes(in.first_input, in.second_input);
 	if (fault != NULL) {
 		if (transaction_id)
 			cwmp_transaction_abort();
-		return strdup(fault);
+		return fault;
 	}
 	if (transaction_id)
 		cwmp_transaction_commit();
@@ -221,7 +228,7 @@ void display_set_notif_cmd_result(struct cmd_input in, union cmd_result res __at
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		FREE(fault);
+		icwmp_free(fault);
 		return;
 	}
 	fprintf(stdout, "%s => %s\n", in.first_input, in.second_input);
@@ -242,7 +249,7 @@ void display_get_names_cmd_result(struct cmd_input in __attribute__((unused)), u
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		FREE(fault);
+		icwmp_free(fault);
 		return;
 	}
 	struct cwmp_dm_parameter *param_value = NULL;

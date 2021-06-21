@@ -50,7 +50,7 @@ done
 echo "1..${test_num}" >> ./funl-test-result.log
 
 echo "Stop all services"
-supervisorctl stop all
+supervisorctl stop icwmpd
 
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./funl-test-coverage.xml

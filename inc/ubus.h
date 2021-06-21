@@ -19,8 +19,8 @@
 #define ARRAY_MAX 8
 
 extern struct ubus_context *ubus_ctx;
-int ubus_init(struct cwmp *cwmp);
-void ubus_exit(void);
+int cwmp_ubus_init(struct cwmp *cwmp);
+void cwmp_ubus_exit(void);
 
 enum cwmp_ubus_arg_type
 {
@@ -58,7 +58,6 @@ struct cwmp_ubus_arg {
 };
 
 #define CWMP_UBUS_ARGS (struct cwmp_ubus_arg[])
-int cwmp_ubus_init();
-void cwmp_ubus_close();
 int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_arg u_args[], int u_args_size, void (*ubus_callback)(struct ubus_request *req, int type, struct blob_attr *msg), void *callback_arg);
+
 #endif /* UBUS_H_ */

@@ -48,13 +48,13 @@
 #define DEFAULT_INSTANCE_MODE 0
 #define DEFAULT_SESSION_TIMEOUT 60
 #define DEFAULT_ACSURL "http://192.168.1.1:8080/openacs/acs"
-
 #define MAX_NBRE_SERVICES 256
-extern int nbre_services;
-extern char *list_services[MAX_NBRE_SERVICES];
+#define FIREWALL_CWMP "/etc/firewall.cwmp"
 
 extern char *commandKey;
-#define FIREWALL_CWMP "/etc/firewall.cwmp"
+extern bool thread_end;
+extern bool signal_exit;
+extern bool ubus_exit;
 
 typedef struct env {
 	unsigned short boot;
@@ -475,7 +475,6 @@ extern struct cwmp cwmp_main;
 extern long int flashsize;
 extern struct FAULT_CPE FAULT_CPE_ARRAY[];
 
-int cwmp_exit(void);
 void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type, int notification, bool writable);
 void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter);
 void cwmp_free_all_dm_parameter_list(struct list_head *list);

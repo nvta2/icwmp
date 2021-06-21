@@ -23,7 +23,7 @@ ubus-api-validator -f ./test/api/json/tr069.validation.json > ./api-test-result.
 check_ret $?
 
 echo "Stop all services"
-supervisorctl stop all
+supervisorctl stop icwmpd
 
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./api-test-coverage.xml
