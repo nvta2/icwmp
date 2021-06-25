@@ -7,6 +7,9 @@ source ./gitlab-ci/shared.sh
 trap cleanup EXIT
 trap cleanup SIGINT
 
+# install required packages for functional test OpenACS
+exec_cmd apt install -y perl -MCPAN -e 'install WWW::Mechanize'
+
 date +%s > timestamp.log
 echo "Compiling icmwp"
 build_icwmp
@@ -18,11 +21,8 @@ supervisorctl restart all
 supervisorctl stop icwmpd
 supervisorctl status all
 
-echo "Configuring genieacs"
-configure_genieacs
-
-echo "Configuring ACS URL"
-configure_acs_url
+echo "Configuring OpenACS URL"
+configure_openacs_url
 
 echo "Starting icwmpd deamon"
 supervisorctl start icwmpd
@@ -37,9 +37,9 @@ echo "## Running script verification of functionalities ##"
 echo > ./funl-test-result.log
 echo > ./funl-test-debug.log
 test_num=0
-for test in `ls -I "common.sh" test/script/`; do
+for test in `ls test/script/openacs/`; do
 	test_num=$(( test_num + 1 ))
-	./test/script/${test}
+	./test/script/openacs/${test}
 	if [ "$?" -eq 0 ]; then
 		echo "ok ${test_num} - ${test}" >> ./funl-test-result.log
 	else

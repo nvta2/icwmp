@@ -48,7 +48,7 @@ function configure_genieacs()
 	check_ret $?
 
 	echo "add a new provision inform"
-	curl -X PUT 'http://localhost:7557/provisions/inform' --data-binary '@/builds/iopsys/icwmp/test/acs/connection_request_auth' >/dev/null 2>&1
+	curl -X PUT 'http://localhost:7557/provisions/inform' --data-binary '@/builds/iopsys/icwmp/test/genieacs/connection_request_auth' >/dev/null 2>&1
 	check_ret $?
 
 	#echo "get the supported provisions"
@@ -61,9 +61,17 @@ function configure_genieacs()
 	check_ret $?
 }
 
-function configure_acs_url()
+function configure_genieacs_url()
 {
 	url="http://`hostname -i`:7547"
+	uci set cwmp.acs.url=$url
+	uci commit cwmp
+	echo "Current ACS URL=$url"
+}
+
+function configure_openacs_url()
+{
+	url="http://`hostname -i`:8080/openacs/acs"
 	uci set cwmp.acs.url=$url
 	uci commit cwmp
 	echo "Current ACS URL=$url"

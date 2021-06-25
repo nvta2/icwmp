@@ -6,7 +6,7 @@ stages:
     - static_code_analysis
     - unit_test
     - api_test
-    - functional_test
+    - functional_test_genieacs
     
 variables:
   DEBUG: 'TRUE'
@@ -26,7 +26,7 @@ run_unit_test:
          - timestamp.log
          - memory-report.xml
          - unit-test-coverage.xml
-         
+
 run_api_test:
     stage: api_test
     image: iopsys/code-analysis:latest
@@ -46,14 +46,14 @@ run_api_test:
             - api-test-memory-report.xml
             - api-test-result.log
 
-run_functional_test:
-    stage: functional_test
+run_functional_test_genieacs:
+    stage: functional_test_genieacs
     image: iopsys/code-analysis:latest
     allow_failure: false
     script:
     - "./gitlab-ci/install-dependencies.sh"
     - "./gitlab-ci/setup.sh"
-    - "./gitlab-ci/functional-test.sh"
+    - "./gitlab-ci/functional-test-genieacs.sh"
 
     artifacts:
         when: always
