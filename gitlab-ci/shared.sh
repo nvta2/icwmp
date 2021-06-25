@@ -108,22 +108,3 @@ function build_icwmp()
 	make >/dev/null 2>&1
 	check_ret $?
 }
-
-function build_libicwmp()
-{
-	COV_CFLAGS='-fprofile-arcs -ftest-coverage'
-	COV_LDFLAGS='--coverage'
-
-	# clean icwmp
-	clean_icwmp
-
-	# compile libicwmp
-	autoreconf -i >/dev/null 2>&1
-	./configure CFLAGS="$COV_CFLAGS" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug --enable-icwmp-test >/dev/null 2>&1
-	make >/dev/null 2>&1
-	check_ret $?
-
-	# Install libicwmp
-	make install >/dev/null 2>&1
-	ldconfig >/dev/null 2>&1
-}

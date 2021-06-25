@@ -19,8 +19,6 @@ AS_IF([test "x$enable_acs" = "xno"], [AC_DEFINE(ACS_MULTI)])
 AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging messages])], AC_DEFINE(WITH_CWMP_DEBUG),)
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(WITH_DEV_DEBUG),)
 AC_ARG_ENABLE(dummy_mode, [AS_HELP_STRING([--enable-dummy-mode], [enable dummy mode])], AC_DEFINE(DUMMY_MODE),)
-AC_ARG_ENABLE(icwmp_test, [AS_HELP_STRING([--enable-icwmp-test], [enable icwmp unit test])], AC_DEFINE(ICWMP_TEST),)
-AM_CONDITIONAL([ICWMP_TEST],[test "x$enable_icwmp_test" = "xyes"])
 
 # checks for programs
 AC_PROG_CC

@@ -15,11 +15,18 @@ supervisorctl stop icwmpd
 ubus wait_for usp.raw
 supervisorctl status all
 
+echo "Clean cmocka"
+make clean -C test/cmocka/
+make uninstall -C test/cmocka
+
 echo "Compiling libicmwp"
-build_libicwmp
+make libicwmp -C test/cmocka
+
+echo "Installing libicwmp"
+make install -C test/cmocka
+ldconfig
 
 echo "Running the unit test cases"
-make clean -C test/cmocka/
 make unit-test -C test/cmocka/
 check_ret $?
 
