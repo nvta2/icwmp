@@ -19,7 +19,7 @@
 #include "common.h"
 #include "event.h"
 #include "datamodel_interface.h"
-#include "xml.h"
+#include "rpc_soap.h"
 
 enum NOTIFICATION_STATUS
 {

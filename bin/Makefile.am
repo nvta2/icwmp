@@ -25,6 +25,7 @@ icwmpd_SOURCES =			\
 	../upload.c				\
 	../sched_inform.c		\
 	../xml.c				\
+	../rpc_soap.c			\
 	../diagnostic.c			\
 	../reboot.c 			\
 	../cwmp.c	

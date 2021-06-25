@@ -19,7 +19,6 @@
 
 #include "common.h"
 #include "session.h"
-#include "xml.h"
 #include "backupSession.h"
 #include "http.h"
 #include "diagnostic.h"
@@ -32,6 +31,7 @@
 #include "download.h"
 #include "upload.h"
 #include "sched_inform.h"
+#include "rpc_soap.h"
 
 static pthread_t periodic_event_thread;
 static pthread_t scheduleInform_thread;

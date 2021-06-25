@@ -23,9 +23,9 @@
 #include "log.h"
 #include "event.h"
 #include "session.h"
-#include "xml.h"
 #include "cwmp_du_state.h"
 #include "download.h"
+#include "rpc_soap.h"
 #include "upload.h"
 #include "sched_inform.h"
 

@@ -14,11 +14,11 @@
 #include "common.h"
 #include "diagnostic.h"
 #include "config.h"
-#include "xml.h"
 #include "datamodel_interface.h"
 #include "ubus.h"
 #include "cwmp_uci.h"
 #include "event.h"
+#include "rpc_soap.h"
 
 struct diagnostic_input {
 	char *input_name;
@@ -145,6 +145,7 @@ bool set_diagnostic_parameter_structure_value(char *parameter_name, char *value)
 }
 
 void empty_ubus_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg __attribute__((unused))) {}
+
 static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name, struct diagnostic_input diagnostics_array[], int number_inputs)
 {
 	int e, i;

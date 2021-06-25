@@ -13,7 +13,7 @@
 #include "event.h"
 #include "backupSession.h"
 #include "config.h"
-#include "xml.h"
+#include "rpc_soap.h"
 
 unsigned int end_session_flag = 0;
 

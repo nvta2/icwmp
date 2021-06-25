@@ -14,12 +14,12 @@
 #include <fcntl.h>
 
 #include "backupSession.h"
-#include "xml.h"
 #include "log.h"
 #include "notifications.h"
 #include "event.h"
 #include "download.h"
 #include "cwmp_du_state.h"
+#include "rpc_soap.h"
 #include "upload.h"
 #include "sched_inform.h"
 

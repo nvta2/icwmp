@@ -9,6 +9,7 @@
 #include <libicwmp/datamodel_interface.h>
 #include <libicwmp/event.h>
 #include <libicwmp/xml.h>
+#include <libicwmp/rpc_soap.h>
 #include <libicwmp/session.h>
 #include <libicwmp/log.h>
 

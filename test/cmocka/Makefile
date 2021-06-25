@@ -14,7 +14,7 @@ VALGRIND = valgrind --xml=yes --xml-file=/builds/iopsys/icwmp/memory-report.xml 
 libobj:
 	$(CC) $(LIBCFLAGS) ../../download.c ../../upload.c ../../log.c ../../md5.c ../../digestauth.c ../../netlink.c ../../cwmp_cli.c ../../cwmp_du_state.c ../../sched_inform.c \
 	 ../../diagnostic.c ../../reboot.c ../../notifications.c ../../cwmp_zlib.c  ../../datamodel_interface.c ../../http.c ../../backupSession.c \
-	 ../../cwmp_time.c ../../config.c ../../event.c ../../session.c ../../ubus.c ../../common.c ../../xml.c ../../cwmp_uci.c $(LDFLAGS)  
+	 ../../cwmp_time.c ../../config.c ../../event.c ../../session.c ../../ubus.c ../../common.c ../../xml.c ../../rpc_soap.c ../../cwmp_uci.c $(LDFLAGS)  
 
 libicwmp: $(LIBOBJ)
 	$(CC) -shared -Wl,-soname,libicwmp.so.1 -o libicwmp.so.1.0 *.o

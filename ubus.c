@@ -15,7 +15,6 @@
 
 #include "ubus.h"
 #include "session.h"
-#include "xml.h"
 #include "log.h"
 #include "netlink.h"
 #include "cwmp_time.h"
@@ -26,6 +25,7 @@
 #include "download.h"
 #include "upload.h"
 #include "http.h"
+#include "rpc_soap.h"
 
 static struct ubus_context *ctx = NULL;
 static struct blob_buf b;
