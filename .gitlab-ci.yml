@@ -24,8 +24,9 @@ run_unit_test:
       when: always
       paths:
          - timestamp.log
+         - memory-report.xml
          - unit-test-coverage.xml
-
+         
 run_api_test:
     stage: api_test
     image: iopsys/code-analysis:latest

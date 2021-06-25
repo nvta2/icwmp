@@ -21,12 +21,12 @@
 #define CWMP_MXML_TAB_SPACE "  "
 #define MAX_SCHEDULE_INFORM_QUEUE 10
 
-#define MXML_DELETE(X)                 \
-	do {                           \
-		if (X) {               \
-			mxmlDelete(X); \
-			X = NULL;      \
-		}                      \
+#define MXML_DELETE(X)                                                                                                                                                                                                                                                                                     \
+	do {                                                                                                                                                                                                                                                                                               \
+		if (X) {                                                                                                                                                                                                                                                                                   \
+			mxmlDelete(X);                                                                                                                                                                                                                                                                     \
+			X = NULL;                                                                                                                                                                                                                                                                          \
+		}                                                                                                                                                                                                                                                                                          \
 	} while (0)
 
 extern const struct rpc_cpe_method rpc_cpe_methods[__RPC_CPE_MAX];
@@ -66,6 +66,7 @@ int xml_prepare_msg_out(struct session *session);
 int xml_prepare_lwnotification_message(char **msg_out);
 int xml_set_cwmp_id_rpc_cpe(struct session *session);
 int cwmp_create_fault_message(struct session *session, struct rpc *rpc_cpe, int fault_code);
+int xml_recreate_namespace(mxml_node_t *tree);
 
 const char *whitespace_cb(mxml_node_t *node, int where);
 int xml_set_cwmp_id(struct session *session);

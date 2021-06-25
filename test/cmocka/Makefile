@@ -1,15 +1,16 @@
 CC = gcc
-CFLAGS = -g -Wall -Werror
+CFLAGS = -g -Wall -I./inc
 LDFLAGS = -lcmocka -licwmp -lmicroxml
-UNIT_TESTS = unit_test_icwmpd
+UNIT_TESTS = icwmp_datamodel_interface_unit_testd icwmp_soap_msg_unit_testd
 
-VALGRIND = valgrind --show-reachable=yes \
-           --show-leak-kinds=all --errors-for-leak-kinds=all \
-           --error-exitcode=1 --track-origins=yes
-           
-unit_test_icwmpd: unit_test_icwmp.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-	
+VALGRIND = valgrind --xml=yes --xml-file=/builds/iopsys/icwmp/memory-report.xml --leak-check=full --show-reachable=yes --show-leak-kinds=all --errors-for-leak-kinds=all
+
+icwmp_datamodel_interface_unit_testd: icwmp_datamodel_interface_unit_test.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
+
+icwmp_soap_msg_unit_testd: icwmp_soap_msg_unit_test.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
+
 unit-test: $(UNIT_TESTS)
 	$(foreach testprog, $(UNIT_TESTS), sudo $(VALGRIND) ./$(testprog);)
 	

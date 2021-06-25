@@ -12,17 +12,7 @@
 #include <libicwmp/session.h>
 #include <libicwmp/log.h>
 
-struct cwmp cwmp_main_test = { 0 };
-struct cwmp *cwmp_test;
-
-static int group_setup(void **state)
-{
-	cwmp_test = &cwmp_main_test;
-	INIT_LIST_HEAD(&(cwmp_test->head_session_queue));
-	return 0;
-}
-
-static int group_teardown(void **state)
+static int dm_iface_unit_tests_clean(void **state)
 {
 	icwmp_cleanmem();
 	return 0;
@@ -320,7 +310,7 @@ static void dm_get_parameter_names_test(void **state)
 	assert_string_equal(fault, "9005");
 }
 
-static void dm_set_parameter_attributes_test(void **state)
+void dm_set_parameter_attributes_test(void **state)
 {
 	char *fault = NULL;
 
@@ -398,76 +388,6 @@ static void dm_get_parameter_attributes_test(void **state)
 	cwmp_free_all_dm_parameter_list(&parameters_list);
 }
 
-/*
- * SOAP TESTS
- */
-static void get_config_test(void **state)
-{
-	struct cwmp *cwmp_test = &cwmp_main_test;
-	int error = get_global_config(&(cwmp_test->conf));
-	assert_int_equal(error, CWMP_OK);
-}
-
-static void get_deviceid_test(void **state)
-{
-	struct cwmp *cwmp_test = &cwmp_main_test;
-	int error = cwmp_get_deviceid(cwmp_test);
-	assert_int_equal(error, CWMP_OK);
-}
-
-static void add_event_test(void **state)
-{
-	struct event_container *event_container;
-	event_container = cwmp_add_event_container(cwmp_test, EVENT_IDX_1BOOT, "");
-	assert_non_null(event_container);
-	assert_string_equal(EVENT_CONST[event_container->code].CODE, "1 BOOT");
-}
-
-static void soap_inform_message_test(void **state)
-{
-	struct session *session;
-	mxml_node_t *env = NULL, *n = NULL, *device_id = NULL, *cwmp_inform = NULL;
-
-	memcpy(&(cwmp_test->env), &cwmp_test, sizeof(struct env));
-	session = calloc(1, sizeof(struct session));
-	if (session == NULL)
-		return;
-
-	list_add_tail(&(session->list), &(cwmp_test->head_session_queue));
-
-	INIT_LIST_HEAD(&(session->head_event_container));
-	session = list_entry((&(cwmp_test->head_session_queue))->next, struct session, list);
-	struct rpc *rpc_acs;
-	rpc_acs = list_entry(&(session->head_rpc_acs), struct rpc, list);
-
-	cwmp_rpc_acs_prepare_message_inform(cwmp_test, session, rpc_acs);
-
-	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
-	assert_non_null(env);
-	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	cwmp_inform = mxmlFindElement(env, env, "cwmp:Inform", NULL, NULL, MXML_DESCEND);
-	assert_non_null(cwmp_inform);
-	device_id = mxmlFindElement(cwmp_inform, cwmp_inform, "DeviceId", NULL, NULL, MXML_DESCEND);
-	assert_non_null(device_id);
-	n = mxmlFindElement(device_id, device_id, "Manufacturer", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(device_id, device_id, "OUI", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(device_id, device_id, "ProductClass", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(device_id, device_id, "SerialNumber", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(cwmp_inform, cwmp_inform, "Event", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	n = mxmlFindElement(cwmp_inform, cwmp_inform, "ParameterList", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-}
-
 int main(void)
 {
 	const struct CMUnitTest tests[] = {
@@ -478,11 +398,7 @@ int main(void)
 		cmocka_unit_test(dm_get_parameter_names_test),
 		cmocka_unit_test(dm_set_parameter_attributes_test),
 		cmocka_unit_test(dm_get_parameter_attributes_test),
-		cmocka_unit_test(get_config_test),
-		cmocka_unit_test(get_deviceid_test),
-		cmocka_unit_test(add_event_test),
-		cmocka_unit_test(soap_inform_message_test),
 	};
 
-	return cmocka_run_group_tests(tests, group_setup, group_teardown);
+	return cmocka_run_group_tests(tests, NULL, dm_iface_unit_tests_clean);
 }

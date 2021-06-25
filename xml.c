@@ -92,7 +92,7 @@ mxmlFindElementOpaque(mxml_node_t *node, /* I - Current node */
 	return (NULL);
 }
 
-static int xml_recreate_namespace(mxml_node_t *tree)
+int xml_recreate_namespace(mxml_node_t *tree)
 {
 	const char *cwmp_urn;
 	char *c;
@@ -1162,7 +1162,6 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	parameter_list = mxmlNewElement(n, "ParameterList");
 	if (!parameter_list)
 		goto fault;
-
 #ifdef ACS_MULTI
 	mxmlElementSetAttr(parameter_list, "xsi:type", "soap_enc:Array");
 #endif

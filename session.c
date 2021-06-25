@@ -121,9 +121,10 @@ int cwmp_session_rpc_destructor(struct rpc *rpc)
 int cwmp_session_destructor(struct session *session)
 {
 	struct rpc *rpc;
-
 	while (session->head_rpc_acs.next != &(session->head_rpc_acs)) {
 		rpc = list_entry(session->head_rpc_acs.next, struct rpc, list);
+		if (!rpc)
+			break;
 		if (rpc_acs_methods[rpc->type].extra_clean != NULL)
 			rpc_acs_methods[rpc->type].extra_clean(session, rpc);
 		cwmp_session_rpc_destructor(rpc);
@@ -131,12 +132,13 @@ int cwmp_session_destructor(struct session *session)
 
 	while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
 		rpc = list_entry(session->head_rpc_cpe.next, struct rpc, list);
+		if (!rpc)
+			break;
 		cwmp_session_rpc_destructor(rpc);
 	}
 
 	if (session->list.next != NULL && session->list.prev != NULL)
 		list_del(&(session->list));
-
 	free(session);
 
 	return CWMP_OK;

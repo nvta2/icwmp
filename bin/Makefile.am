@@ -98,6 +98,6 @@ libicwmp_la_SOURCES =				\
 	../diagnostic.c 		\
 	../reboot.c
 
-libicwmp_la_CFLAGS=-I../inc
+libicwmp_la_CFLAGS=-g -I../inc
 libicwmp_la_LDFLAGS= $(AM_LIBS) -luci -lubox -lubus $(MICROXML_LIBS) $(LIBCURL_LIBS) -lpthread -lcrypto -lssl -ljson-c -lblobmsg_json -lz -lm
 endif
