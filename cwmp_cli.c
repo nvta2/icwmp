@@ -86,7 +86,7 @@ char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 	int flag;
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return strdup(get_fault_message_by_fault_code("9002"));
+			return get_fault_message_by_fault_code("9002");
 	}
 	LIST_HEAD(list_set_param_value);
 	LIST_HEAD(faults_list);
@@ -118,7 +118,6 @@ void display_set_cmd_result(struct cmd_input in, union cmd_result res __attribut
 		return;
 	}
 	fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-	FREE(fault);
 }
 
 /*
@@ -128,7 +127,7 @@ char *cmd_add_exec_func(struct cmd_input in, union cmd_result *res)
 {
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return icwmp_strdup(get_fault_message_by_fault_code("9002"));
+			return get_fault_message_by_fault_code("9002");
 	}
 
 	char *fault = cwmp_add_object(in.first_input, in.second_input ? in.second_input : "add_obj", &(res->instance));
@@ -163,7 +162,7 @@ char *cmd_del_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 {
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return icwmp_strdup(get_fault_message_by_fault_code("9002"));
+			return get_fault_message_by_fault_code("9002");
 	}
 
 	char *fault = cwmp_delete_object(in.first_input, in.second_input ? in.second_input : "del_obj");
@@ -181,7 +180,6 @@ void display_del_cmd_result(struct cmd_input in, union cmd_result res __attribut
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		icwmp_strdup(fault);
 		return;
 	}
 	fprintf(stdout, "Deleted %s\n", in.first_input);
@@ -218,7 +216,7 @@ char *cmd_set_notif_exec_func(struct cmd_input in, union cmd_result *res __attri
 {
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return icwmp_strdup(get_fault_message_by_fault_code("9002"));
+			return get_fault_message_by_fault_code("9002");
 	}
 	char *fault = cwmp_set_parameter_attributes(in.first_input, in.second_input);
 	if (fault != NULL) {
