@@ -1,3 +1,13 @@
+/*
+ *	This program is free software: you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation, either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	Copyright (C) 2013-2020 iopsys Software Solutions AB
+ *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
+ */
+
 #include <stdio.h>
 
 #include "common.h"
@@ -59,7 +69,6 @@ void display_get_cmd_result(struct cmd_input in __attribute__((unused)), union c
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		icwmp_free(fault);
 		return;
 	}
 	struct cwmp_dm_parameter *param_value = NULL;
@@ -94,7 +103,7 @@ char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 			break;
 		}
 		cwmp_free_all_list_param_fault(&faults_list);
-		return strdup(fault);
+		return icwmp_strdup(fault);
 	}
 	if (transaction_id)
 		cwmp_transaction_commit();
@@ -137,7 +146,6 @@ void display_add_cmd_result(struct cmd_input in, union cmd_result res, char *fau
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		icwmp_free(fault);
 		return;
 	}
 	if (in.first_input[strlen(in.first_input) - 1] == '.')
@@ -194,7 +202,6 @@ void display_get_notif_cmd_result(struct cmd_input in __attribute__((unused)), u
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		icwmp_free(fault);
 		return;
 	}
 	struct cwmp_dm_parameter *param_value = NULL;
@@ -228,7 +235,6 @@ void display_set_notif_cmd_result(struct cmd_input in, union cmd_result res __at
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		icwmp_free(fault);
 		return;
 	}
 	fprintf(stdout, "%s => %s\n", in.first_input, in.second_input);
@@ -249,7 +255,6 @@ void display_get_names_cmd_result(struct cmd_input in __attribute__((unused)), u
 {
 	if (fault != NULL) {
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
-		icwmp_free(fault);
 		return;
 	}
 	struct cwmp_dm_parameter *param_value = NULL;
@@ -301,10 +306,14 @@ void execute_cwmp_cli_command(char *cmd, char *args[])
 		if (strcmp(icwmp_commands[i].command_name, cmd) == 0) {
 			char *fault = icwmp_commands[i].cmd_exec_func(cmd_in, &cmd_out);
 			icwmp_commands[i].display_cmd_result(cmd_in, cmd_out, fault);
-			return;
+			goto cli_end;
 		}
 	}
 	printf("Wrong cwmp cli command: %s\n", cmd);
+
 cli_help:
 	cwmp_cli_help();
+
+cli_end:
+	icwmp_cleanmem();
 }

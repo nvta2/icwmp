@@ -322,7 +322,7 @@ char *cwmp_get_parameter_values(char *parameter_name, struct list_head *paramete
 	e = cwmp_ubus_call("usp.raw", "get", CWMP_UBUS_ARGS{ { "path", { .str_val = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name }, UBUS_String }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "get ubus method failed: Ubus err code: %d", e);
-		return icwmp_strdup("9002");
+		return "9002";
 	}
 
 	if (get_result.type == FAULT) {
@@ -339,7 +339,7 @@ char *cwmp_get_parameter_names(char *object_name, bool next_level, struct list_h
 	e = cwmp_ubus_call("usp.raw", "object_names", CWMP_UBUS_ARGS{ { "path", { .str_val = object_name }, UBUS_String }, { "next-level", { .bool_val = next_level }, UBUS_Bool }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 3, ubus_get_parameter_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "object_names ubus method failed: Ubus err code: %d", e);
-		return icwmp_strdup("9002");
+		return "9002";
 	}
 
 	if (get_result.type == FAULT) {
@@ -444,7 +444,7 @@ char *cwmp_add_object(char *object_name, char *key, char **instance)
 
 	if (e < 0) {
 		CWMP_LOG(INFO, "add_object ubus method failed: Ubus err code: %d", e);
-		return icwmp_strdup("9002");
+		return "9002";
 	}
 	if (add_result.status == false) {
 		CWMP_LOG(INFO, "AddObject failed");
@@ -461,7 +461,7 @@ char *cwmp_delete_object(char *object_name, char *key)
 			   ubus_objects_callback, &add_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "del_object ubus method failed: Ubus err code: %d", e);
-		return icwmp_strdup("9002");
+		return "9002";
 	}
 
 	if (add_result.status == false) {
@@ -500,7 +500,7 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 			   ubus_parameter_attributes_callback, &get_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "getm_attributes ubus method failed: Ubus err code: %d", e);
-		return icwmp_strdup("9002");
+		return "9002";
 	}
 
 	if (get_result.type == FAULT) {
@@ -522,7 +522,7 @@ char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
 			   3, ubus_parameter_attributes_callback, &set_result);
 	if (e < 0) {
 		CWMP_LOG(INFO, "setm_attributes ubus method failed: Ubus err code: %d", e);
-		return icwmp_strdup("9002");
+		return "9002";
 	}
 
 	if (set_result.type == FAULT) {
