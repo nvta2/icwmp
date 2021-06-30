@@ -218,9 +218,16 @@ int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struc
 	} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
 		rename(ICWMP_DOWNLOAD_FILE, "/tmp/vendor_configuration_file.cfg");
 		error = FAULT_CPE_NO_FAULT;
+	}  else if (strcmp(pdownload->file_type, "4 Tone File") == 0) {
+		//TODO Not Supported
+		error = FAULT_CPE_NO_FAULT;
+	} else if (strcmp(pdownload->file_type, "5 Ringer File") == 0) {
+		//TODO Not Supported
+		error = FAULT_CPE_NO_FAULT;
+
 	} else {
 		remove(ICWMP_DOWNLOAD_FILE);
-		error = FAULT_CPE_NO_FAULT;
+		error = FAULT_CPE_INVALID_ARGUMENTS;
 	}
 
 end_download:
@@ -270,13 +277,21 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 			error = FAULT_CPE_INTERNAL_ERROR;
 		else if (err == -1)
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+	} else if (strcmp(pdownload->file_type, "4 Tone File") == 0) {
+		//TODO Not Supported
+		error = FAULT_CPE_NO_FAULT;
+	} else if (strcmp(pdownload->file_type, "5 Ringer File") == 0) {
+		//TODO Not Supported
+		error = FAULT_CPE_NO_FAULT;
+
 	} else if (strcmp(pdownload->file_type, "6 Stored Firmware Image") == 0) {
 		int err = cwmp_apply_multiple_firmware();
 		if (err == CWMP_OK)
 			error = FAULT_CPE_NO_FAULT;
 		else
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-	}
+	} else
+		error = FAULT_CPE_INVALID_ARGUMENTS;
 
 	if ((error == FAULT_CPE_NO_FAULT) && (pdownload->file_type[0] == '1' || pdownload->file_type[0] == '3')) {
 		uci_set_value(UCI_ACS_PARAMETERKEY_PATH, pdownload->command_key ? pdownload->command_key : "", CWMP_CMD_SET);
