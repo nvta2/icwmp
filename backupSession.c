@@ -172,7 +172,8 @@ void bkp_tree_clean(void)
 void bkp_session_save()
 {
 	FILE *fp;
-
+	if (!bkp_tree)
+		return;
 	pthread_mutex_lock(&mutex_backup_session);
 	fp = fopen(CWMP_BKP_FILE, "w");
 	mxmlSaveFile(bkp_tree, fp, MXML_NO_CALLBACK);
@@ -200,7 +201,8 @@ mxml_node_t *bkp_session_node_found(mxml_node_t *tree, char *name, struct search
 	mxml_node_t *b = tree, *c, *d;
 	struct search_keywords;
 	int i = 0;
-
+	if (!tree)
+		return NULL;
 	b = mxmlFindElement(b, b, name, NULL, NULL, MXML_DESCEND_FIRST);
 	while (b) {
 		if (b && b->child) {
