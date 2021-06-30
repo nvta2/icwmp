@@ -143,22 +143,16 @@ typedef struct cwmp {
 	int cr_socket_desc;
 } cwmp;
 
-enum action
-{
+enum action {
 	NONE = 0,
 	START,
 	STOP,
 	RESTART,
 };
 
-enum cwmp_start
-{
-	CWMP_START_BOOT = 1,
-	CWMP_START_PERIODIC = 2
-};
+enum cwmp_start { CWMP_START_BOOT = 1, CWMP_START_PERIODIC = 2 };
 
-enum cwmp_ret_err
-{
+enum cwmp_ret_err {
 	CWMP_XML_ERR = -1,
 	CWMP_OK = 0, /* No Error */
 	CWMP_GEN_ERR, /* General Error */
@@ -167,18 +161,9 @@ enum cwmp_ret_err
 	CWMP_RETRY_SESSION
 };
 
-enum http_compression
-{
-	COMP_NONE,
-	COMP_GZIP,
-	COMP_DEFLATE
-};
+enum http_compression { COMP_NONE, COMP_GZIP, COMP_DEFLATE };
 
-enum enum_ip_version
-{
-	IPv4 = 4,
-	IPv6 = 6
-};
+enum enum_ip_version { IPv4 = 4, IPv6 = 6 };
 
 typedef struct rpc {
 	struct list_head list;
@@ -202,8 +187,7 @@ struct cwmp_dm_parameter {
 	bool writable;
 };
 
-enum amd_version_enum
-{
+enum amd_version_enum {
 	AMD_1 = 1,
 	AMD_2,
 	AMD_3,
@@ -211,11 +195,7 @@ enum amd_version_enum
 	AMD_5,
 };
 
-enum instance_mode
-{
-	INSTANCE_MODE_NUMBER,
-	INSTANCE_MODE_ALIAS
-};
+enum instance_mode { INSTANCE_MODE_NUMBER, INSTANCE_MODE_ALIAS };
 
 struct cwmp_namespaces {
 	char *soap_env;
@@ -225,8 +205,7 @@ struct cwmp_namespaces {
 	char *cwmp;
 } ns;
 
-enum rpc_cpe_methods_idx
-{
+enum rpc_cpe_methods_idx {
 	RPC_CPE_GET_RPC_METHODS = 1,
 	RPC_CPE_SET_PARAMETER_VALUES,
 	RPC_CPE_GET_PARAMETER_VALUES,
@@ -248,8 +227,7 @@ enum rpc_cpe_methods_idx
 	__RPC_CPE_MAX
 };
 
-enum rpc_acs_methods_idx
-{
+enum rpc_acs_methods_idx {
 	RPC_ACS_INFORM = 1,
 	RPC_ACS_GET_RPC_METHODS,
 	RPC_ACS_TRANSFER_COMPLETE,
@@ -257,22 +235,11 @@ enum rpc_acs_methods_idx
 	__RPC_ACS_MAX
 };
 
-enum load_type
-{
-	TYPE_DOWNLOAD = 0,
-	TYPE_SCHEDULE_DOWNLOAD,
-	TYPE_UPLOAD
-};
+enum load_type { TYPE_DOWNLOAD = 0, TYPE_SCHEDULE_DOWNLOAD, TYPE_UPLOAD };
 
-enum dustate_type
-{
-	DU_INSTALL = 1,
-	DU_UPDATE,
-	DU_UNINSTALL
-};
+enum dustate_type { DU_INSTALL = 1, DU_UPDATE, DU_UNINSTALL };
 
-enum fault_cpe_idx
-{
+enum fault_cpe_idx {
 	FAULT_CPE_NO_FAULT,
 	FAULT_CPE_METHOD_NOT_SUPPORTED,
 	FAULT_CPE_REQUEST_DENIED,
@@ -305,8 +272,7 @@ enum fault_cpe_idx
 	__FAULT_CPE_MAX
 };
 
-enum fault_code_enum
-{
+enum fault_code_enum {
 	FAULT_9000 = 9000, // Method not supported
 	FAULT_9001, // Request denied
 	FAULT_9002, // Internal error
@@ -343,11 +309,7 @@ enum fault_code_enum
 	__FAULT_MAX
 };
 
-enum client_server_faults
-{
-	FAULT_CPE_TYPE_CLIENT,
-	FAULT_CPE_TYPE_SERVER
-};
+enum client_server_faults { FAULT_CPE_TYPE_CLIENT, FAULT_CPE_TYPE_SERVER };
 
 struct rpc_cpe_method {
 	const char *name;
@@ -475,7 +437,8 @@ extern struct cwmp cwmp_main;
 extern long int flashsize;
 extern struct FAULT_CPE FAULT_CPE_ARRAY[];
 
-void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type, int notification, bool writable);
+void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type,
+			      int notification, bool writable);
 void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter);
 void cwmp_free_all_dm_parameter_list(struct list_head *list);
 int global_env_init(int argc, char **argv, struct env *env);
@@ -510,20 +473,24 @@ void icwmp_init_list_services();
 int icwmp_add_service(char *service);
 void icwmp_free_list_services();
 void icwmp_restart_services();
+bool icwmp_validate_string_length(char *arg, int max_length);
+bool icwmp_validate_boolean_value(char *arg);
+bool icwmp_validate_unsignedint(char *arg);
+bool icwmp_validate_int_in_range(char *arg, int min, int max);
 #ifndef FREE
-#define FREE(x)                                                                                                                                                                                                                                                                                            \
-	do {                                                                                                                                                                                                                                                                                               \
-		if (x) {                                                                                                                                                                                                                                                                                   \
-			free(x);                                                                                                                                                                                                                                                                           \
-			x = NULL;                                                                                                                                                                                                                                                                          \
-		}                                                                                                                                                                                                                                                                                          \
+#define FREE(x)                                                                                                        \
+	do {                                                                                                           \
+		if (x) {                                                                                               \
+			free(x);                                                                                       \
+			x = NULL;                                                                                      \
+		}                                                                                                      \
 	} while (0)
 #endif
 
-#define CWMP_STRNCPY(DST, SRC, SIZE)                                                                                                                                                                                                                                                                       \
-	do {                                                                                                                                                                                                                                                                                               \
-		strncpy(DST, SRC, SIZE - 1);                                                                                                                                                                                                                                                               \
-		DST[SIZE - 1] = '\0';                                                                                                                                                                                                                                                                      \
+#define CWMP_STRNCPY(DST, SRC, SIZE)                                                                                   \
+	do {                                                                                                           \
+		strncpy(DST, SRC, SIZE - 1);                                                                           \
+		DST[SIZE - 1] = '\0';                                                                                  \
 	} while (0)
 
 #endif

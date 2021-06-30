@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/file.h>
+#include <regex.h>
 
 #include "common.h"
 #include "cwmp_uci.h"
@@ -41,36 +42,60 @@ struct cwmp_mem {
 	char mem[0];
 };
 
-struct option cwmp_long_options[] = { { "boot-event", no_argument, NULL, 'b' }, { "get-rpc-methods", no_argument, NULL, 'g' }, { "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument, NULL, 'v' }, { NULL, 0, NULL, 0 } };
+struct option cwmp_long_options[] = {
+	{ "boot-event", no_argument, NULL, 'b' },    { "get-rpc-methods", no_argument, NULL, 'g' },
+	{ "command-input", no_argument, NULL, 'c' }, { "help", no_argument, NULL, 'h' },
+	{ "version", no_argument, NULL, 'v' },	     { NULL, 0, NULL, 0 }
+};
 
-struct FAULT_CPE FAULT_CPE_ARRAY[] = { [FAULT_CPE_METHOD_NOT_SUPPORTED] = { "9000", FAULT_9000, FAULT_CPE_TYPE_SERVER, "Method not supported" },
-				       [FAULT_CPE_REQUEST_DENIED] = { "9001", FAULT_9001, FAULT_CPE_TYPE_SERVER, "Request denied (no reason specified)" },
-				       [FAULT_CPE_INTERNAL_ERROR] = { "9002", FAULT_9002, FAULT_CPE_TYPE_SERVER, "Internal error" },
-				       [FAULT_CPE_INVALID_ARGUMENTS] = { "9003", FAULT_9003, FAULT_CPE_TYPE_CLIENT, "Invalid arguments" },
-				       [FAULT_CPE_RESOURCES_EXCEEDED] = { "9004", FAULT_9004, FAULT_CPE_TYPE_SERVER, "Resources exceeded" },
-				       [FAULT_CPE_INVALID_PARAMETER_NAME] = { "9005", FAULT_9005, FAULT_CPE_TYPE_CLIENT, "Invalid parameter name" },
-				       [FAULT_CPE_INVALID_PARAMETER_TYPE] = { "9006", FAULT_9006, FAULT_CPE_TYPE_CLIENT, "Invalid parameter type" },
-				       [FAULT_CPE_INVALID_PARAMETER_VALUE] = { "9007", FAULT_9007, FAULT_CPE_TYPE_CLIENT, "Invalid parameter value" },
-				       [FAULT_CPE_NON_WRITABLE_PARAMETER] = { "9008", FAULT_9008, FAULT_CPE_TYPE_CLIENT, "Attempt to set a non-writable parameter" },
-				       [FAULT_CPE_NOTIFICATION_REJECTED] = { "9009", FAULT_9009, FAULT_CPE_TYPE_SERVER, "Notification request rejected" },
-				       [FAULT_CPE_DOWNLOAD_FAILURE] = { "9010", FAULT_9010, FAULT_CPE_TYPE_SERVER, "Download failure" },
-				       [FAULT_CPE_UPLOAD_FAILURE] = { "9011", FAULT_9011, FAULT_CPE_TYPE_SERVER, "Upload failure" },
-				       [FAULT_CPE_FILE_TRANSFER_AUTHENTICATION_FAILURE] = { "9012", FAULT_9012, FAULT_CPE_TYPE_SERVER, "File transfer server authentication failure" },
-				       [FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL] = { "9013", FAULT_9013, FAULT_CPE_TYPE_SERVER, "Unsupported protocol for file transfer" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_MULTICAST_GROUP] = { "9014", FAULT_9014, FAULT_CPE_TYPE_SERVER, "Download failure: unable to join multicast group" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER] = { "9015", FAULT_9015, FAULT_CPE_TYPE_SERVER, "Download failure: unable to contact file server" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_ACCESS_FILE] = { "9016", FAULT_9016, FAULT_CPE_TYPE_SERVER, "Download failure: unable to access file" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD] = { "9017", FAULT_9017, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED] = { "9018", FAULT_9018, FAULT_CPE_TYPE_SERVER, "Download failure: file corrupted" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION] = { "9019", FAULT_9019, FAULT_CPE_TYPE_SERVER, "Download failure: file authentication failure" },
-				       [FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW] = { "9020", FAULT_9020, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download" },
-				       [FAULT_CPE_DUPLICATE_DEPLOYMENT_UNIT] = { "9026", FAULT_9026, FAULT_CPE_TYPE_SERVER, "Duplicate deployment unit" },
-				       [FAULT_CPE_SYSTEM_RESOURCES_EXCEEDED] = { "9027", FAULT_9027, FAULT_CPE_TYPE_SERVER, "System ressources exceeded" },
-				       [FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT] = { "9028", FAULT_9028, FAULT_CPE_TYPE_SERVER, "Unknown deployment unit" },
-				       [FAULT_CPE_INVALID_DEPLOYMENT_UNIT_STATE] = { "9029", FAULT_9029, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit state" },
-				       [FAULT_CPE_INVALID_DOWNGRADE_REJECTED] = { "9030", FAULT_9030, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Downgrade not permitted" },
-				       [FAULT_CPE_INVALID_UPDATE_VERSION_UNSPECIFIED] = { "9031", FAULT_9031, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Version not specified" },
-				       [FAULT_CPE_INVALID_UPDATE_VERSION_EXIST] = { "9031", FAULT_9032, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Version already exist" } };
+struct FAULT_CPE FAULT_CPE_ARRAY[] = {
+	[FAULT_CPE_METHOD_NOT_SUPPORTED] = { "9000", FAULT_9000, FAULT_CPE_TYPE_SERVER, "Method not supported" },
+	[FAULT_CPE_REQUEST_DENIED] = { "9001", FAULT_9001, FAULT_CPE_TYPE_SERVER,
+				       "Request denied (no reason specified)" },
+	[FAULT_CPE_INTERNAL_ERROR] = { "9002", FAULT_9002, FAULT_CPE_TYPE_SERVER, "Internal error" },
+	[FAULT_CPE_INVALID_ARGUMENTS] = { "9003", FAULT_9003, FAULT_CPE_TYPE_CLIENT, "Invalid arguments" },
+	[FAULT_CPE_RESOURCES_EXCEEDED] = { "9004", FAULT_9004, FAULT_CPE_TYPE_SERVER, "Resources exceeded" },
+	[FAULT_CPE_INVALID_PARAMETER_NAME] = { "9005", FAULT_9005, FAULT_CPE_TYPE_CLIENT, "Invalid parameter name" },
+	[FAULT_CPE_INVALID_PARAMETER_TYPE] = { "9006", FAULT_9006, FAULT_CPE_TYPE_CLIENT, "Invalid parameter type" },
+	[FAULT_CPE_INVALID_PARAMETER_VALUE] = { "9007", FAULT_9007, FAULT_CPE_TYPE_CLIENT, "Invalid parameter value" },
+	[FAULT_CPE_NON_WRITABLE_PARAMETER] = { "9008", FAULT_9008, FAULT_CPE_TYPE_CLIENT,
+					       "Attempt to set a non-writable parameter" },
+	[FAULT_CPE_NOTIFICATION_REJECTED] = { "9009", FAULT_9009, FAULT_CPE_TYPE_SERVER,
+					      "Notification request rejected" },
+	[FAULT_CPE_DOWNLOAD_FAILURE] = { "9010", FAULT_9010, FAULT_CPE_TYPE_SERVER, "Download failure" },
+	[FAULT_CPE_UPLOAD_FAILURE] = { "9011", FAULT_9011, FAULT_CPE_TYPE_SERVER, "Upload failure" },
+	[FAULT_CPE_FILE_TRANSFER_AUTHENTICATION_FAILURE] = { "9012", FAULT_9012, FAULT_CPE_TYPE_SERVER,
+							     "File transfer server authentication failure" },
+	[FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL] = { "9013", FAULT_9013, FAULT_CPE_TYPE_SERVER,
+							   "Unsupported protocol for file transfer" },
+	[FAULT_CPE_DOWNLOAD_FAIL_MULTICAST_GROUP] = { "9014", FAULT_9014, FAULT_CPE_TYPE_SERVER,
+						      "Download failure: unable to join multicast group" },
+	[FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER] = { "9015", FAULT_9015, FAULT_CPE_TYPE_SERVER,
+						     "Download failure: unable to contact file server" },
+	[FAULT_CPE_DOWNLOAD_FAIL_ACCESS_FILE] = { "9016", FAULT_9016, FAULT_CPE_TYPE_SERVER,
+						  "Download failure: unable to access file" },
+	[FAULT_CPE_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD] = { "9017", FAULT_9017, FAULT_CPE_TYPE_SERVER,
+							"Download failure: unable to complete download" },
+	[FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED] = { "9018", FAULT_9018, FAULT_CPE_TYPE_SERVER,
+						     "Download failure: file corrupted" },
+	[FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION] = { "9019", FAULT_9019, FAULT_CPE_TYPE_SERVER,
+							  "Download failure: file authentication failure" },
+	[FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW] = { "9020", FAULT_9020, FAULT_CPE_TYPE_SERVER,
+							 "Download failure: unable to complete download" },
+	[FAULT_CPE_DUPLICATE_DEPLOYMENT_UNIT] = { "9026", FAULT_9026, FAULT_CPE_TYPE_SERVER,
+						  "Duplicate deployment unit" },
+	[FAULT_CPE_SYSTEM_RESOURCES_EXCEEDED] = { "9027", FAULT_9027, FAULT_CPE_TYPE_SERVER,
+						  "System ressources exceeded" },
+	[FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT] = { "9028", FAULT_9028, FAULT_CPE_TYPE_SERVER, "Unknown deployment unit" },
+	[FAULT_CPE_INVALID_DEPLOYMENT_UNIT_STATE] = { "9029", FAULT_9029, FAULT_CPE_TYPE_SERVER,
+						      "Invalid deployment unit state" },
+	[FAULT_CPE_INVALID_DOWNGRADE_REJECTED] = { "9030", FAULT_9030, FAULT_CPE_TYPE_SERVER,
+						   "Invalid deployment unit Update: Downgrade not permitted" },
+	[FAULT_CPE_INVALID_UPDATE_VERSION_UNSPECIFIED] = { "9031", FAULT_9031, FAULT_CPE_TYPE_SERVER,
+							   "Invalid deployment unit Update: Version not specified" },
+	[FAULT_CPE_INVALID_UPDATE_VERSION_EXIST] = { "9031", FAULT_9032, FAULT_CPE_TYPE_SERVER,
+						     "Invalid deployment unit Update: Version already exist" }
+};
 
 static void show_help(void)
 {
@@ -122,7 +147,8 @@ int global_env_init(int argc, char **argv, struct env *env)
 /*
  * List dm_paramter
  */
-void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_val, char *param_type, int notification, bool writable)
+void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_val, char *param_type,
+			      int notification, bool writable)
 {
 	struct cwmp_dm_parameter *dm_parameter;
 	struct list_head *ilist;
@@ -301,9 +327,13 @@ int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_t
 	fprintf(fp, "	iptables -X zone_icwmp_input 2> /dev/null\n");
 	fprintf(fp, "fi\n");
 	if (ip_type == 0)
-		fprintf(fp, "iptables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n", zone_name, ip_addr, port);
+		fprintf(fp,
+			"iptables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n",
+			zone_name, ip_addr, port);
 	else
-		fprintf(fp, "ip6tables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n", zone_name, ip_addr, port);
+		fprintf(fp,
+			"ip6tables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n",
+			zone_name, ip_addr, port);
 	fclose(fp);
 	return 0;
 }
@@ -602,7 +632,60 @@ void icwmp_restart_services()
 		if (strlen(list_services[i]) == 0)
 			continue;
 
-		cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", { .str_val = list_services[i] }, UBUS_String } }, 1, NULL, NULL);
+		cwmp_ubus_call("uci", "commit",
+			       CWMP_UBUS_ARGS{ { "config", { .str_val = list_services[i] }, UBUS_String } }, 1, NULL,
+			       NULL);
 	}
 	icwmp_free_list_services();
+}
+
+/*
+ * Arguments validation
+ */
+bool icwmp_validate_string_length(char *arg, int max_length)
+{
+	if (arg != NULL && strlen(arg) > max_length)
+		return false;
+	return true;
+}
+
+bool icwmp_validate_boolean_value(char *arg)
+{
+	if (!arg ||( strcmp(arg, "1") != 0 && strcmp(arg, "0") != 0 && strcmp(arg, "true") != 0 && strcmp(arg, "false") != 0))
+		return false;
+	return true;
+}
+
+bool icwmp_validate_unsignedint(char *arg)
+{
+	int arg_int;
+
+	if(arg == NULL)
+		return false;
+
+	if (strcmp(arg, "0") == 0)
+		arg_int = 0;
+	else {
+		arg_int = atoi(arg);
+		if (arg_int == 0)
+			return false;
+	}
+	return arg_int >= 0;
+}
+
+bool icwmp_validate_int_in_range(char *arg, int min, int max)
+{
+	int arg_int;
+
+	if(arg == NULL)
+		return false;
+
+	if (strcmp(arg, "0") == 0)
+		arg_int = 0;
+	else {
+		arg_int = atoi(arg);
+		if (arg_int == 0)
+			return false;
+	}
+	return arg_int >= min && arg_int <= max;
 }

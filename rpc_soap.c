@@ -851,6 +851,12 @@ int cwmp_handle_rpc_cpe_get_parameter_names(struct session *session, struct rpc 
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
+
+	if (!icwmp_validate_boolean_value(NextLevel)) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+
 	if (parameter_name && NextLevel) {
 		char *err = cwmp_get_parameter_names(parameter_name, strcmp(NextLevel, "true") == 0 || strcmp(NextLevel, "1") == 0 ? true : false, &parameters_list);
 		if (err) {
@@ -1090,6 +1096,12 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct session *session, struct rpc
 	b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
 	if (b && b->type == MXML_OPAQUE && b->value.opaque)
 		parameter_key = b->value.opaque;
+
+	if (!icwmp_validate_string_length(parameter_key, 32)) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+
 	int flag = 0;
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
@@ -1149,6 +1161,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	mxml_node_t *n, *b = session->body_in;
 	char *parameter_name = NULL, *parameter_notification = NULL;
 	int fault_code = FAULT_CPE_INTERNAL_ERROR, ret = 0;
+	char *notification_change = NULL;
 	char c[256];
 
 	/* handle cwmp:SetParameterAttributes */
@@ -1167,9 +1180,9 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	}
 	while (b != NULL) {
 		if (b && b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "SetParameterAttributesStruct")) {
-			//attr_notification_update = NULL;
 			parameter_name = NULL;
 			parameter_notification = NULL;
+			notification_change = NULL;
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Name")) {
 			parameter_name = b->value.opaque;
@@ -1178,10 +1191,10 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 			parameter_name = "";
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "NotificationChange")) {
-			//attr_notification_update = b->value.opaque;
+			notification_change = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "NotificationChange") && !b->child) {
-			//attr_notification_update = "";
+			notification_change = "";
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Notification")) {
 			parameter_notification = b->value.opaque;
@@ -1189,7 +1202,15 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 		if (b && b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "Notification") && !b->child) {
 			parameter_notification = "";
 		}
-		if (parameter_name && parameter_notification) {
+		if (parameter_name && parameter_notification && notification_change) {
+			if (!icwmp_validate_boolean_value(notification_change)) {
+				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+				goto fault;
+			}
+			if (!icwmp_validate_int_in_range(parameter_notification, 0, 6)) {
+				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+				goto fault;
+			}
 			char *err = cwmp_set_parameter_attributes(parameter_name, parameter_notification);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
@@ -1248,6 +1269,10 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
 
+	if (!icwmp_validate_string_length(parameter_key, 32)) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
 			goto fault;
@@ -1327,6 +1352,10 @@ int cwmp_handle_rpc_cpe_delete_object(struct session *session, struct rpc *rpc)
 			parameter_key = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
+	}
+	if (!icwmp_validate_string_length(parameter_key, 32)) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
 	}
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
@@ -1502,6 +1531,7 @@ int cwmp_handle_rpc_cpe_cancel_transfer(struct session *session, struct rpc *rpc
 {
 	mxml_node_t *b;
 	char *command_key = NULL;
+	int fault_code = FAULT_CPE_INTERNAL_ERROR;
 
 	b = session->body_in;
 	while (b) {
@@ -1509,6 +1539,10 @@ int cwmp_handle_rpc_cpe_cancel_transfer(struct session *session, struct rpc *rpc
 			command_key = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
+	}
+	if (!icwmp_validate_string_length(command_key, 32)) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
 	}
 	if (command_key) {
 		cancel_transfer(command_key);
@@ -1522,7 +1556,7 @@ int cwmp_handle_rpc_cpe_cancel_transfer(struct session *session, struct rpc *rpc
 		goto fault;
 	return 0;
 fault:
-	if (cwmp_create_fault_message(session, rpc, FAULT_CPE_INTERNAL_ERROR))
+	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
 
@@ -1579,7 +1613,7 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 	mxml_node_t *b;
 	struct event_container *event_container;
 	char *command_key = NULL;
-
+	int fault_code = FAULT_CPE_INTERNAL_ERROR;
 	b = session->body_in;
 
 	while (b) {
@@ -1589,7 +1623,10 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
-
+	if (!icwmp_validate_string_length(commandKey, 32)) {
+		fault_code = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
 	pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 	event_container = cwmp_add_event_container(&cwmp_main, EVENT_IDX_M_Reboot, command_key);
 	if (event_container == NULL) {
@@ -1612,7 +1649,7 @@ int cwmp_handle_rpc_cpe_reboot(struct session *session, struct rpc *rpc)
 	return 0;
 
 fault:
-	if (cwmp_create_fault_message(session, rpc, FAULT_CPE_INTERNAL_ERROR))
+	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
 	return 0;
 
@@ -1646,7 +1683,11 @@ int cwmp_handle_rpc_cpe_schedule_inform(struct session *session, struct rpc *rpc
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 	}
-
+	if (!icwmp_validate_string_length(command_key, 32)) {
+		fault = FAULT_CPE_INVALID_ARGUMENTS;
+		pthread_mutex_unlock(&mutex_schedule_inform);
+		goto fault;
+	}
 	if (delay_seconds <= 0) {
 		fault = FAULT_CPE_INVALID_ARGUMENTS;
 		pthread_mutex_unlock(&mutex_schedule_inform);
@@ -1809,6 +1850,10 @@ int cwmp_handle_rpc_cpe_change_du_state(struct session *session, struct rpc *rpc
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
+	if (!icwmp_validate_string_length(change_du_state->command_key, 32)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
 	t = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!t)
 		goto fault;
@@ -1889,6 +1934,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	struct list_head *ilist;
 	time_t scheduled_time = 0;
 	time_t download_delay = 0;
+	char *str_file_size = NULL, *str_download_delay = NULL;
 
 	if (snprintf(c, sizeof(c), "%s:%s", ns.cwmp, "Download") == -1) {
 		error = FAULT_CPE_INTERNAL_ERROR;
@@ -1934,15 +1980,45 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 			download->password = strdup(b->value.opaque);
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileSize")) {
+			str_file_size = strdup(b->value.opaque ? b->value.opaque: "0");
 			download->file_size = atoi(b->value.opaque);
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "DelaySeconds")) {
+			str_download_delay = strdup(b->value.opaque ? b->value.opaque: "0");
 			download_delay = atol(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
+	if (!icwmp_validate_string_length(download->command_key, 32)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(download->url, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(download->username, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(download->password, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_unsignedint(str_file_size)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		FREE(str_file_size);
+		goto fault;
+	}
+	FREE(str_file_size);
+	if (!icwmp_validate_unsignedint(str_download_delay)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		FREE(str_download_delay);
+		goto fault;
+	}
+	FREE(str_download_delay);
 
-	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "6 Stored Firmware Image")) {
+	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "4 Tone File") && strcmp(file_type, "5 Ringer File") && strcmp(file_type, "6 Stored Firmware Image")) {
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	} else if (count_download_queue >= MAX_DOWNLOAD_QUEUE) {
 		error = FAULT_CPE_RESOURCES_EXCEEDED;
@@ -2007,7 +2083,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 {
 	mxml_node_t *n, *t, *b = session->body_in;
 	char c[256], *tmp, *file_type = NULL;
-	char *windowmode0 = NULL, *windowmode1 = NULL;
+	char *windowmode0 = NULL, *windowmode1 = NULL, *str_file_size = NULL;
 	int i = 0, j = 0;
 	int error = FAULT_CPE_NO_FAULT;
 	struct download *schedule_download = NULL;
@@ -2057,6 +2133,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 			schedule_download->password = strdup(b->value.opaque);
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileSize")) {
+			str_file_size = strdup(b->value.opaque);
 			schedule_download->file_size = atoi(b->value.opaque);
 		}
 
@@ -2107,6 +2184,28 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
+	if (!icwmp_validate_string_length(schedule_download->command_key, 32)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(schedule_download->url, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(schedule_download->username, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(schedule_download->password, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_unsignedint(str_file_size)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		FREE(str_file_size);
+		goto fault;
+	}
+	FREE(str_file_size);
 	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "4 Tone File") && strcmp(file_type, "5 Ringer File") && strcmp(file_type, "6 Stored Firmware Image")) {
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	} else if ((strcmp(windowmode0, "1 At Any Time") && strcmp(windowmode0, "2 Immediately") && strcmp(windowmode0, "3 When Idle")) || (strcmp(windowmode1, "1 At Any Time") && strcmp(windowmode1, "2 Immediately") && strcmp(windowmode1, "3 When Idle"))) {
@@ -2188,6 +2287,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	struct list_head *ilist;
 	time_t scheduled_time = 0;
 	time_t upload_delay = 0;
+	char *str_upload_delay = NULL;
 	char c[256];
 
 	if (snprintf(c, sizeof(c), "%s:%s", ns.cwmp, "Upload") == -1) {
@@ -2236,10 +2336,34 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 			upload->password = strdup(b->value.opaque);
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "DelaySeconds")) {
+			str_upload_delay = strdup(b->value.opaque);
 			upload_delay = atol(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, n, MXML_DESCEND);
 	}
+	if (!icwmp_validate_string_length(upload->command_key, 32)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(upload->url, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(upload->username, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_string_length(upload->password, 256)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		goto fault;
+	}
+	if (!icwmp_validate_unsignedint(str_upload_delay)) {
+		error = FAULT_CPE_INVALID_ARGUMENTS;
+		FREE(str_upload_delay);
+		goto fault;
+	}
+	FREE(str_upload_delay);
+
 	if (strncmp(file_type, "1 Vendor Configuration File", sizeof "1 Vendor Configuration File" - 1) != 0 && strncmp(file_type, "3 Vendor Configuration File", sizeof "3 Vendor Configuration File" - 1) != 0 && strncmp(file_type, "2 Vendor Log File", sizeof "2 Vendor Log File" - 1) != 0 &&
 	    strncmp(file_type, "4 Vendor Log File", sizeof "4 Vendor Log File" - 1) != 0) {
 		error = FAULT_CPE_REQUEST_DENIED;

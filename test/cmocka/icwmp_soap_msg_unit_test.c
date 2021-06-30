@@ -14,7 +14,7 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/xml.h>
+#include <libicwmp/rpc_soap.h>
 #include <libicwmp/event.h>
 #include <libicwmp/session.h>
 #include <libicwmp/config.h>
