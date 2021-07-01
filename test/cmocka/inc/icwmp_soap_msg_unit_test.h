@@ -29,7 +29,7 @@
 					"<ParameterValueStruct>" \
 					"</ParameterValueStruct>" \
 				"</ParameterList>" \
-				"<ParameterKey>set_value_test</ParameterKey>" \
+				"<ParameterKey></ParameterKey>" \
 			"</cwmp:SetParameterValues>" \
 		"</SOAP-ENV:Body>" \
 	"</SOAP-ENV:Envelope>"
@@ -44,7 +44,7 @@
 		"<SOAP-ENV:Body>" \
 			"<cwmp:AddObject xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">" \
 				"<ObjectName></ObjectName>" \
-				"<ParameterKey>add_object_test</ParameterKey>" \
+				"<ParameterKey></ParameterKey>" \
 			"</cwmp:AddObject>" \
 		"</SOAP-ENV:Body>" \
 	"</SOAP-ENV:Envelope>"
@@ -59,7 +59,7 @@
 		"<SOAP-ENV:Body>" \
 			"<cwmp:DeleteObject xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">" \
 				"<ObjectName></ObjectName>" \
-				"<ParameterKey>del_object_test</ParameterKey>" \
+				"<ParameterKey></ParameterKey>" \
 			"</cwmp:DeleteObject>" \
 		"</SOAP-ENV:Body>" \
 	"</SOAP-ENV:Envelope>"
@@ -90,7 +90,7 @@
 				"<ParameterList SOAP-ENC:arrayType=\"cwmp:SetParameterAttributesStruct[1]\">" \
 					"<SetParameterAttributesStruct>" \
 						"<Name></Name>" \
-						"<NotificationChange>1</NotificationChange>" \
+						"<NotificationChange></NotificationChange>" \
 						"<Notification></Notification>" \
 						"<AccessList SOAP-ENC:arrayType=\"xsd:string[1]\"><string xsi:type=\"xsd:string\">subscriber</string></AccessList>" \
 						"<AccessListChange>1</AccessListChange>" \
@@ -114,9 +114,9 @@
 				"<URL></URL>" \
 				"<Username></Username>" \
 				"<Password></Password>" \
-				"<FileSize>0</FileSize>" \
+				"<FileSize></FileSize>" \
 				"<TargetFileName></TargetFileName>" \
-				"<DelaySeconds>0</DelaySeconds>" \
+				"<DelaySeconds></DelaySeconds>" \
 				"<SuccessURL></SuccessURL>" \
 				"<FailureURL></FailureURL>" \
 			"</cwmp:Download>" \

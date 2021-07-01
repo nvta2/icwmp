@@ -29,6 +29,9 @@ struct cwmp *cwmp_test;
 struct session *session_test = NULL;
 int instance = 0;
 
+#define INVALID_PARAM_KEY "ParameterKeyParameterKeyParameter"
+#define INVALID_USER "useruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruseruser1"
+#define INVALID_PASS "passwordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpasswordpassword1"
 /*
  * End test clean
  */
@@ -318,7 +321,7 @@ static void soap_get_param_value_message_test(void **state)
 	session_test = NULL;
 }
 
-/*static void prepare_spv_soap_request(struct session *session, char *parameter, char *value)
+static void prepare_spv_soap_request(struct session *session, char *parameter, char *value, char *parameter_key)
 {
 	mxml_node_t *params = NULL, *n = NULL;
 
@@ -330,6 +333,8 @@ static void soap_get_param_value_message_test(void **state)
 	n = mxmlNewElement(params, "Value");
 	mxmlElementSetAttr(n, "xsi:type", "xsd:string");
 	n = mxmlNewOpaque(n, value);
+	n = mxmlFindElement(session->tree_in, session->tree_in, "ParameterKey", NULL, NULL, MXML_DESCEND);
+	n = mxmlNewOpaque(n, parameter_key);
 }
 
 static void soap_set_param_value_message_test(void **state)
@@ -343,11 +348,11 @@ static void soap_set_param_value_message_test(void **state)
 
 	rpc_cpe = list_entry(&(session->head_rpc_cpe), struct rpc, list);
 
-
+	/*
 	 * Valid path & writable parameter
-
+	*/
 	rpc_cpe->type = RPC_CPE_SET_PARAMETER_VALUES;
-	prepare_spv_soap_request(session, "Device.ManagementServer.PeriodicInformEnable", "true");
+	prepare_spv_soap_request(session, "Device.ManagementServer.PeriodicInformEnable", "true", "set_value_test");
 	prepare_session_for_rpc_method_call(session);
 
 	int ret = cwmp_handle_rpc_cpe_set_parameter_values(session, rpc_cpe);
@@ -372,13 +377,13 @@ static void soap_set_param_value_message_test(void **state)
 	MXML_DELETE(session->tree_out);
 	session->tree_out = NULL;
 
-
+	/*
 	 * Wrong parameter path
-
+	 */
 	rpc_cpe->type = RPC_CPE_SET_PARAMETER_VALUES;
 	mxml_node_t *cwmp_fault = NULL, *set_val_fault = NULL;
 
-	prepare_spv_soap_request(session, "Device.ManagementServeriodicInformEnable", "mngmt_enable");
+	prepare_spv_soap_request(session, "Device.ManagementServeriodicInformEnable", "mngmt_enable", "set_value_test");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_set_parameter_values(session, rpc_cpe);
@@ -419,11 +424,11 @@ static void soap_set_param_value_message_test(void **state)
 	session->tree_in = NULL;
 	session->tree_out = NULL;
 
-
+	/*
 	 * Not writable & Valid parameter path
-
+	 */
 	rpc_cpe->type = RPC_CPE_SET_PARAMETER_VALUES;
-	prepare_spv_soap_request(session, "Device.ManagementServer.AliasBasedAddressing", "true");
+	prepare_spv_soap_request(session, "Device.ManagementServer.AliasBasedAddressing", "true", "set_value_test");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_set_parameter_values(session, rpc_cpe);
@@ -466,17 +471,51 @@ static void soap_set_param_value_message_test(void **state)
 	unit_test_end_test_destruction();
 	clean_name_space();
 	session_test = NULL;
-}*/
 
-static void prepare_addobj_soap_request(struct session *session, char *object)
+	/*
+	 * Invalide parameteKey
+	 */
+	rpc_cpe->type = RPC_CPE_SET_PARAMETER_VALUES;
+
+	prepare_spv_soap_request(session, "Device.ManagementServer.PeriodicInformEnable", "false", INVALID_PARAM_KEY);
+	prepare_session_for_rpc_method_call(session);
+
+	ret = cwmp_handle_rpc_cpe_set_parameter_values(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	set_val_fault = mxmlFindElement(cwmp_fault, cwmp_fault, "SetParameterValuesFault", NULL, NULL, MXML_DESCEND);
+	assert_null(set_val_fault);
+}
+
+static void prepare_addobj_soap_request(struct session *session, char *object, char *parameter_key)
 {
-	mxml_node_t *n = NULL;
+	mxml_node_t *add_node = NULL, *n = NULL;
 
 	session->tree_in = mxmlLoadString(NULL, CWMP_ADDOBJECT_REQ, MXML_OPAQUE_CALLBACK);
 	xml_recreate_namespace(session->tree_in);
-	n = mxmlFindElement(session->tree_in, session->tree_in, "cwmp:AddObject", NULL, NULL, MXML_DESCEND);
-	n = mxmlFindElement(n, n, "ObjectName", NULL, NULL, MXML_DESCEND);
+	add_node = mxmlFindElement(session->tree_in, session->tree_in, "cwmp:AddObject", NULL, NULL, MXML_DESCEND);
+	n = mxmlFindElement(add_node, add_node, "ObjectName", NULL, NULL, MXML_DESCEND);
 	n = mxmlNewOpaque(n, object);
+	n = mxmlFindElement(add_node, add_node, "ParameterKey", NULL, NULL, MXML_DESCEND);
+	n = mxmlNewOpaque(n, parameter_key);
 }
 
 static void soap_add_object_message_test(void **state)
@@ -492,7 +531,7 @@ static void soap_add_object_message_test(void **state)
 	/*
 	 * Valid path & writable object
 	 */
-	prepare_addobj_soap_request(session, "Device.WiFi.SSID.");
+	prepare_addobj_soap_request(session, "Device.WiFi.SSID.", "add_object_test");
 	prepare_session_for_rpc_method_call(session);
 
 	int ret = cwmp_handle_rpc_cpe_add_object(session, rpc_cpe);
@@ -521,7 +560,7 @@ static void soap_add_object_message_test(void **state)
 	 */
 	mxml_node_t *cwmp_fault = NULL;
 
-	prepare_addobj_soap_request(session, "Device.WiFi.SSI.");
+	prepare_addobj_soap_request(session, "Device.WiFi.SSI.", "add_object_test");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_add_object(session, rpc_cpe);
@@ -553,7 +592,7 @@ static void soap_add_object_message_test(void **state)
 	 * Not writable & Valid object path
 	 */
 	cwmp_fault = NULL;
-	prepare_addobj_soap_request(session, "Device.DeviceInfo.Processor.");
+	prepare_addobj_soap_request(session, "Device.DeviceInfo.Processor.", "add_object_test");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_add_object(session, rpc_cpe);
@@ -581,21 +620,55 @@ static void soap_add_object_message_test(void **state)
 	MXML_DELETE(session->tree_in);
 	MXML_DELETE(session->tree_out);
 
+	/*
+	 * Invalid parameterkey
+	 */
+	cwmp_fault = NULL;
+	prepare_addobj_soap_request(session, "Device.WiFi.SSID.", INVALID_PARAM_KEY);
+	prepare_session_for_rpc_method_call(session);
+
+	ret = cwmp_handle_rpc_cpe_add_object(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+
 	session->head_rpc_acs.next = NULL;
 	unit_test_end_test_destruction();
 	clean_name_space();
 	session_test = NULL;
 }
 
-static void prepare_delobj_soap_request(struct session *session, char *object)
+static void prepare_delobj_soap_request(struct session *session, char *object, char *parameter_key)
 {
-	mxml_node_t *n = NULL;
+	mxml_node_t *del_node = NULL, *n = NULL;
 
 	session->tree_in = mxmlLoadString(NULL, CWMP_DELOBJECT_REQ, MXML_OPAQUE_CALLBACK);
 	xml_recreate_namespace(session->tree_in);
-	n = mxmlFindElement(session->tree_in, session->tree_in, "cwmp:DeleteObject", NULL, NULL, MXML_DESCEND);
-	n = mxmlFindElement(n, n, "ObjectName", NULL, NULL, MXML_DESCEND);
+	del_node = mxmlFindElement(session->tree_in, session->tree_in, "cwmp:DeleteObject", NULL, NULL, MXML_DESCEND);
+	n = mxmlFindElement(del_node, del_node, "ObjectName", NULL, NULL, MXML_DESCEND);
 	n = mxmlNewOpaque(n, object);
+	n = mxmlFindElement(del_node, del_node, "ParameterKey", NULL, NULL, MXML_DESCEND);
+	n = mxmlNewOpaque(n, parameter_key);
 }
 
 static void soap_delete_object_message_test(void **state)
@@ -614,7 +687,7 @@ static void soap_delete_object_message_test(void **state)
 	 */
 	char del_obj[32];
 	snprintf(del_obj, sizeof(del_obj), "Device.WiFi.SSID.%d.", instance);
-	prepare_delobj_soap_request(session, del_obj);
+	prepare_delobj_soap_request(session, del_obj, "del_object_test");
 	prepare_session_for_rpc_method_call(session);
 
 	int ret = cwmp_handle_rpc_cpe_delete_object(session, rpc_cpe);
@@ -640,7 +713,7 @@ static void soap_delete_object_message_test(void **state)
 	 */
 	mxml_node_t *cwmp_fault = NULL;
 
-	prepare_delobj_soap_request(session, "Device.WiFi.SID.1");
+	prepare_delobj_soap_request(session, "Device.WiFi.SID.1", "del_object_test");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_delete_object(session, rpc_cpe);
@@ -672,7 +745,7 @@ static void soap_delete_object_message_test(void **state)
 	 * Not writable & Valid object path
 	 */
 	cwmp_fault = NULL;
-	prepare_delobj_soap_request(session, "Device.DeviceInfo.Processor.2.");
+	prepare_delobj_soap_request(session, "Device.DeviceInfo.Processor.2.", "del_object_test");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_delete_object(session, rpc_cpe);
@@ -695,6 +768,38 @@ static void soap_delete_object_message_test(void **state)
 	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
 	assert_non_null(n);
 	assert_string_equal(n->child->value.opaque, "9005");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+
+	/*
+	 * Invalid parameterkey
+	 */
+	cwmp_fault = NULL;
+	prepare_delobj_soap_request(session, "Device.WiFi.SSID.1.", INVALID_PARAM_KEY);
+	prepare_session_for_rpc_method_call(session);
+
+	ret = cwmp_handle_rpc_cpe_delete_object(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
 	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
 	assert_non_null(n);
 	MXML_DELETE(session->tree_in);
@@ -891,9 +996,75 @@ static void soap_set_parameter_attributes_message_test(void **state)
 	MXML_DELETE(session->tree_out);
 
 	/*
-	 * Not Valid Notification
+	 * Not Valid Notification value
 	 */
 	prepare_spa_soap_request(session, "Device.DeviceInfo.UpTime", "8", "true");
+	prepare_session_for_rpc_method_call(session);
+
+	ret = cwmp_handle_rpc_cpe_set_parameter_attributes(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+
+	/*
+	 * Invalid Notification String
+	 */
+
+	prepare_spa_soap_request(session, "Device.DeviceInfo.UpTime", "balabala", "true");
+	prepare_session_for_rpc_method_call(session);
+
+	ret = cwmp_handle_rpc_cpe_set_parameter_attributes(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+
+	/*
+	 * Invalid NotificationChange
+	 */
+
+	prepare_spa_soap_request(session, "Device.DeviceInfo.UpTime", "2", "5");
 	prepare_session_for_rpc_method_call(session);
 
 	ret = cwmp_handle_rpc_cpe_set_parameter_attributes(session, rpc_cpe);
@@ -928,7 +1099,7 @@ static void soap_set_parameter_attributes_message_test(void **state)
 	session_test = NULL;
 }
 
-static void prepare_download_soap_request(struct session *session, char *url, char *file_type, char *username, char *password)
+static void prepare_download_soap_request(struct session *session, char *url, char *file_type, char *username, char *password, char *file_size, char *delay_second)
 {
 	mxml_node_t *n = NULL, *download = NULL;
 	session->tree_in = mxmlLoadString(NULL, CWMP_DOWNLOAD_REQ, MXML_OPAQUE_CALLBACK);
@@ -942,6 +1113,10 @@ static void prepare_download_soap_request(struct session *session, char *url, ch
 	n = mxmlNewOpaque(n, username);
 	n = mxmlFindElement(download, download, "Password", NULL, NULL, MXML_DESCEND);
 	n = mxmlNewOpaque(n, password);
+	n = mxmlFindElement(download, download, "FileSize", NULL, NULL, MXML_DESCEND);
+	n = mxmlNewOpaque(n, file_size);
+	n = mxmlFindElement(download, download, "DelaySeconds", NULL, NULL, MXML_DESCEND);
+	n = mxmlNewOpaque(n, delay_second);
 }
 
 void free_download()
@@ -951,7 +1126,6 @@ void free_download()
 
 	if (list_download.next != &(list_download)) {
 		list_for_each_safe (ilist, q, &(list_download)) {
-			printf("%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			download = list_entry(ilist, struct download, list);
 			bkp_session_delete_download(download);
 			cwmp_free_download_request(download);
@@ -973,11 +1147,10 @@ static void soap_download_message_test(void **state)          //TODO will be pro
 	/*
 	* Valid Arguments
 	*/
-	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "6 Stored Firmware Image", "iopsys", "iopsys");
+	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "6 Stored Firmware Image", "iopsys", "iopsys", "0", "0");
 	prepare_session_for_rpc_method_call(session);
 	int ret = cwmp_handle_rpc_cpe_download(session, rpc_cpe);
 	assert_int_equal(ret, 0);
-
 	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	assert_non_null(env);
 	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
@@ -1006,7 +1179,152 @@ static void soap_download_message_test(void **state)          //TODO will be pro
 	 */
 
 	mxml_node_t *cwmp_fault = NULL;
-	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "7 System Certificate", "iopsys", "iopsys");
+	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "7 New FileType", "iopsys", "iopsys", "0", "0");
+	prepare_session_for_rpc_method_call(session);
+	ret = cwmp_handle_rpc_cpe_download(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+
+	n = mxmlFindElement(n, n, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+	free_download();
+	bkp_tree_clean();
+
+	/*
+	 * Wrong FileSize
+	 */
+	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "6 Stored Firmware Image", "iopsys", "iopsys", "-15", "0");
+	prepare_session_for_rpc_method_call(session);
+	ret = cwmp_handle_rpc_cpe_download(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+
+	n = mxmlFindElement(n, n, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+	free_download();
+	bkp_tree_clean();
+
+	session->head_rpc_acs.next = NULL;
+	unit_test_end_test_destruction();
+	clean_name_space();
+	session_test = NULL;
+
+	/*
+	 * Wrong DelaySeconds
+	 */
+	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "6 Stored Firmware Image", "iopsys", "iopsys", "0", "jjjk");
+	prepare_session_for_rpc_method_call(session);
+	ret = cwmp_handle_rpc_cpe_download(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+
+	n = mxmlFindElement(n, n, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+	free_download();
+	bkp_tree_clean();
+
+	/*
+	 * Invalid username
+	 */
+	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "6 Stored Firmware Image", INVALID_USER, "iopsys", "0", "0");
+	prepare_session_for_rpc_method_call(session);
+	ret = cwmp_handle_rpc_cpe_download(session, rpc_cpe);
+	assert_int_equal(ret, 0);
+
+	env = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	assert_non_null(env);
+	n = mxmlFindElement(env, env, "soap_env:Header", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(env, env, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+
+	n = mxmlFindElement(n, n, "soap_env:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	n = mxmlFindElement(n, n, "detail", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	cwmp_fault = mxmlFindElement(n, n, "cwmp:Fault", NULL, NULL, MXML_DESCEND);
+	assert_non_null(cwmp_fault);
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultCode", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+	assert_string_equal(n->child->value.opaque, "9003");
+	n = mxmlFindElement(cwmp_fault, cwmp_fault, "FaultString", NULL, NULL, MXML_DESCEND);
+	assert_non_null(n);
+
+	MXML_DELETE(session->tree_in);
+	MXML_DELETE(session->tree_out);
+	free_download();
+	bkp_tree_clean();
+
+	/*
+	 * Invalid password
+	 */
+	prepare_download_soap_request(session, "http://192.168.1.160/tr069/DG400PRIME-A-IOPSYS-6.2.0BETA1-210530_2348_nand_squashfs_update.pkgtb", "6 Stored Firmware Image", "iopsys", INVALID_PASS, "0", "0");
 	prepare_session_for_rpc_method_call(session);
 	ret = cwmp_handle_rpc_cpe_download(session, rpc_cpe);
 	assert_int_equal(ret, 0);
