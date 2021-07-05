@@ -57,6 +57,7 @@ function configure_genieacs()
 
 	echo "upload firmware image to genieacs server"
 	exec_cmd dd if=/dev/zero of=/builds/iopsys/icwmp/firmware_v1.0.bin bs=25MB count=1
+	echo "Valid" > /builds/iopsys/icwmp/firmware_v1.0.bin
 	curl -X PUT 'http://localhost:7557/files/firmware_v1.0.bin' --data-binary '@/builds/iopsys/icwmp/firmware_v1.0.bin' --header "fileType: 1 Firmware Upgrade Image" --header "oui: XXX" --header "productClass: FirstClass" --header "version: 000000001" >/dev/null 2>&1
 	check_ret $?
 }

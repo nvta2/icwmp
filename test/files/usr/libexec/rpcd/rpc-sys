@@ -9,7 +9,12 @@ case "$1" in
         call)
                 case "$2" in
                         upgrade_test)
-                                cat /tmp/rpc_sys.data 2>/dev/null
+                        		invalid=`cat /tmp/firmware.bin`
+                        		if [ $invalid = "Invalid" ]; then
+                        			cat /tmp/rpc_sys_fail.data 2>/dev/null
+                        		else
+                        			cat /tmp/rpc_sys.data 2>/dev/null
+                        		fi
                         ;;
                         upgrade_start)
                                 cat /tmp/rpc_sys.data 2>/dev/null

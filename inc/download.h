@@ -32,4 +32,5 @@ int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session, struct 
 void *thread_cwmp_rpc_cpe_download(void *v);
 void *thread_cwmp_rpc_cpe_schedule_download(void *v);
 void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v);
+int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struct transfer_complete **ptransfer_complete);
 #endif

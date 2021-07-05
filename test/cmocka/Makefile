@@ -6,10 +6,8 @@ CFLAGS = -g -Wall -I./inc
 LDFLAGS = -lmicroxml -luci -lblobmsg_json -lubox -ljson-c -lubus -lpthread -lcurl -lssl -lcrypto
 LIBCFLAGS = -g -Wall -fPIC -c -I../../inc
 LIBOBJ = libobj
-UNIT_TESTS = icwmp_datamodel_interface_unit_testd icwmp_soap_msg_unit_testd
+UNIT_TESTS = icwmp_datamodel_interface_unit_testd icwmp_soap_msg_unit_testd icwmp_backup_session_unit_testd icwmp_download_unit_testd
 VALGRIND = valgrind --xml=yes --xml-file=/builds/iopsys/icwmp/memory-report.xml --leak-check=full --show-reachable=yes --show-leak-kinds=all --errors-for-leak-kinds=all
-
-
 
 libobj:
 	$(CC) $(LIBCFLAGS) ../../download.c ../../upload.c ../../log.c ../../md5.c ../../digestauth.c ../../netlink.c ../../cwmp_cli.c ../../cwmp_du_state.c ../../sched_inform.c \
@@ -38,6 +36,12 @@ icwmp_datamodel_interface_unit_testd: icwmp_datamodel_interface_unit_test.o
 icwmp_soap_msg_unit_testd: icwmp_soap_msg_unit_test.o
 	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
 
+icwmp_backup_session_unit_testd: icwmp_backup_session_unit_test.o
+	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
+
+icwmp_download_unit_testd: icwmp_download_unit_test.o
+	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
+	
 unit-test: $(UNIT_TESTS)
 	$(foreach testprog, $(UNIT_TESTS), sudo $(VALGRIND) ./$(testprog);)
 	

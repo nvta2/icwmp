@@ -1,0 +1,4 @@
+{
+	"code": 1,
+	"stderr": "FATAL ERROR: could not read header from: /tmp/firmware.bin\nNot an IOPSYS image\nImage check failed.\n"
+}
