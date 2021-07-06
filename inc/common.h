@@ -185,6 +185,7 @@ struct cwmp_dm_parameter {
 	char *type;
 	int notification;
 	bool writable;
+	bool forced_notification_param;
 };
 
 enum amd_version_enum {
@@ -488,6 +489,11 @@ void clean_custom_inform_parameters();
 		}                                                                                                      \
 	} while (0)
 #endif
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+#endif
+
 
 #define CWMP_STRNCPY(DST, SRC, SIZE)                                                                                   \
 	do {                                                                                                           \

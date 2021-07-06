@@ -29,7 +29,8 @@ enum cwmp_ubus_arg_type
 	UBUS_Array_Obj,
 	UBUS_Array_Str,
 	UBUS_Obj_Obj,
-	UBUS_List_Param,
+	UBUS_List_Param_Set,
+	UBUS_List_Param_Get,
 	UBUS_Bool,
 };
 

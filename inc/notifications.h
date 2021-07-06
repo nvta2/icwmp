@@ -30,19 +30,42 @@ enum NOTIFICATION_STATUS
 	NOTIF_LW_ACTIVE = 1 << 4
 };
 
+extern struct cwmp_dm_parameter forced_notifications_parameters[];
 struct list_head list_lw_value_change;
 extern struct list_head list_value_change;
 extern pthread_mutex_t mutex_value_change;
+extern struct list_head list_param_obj_notify;
+
+/*#define foreach_parameter_notification(function, parameter, notification) \
+	#ifndef NOTIF_VARIABLES_##function \
+	#define NOTIF_VARIABLES_##function \
+	struct uci_list *list_notif; \
+	struct uci_element *e = NULL; \
+	#endif \
+	for (notification = 1; notification < 7; i++) { \
+		cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[notification], &list_notif); \
+			if (list_notif) { \
+				uci_foreach_element(list_notif, e) { \*/
+
+
 
 #define DM_ENABLED_NOTIFY "/etc/icwmpd/.dm_enabled_notify"
 void ubus_check_value_change_callback(struct ubus_request *req, int type, struct blob_attr *msg);
-void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type, struct blob_attr *msg);
+void cwmp_update_enabled_notify_file(void);
+int check_value_change(void);
+void create_list_param_obj_notify();
+void create_list_param_leaf_notify();
 void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p);
 void *thread_periodic_check_notify(void *v);
 void send_active_value_change(void);
 void add_list_value_change(char *param_name, char *param_data, char *param_type);
 void clean_list_value_change();
+char *cwmp_set_parameter_attributes(char *parameter_name, int notification);
+char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list);
 void add_lw_list_value_change(char *param_name, char *param_data, char *param_type);
 char *calculate_lwnotification_cnonce();
 void cwmp_lwnotification();
+void clean_list_param_notify();
+void init_list_param_notify();
+void reinit_list_param_notify();
 #endif /* SRC_INC_NOTIFICATIONS_H_ */

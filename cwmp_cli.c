@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "datamodel_interface.h"
+#include "notifications.h"
 
 LIST_HEAD(parameters_list);
 
@@ -218,7 +219,12 @@ char *cmd_set_notif_exec_func(struct cmd_input in, union cmd_result *res __attri
 		if (!cwmp_transaction_start("cwmp"))
 			return get_fault_message_by_fault_code("9002");
 	}
-	char *fault = cwmp_set_parameter_attributes(in.first_input, in.second_input);
+	if (!icwmp_validate_int_in_range(in.second_input, 0, 6)) {
+		if (transaction_id)
+			cwmp_transaction_abort();
+		return get_fault_message_by_fault_code("9003");
+	}
+	char *fault = cwmp_set_parameter_attributes(in.first_input, atoi(in.second_input));
 	if (fault != NULL) {
 		if (transaction_id)
 			cwmp_transaction_abort();

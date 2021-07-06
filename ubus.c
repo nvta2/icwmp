@@ -347,7 +347,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 				}
 			}
 			blobmsg_close_array(&b, a);
-		} else if (u_args[i].type == UBUS_List_Param) {
+		} else if (u_args[i].type == UBUS_List_Param_Set) {
 			struct cwmp_dm_parameter *param_value;
 			void *a, *t;
 			a = blobmsg_open_array(&b, u_args[i].key);
@@ -358,6 +358,16 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 				blobmsg_add_string(&b, "path", param_value->name);
 				blobmsg_add_string(&b, "value", param_value->value);
 				blobmsg_close_table(&b, t);
+			}
+			blobmsg_close_array(&b, a);
+		} else if (u_args[i].type == UBUS_List_Param_Get) {
+			struct cwmp_dm_parameter *param_value;
+			void *a;
+			a = blobmsg_open_array(&b, u_args[i].key);
+			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
+				if (!param_value->name)
+					break;
+				blobmsg_add_string(&b, NULL, param_value->name);
 			}
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_Obj_Obj) {

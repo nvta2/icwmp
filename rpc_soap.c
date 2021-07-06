@@ -1184,10 +1184,6 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 		goto fault;
 	b = n;
 
-	if (transaction_id == 0) {
-		if (!cwmp_transaction_start("cwmp"))
-			goto fault;
-	}
 	while (b != NULL) {
 		if (b && b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "SetParameterAttributesStruct")) {
 			parameter_name = NULL;
@@ -1221,7 +1217,7 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 				fault_code = FAULT_CPE_INVALID_ARGUMENTS;
 				goto fault;
 			}
-			char *err = cwmp_set_parameter_attributes(parameter_name, parameter_notification);
+			char *err = cwmp_set_parameter_attributes(parameter_name, atoi(parameter_notification));
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
 				goto fault;
@@ -1240,19 +1236,13 @@ int cwmp_handle_rpc_cpe_set_parameter_attributes(struct session *session, struct
 	if (!b)
 		goto fault;
 
-	if (!cwmp_transaction_commit())
-		goto fault;
-
-	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE | END_SESSION_RESTART_SERVICES);
+	cwmp_set_end_session(END_SESSION_SET_NOTIFICATION_UPDATE | END_SESSION_RESTART_SERVICES | END_SESSION_INIT_NOTIFY);
 	return 0;
 
 fault:
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		ret = CWMP_XML_ERR;
-	if (transaction_id) {
-		cwmp_transaction_abort();
-		transaction_id = 0;
-	}
+
 	return ret;
 }
 

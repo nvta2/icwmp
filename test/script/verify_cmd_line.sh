@@ -64,7 +64,7 @@ if [[ $res != *"9005"* ]]; then
 fi
 
 echo "GET NOTIFICATION METHOD: Correct Path" >> ./funl-test-debug.log
-res=$(./bin/icwmpd -c get_notif Device.ManagementServer.ConnectionRequestURL 2>&1)
+res=$(./bin/icwmpd -c get_notif Device.DeviceInfo.SoftwareVersion 2>&1)
 if [[ $res != *"=> active"* ]]; then
 	echo "Error: Get Notification Method with correct path doesn't work correctly" >> ./funl-test-debug.log
 	exit 1
@@ -92,7 +92,7 @@ if [[ $res != *"9005"* ]]; then
 fi
 
 echo "SET NOTIFICATION METHOD: Correst Path forced active notification" >> ./funl-test-debug.log
-res=$(./bin/icwmpd -c set_notif Device.ManagementServer.ConnectionRequestURL 1 2>&1)
+res=$(./bin/icwmpd -c set_notif Device.DeviceInfo.SoftwareVersion 1 2>&1)
 if [[ $res != *"9009"* ]]; then
 	echo "Error: Set Notification Method with correct path forced active notification doesn't work correctly" >> ./funl-test-debug.log
 	exit 1

@@ -203,6 +203,11 @@ int run_session_end_func(void)
 		cwmp_apply_acs_changes();
 	}
 
+	if (end_session_flag & END_SESSION_INIT_NOTIFY) {
+		CWMP_LOG(INFO, "SetParameterAttributes end session: reinit list notify");
+		reinit_list_param_notify();
+	}
+
 	if (end_session_flag & END_SESSION_SET_NOTIFICATION_UPDATE) {
 		CWMP_LOG(INFO, "SetParameterAttributes/Values end session: update enabled notify file");
 		cwmp_update_enabled_notify_file();
@@ -474,6 +479,8 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	pthread_mutex_init(&cwmp->mutex_session_send, NULL);
 	memcpy(&(cwmp->env), &env, sizeof(struct env));
 	INIT_LIST_HEAD(&(cwmp->head_session_queue));
+
+	init_list_param_notify();
 	if ((error = global_conf_init(cwmp)))
 		return error;
 
@@ -502,6 +509,7 @@ static void cwmp_free(struct cwmp *cwmp)
 	FREE(cwmp->conf.connection_request_path);
 	FREE(cwmp->conf.default_wan_iface);
 	FREE(cwmp->conf.forced_inform_json_file);
+	clean_list_param_notify();
 	bkp_tree_clean();
 	cwmp_ubus_exit();
 	clean_custom_inform_parameters();

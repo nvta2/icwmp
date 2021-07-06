@@ -16,95 +16,399 @@
 
 #include "notifications.h"
 #include "ubus.h"
+#include "cwmp_uci.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
+LIST_HEAD(list_param_obj_notify);
 pthread_mutex_t mutex_value_change = PTHREAD_MUTEX_INITIALIZER;
 
-void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+char *notifications[7] = {"disabled" , "passive", "active", "passive_lw", "passive_passive_lw", "active_lw", "passive_active_lw"};
+
+struct cwmp_dm_parameter forced_notifications_parameters[] = {
+	{.name = "Device.DeviceInfo.SoftwareVersion", .notification = 2, .forced_notification_param = true},
+	{.name = "Device.DeviceInfo.ProvisioningCode", .notification = 2, .forced_notification_param = true}
+};
+
+/*
+ * Common functions
+ */
+static bool parameter_is_subobject_of_parameter(char *parent, char *child)
 {
-	FILE *fp;
-	int *int_ret = (int *)req->priv;
-	struct blob_buf bbuf;
-	*int_ret = get_fault(msg);
-	if (*int_ret) {
-		*int_ret = 0;
-		return;
+	if (strcmp(parent, child) == 0)
+		return false;
+	if (strncmp(parent, child, strlen(parent)) == 0)
+		return true;
+	return false;
+}
+
+int check_parameter_forced_notification(const char *parameter)
+{
+	int i;
+
+	for (i = 0; i < (int)ARRAY_SIZE(forced_notifications_parameters); i++) {
+		if (strcmp(forced_notifications_parameters[i].name, parameter) == 0)
+			return forced_notifications_parameters[i].notification;
 	}
+
+	return 0;
+}
+
+char *check_valid_parameter_path(char *parameter_name)
+{
+	char *error = NULL;
+	LIST_HEAD(parameters_list);
+
+	error = cwmp_get_parameter_names(parameter_name, true, &parameters_list);
+
+	if (error != NULL && strcmp(error, "9003") == 0)
+		error = cwmp_get_parameter_values(parameter_name, &parameters_list);
+
+	cwmp_free_all_dm_parameter_list(&parameters_list);
+
+	return error;
+}
+
+/*
+ * SetParameterAttributes
+ */
+int add_uci_option_notification(char *parameter_name, int notification)
+{
+	char *notification_type = NULL;
+	struct uci_section *s = NULL;
+	int ret = 0;
+
+	cwmp_uci_init(UCI_STANDARD_CONFIG);
+	ret =cwmp_uci_get_section_type("cwmp", "@notifications[0]", &notification_type);
+	if (notification_type == NULL || notification_type[0] == '\0') {
+		cwmp_uci_add_section("cwmp", "notifications", &s);
+	}
+	ret = cwmp_uci_add_list_value("cwmp", "@notifications[0]", notifications[notification], parameter_name);
+	ret = cwmp_commit_package("cwmp");
+	cwmp_uci_exit();
+	return ret;
+}
+
+bool check_parent_with_different_notification(char *parameter_name, int notification)
+{
+	struct uci_list *list_notif;
+	struct uci_element *e = NULL;
+	int i;
+	int option_type;
+	cwmp_uci_init(UCI_STANDARD_CONFIG);
+	for (i = 0; i < 7; i++) {
+		if (i == notification)
+			continue;
+		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
+		if (list_notif) {
+			uci_foreach_element(list_notif, e) {
+				if (parameter_is_subobject_of_parameter(e->name, parameter_name))
+					return true;
+			}
+		}
+		if (option_type == UCI_TYPE_STRING)
+			cwmp_free_uci_list(list_notif);
+	}
+	cwmp_uci_exit();
+	return false;
+}
+
+bool update_notifications_list(char *parameter_name, int notification)
+{
+	struct uci_list *list_notif;
+	struct uci_element *e = NULL, *tmp = NULL;
+	int i, option_type;
+	char *ename = NULL;
+	bool update_ret = true;
+	cwmp_uci_init(UCI_STANDARD_CONFIG);
+	for (i = 0; i < 7; i++) {
+		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
+		if (list_notif) {
+			uci_foreach_element_safe(list_notif, tmp, e) {
+				if (e->name == NULL)
+					continue;
+				ename = strdup(e->name);
+				if ((strcmp(parameter_name, e->name) == 0 && (i != notification)) || parameter_is_subobject_of_parameter(parameter_name, e->name))
+					cwmp_uci_del_list_value("cwmp", "@notifications[0]", notifications[i], e->name);
+				if (ename && (strcmp(parameter_name, ename) == 0 || parameter_is_subobject_of_parameter(ename, parameter_name) ) && (i == notification))
+					update_ret = false;
+				FREE(ename);
+			}
+			cwmp_commit_package("cwmp");
+		}
+		if (option_type == UCI_TYPE_STRING)
+			cwmp_free_uci_list(list_notif);
+	}
+
+	if (update_ret && notification == 0 && !check_parent_with_different_notification(parameter_name, 0))
+		update_ret = false;
+	cwmp_uci_exit();
+	return update_ret;
+}
+
+char *cwmp_set_parameter_attributes(char *parameter_name, int notification)
+{
+	char *error = NULL;
+
+	error = check_valid_parameter_path(parameter_name);
+
+	if (error != NULL)
+		return error;
+
+	if (check_parameter_forced_notification(parameter_name))
+		return "9009";
+
+	if (update_notifications_list(parameter_name, notification) == true)
+		add_uci_option_notification(parameter_name, notification);
+
+	return NULL;
+}
+
+/*
+ * GetPrameterAttributes
+ */
+int get_parameter_family_notifications(char *parameter_name, struct list_head *childs_notifications) {
+
+	struct uci_list *list_notif;
+	struct uci_element *e = NULL;
+	int i, notif_ret = 0, option_type;
+	char *parent_param = NULL;
+
+	cwmp_uci_init(UCI_STANDARD_CONFIG);
+	for (i = 0; i < 7; i++) {
+		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
+		if (list_notif) {
+			uci_foreach_element(list_notif, e) {
+				if (parameter_is_subobject_of_parameter(parameter_name, e->name)) {
+					add_dm_parameter_to_list(childs_notifications, e->name, "", "", i, false);
+				}
+				if (parameter_is_subobject_of_parameter(e->name, parameter_name) && (parent_param == NULL || parameter_is_subobject_of_parameter(parent_param, e->name))) {
+						parent_param = e->name;
+						notif_ret = i;
+				}
+				if (strcmp(parameter_name, e->name) == 0)
+					notif_ret = i;
+			}
+		}
+		if (option_type == UCI_TYPE_STRING)
+			cwmp_free_uci_list(list_notif);
+	}
+	cwmp_uci_exit();
+	return notif_ret;
+}
+
+int get_parameter_leaf_notification_from_childs_list(char *parameter_name, struct list_head *childs_list)
+{
+	char *parent = NULL;
+	int ret_notif = -1;
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, childs_list, list) {
+		if (strcmp(param_value->name, parameter_name) == 0) {
+			ret_notif = param_value->notification;
+			break;
+		}
+		if (parameter_is_subobject_of_parameter(param_value->name, parameter_name) && ( parent == NULL || parameter_is_subobject_of_parameter(parent, param_value->name))) {
+			parent = param_value->name;
+			ret_notif = param_value->notification;
+		}
+	}
+	return ret_notif;
+}
+
+char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list)
+{
+	char *error = NULL;
+
+	error = check_valid_parameter_path(parameter_name);
+
+	if (error != NULL)
+		return error;
+	LIST_HEAD(childs_notifs);
+	int notification = get_parameter_family_notifications(parameter_name, &childs_notifs);
+	int notif_leaf;
+	LIST_HEAD(params_list);
+	error = cwmp_get_parameter_values(parameter_name, &params_list);
+	if (error != NULL) {
+		cwmp_free_all_dm_parameter_list(&childs_notifs);
+		return error;
+	}
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, &params_list, list) {
+		notif_leaf = check_parameter_forced_notification(param_value->name);
+		if (notif_leaf > 0) {
+			add_dm_parameter_to_list(parameters_list, param_value->name, "", "", notif_leaf, false);
+			continue;
+		}
+		notif_leaf = get_parameter_leaf_notification_from_childs_list(param_value->name, &childs_notifs);
+		if (notif_leaf == -1) {
+			add_dm_parameter_to_list(parameters_list, param_value->name, "", "", notification, false);
+		}
+		else {
+			add_dm_parameter_to_list(parameters_list, param_value->name, "", "", notif_leaf, false);
+		}
+	}
+	cwmp_free_all_dm_parameter_list(&childs_notifs);
+	cwmp_free_all_dm_parameter_list(&params_list);
+	return NULL;
+}
+
+/*
+ * Update notify file
+ */
+bool parameter_is_other_notif_object_child(char *parent, char *parameter)
+{
+	struct list_head list_iter, *list_ptr;
+	list_iter.next = list_param_obj_notify.next;
+	list_iter.prev = list_param_obj_notify.prev;
+	struct cwmp_dm_parameter *dm_parameter = NULL;
+	while (list_iter.prev != &list_param_obj_notify) {
+		dm_parameter = list_entry(list_iter.prev, struct cwmp_dm_parameter, list);
+		list_ptr = list_iter.prev;
+		list_iter.prev = list_ptr->prev;
+		list_iter.next = list_ptr->next;
+		if (strcmp(parent, dm_parameter->name) == 0)
+			continue;
+		if (strncmp(parent, dm_parameter->name, strlen(parent)) == 0 && strncmp(parameter, dm_parameter->name, strlen(dm_parameter->name)) == 0)
+			return true;
+	}
+	return false;
+}
+
+void create_list_param_obj_notify()
+{
+	struct uci_list *list_notif;
+	struct uci_element *e = NULL;
+	int i, option_type;
+	cwmp_uci_init(UCI_STANDARD_CONFIG);
+	for (i = 0; i < 7; i++) {
+		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
+		if (list_notif) {
+			uci_foreach_element(list_notif, e) {
+				add_dm_parameter_to_list(&list_param_obj_notify, e->name, "", "", i, false);
+			}
+		}
+		if (option_type == UCI_TYPE_STRING)
+			cwmp_free_uci_list(list_notif);
+	}
+	cwmp_uci_exit();
+}
+
+char* updated_list_param_leaf_notify_with_sub_parameter_list(struct list_head *list_param_leaf_notify, struct cwmp_dm_parameter parent_parameter, void (*update_notify_file_line_arg)(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification), FILE* notify_file_arg)
+{
+	struct cwmp_dm_parameter *param_iter = NULL;
+	LIST_HEAD(params_list);
+	char *err = cwmp_get_parameter_values(parent_parameter.name, &params_list);
+	if (err)
+		return err;
+	list_for_each_entry (param_iter, &params_list, list) {
+		if (parent_parameter.forced_notification_param || (!parameter_is_other_notif_object_child(parent_parameter.name, param_iter->name) && !check_parameter_forced_notification(param_iter->name))) {
+			if (list_param_leaf_notify != NULL)
+				add_dm_parameter_to_list(list_param_leaf_notify, param_iter->name, param_iter->value, "", parent_parameter.notification, false);
+			if (notify_file_arg != NULL && update_notify_file_line_arg != NULL)
+				update_notify_file_line_arg(notify_file_arg, param_iter->name, param_iter->type, param_iter->value, parent_parameter.notification);
+		}
+	}
+	cwmp_free_all_dm_parameter_list(&params_list);
+	return NULL;
+}
+
+void create_list_param_leaf_notify(struct list_head *list_param_leaf_notify, void (*update_notify_file_line_arg)(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification), FILE* notify_file_arg)
+{
+	struct cwmp_dm_parameter *param_iter;
+	int i;
+
+	for (i = 0; i < (int)ARRAY_SIZE(forced_notifications_parameters); i++)
+		updated_list_param_leaf_notify_with_sub_parameter_list(list_param_leaf_notify, forced_notifications_parameters[i], update_notify_file_line_arg, notify_file_arg);
+
+	list_for_each_entry (param_iter, &list_param_obj_notify, list) {
+		if (param_iter->notification == 0)
+			continue;
+		param_iter->forced_notification_param = false;
+		updated_list_param_leaf_notify_with_sub_parameter_list(list_param_leaf_notify, *param_iter, update_notify_file_line_arg, notify_file_arg);
+	}
+}
+
+void init_list_param_notify()
+{
+	create_list_param_obj_notify();
+}
+
+void clean_list_param_notify()
+{
+	cwmp_free_all_dm_parameter_list(&list_param_obj_notify);
+}
+
+void reinit_list_param_notify()
+{
+	clean_list_param_notify();
+	init_list_param_notify();
+}
+
+void update_notify_file_line(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification)
+{
+	if (notify_file == NULL)
+		return;
+	struct blob_buf bbuf;
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+	blobmsg_add_string(&bbuf, "parameter", param_name);
+	blobmsg_add_u32(&bbuf, "notification", notification);
+	blobmsg_add_string(&bbuf, "type", param_type);
+	blobmsg_add_string(&bbuf, "value", param_value);
+	char *notification_line = blobmsg_format_json(bbuf.head, true);
+	if (notification_line != NULL) {
+		fprintf(notify_file, "%s\n", notification_line);
+		FREE(notification_line);
+	}
+	blob_buf_free(&bbuf);
+}
+
+void cwmp_update_enabled_notify_file(void)
+{
+	FILE *fp = NULL;
+
+	LIST_HEAD(list_notify_params);
 	remove(DM_ENABLED_NOTIFY);
 	fp = fopen(DM_ENABLED_NOTIFY, "a");
-	if (fp == NULL) {
-		*int_ret = 0;
+	if (fp == NULL)
 		return;
-	}
-	struct blob_attr *parameters = get_parameters_array(msg);
-	const struct blobmsg_policy p[5] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_STRING } };
-	struct blob_attr *cur;
-	int rem;
-	blobmsg_for_each_attr(cur, parameters, rem)
-	{
-		struct blob_attr *tb[4] = { NULL, NULL, NULL, NULL };
-		blobmsg_parse(p, 4, tb, blobmsg_data(cur), blobmsg_len(cur));
-		if (!tb[0])
-			continue;
-		memset(&bbuf, 0, sizeof(struct blob_buf));
-		blob_buf_init(&bbuf, 0);
-		blobmsg_add_string(&bbuf, "parameter", blobmsg_get_string(tb[0]));
-		blobmsg_add_string(&bbuf, "notification", tb[3] ? blobmsg_get_string(tb[3]) : "");
-		blobmsg_add_string(&bbuf, "type", tb[2] ? blobmsg_get_string(tb[2]) : "");
-		blobmsg_add_string(&bbuf, "value", tb[1] ? blobmsg_get_string(tb[1]) : "");
-		char *notification_line = blobmsg_format_json(bbuf.head, true);
-		if (notification_line != NULL) {
-			fprintf(fp, "%s\n", notification_line);
-			FREE(notification_line);
-		}
-		blob_buf_free(&bbuf);
-	}
+
+	create_list_param_leaf_notify(NULL, update_notify_file_line, fp);
 	fclose(fp);
 }
 
-void get_parameter_value_from_parameters_list(struct blob_attr *list_notif, char *parameter_name, char **value, char **type)
+/*
+ * Check value change
+ */
+void get_parameter_value_from_parameters_list(struct list_head *params_list, char *parameter_name, char **value, char **type)
 {
-	const struct blobmsg_policy p[5] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING } };
-	struct blob_attr *cur;
-	int rem;
-	blobmsg_for_each_attr(cur, list_notif, rem)
-	{
-		struct blob_attr *tb[3] = { NULL, NULL, NULL };
-		blobmsg_parse(p, 3, tb, blobmsg_data(cur), blobmsg_len(cur));
-		if (!tb[0])
+	struct cwmp_dm_parameter *param_value = NULL;
+	list_for_each_entry (param_value, params_list, list) {
+		if (param_value->name == NULL)
 			continue;
-		if (strcmp(parameter_name, blobmsg_get_string(tb[0])) != 0)
+		if (strcmp(parameter_name, param_value->name) != 0)
 			continue;
-		*value = strdup(tb[1] ? blobmsg_get_string(tb[1]) : "");
-		*type = strdup(tb[2] ? blobmsg_get_string(tb[2]) : "");
-		break;
+		*value = strdup(param_value->value ? param_value->value : "");
+		*type = strdup(param_value->type ? param_value->type : "");
 	}
 }
 
-void ubus_check_value_change_callback(struct ubus_request *req, int typearg __attribute__((unused)), struct blob_attr *msg)
+int check_value_change(void)
 {
 	FILE *fp;
 	char buf[1280];
 	char *dm_value = NULL, *dm_type = NULL;
-	int *int_ret = (int *)req->priv;
+	int int_ret = 0;
 	struct blob_buf bbuf;
 
-	char *parameter = NULL, *notification = NULL, *value = NULL, *type = NULL;
-
-	*int_ret = get_fault(msg);
-	if (*int_ret) {
-		*int_ret = 0;
-		return;
-	}
-
+	char *parameter = NULL, *value = NULL, *type = NULL;
+	int notification = 0;
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
-	if (fp == NULL) {
-		*int_ret = 0;
-		return;
-	}
+	if (fp == NULL)
+		return int_ret;
 
-	struct blob_attr *list_notify = get_parameters_array(msg);
+	LIST_HEAD(list_notify_params);
+	create_list_param_leaf_notify(&list_notify_params, NULL, NULL);
 	while (fgets(buf, 1280, fp) != NULL) {
 		int len = strlen(buf);
 		if (len)
@@ -117,45 +421,48 @@ void ubus_check_value_change_callback(struct ubus_request *req, int typearg __at
 			blob_buf_free(&bbuf);
 			continue;
 		}
-		const struct blobmsg_policy p[4] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING } };
+		const struct blobmsg_policy p[4] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_INT32 }, { "type", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING } };
+
 		struct blob_attr *tb[4] = { NULL, NULL, NULL, NULL };
 		blobmsg_parse(p, 4, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
 		parameter = blobmsg_get_string(tb[0]);
-		notification = blobmsg_get_string(tb[1]);
+		notification = blobmsg_get_u32(tb[1]);
 		type = blobmsg_get_string(tb[2]);
 		value = blobmsg_get_string(tb[3]);
-		get_parameter_value_from_parameters_list(list_notify, parameter, &dm_value, &dm_type);
-		if (dm_value == NULL && dm_type == NULL) {
+		get_parameter_value_from_parameters_list(&list_notify_params, parameter, &dm_value, &dm_type);
+		if (dm_value == NULL && dm_type == NULL){
 			blob_buf_free(&bbuf);
 			parameter = NULL;
-			notification = NULL;
+			notification = 0;
 			type = NULL;
 			value = NULL;
 			continue;
 		}
-		if ((strlen(notification) > 0) && (notification[0] >= '1') && (dm_value != NULL) && (strcmp(dm_value, value) != 0)) {
-			if (notification[0] == '1' || notification[0] == '2')
+		if ((notification >= 1) && (dm_value != NULL) && (strcmp(dm_value, value) != 0)) {
+			if (notification == 1 || notification == 2)
 				add_list_value_change(parameter, dm_value, dm_type);
-			if (notification[0] >= '3')
+			if (notification >= 3)
 				add_lw_list_value_change(parameter, dm_value, dm_type);
 
-			if (notification[0] == '1')
-				*int_ret |= NOTIF_PASSIVE;
-			if (notification[0] == '2')
-				*int_ret |= NOTIF_ACTIVE;
+			if (notification == 1)
+				int_ret |= NOTIF_PASSIVE;
+			if (notification == 2)
+				int_ret |= NOTIF_ACTIVE;
 
-			if (notification[0] == '5' || notification[0] == '6')
-				*int_ret |= NOTIF_LW_ACTIVE;
+			if (notification == 5 || notification == 6)
+				int_ret |= NOTIF_LW_ACTIVE;
 		}
 		FREE(dm_value);
 		FREE(dm_type);
 		parameter = NULL;
-		notification = NULL;
+		notification = 0;
 		type = NULL;
 		value = NULL;
 		blob_buf_free(&bbuf);
 	}
 	fclose(fp);
+	cwmp_free_all_dm_parameter_list(&list_notify_params);
+	return int_ret;
 }
 
 void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p)

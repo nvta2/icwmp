@@ -126,7 +126,7 @@ struct uci_paths {
 int cwmp_uci_init(int uci_path_type);
 void cwmp_uci_exit(void);
 int cwmp_uci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value);
-int cwmp_uci_get_option_value_list(char *package, char *section, char *option, struct list_head *list);
+int cwmp_uci_get_option_value_list(char *package, char *section, char *option, struct uci_list **value);
 int uci_get_state_value(char *cmd, char **value);
 int uci_set_value(char *cmd, char *value, uci_config_action action);
 int uci_get_value(char *cmd, char **value);
@@ -138,7 +138,11 @@ int cwmp_commit_package(char *package);
 int cwmp_uci_import(char *package_name, const char *input_path);
 int cwmp_uci_export_package(char *package, const char *output_path);
 int cwmp_uci_export(const char *output_path);
-
+void cwmp_free_uci_list(struct uci_list *list);
+int cwmp_uci_add_list_value(char *package, char *section, char *option, char *value);
+int cwmp_uci_del_list_value(char *package, char *section, char *option, char *value);
+int cwmp_uci_get_section_type(char *package, char *section, char **value);
+char *cwmp_uci_add_section(char *package, char *stype, struct uci_section **s);
 #define cwmp_uci_path_foreach_option_eq(package, stype, option, val, section) \
 	for (section = cwmp_uci_walk_section(package, stype, option, val, CWMP_CMP_OPTION_EQUAL, NULL, NULL, CWMP_GET_FIRST_SECTION); section != NULL; section = cwmp_uci_walk_section(package, stype, option, val, CWMP_CMP_OPTION_EQUAL, NULL, section, CWMP_GET_NEXT_SECTION))
 

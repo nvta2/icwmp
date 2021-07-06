@@ -91,6 +91,46 @@ lookup:
 	return UCI_OK;
 }
 
+static inline void cwmp_uci_list_init(struct uci_list *ptr)
+{
+	ptr->prev = ptr;
+	ptr->next = ptr;
+}
+
+static inline void cwmp_uci_list_insert(struct uci_list *list, struct uci_list *ptr)
+{
+	list->next->prev = ptr;
+	ptr->prev = list;
+	ptr->next = list->next;
+	list->next = ptr;
+}
+
+static inline void cwmp_uci_list_add(struct uci_list *head, struct uci_list *ptr)
+{ //
+	cwmp_uci_list_insert(head->prev, ptr);
+}
+
+void cwmp_uci_list_del(struct uci_element *e)
+{
+	struct uci_list *ptr = e->list.prev;
+	ptr->next = e->list.next;
+}
+
+static void cwmp_delete_uci_element_from_list(struct uci_element *e)
+{
+	cwmp_uci_list_del(e);
+	free(e->name);
+	free(e);
+}
+
+void cwmp_free_uci_list(struct uci_list *list)
+{
+	struct uci_element *e = NULL, *tmp = NULL;
+
+	uci_foreach_element_safe(list, e, tmp)
+		cwmp_delete_uci_element_from_list(e);
+}
+
 char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
 {
 	if (list) {
@@ -162,100 +202,48 @@ char *cwmp_db_get_value_string(char *package, char *section, char *option)
 	}
 }
 
-int cwmp_uci_get_option_value_list(char *package, char *section, char *option, struct list_head *list)
+int cwmp_uci_get_option_value_list(char *package, char *section, char *option, struct uci_list **value)
 {
-	struct uci_element *e;
-	struct uci_ptr ptr = { 0 };
-	cwmp_uci_ctx = uci_alloc_context();
-	struct config_uci_list *uci_list_elem;
-	int size = 0;
-	//*value = NULL;
+	struct uci_element *e = NULL;
+	struct uci_ptr ptr = {0};
+	struct uci_list *list;
+	char *pch = NULL, *spch = NULL, *dup = NULL;
+	int option_type;
+	*value = NULL;
 
-	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, option, NULL)) {
-		uci_free_context(cwmp_uci_ctx);
+	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, option, NULL))
+		return -1;
+
+	if (ptr.o) {
+		switch(ptr.o->type) {
+			case UCI_TYPE_LIST:
+				*value = &ptr.o->v.list;
+				option_type = UCI_TYPE_LIST;
+				break;
+			case UCI_TYPE_STRING:
+				if (!ptr.o->v.string || (ptr.o->v.string)[0] == '\0') {
+					return UCI_TYPE_STRING;
+				}
+				list = calloc(1, sizeof(struct uci_list));
+				cwmp_uci_list_init(list);
+				dup = strdup(ptr.o->v.string);
+				pch = strtok_r(dup, " ", &spch);
+				while (pch != NULL) {
+					e = calloc(1, sizeof(struct uci_element));
+					e->name = pch;
+					cwmp_uci_list_add(list, &e->list);
+					pch = strtok_r(NULL, " ", &spch);
+				}
+				*value = list;
+				option_type = UCI_TYPE_STRING;
+				break;
+			default:
+				return -1;
+		}
+	} else {
 		return -1;
 	}
-
-	if (ptr.o == NULL) {
-		uci_free_context(cwmp_uci_ctx);
-		return -1;
-	}
-
-	if (ptr.o->type == UCI_TYPE_LIST) {
-		uci_foreach_element(&ptr.o->v.list, e)
-		{
-			if ((e != NULL) && (e->name)) {
-				uci_list_elem = icwmp_calloc(1, sizeof(struct config_uci_list));
-				if (uci_list_elem == NULL) {
-					uci_free_context(cwmp_uci_ctx);
-					return -1;
-				}
-				uci_list_elem->value = icwmp_strdup(e->name);
-				list_add_tail(&(uci_list_elem->list), list);
-				size++;
-			} else {
-				uci_free_context(cwmp_uci_ctx);
-				return size;
-			}
-		}
-	}
-
-	uci_free_context(cwmp_uci_ctx);
-	return size;
-}
-
-int uci_get_list_value(char *cmd, struct list_head *list)
-{
-	struct uci_ptr ptr;
-	struct uci_context *c = uci_alloc_context();
-	struct uci_element *e;
-	struct config_uci_list *uci_list_elem;
-	char *s, *t;
-	int size = 0;
-
-	if (!c) {
-		CWMP_LOG(ERROR, "Out of memory");
-		return size;
-	}
-
-	s = strdup(cmd);
-	t = s;
-	if (uci_lookup_ptr(c, &ptr, s, true) != UCI_OK) {
-		CWMP_LOG(ERROR, "Invalid uci command path: %s", cmd);
-		free(t);
-		uci_free_context(c);
-		return size;
-	}
-
-	if (ptr.o == NULL) {
-		free(t);
-		uci_free_context(c);
-		return size;
-	}
-
-	if (ptr.o->type == UCI_TYPE_LIST) {
-		uci_foreach_element(&ptr.o->v.list, e)
-		{
-			if ((e != NULL) && (e->name)) {
-				uci_list_elem = icwmp_calloc(1, sizeof(struct config_uci_list));
-				if (uci_list_elem == NULL) {
-					free(t);
-					uci_free_context(c);
-					return CWMP_GEN_ERR;
-				}
-				uci_list_elem->value = icwmp_strdup(e->name);
-				list_add_tail(&(uci_list_elem->list), list);
-				size++;
-			} else {
-				free(t);
-				uci_free_context(c);
-				return size;
-			}
-		}
-	}
-	free(t);
-	uci_free_context(c);
-	return size;
+	return option_type;
 }
 
 int cwmp_uci_get_value_common(char *cmd, char **value, bool state)
@@ -376,6 +364,32 @@ int uci_set_value(char *path, char *value, uci_config_action action)
 	return CWMP_OK;
 }
 
+int cwmp_uci_add_list_value(char *package, char *section, char *option, char *value)
+{
+	struct uci_ptr ptr = {0};
+
+	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, option, value))
+		return CWMP_GEN_ERR;
+
+	if (uci_add_list(cwmp_uci_ctx, &ptr) != UCI_OK)
+		return CWMP_GEN_ERR;
+
+	return CWMP_OK;
+}
+
+int cwmp_uci_del_list_value(char *package, char *section, char *option, char *value)
+{
+	struct uci_ptr ptr = {0};
+
+	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, option, value))
+		return -1;
+
+	if (uci_del_list(cwmp_uci_ctx, &ptr) != UCI_OK)
+		return -1;
+
+	return 0;
+}
+
 int uci_add_list_value(char *cmd)
 {
 	struct uci_context *c = uci_alloc_context();
@@ -403,17 +417,42 @@ int uci_add_list_value(char *cmd)
 	return CWMP_OK;
 }
 
-static inline void cwmp_uci_list_insert(struct uci_list *list, struct uci_list *ptr)
+int cwmp_uci_get_section_type(char *package, char *section, char **value)
 {
-	list->next->prev = ptr;
-	ptr->prev = list;
-	ptr->next = list->next;
-	list->next = ptr;
+	struct uci_ptr ptr = {0};
+	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, section, NULL, NULL)) {
+		*value = "";
+		return -1;
+	}
+	if (ptr.s) {
+		*value = strdup(ptr.s->type);
+	} else {
+		*value = "";
+		return -1;
+	}
+	return 0;
 }
 
-static inline void cwmp_uci_list_add(struct uci_list *head, struct uci_list *ptr)
-{ //
-	cwmp_uci_list_insert(head->prev, ptr);
+char *cwmp_uci_add_section(char *package, char *stype, struct uci_section **s)
+{
+	struct uci_ptr ptr = {0};
+	char fname[128], *val = "";
+	*s = NULL;
+
+	snprintf(fname, sizeof(fname), "/etc/config/%s", package);
+	if (!file_exists(fname)) {
+		FILE *fptr = fopen(fname, "w");
+		if (fptr)
+			fclose(fptr);
+		else {
+			return val;
+		}
+	}
+	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, NULL, NULL, NULL) == 0
+		&& uci_add_section(cwmp_uci_ctx, ptr.p, stype, s) == UCI_OK) {
+		val = strdup((*s)->e.name);
+	}
+	return val;
 }
 
 int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, char **value)
@@ -442,11 +481,6 @@ not_found:
 	return -1;
 }
 
-static inline void cwmp_uci_list_init(struct uci_list *ptr)
-{
-	ptr->prev = ptr;
-	ptr->next = ptr;
-}
 
 int cwmp_uci_get_value_by_section_list(struct uci_section *s, char *option, struct uci_list **value)
 {
@@ -567,13 +601,13 @@ end:
 int cwmp_commit_package(char *package)
 {
 	struct uci_ptr ptr = { 0 };
-	struct uci_context *c = uci_alloc_context();
-	if (uci_lookup_ptr(c, &ptr, package, true) != UCI_OK)
+	if (uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, true) != UCI_OK) {
 		return -1;
+	}
 
-	if (uci_commit(c, &ptr.p, false) != UCI_OK)
+	if (uci_commit(cwmp_uci_ctx, &ptr.p, false) != UCI_OK) {
 		return -1;
-	uci_free_context(c);
+	}
 	return 0;
 }
 

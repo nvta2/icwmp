@@ -79,13 +79,18 @@ int get_fault(struct blob_attr *msg)
 	return fault;
 }
 
-void get_parameters_list_from_parameters_blob_array(struct blob_attr *parameters, struct list_head *parameters_list)
+int get_parameters_list_from_parameters_blob_array(struct blob_attr *parameters, struct list_head *parameters_list)
 {
 	const struct blobmsg_policy p[5] = { { "parameter", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_STRING }, { "writable", BLOBMSG_TYPE_STRING } };
 	struct blob_attr *cur;
 	int rem;
 	blobmsg_for_each_attr(cur, parameters, rem)
 	{
+		int fault_code = get_fault(cur);
+		if (fault_code != FAULT_CPE_NO_FAULT) {
+			cwmp_free_all_dm_parameter_list(parameters_list);
+			return fault_code;
+		}
 		struct blob_attr *tb[5] = { NULL, NULL, NULL, NULL, NULL };
 		blobmsg_parse(p, 5, tb, blobmsg_data(cur), blobmsg_len(cur));
 		if (!tb[0])
@@ -100,6 +105,7 @@ void get_parameters_list_from_parameters_blob_array(struct blob_attr *parameters
 			writable = true;
 		add_dm_parameter_to_list(parameters_list, blobmsg_get_string(tb[0]), tb[1] ? blobmsg_get_string(tb[1]) : "", tb[2] ? blobmsg_get_string(tb[2]) : "", notification, writable);
 	}
+	return FAULT_CPE_NO_FAULT;
 }
 
 int get_single_fault_from_blob_attr(struct blob_attr *msg)
@@ -305,14 +311,19 @@ void ubus_get_parameter_callback(struct ubus_request *req, int type __attribute_
 {
 	struct blob_attr *parameters = get_parameters_array(msg);
 	struct list_params_result *result = (struct list_params_result *)req->priv;
+	int fault_code = FAULT_CPE_NO_FAULT;
 	if (parameters == NULL) {
-		int fault_code = get_fault(msg);
+		fault_code = get_fault(msg);
 		snprintf(result->fault, 5, "%d", fault_code);
 		result->type = FAULT;
 		return;
 	}
 	result->type = LIST;
-	get_parameters_list_from_parameters_blob_array(parameters, result->parameters_list);
+	fault_code = get_parameters_list_from_parameters_blob_array(parameters, result->parameters_list);
+	if (fault_code != FAULT_CPE_NO_FAULT) {
+		snprintf(result->fault, 5, "%d", fault_code);
+		result->type = FAULT;
+	}
 }
 
 char *cwmp_get_parameter_values(char *parameter_name, struct list_head *parameters_list)
@@ -326,8 +337,25 @@ char *cwmp_get_parameter_values(char *parameter_name, struct list_head *paramete
 	}
 
 	if (get_result.type == FAULT) {
-		CWMP_LOG(INFO, "Get parameter_values failed: fault_code: %s", get_result.fault);
+		CWMP_LOG(INFO, "Get parameter values failed: fault_code: %s", get_result.fault);
 		return icwmp_strdup(get_result.fault);
+	}
+	return NULL;
+}
+
+char *cwmp_get_multiple_parameters_values(struct list_head *arg_params_list, struct list_head *parameters_list)
+{
+	int e;
+	struct list_params_result get_result = { .parameters_list = parameters_list };
+	e = cwmp_ubus_call("usp.raw", "getm_values", CWMP_UBUS_ARGS{ { "paths", { .param_value_list = arg_params_list }, UBUS_List_Param_Get } }, 1, ubus_get_parameter_callback, &get_result );
+	if (e < 0) {
+		CWMP_LOG(INFO, "getm_values ubus method failed: Ubus err code: %d", e);
+		return "9002";
+	}
+
+	if (get_result.type == FAULT) {
+		CWMP_LOG(INFO, "Get multiple parameters values failed: fault_code: %s", get_result.fault);
+		return strdup(get_result.fault);
 	}
 	return NULL;
 }
@@ -388,7 +416,7 @@ int cwmp_set_multiple_parameters_values(struct list_head *parameters_values_list
 	int e;
 	struct setm_values_res set_result = { .flag = flag, .faults_list = faults_list };
 	e = cwmp_ubus_call("usp.raw", "setm_values",
-			   CWMP_UBUS_ARGS{ { "pv_tuple", { .param_value_list = parameters_values_list }, UBUS_List_Param }, { "key", { .str_val = parameter_key }, UBUS_String }, { "transaction_id", { .int_val = transaction_id }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 4,
+			   CWMP_UBUS_ARGS{ { "pv_tuple", { .param_value_list = parameters_values_list }, UBUS_List_Param_Set }, { "key", { .str_val = parameter_key }, UBUS_String }, { "transaction_id", { .int_val = transaction_id }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 4,
 			   ubus_setm_values_callback, &set_result);
 
 	if (e < 0) {
@@ -470,86 +498,4 @@ char *cwmp_delete_object(char *object_name, char *key)
 	}
 
 	return NULL;
-}
-
-/*
- * GET SET Parameter Attributes
- */
-
-void ubus_parameter_attributes_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
-{
-	int fault_code = get_single_fault_from_blob_attr(msg);
-	struct list_params_result *result = (struct list_params_result *)req->priv;
-	if (fault_code != FAULT_CPE_NO_FAULT) {
-		snprintf(result->fault, 5, "%d", fault_code);
-		result->type = FAULT;
-		return;
-	}
-	result->type = LIST;
-	if (result->parameters_list != NULL) {
-		struct blob_attr *parameters = get_parameters_array(msg);
-		get_parameters_list_from_parameters_blob_array(parameters, result->parameters_list);
-	}
-}
-
-char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list)
-{
-	int e;
-	struct list_params_result get_result = { .parameters_list = parameters_list };
-	e = cwmp_ubus_call("usp.raw", "getm_attributes", CWMP_UBUS_ARGS{ { "paths", { .array_value = { { .str_value = !parameter_name || parameter_name[0] == '\0' ? DM_ROOT_OBJ : parameter_name } } }, UBUS_Array_Str }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2,
-			   ubus_parameter_attributes_callback, &get_result);
-	if (e < 0) {
-		CWMP_LOG(INFO, "getm_attributes ubus method failed: Ubus err code: %d", e);
-		return "9002";
-	}
-
-	if (get_result.type == FAULT) {
-		CWMP_LOG(INFO, "GetParameterAttributes failed");
-		return icwmp_strdup(get_result.fault);
-	}
-
-	return NULL;
-}
-
-char *cwmp_set_parameter_attributes(char *parameter_name, char *notification)
-{
-	int e;
-	struct list_params_result set_result = { .parameters_list = NULL };
-	e = cwmp_ubus_call("usp.raw", "setm_attributes",
-			   CWMP_UBUS_ARGS{ { "paths", { .array_value = { { .param_value = { "path", parameter_name } }, { .param_value = { "notify-type", notification } }, { .param_value = { "notify", "1" } } } }, UBUS_Array_Obj },
-					   { "transaction_id", { .int_val = transaction_id }, UBUS_Integer },
-					   { "proto", { .str_val = "cwmp" }, UBUS_String } },
-			   3, ubus_parameter_attributes_callback, &set_result);
-	if (e < 0) {
-		CWMP_LOG(INFO, "setm_attributes ubus method failed: Ubus err code: %d", e);
-		return "9002";
-	}
-
-	if (set_result.type == FAULT) {
-		CWMP_LOG(INFO, "SetParameterAttributes failed");
-		return icwmp_strdup(set_result.fault);
-	}
-
-	return NULL;
-}
-
-/*
- * Notifications functions
- */
-int cwmp_update_enabled_notify_file(void)
-{
-	int e, fault;
-	struct cwmp *cwmp = &cwmp_main;
-	e = cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", { .int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, cwmp_update_enabled_notify_file_callback, &fault);
-	if (e || fault)
-		return 0;
-	return 1;
-}
-
-int check_value_change(void)
-{
-	struct cwmp *cwmp = &cwmp_main;
-	int ret = 0;
-	cwmp_ubus_call("usp.raw", "list_notify", CWMP_UBUS_ARGS{ { "instance_mode", { .int_val = cwmp->conf.instance_mode }, UBUS_Integer }, { "proto", { .str_val = "cwmp" }, UBUS_String } }, 2, ubus_check_value_change_callback, &ret);
-	return ret;
 }
