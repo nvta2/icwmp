@@ -19,6 +19,9 @@
 #include "session.h"
 #include "xml.h"
 
+#define MAX_NBRE_CUSTOM_INFORM 256
+extern char *custom_forced_inform_parameters[MAX_NBRE_CUSTOM_INFORM];
+extern int nbre_custom_inform;
 extern const struct rpc_cpe_method rpc_cpe_methods[__RPC_CPE_MAX];
 extern const struct rpc_acs_method rpc_acs_methods[__RPC_ACS_MAX];
 

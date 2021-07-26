@@ -58,6 +58,8 @@ const struct rpc_acs_method rpc_acs_methods[] = { [RPC_ACS_INFORM] = { "Inform",
 
 };
 
+char *custom_forced_inform_parameters[MAX_NBRE_CUSTOM_INFORM] = { 0 };
+int nbre_custom_inform = 0;
 char *forced_inform_parameters[] = {
 	"Device.RootDataModelVersion", "Device.DeviceInfo.HardwareVersion", "Device.DeviceInfo.SoftwareVersion", "Device.DeviceInfo.ProvisioningCode", "Device.ManagementServer.ParameterKey", "Device.ManagementServer.ConnectionRequestURL", "Device.ManagementServer.AliasBasedAddressing"
 };
@@ -355,6 +357,14 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 	LIST_HEAD(list_inform);
 	for (i = 0; i < inform_parameters_nbre; i++) {
 		char *fault = cwmp_get_single_parameter_value(forced_inform_parameters[i], &cwmp_dm_param);
+		if (fault != NULL)
+			continue;
+		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
+			goto error;
+	}
+
+	for (i = 0; i < nbre_custom_inform; i++) {
+		char *fault = cwmp_get_single_parameter_value(custom_forced_inform_parameters[i], &cwmp_dm_param);
 		if (fault != NULL)
 			continue;
 		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))

@@ -71,6 +71,7 @@ typedef struct config {
 	char *https_ssl_capath;
 	char *cpe_userid;
 	char *cpe_passwd;
+	char *forced_inform_json_file;
 	char *ip;
 	char *ipv6;
 	char *interface;
@@ -477,6 +478,8 @@ bool icwmp_validate_string_length(char *arg, int max_length);
 bool icwmp_validate_boolean_value(char *arg);
 bool icwmp_validate_unsignedint(char *arg);
 bool icwmp_validate_int_in_range(char *arg, int min, int max);
+void load_forced_inform_json_file(struct cwmp *cwmp);
+void clean_custom_inform_parameters();
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

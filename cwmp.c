@@ -383,6 +383,64 @@ static void *thread_http_cr_server_listen(void *v __attribute__((unused)))
 	return NULL;
 }
 
+void load_forced_inform_json_file(struct cwmp *cwmp)
+{
+	struct blob_buf bbuf;
+	struct blob_attr *cur;
+	struct blob_attr *forced_inform_list = NULL;
+	int rem;
+	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
+
+	if (cwmp->conf.forced_inform_json_file == NULL || !file_exists(cwmp->conf.forced_inform_json_file))
+		return;
+
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+
+	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.forced_inform_json_file) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.forced_inform_json_file);
+		return;
+	}
+	blobmsg_for_each_attr(cur, bbuf.head, rem)
+	{
+		if (blobmsg_type(cur) == BLOBMSG_TYPE_ARRAY) {
+			forced_inform_list = cur;
+			break;
+		}
+	}
+	if (forced_inform_list == NULL) {
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a parameters list", cwmp->conf.forced_inform_json_file);
+		return;
+	}
+	blobmsg_for_each_attr(cur, forced_inform_list, rem)
+	{
+		char parameter_path[128];
+		snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
+		if (parameter_path[strlen(parameter_path)-1] == '.') {
+			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
+			continue;
+		}
+		char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
+		if (fault != NULL) {
+			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
+			continue;
+		}
+		custom_forced_inform_parameters[nbre_custom_inform++] = strdup(parameter_path);
+	}
+	blob_buf_free(&bbuf);
+
+}
+
+void clean_custom_inform_parameters()
+{
+	int i;
+	for (i=0; i < nbre_custom_inform; i++) {
+		free(custom_forced_inform_parameters[i]);
+		custom_forced_inform_parameters[i] = NULL;
+	}
+	nbre_custom_inform = 0;
+}
+
 static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 {
 	int error;
@@ -414,11 +472,11 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	pthread_mutex_init(&cwmp->mutex_session_send, NULL);
 	memcpy(&(cwmp->env), &env, sizeof(struct env));
 	INIT_LIST_HEAD(&(cwmp->head_session_queue));
-
 	if ((error = global_conf_init(cwmp)))
 		return error;
 
 	cwmp_get_deviceid(cwmp);
+	load_forced_inform_json_file(cwmp);
 	return CWMP_OK;
 }
 
@@ -441,8 +499,10 @@ static void cwmp_free(struct cwmp *cwmp)
 	FREE(cwmp->conf.ubus_socket);
 	FREE(cwmp->conf.connection_request_path);
 	FREE(cwmp->conf.default_wan_iface);
+	FREE(cwmp->conf.forced_inform_json_file);
 	bkp_tree_clean();
 	cwmp_ubus_exit();
+	clean_custom_inform_parameters();
 }
 
 static void *thread_cwmp_signal_handler_thread(void *arg)

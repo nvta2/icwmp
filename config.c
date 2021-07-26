@@ -582,6 +582,17 @@ int get_global_config(struct config *conf)
 		return error;
 	}
 
+	if (uci_get_value(UCI_CPE_FORCED_INFORM_JSON, &value) == CWMP_OK) {
+		FREE(conf->forced_inform_json_file);
+		if (value != NULL) {
+			conf->forced_inform_json_file = strdup(value);
+			FREE(value);
+		} else {
+			conf->forced_inform_json_file = NULL;
+		}
+		if (conf->forced_inform_json_file)
+			CWMP_LOG(DEBUG, "CWMP CONFIG - cpe forced inform json file: %s", conf->forced_inform_json_file);
+	}
 	return CWMP_OK;
 }
 

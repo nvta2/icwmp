@@ -56,6 +56,7 @@
 #define UCI_CPE_IPV6 "cwmp.cpe.ipv6"
 #define UCI_CPE_SCHEDULE_REBOOT "cwmp.cpe.schedule_reboot"
 #define UCI_CPE_DELAY_REBOOT "cwmp.cpe.delay_reboot"
+#define UCI_CPE_FORCED_INFORM_JSON "cwmp.cpe.forced_inform_json"
 #define LW_NOTIFICATION_ENABLE "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT "cwmp.lwn.port"
