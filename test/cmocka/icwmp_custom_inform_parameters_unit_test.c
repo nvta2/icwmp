@@ -32,6 +32,28 @@ static int verify_inform_parameter_in_list(char *parameter)
 	return 0;
 }
 
+void clean_config(struct cwmp *cwmp_test)
+{
+	FREE(cwmp_test->deviceid.manufacturer);
+	FREE(cwmp_test->deviceid.serialnumber);
+	FREE(cwmp_test->deviceid.productclass);
+	FREE(cwmp_test->deviceid.oui);
+	FREE(cwmp_test->deviceid.softwareversion);
+	FREE(cwmp_test->conf.lw_notification_hostname);
+	FREE(cwmp_test->conf.ip);
+	FREE(cwmp_test->conf.ipv6);
+	FREE(cwmp_test->conf.acsurl);
+	FREE(cwmp_test->conf.acs_userid);
+	FREE(cwmp_test->conf.acs_passwd);
+	FREE(cwmp_test->conf.interface);
+	FREE(cwmp_test->conf.cpe_userid);
+	FREE(cwmp_test->conf.cpe_passwd);
+	FREE(cwmp_test->conf.ubus_socket);
+	FREE(cwmp_test->conf.connection_request_path);
+	FREE(cwmp_test->conf.default_wan_iface);
+	FREE(cwmp_test->conf.interface);
+}
+
 static void cwmp_custom_inform_unit_test(void **state)
 {
 	struct cwmp *cwmp_test = &cwmp_main_test;
@@ -61,6 +83,9 @@ static void cwmp_custom_inform_unit_test(void **state)
 	assert_int_equal(verify_inform_parameter_in_list("Device.DeviceInfo.UpTime"), 1);
 	FREE(cwmp_test->conf.forced_inform_json_file);
 	clean_custom_inform_parameters();
+
+	clean_config(cwmp_test);
+	icwmp_cleanmem();
 }
 
 int main(void)

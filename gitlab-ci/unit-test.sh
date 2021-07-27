@@ -44,6 +44,8 @@ echo "Running the unit test cases"
 make unit-test -C test/cmocka/
 check_ret $?
 
+exec_cmd rm -rf /etc/icwmpd/*
+
 echo "Stop dependent services"
 supervisorctl stop all
 supervisorctl status
