@@ -399,6 +399,7 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 
 	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.forced_inform_json_file) == false) {
 		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.forced_inform_json_file);
+		blob_buf_free(&bbuf);
 		return;
 	}
 	blobmsg_for_each_attr(cur, bbuf.head, rem)
@@ -410,6 +411,7 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 	}
 	if (forced_inform_list == NULL) {
 		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a parameters list", cwmp->conf.forced_inform_json_file);
+		blob_buf_free(&bbuf);
 		return;
 	}
 	blobmsg_for_each_attr(cur, forced_inform_list, rem)
