@@ -234,6 +234,24 @@ Valid commands:
 
 ```
 
+## icwmpd forced inform parameters
+
+In addition to the forced inform parameters specified in datamodel stanadard, icwmp gives the possibility to add other inform parameters.
+Those new inform parameters can be set in a json file as following:
+
+```bash
+{
+  "forced_inform":[
+    "Device.DeviceInfo.X_IOPSYS_EU_BaseMACAddress",
+    "Device.DeviceInfo.UpTime"
+    ]
+}
+```
+
+The path of the json file is set in the uci option: cwmp.cpe.forced_inform_json
+
+Please be sure that this json_file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel.
+
 ## Dependencies
 
 To successfully build icwmp, the following libraries are needed:
