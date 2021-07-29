@@ -7,11 +7,11 @@ It is written in C programming language and depends on a number of libraries of 
 ## Good to Know
 
 The icwmp client is :
-* tested with several ACS such as **Axiros**, **AVSytem**, **GenieACS**, **OpenACS**, etc...
-* supports all required **TR069 RPCs**.
-* supports all DataModel of TR family such as **TR-181**, **TR-104**, **TR-143**, **TR-157**, etc...
-* supports all types of connection requests such as **HTTP**, **XMPP**, **STUN**.
-* supports integrated file transfer such as **HTTP**, **HTTPS**, **FTP**.
+* Tested with several ACS such as **Axiros**, **AVSytem**, **GenieACS**, **OpenACS**, etc...
+* Supports all required **TR069 RPCs**.
+* Supports all DataModel of TR family such as **TR-181**, **TR-104**, **TR-143**, **TR-157**, etc...
+* Supports all types of connection requests such as **HTTP**, **XMPP**, **STUN**.
+* Supports integrated file transfer such as **HTTP**, **HTTPS**, **FTP**.
 
 ## Configuration File
 
@@ -37,7 +37,7 @@ config lwn 'lwn'
 	option port ''
 ```
 
-For more info on the `cwmp` UCI configuration see [link](./docs/api/uci.cwmp.md) or [raw schema](./schemas/uci/cwmp.json)
+> Complete uci for `cwmp` configuration available in [link](./docs/api/uci.cwmp.md) or [raw schema](./schemas/uci/cwmp.json)
 
 ## RPCs Method supported
 
@@ -85,7 +85,7 @@ the folowing tables provides a summary of all methods, and indicates the conditi
 
 ## Concepts and Workflow
 
-As indicated in the TR069 standard, the icwmpd starts automatically when the system is started. Then it connects to the ACS, that can be set manually by the admin or found by dhcp discovery. And later  it could start other sessions due to event causes.
+As indicated in the TR069 standard, the icwmpd starts automatically when the system is started. Then it reads the initial configuration from uci and if configured connects to the ACS. ACS configuration in icwmp can be done manually by the admin using uci or by operator using dhcp option 43, and later it could start other sessions due to event causes.
 
 Session workflow could be checked with sniffer packets tool such as wireshark or tcpdump.
 In addition icwmpd has a log file '/var/log/icwmpd.log', that describes the workflow. E.g. below you can find an abstract of a log file content:
@@ -110,19 +110,20 @@ You could set the uci config `cwmp.cpe.log_severity` option to `'DEBUG'` in orde
 
 ## icwmp uBus
 
-icwmpd must be launched on startup after ubusd. It exposes the CWMP functionality over ubus. The icwmpd registers `tr069` namespaces with ubus, that has the shown below functionalities:
+icwmpd must be launched on startup after ubusd. It exposes some cwmp client rpc along with some debug utilities over ubus. The icwmpd registers `tr069` namespaces with ubus, that has below functionalities:
 
-For more info on the `tr069` ubus schema see [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
+> Note: For more info on the `tr069` ubus schema see [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
 
 ### tr069 ubus examples
+The output shown in below examples are just for demonstration purpose, the actual output shall vary as per the cwmp configuration and state. The schema for ubus is available at [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
+
 ```bash
 root@iopsys:~# ubus -v list tr069
-'tr069' @04d3de4e
-	"notify":{}
-	"command":{"command":"String"}
-	"status":{}
-	"inform":{"GetRPCMethods":"Boolean","event":"String"}
-root@iopsys:~# 
+'tr069' @aadff65c
+        "command":{"command":"String"}
+        "status":{}
+        "inform":{"GetRPCMethods":"Boolean","event":"String"}
+root@iopsys:~#
 ```
 
 Each object registered with the `'tr069'` namespace has a specific functionality.
@@ -132,26 +133,26 @@ Each object registered with the `'tr069'` namespace has a specific functionality
 ```bash
 root@iopsys:~# ubus call tr069 status
 {
-	"cwmp": {
-		"status": "up",
-		"start_time": "2019-12-24T10:21:18+01:00",
-		"acs_url": "http:\/\/genieacs:7547"
-	},
-	"last_session": {
-		"status": "success",
-		"start_time": "2019-12-24T10:21:18+01:00",
-		"end_time": "2019-12-24T10:21:19+01:00"
-	},
-	"next_session": {
-		"status": "waiting",
-		"start_time": "2019-12-26T12:21:18+01:00",
-		"end_time": "N\/A"
-	},
-	"statistics": {
-		"success_sessions": 1,
-		"failure_sessions": 0,
-		"total_sessions": 1
-	}
+        "cwmp": {
+                "status": "up",
+                "start_time": "2021-07-29T09:29:02+02:00",
+                "acs_url": "http://genieacs:7547"
+        },
+        "last_session": {
+                "status": "success",
+                "start_time": "2021-07-29T09:29:59+02:00",
+                "end_time": "2021-07-29T09:30:00+02:00"
+        },
+        "next_session": {
+                "status": "waiting",
+                "start_time": "2021-07-29T09:59:59+02:00",
+                "end_time": "N/A"
+        },
+        "statistics": {
+                "success_sessions": 2,
+                "failure_sessions": 0,
+                "total_sessions": 2
+        }
 }
 root@iopsys:~#
 ```
@@ -187,7 +188,7 @@ root@iopsys:~# ubus call tr069 command '{"command":"reload"}'
 	"status": 1,
 	"info": "icwmpd config reloaded"
 }
-root@iopsys:~# 
+root@iopsys:~#
 ```
 - To exit the icwmpd daemod, use the `command` ubus method with `exit` argument:
 
@@ -197,7 +198,7 @@ root@iopsys:~# ubus call tr069 command '{"command":"exit"}'
 	"status": 1,
 	"info": "icwmpd daemon stopped"
 }
-root@iopsys:~# 
+root@iopsys:~#
 ```
 ## icwmpd command line
 
@@ -206,51 +207,70 @@ icwmpd command line options are described with `--help` option as below:
 ```bash
 root@iopsys:~# icwmpd --help
 Usage: icwmpd [OPTIONS]
- -s, --ubus_socket                                    Ubus socket path for IPC
  -b, --boot-event                                    (CWMP daemon) Start CWMP with BOOT event
  -g, --get-rpc-methods                               (CWMP daemon) Start CWMP with GetRPCMethods request to ACS
- -c, --cli                              	     CWMP CLI
+ -c, --cli                                           CWMP CLI
  -h, --help                                          Display this help text
  -v, --version                                       Display the version
 ```
 
 ## icwmpd CLI
 
-The icwmpd CLI is the -c (--cli) option of the icwmpd command line. 
+The icwmpd CLI is a debug utility and can be invoked using -c (--cli) command line option.
 
 Different options of this CLI are described with help command as below:
 
 ```bash
 root@iopsys:~# icwmpd -c help
 Valid commands:
-	help 									=> show this help
-	get [path-expr] 						=> get parameter values
-	get_names [path-expr] [next-level] 		=> get parameter names
-	set [path-expr] [value] 				=> set parameter value
-	add [object] 							=> add object
-	del [object] 							=> delete object
-	get_notif [path-expr]					=> get parameter notifications
-	set_notif [path-expr] [notification]	=> set parameter notifications
-
+        help                                    => show this help
+        get [path-expr]                         => get parameter values
+        get_names [path-expr] [next-level]      => get parameter names
+        set [path-expr] [value]                 => set parameter value
+        add [object]                            => add object
+        del [object]                            => delete object
+        get_notif [path-expr]                   => get parameter notifications
+        set_notif [path-expr] [notification]    => set parameter notifications
 ```
+> Note: icwmpd CLI is a debug utility and hence it is advised to use for debug and development purpose only.
 
 ## icwmpd forced inform parameters
+As per the cwmp inform requirements, cwmp client has list of parameters defined internally. The list contains below parameters:
 
-In addition to the forced inform parameters specified in datamodel stanadard, icwmp gives the possibility to add other inform parameters.
-Those new inform parameters can be set in a json file as following:
+| Parameter name                                 |
+| ---------------------------------------------- |
+| Device.RootDataModelVersion                    |
+| Device.DeviceInfo.HardwareVersion              |
+| Device.DeviceInfo.SoftwareVersion              |
+| Device.DeviceInfo.ProvisioningCode             |
+| Device.ManagementServer.ParameterKey           |
+| Device.ManagementServer.ConnectionRequestURL   |
+| Device.ManagementServer.AliasBasedAddressing   |
+
+In addition to the above defined forced inform parameters as specified in datamodel stanadard, icwmp gives the possibility to add other datamodel parameters as forced inform parameters, by defining them in a json file.
+
+Additional inform parameters can be configured in a json file as below:
 
 ```bash
+root@iopsys:~# cat /etc/icwmpd/forced_inform.json
 {
   "forced_inform":[
     "Device.DeviceInfo.X_IOPSYS_EU_BaseMACAddress",
     "Device.DeviceInfo.UpTime"
     ]
 }
+root@iopsys:~#
+```
+And then the path of the json file can be set in the uci option: cwmp.cpe.forced_inform_json like below:
+```bash
+root@iopsys:~# uci set cwmp.cpe.forced_inform_json=/etc/icwmpd/forced_inform.json
+root@iopsys:~# uci commit cwmp
+root@iopsys:~# /etc/init.d/icwmpd restart
 ```
 
-The path of the json file is set in the uci option: cwmp.cpe.forced_inform_json
-
-Please be sure that this json_file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel.
+> - It is required to restart icwmp service after the changes to use the new forced inform parameters    
+> - This json file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
+> - Forced inform parameters defined in json should be leaf elements
 
 ## Dependencies
 
@@ -265,3 +285,13 @@ To successfully build icwmp, the following libraries are needed:
 | libopenssl  | http://ftp.fi.muni.cz/pub/openssl/source/   | OpenSSL        |
 | libcurl     | https://dl.uxnr.de/mirror/curl              | MIT            |
 | libmicroxml | https://dev.freecwmp.org/microxml           | LGPL 2.0       |
+
+Runtime dependencies:
+
+| Dependency  | Link                                        | License        |
+| ----------- | ------------------------------------------- | -------------- |
+| ubus        | https://git.openwrt.org/project/ubus.git    | LGPL 2.1       |
+| bbf         | https://dev.iopsys.eu/iopsys/bbf.git        | LGPLv2.1       |
+| uspd        | https://dev.iopsys.eu/iopsys/uspd.git       | GPL v2.0       |
+
+> icwmpd gets the datamodel from the DUT via ubus using uspd, and also it registers `tr069` ubus namespace to expose some debug and cwmp client rpc funtionalities, so it is required to start it after starting ubusd and uspd.

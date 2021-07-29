@@ -50,18 +50,20 @@ int get_global_config(struct config *conf)
 		if (value != NULL) {
 			log_set_log_file_name(value);
 			FREE(value);
-		}
+		} else
+			log_set_log_file_name(NULL);
 	} else {
-		return error;
+		log_set_log_file_name(NULL);
 	}
 
 	if ((error = uci_get_value(UCI_CPE_LOG_MAX_SIZE, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			log_set_file_max_size(value);
 			FREE(value);
-		}
+		} else
+			log_set_file_max_size(NULL);
 	} else {
-		return error;
+		log_set_file_max_size(NULL);
 	}
 
 	if ((error = uci_get_value(UCI_CPE_ENABLE_STDOUT_LOG, &value)) == CWMP_OK) {
@@ -173,7 +175,7 @@ int get_global_config(struct config *conf)
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - acs compression: %d", conf->compression);
 	} else {
-		return error;
+		conf->compression = COMP_NONE;
 	}
 
 	if ((error = uci_get_value(UCI_ACS_RETRY_MIN_WAIT_INTERVAL, &value)) == CWMP_OK) {
@@ -264,18 +266,6 @@ int get_global_config(struct config *conf)
 		}
 
 		CWMP_LOG(DEBUG, "CWMP CONFIG - ipv6 enable: %d", conf->ipv6_enable);
-	} else {
-		return error;
-	}
-
-	if ((error = uci_get_value(UCI_ACS_SSL_VERSION, &value)) == CWMP_OK) {
-		if (value != NULL) {
-			FREE(conf->acs_ssl_version);
-			conf->acs_ssl_version = strdup(value);
-			FREE(value);
-		}
-
-		CWMP_LOG(DEBUG, "CWMP CONFIG - acs ssl version: %s", conf->acs_ssl_version ? conf->acs_ssl_version : "");
 	} else {
 		return error;
 	}

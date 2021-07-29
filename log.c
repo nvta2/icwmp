@@ -53,6 +53,8 @@ int log_set_file_max_size(char *value)
 {
 	if (value != NULL) {
 		log_max_size = atol(value);
+	} else {
+		log_max_size = 102400;
 	}
 	return 1;
 }

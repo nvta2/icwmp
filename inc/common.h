@@ -67,7 +67,6 @@ typedef struct config {
 	char *acs_userid;
 	char *acs_passwd;
 	char *acs_ssl_capath;
-	char *acs_ssl_version;
 	char *https_ssl_capath;
 	char *cpe_userid;
 	char *cpe_passwd;
