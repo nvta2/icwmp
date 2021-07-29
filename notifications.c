@@ -25,7 +25,7 @@ void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type
 {
 	FILE *fp;
 	int *int_ret = (int *)req->priv;
-
+	struct blob_buf bbuf;
 	*int_ret = get_fault(msg);
 	if (*int_ret) {
 		*int_ret = 0;
@@ -47,9 +47,18 @@ void cwmp_update_enabled_notify_file_callback(struct ubus_request *req, int type
 		blobmsg_parse(p, 4, tb, blobmsg_data(cur), blobmsg_len(cur));
 		if (!tb[0])
 			continue;
-		char notif_line[1024];
-		snprintf(notif_line, sizeof(notif_line), "parameter:%s notifcation:%s type:%s value:%s", blobmsg_get_string(tb[0]), tb[3] ? blobmsg_get_string(tb[3]) : "", tb[2] ? blobmsg_get_string(tb[2]) : "", tb[1] ? blobmsg_get_string(tb[1]) : "");
-		fprintf(fp, "%s\n", notif_line);
+		memset(&bbuf, 0, sizeof(struct blob_buf));
+		blob_buf_init(&bbuf, 0);
+		blobmsg_add_string(&bbuf, "parameter", blobmsg_get_string(tb[0]));
+		blobmsg_add_string(&bbuf, "notification", tb[3] ? blobmsg_get_string(tb[3]) : "");
+		blobmsg_add_string(&bbuf, "type", tb[2] ? blobmsg_get_string(tb[2]) : "");
+		blobmsg_add_string(&bbuf, "value", tb[1] ? blobmsg_get_string(tb[1]) : "");
+		char *notification_line = blobmsg_format_json(bbuf.head, true);
+		if (notification_line != NULL) {
+			fprintf(fp, "%s\n", notification_line);
+			FREE(notification_line);
+		}
+		blob_buf_free(&bbuf);
 	}
 	fclose(fp);
 }
@@ -73,12 +82,15 @@ void get_parameter_value_from_parameters_list(struct blob_attr *list_notif, char
 	}
 }
 
-void ubus_check_value_change_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+void ubus_check_value_change_callback(struct ubus_request *req, int typearg __attribute__((unused)), struct blob_attr *msg)
 {
 	FILE *fp;
 	char buf[1280];
 	char *dm_value = NULL, *dm_type = NULL;
 	int *int_ret = (int *)req->priv;
+	struct blob_buf bbuf;
+
+	char *parameter = NULL, *notification = NULL, *value = NULL, *type = NULL;
 
 	*int_ret = get_fault(msg);
 	if (*int_ret) {
@@ -97,11 +109,30 @@ void ubus_check_value_change_callback(struct ubus_request *req, int type __attri
 		int len = strlen(buf);
 		if (len)
 			buf[len - 1] = '\0';
-		char parameter[128] = { 0 }, notification[2] = { 0 }, value[1024] = { 0 }, type[32] = { 0 };
-		sscanf(buf, "parameter:%128s notifcation:%2s type:%32s value:%1024s\n", parameter, notification, type, value);
-		get_parameter_value_from_parameters_list(list_notify, parameter, &dm_value, &dm_type);
-		if (dm_value == NULL && dm_type == NULL)
+
+		memset(&bbuf, 0, sizeof(struct blob_buf));
+		blob_buf_init(&bbuf, 0);
+
+		if (blobmsg_add_json_from_string(&bbuf, buf) == false) {
+			blob_buf_free(&bbuf);
 			continue;
+		}
+		const struct blobmsg_policy p[4] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_STRING }, { "type", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING } };
+		struct blob_attr *tb[4] = { NULL, NULL, NULL, NULL };
+		blobmsg_parse(p, 4, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
+		parameter = blobmsg_get_string(tb[0]);
+		notification = blobmsg_get_string(tb[1]);
+		type = blobmsg_get_string(tb[2]);
+		value = blobmsg_get_string(tb[3]);
+		get_parameter_value_from_parameters_list(list_notify, parameter, &dm_value, &dm_type);
+		if (dm_value == NULL && dm_type == NULL) {
+			blob_buf_free(&bbuf);
+			parameter = NULL;
+			notification = NULL;
+			type = NULL;
+			value = NULL;
+			continue;
+		}
 		if ((strlen(notification) > 0) && (notification[0] >= '1') && (dm_value != NULL) && (strcmp(dm_value, value) != 0)) {
 			if (notification[0] == '1' || notification[0] == '2')
 				add_list_value_change(parameter, dm_value, dm_type);
@@ -118,6 +149,11 @@ void ubus_check_value_change_callback(struct ubus_request *req, int type __attri
 		}
 		FREE(dm_value);
 		FREE(dm_type);
+		parameter = NULL;
+		notification = NULL;
+		type = NULL;
+		value = NULL;
+		blob_buf_free(&bbuf);
 	}
 	fclose(fp);
 }
