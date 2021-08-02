@@ -15,7 +15,7 @@ The icwmp client is :
 
 ## Configuration File
 
-The icwmp UCI configuration is located in **'/etc/config/cwmp'**, and contains 3 sections: **'acs'**, **'cpe'** and **'lwn'**.
+The `icwmp` UCI configuration is located in **'/etc/config/cwmp'**, and contains 3 sections: **'acs'**, **'cpe'** and **'lwn'**.
 
 ```bash
 config acs 'acs'
@@ -37,11 +37,11 @@ config lwn 'lwn'
 	option port ''
 ```
 
-> Complete uci for `cwmp` configuration available in [link](./docs/api/uci.cwmp.md) or [raw schema](./schemas/uci/cwmp.json)
+> Complete UCI for `cwmp` configuration available in [link](./docs/api/uci.cwmp.md) or [raw schema](./schemas/uci/cwmp.json)
 
 ## RPCs Method supported
 
-the folowing tables provides a summary of all methods, and indicates the conditions under which implementation of each RPC method defined in Annex A is `REQUIRED` or `OPTIONAL`.
+The following tables provides a summary of all methods, and indicates the conditions under which implementation of each RPC method defined in Annex A is `REQUIRED` or `OPTIONAL`.
 
 ### Methods for CPE responding
 
@@ -85,10 +85,10 @@ the folowing tables provides a summary of all methods, and indicates the conditi
 
 ## Concepts and Workflow
 
-As indicated in the TR069 standard, the icwmpd starts automatically when the system is started. Then it reads the initial configuration from uci and if configured connects to the ACS. ACS configuration in icwmp can be done manually by the admin using uci or by operator using dhcp option 43, and later it could start other sessions due to event causes.
+As indicated in the TR069 standard, the `icwmpd` starts automatically when the system is started. Then it reads the initial configuration from UCI and if configured connects to the ACS. ACS configuration in `icwmp` can be done manually by the admin using UCI or by operator using DHCP Option 43, and later it could start other sessions due to event causes.
 
-Session workflow could be checked with sniffer packets tool such as wireshark or tcpdump.
-In addition icwmpd has a log file '/var/log/icwmpd.log', that describes the workflow. E.g. below you can find an abstract of a log file content:
+Session workflow could be checked with sniffer packets tool such as Wireshark or `tcpdump`.
+In addition `icwmpd` has a log file '/var/log/icwmpd.log', that describes the workflow. E.g. below you can find an abstract of a log file content:
 
 ```bash
 24-12-2019, 10:21:18 [INFO]    STARTING ICWMP with PID :7762
@@ -106,16 +106,16 @@ In addition icwmpd has a log file '/var/log/icwmpd.log', that describes the work
 24-12-2019, 10:21:19 [INFO]    Waiting the next session
 ```
 
-You could set the uci config `cwmp.cpe.log_severity` option to `'DEBUG'` in order to show in details the cwmp log.
+You could set the UCI config `cwmp.cpe.log_severity` option to `'DEBUG'` in order to show in details the cwmp log.
 
 ## icwmp uBus
 
-icwmpd must be launched on startup after ubusd. It exposes some cwmp client rpc along with some debug utilities over ubus. The icwmpd registers `tr069` namespaces with ubus, that has below functionalities:
+`icwmpd` must be launched on startup after `ubusd`. It exposes some CWMP client RPC along with some debug utilities over UBUS. The `icwmpd` registers `tr069` namespaces with UBUS, that has below functionalities:
 
 > Note: For more info on the `tr069` ubus schema see [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
 
 ### tr069 ubus examples
-The output shown in below examples are just for demonstration purpose, the actual output shall vary as per the cwmp configuration and state. The schema for ubus is available at [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
+The output shown in below examples are just for demonstration purpose, the actual output shall vary as per the cwmp configuration and state. The schema for UBUS is available at [link](./docs/api/tr069.md) or [raw schema](./schemas/ubus/tr069.json)
 
 ```bash
 root@iopsys:~# ubus -v list tr069
@@ -190,7 +190,7 @@ root@iopsys:~# ubus call tr069 command '{"command":"reload"}'
 }
 root@iopsys:~#
 ```
-- To exit the icwmpd daemod, use the `command` ubus method with `exit` argument:
+- To exit the icwmpd daemon, use the `command` ubus method with `exit` argument:
 
 ```bash
 root@iopsys:~# ubus call tr069 command '{"command":"exit"}'
@@ -247,9 +247,9 @@ As per the cwmp inform requirements, cwmp client has list of parameters defined 
 | Device.ManagementServer.ConnectionRequestURL   |
 | Device.ManagementServer.AliasBasedAddressing   |
 
-In addition to the above defined forced inform parameters as specified in datamodel stanadard, icwmp gives the possibility to add other datamodel parameters as forced inform parameters, by defining them in a json file.
+In addition to the above defined forced inform parameters as specified in datamodel standard, icwmp gives the possibility to add other datamodel parameters as forced inform parameters, by defining them in a JSON file.
 
-Additional inform parameters can be configured in a json file as below:
+Additional inform parameters can be configured in a JSON file as below:
 
 ```bash
 root@iopsys:~# cat /etc/icwmpd/forced_inform.json
@@ -261,7 +261,7 @@ root@iopsys:~# cat /etc/icwmpd/forced_inform.json
 }
 root@iopsys:~#
 ```
-And then the path of the json file can be set in the uci option: cwmp.cpe.forced_inform_json like below:
+And then the path of the JSON file can be set in the UCI option: `cwmp.cpe.forced_inform_json` like below:
 ```bash
 root@iopsys:~# uci set cwmp.cpe.forced_inform_json=/etc/icwmpd/forced_inform.json
 root@iopsys:~# uci commit cwmp
@@ -269,8 +269,8 @@ root@iopsys:~# /etc/init.d/icwmpd restart
 ```
 
 > - It is required to restart icwmp service after the changes to use the new forced inform parameters    
-> - This json file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
-> - Forced inform parameters defined in json should be leaf elements
+> - This JSON file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
+> - Forced inform parameters defined in JSON should be leaf elements
 
 ## Dependencies
 
@@ -294,4 +294,4 @@ Runtime dependencies:
 | bbf         | https://dev.iopsys.eu/iopsys/bbf.git        | LGPLv2.1       |
 | uspd        | https://dev.iopsys.eu/iopsys/uspd.git       | GPL v2.0       |
 
-> icwmpd gets the datamodel from the DUT via ubus using uspd, and also it registers `tr069` ubus namespace to expose some debug and cwmp client rpc funtionalities, so it is required to start it after starting ubusd and uspd.
+> icwmpd gets the datamodel from the DUT via ubus using uspd, and also it registers `tr069` ubus namespace to expose some debug and cwmp client rpc funtionalities, so it is required to start it after starting `ubusd` and `uspd`.
