@@ -13,6 +13,7 @@
 #include "common.h"
 #include "datamodel_interface.h"
 #include "notifications.h"
+#include "cwmp_cli.h"
 
 LIST_HEAD(parameters_list);
 
@@ -20,6 +21,12 @@ struct fault_resp {
 	int fault_index;
 	char *fault_code;
 	char *fault_message;
+};
+
+struct cwmp_cli_command_struct {
+	char *command_name;
+	char *(*cmd_exec_func)(struct cmd_input in, union cmd_result *out);
+	void (*display_cmd_result)(struct cmd_input in, union cmd_result res, char *fault);
 };
 
 const struct fault_resp faults_array[] = { { FAULT_CPE_INTERNAL_ERROR, "9002", "Internal error" }, //Internal error
@@ -39,22 +46,6 @@ char *get_fault_message_by_fault_code(char *fault_code)
 	}
 	return NULL;
 }
-
-union cmd_result {
-	struct list_head *param_list;
-	char *instance;
-};
-
-struct cmd_input {
-	char *first_input;
-	char *second_input;
-};
-
-struct cwmp_cli_command_struct {
-	char *command_name;
-	char *(*cmd_exec_func)(struct cmd_input in, union cmd_result *out);
-	void (*display_cmd_result)(struct cmd_input in, union cmd_result res, char *fault);
-};
 
 /*
  * Get_Values
@@ -85,9 +76,11 @@ void display_get_cmd_result(struct cmd_input in __attribute__((unused)), union c
 char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
 	int flag;
+	if (in.first_input == NULL || in.second_input == NULL || strlen(in.first_input) <= 0 || strlen(in.second_input) <= 0)
+		return "9003";
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return get_fault_message_by_fault_code("9002");
+			return "9002";
 	}
 	LIST_HEAD(list_set_param_value);
 	LIST_HEAD(faults_list);
@@ -126,9 +119,12 @@ void display_set_cmd_result(struct cmd_input in, union cmd_result res __attribut
  */
 char *cmd_add_exec_func(struct cmd_input in, union cmd_result *res)
 {
+	if (in.first_input == NULL)
+		return "9003";
+
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return get_fault_message_by_fault_code("9002");
+			return "9002";
 	}
 
 	char *fault = cwmp_add_object(in.first_input, in.second_input ? in.second_input : "add_obj", &(res->instance));
@@ -161,9 +157,11 @@ void display_add_cmd_result(struct cmd_input in, union cmd_result res, char *fau
  */
 char *cmd_del_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
+	if (in.first_input == NULL)
+		return "9003";
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return get_fault_message_by_fault_code("9002");
+			return "9002";
 	}
 
 	char *fault = cwmp_delete_object(in.first_input, in.second_input ? in.second_input : "del_obj");
@@ -192,6 +190,8 @@ void display_del_cmd_result(struct cmd_input in, union cmd_result res __attribut
  */
 char *cmd_get_notif_exec_func(struct cmd_input in, union cmd_result *res)
 {
+	if (in.first_input == NULL)
+		in.first_input = "";
 	res->param_list = &parameters_list;
 	char *fault = cwmp_get_parameter_attributes(in.first_input, res->param_list);
 	return fault;
@@ -215,14 +215,16 @@ void display_get_notif_cmd_result(struct cmd_input in __attribute__((unused)), u
  */
 char *cmd_set_notif_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
+	if (in.first_input == NULL || in.second_input == NULL)
+		return "9003";
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
-			return get_fault_message_by_fault_code("9002");
+			return "9002";
 	}
 	if (!icwmp_validate_int_in_range(in.second_input, 0, 6)) {
 		if (transaction_id)
 			cwmp_transaction_abort();
-		return get_fault_message_by_fault_code("9003");
+		return "9003";
 	}
 	char *fault = cwmp_set_parameter_attributes(in.first_input, atoi(in.second_input));
 	if (fault != NULL) {
@@ -249,6 +251,8 @@ void display_set_notif_cmd_result(struct cmd_input in, union cmd_result res __at
  */
 char *cmd_get_names_exec_func(struct cmd_input in, union cmd_result *res)
 {
+	if (in.first_input == NULL)
+		in.first_input = "";
 	res->param_list = &parameters_list;
 	bool next_level = in.second_input && (strcmp(in.second_input, "1") == 0 || strcasecmp(in.second_input, "true") == 0) ? true : false;
 	char *fault = cwmp_get_parameter_names(in.first_input, next_level, res->param_list);
@@ -294,7 +298,7 @@ const struct cwmp_cli_command_struct icwmp_commands[] = {
 	{ "set_notif", cmd_set_notif_exec_func, display_set_notif_cmd_result }, //set_notifications
 };
 
-void execute_cwmp_cli_command(char *cmd, char *args[])
+char* execute_cwmp_cli_command(char *cmd, char *args[])
 {
 	if (!cmd || strlen(cmd) <= 0) {
 		printf("You must add a command as input: \n\n");
@@ -304,11 +308,14 @@ void execute_cwmp_cli_command(char *cmd, char *args[])
 		goto cli_help;
 	struct cmd_input cmd_in = { args[0] ? args[0] : NULL, args[0] && args[1] ? args[1] : NULL };
 	union cmd_result cmd_out = { 0 };
+	char *fault = NULL, *fault_ret = NULL;
 	size_t i;
 	size_t commands_array_size = sizeof(icwmp_commands) / sizeof(struct cwmp_cli_command_struct);
 	for (i = 0; i < commands_array_size; i++) {
 		if (strcmp(icwmp_commands[i].command_name, cmd) == 0) {
-			char *fault = icwmp_commands[i].cmd_exec_func(cmd_in, &cmd_out);
+			fault = icwmp_commands[i].cmd_exec_func(cmd_in, &cmd_out);
+			if (fault)
+				fault_ret = strdup(fault);
 			icwmp_commands[i].display_cmd_result(cmd_in, cmd_out, fault);
 			goto cli_end;
 		}
@@ -320,4 +327,5 @@ cli_help:
 
 cli_end:
 	icwmp_cleanmem();
+	return fault_ret;
 }
