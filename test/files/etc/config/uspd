@@ -1,0 +1,4 @@
+config uspd 'usp'
+	option granularitylevel  '0'
+	option debug '1'
+	option loglevel  '2'

@@ -311,84 +311,6 @@ static void dm_get_parameter_names_test(void **state)
 	assert_string_equal(fault, "9005");
 }
 
-void dm_set_parameter_attributes_test(void **state)
-{
-	char *fault = NULL;
-
-	/*
-	 * Valid parameter path
-	 */
-	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_parameter_attributes("Device.DeviceInfo.UpTime", "1");
-	assert_null(fault);
-	cwmp_transaction_commit();
-
-	/*
-	 * Not valid parameter path
-	 */
-	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_parameter_attributes("Device.DeviceInfo.pTime", "1");
-	assert_non_null(fault);
-	cwmp_transaction_commit();
-
-	/*
-	 * Valid object path
-	 */
-	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_parameter_attributes("Device.WiFi.SSID.", "1");
-	assert_null(fault);
-	cwmp_transaction_commit();
-}
-
-static void dm_get_parameter_attributes_test(void **state)
-{
-	char *fault = NULL;
-	LIST_HEAD(parameters_list);
-
-	/*
-	 * Test of valid parameter path
-	 */
-	fault = cwmp_get_parameter_attributes("Device.DeviceInfo.ProvisioningCode", &parameters_list);
-	assert_null(fault);
-	struct cwmp_dm_parameter *param_value = NULL;
-	list_for_each_entry (param_value, &parameters_list, list) {
-		assert_non_null(param_value->name);
-		assert_string_equal(param_value->name, "Device.DeviceInfo.ProvisioningCode");
-		break;
-	}
-	cwmp_free_all_dm_parameter_list(&parameters_list);
-
-	/*
-	 * Test of non valid parameter path
-	 */
-	fault = cwmp_get_parameter_attributes("Device.Deviceno.UpTime", &parameters_list);
-	assert_non_null(fault);
-	assert_string_equal(fault, "9005");
-	cwmp_free_all_dm_parameter_list(&parameters_list);
-
-	/*
-	 * Test of valid multi-instance_object_path
-	 */
-	fault = cwmp_get_parameter_attributes("Device.WiFi.SSID.", &parameters_list);
-	assert_null(fault);
-	cwmp_free_all_dm_parameter_list(&parameters_list);
-
-	/*
-	 * Test of valid not multi-instance_object_path
-	 */
-	fault = cwmp_get_parameter_attributes("Device.DeviceInfo.", &parameters_list);
-	assert_null(fault);
-	cwmp_free_all_dm_parameter_list(&parameters_list);
-
-	/*
-	 * Test of non valid object path
-	 */
-	fault = cwmp_get_parameter_attributes("Device.Deviceno.", &parameters_list);
-	assert_non_null(fault);
-	assert_string_equal(fault, "9005");
-	cwmp_free_all_dm_parameter_list(&parameters_list);
-}
-
 int main(void)
 {
 	const struct CMUnitTest tests[] = {
@@ -397,8 +319,6 @@ int main(void)
 		cmocka_unit_test(dm_add_object_test),
 		cmocka_unit_test(dm_delete_object_test),
 		cmocka_unit_test(dm_get_parameter_names_test),
-		cmocka_unit_test(dm_set_parameter_attributes_test),
-		cmocka_unit_test(dm_get_parameter_attributes_test),
 	};
 
 	return cmocka_run_group_tests(tests, NULL, dm_iface_unit_tests_clean);

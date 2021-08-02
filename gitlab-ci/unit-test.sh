@@ -40,6 +40,13 @@ echo "Installing libicwmp"
 make install -C test/cmocka
 ldconfig
 
+mkdir -p /etc/icwmpd
+mkdir -p /etc/config
+cp test/files/etc/config/* /etc/config/
+
+echo "Display cwmp config: "
+cat /etc/config/cwmp 
+
 echo "Running the unit test cases"
 make unit-test -C test/cmocka/
 check_ret $?
