@@ -234,6 +234,25 @@ Valid commands:
 ```
 > Note: icwmpd CLI is a debug utility and hence it is advised to use for debug and development purpose only.
 
+icwmp CLI command success result is displayed in the terminal as following:
+
+```bash
+root@iopsys:~# icwmpd -c get Device.DeviceInfo.UpTime
+Device.DeviceInfo.UpTime => 91472
+root@iopsys:~# icwmpd -c set Device.WiFi.SSID.1.SSID wifi1_ssid
+Set value is successfully done
+Device.WiFi.SSID.1.SSID => wifi1_ssid
+```
+In the case of fault the result is displayed as following:
+
+```bash
+root@iopsys:~# icwmpd -c get Device.DeviceInfo.UpTme
+Fault 9005: Invalid parameter name
+root@iopsys:~# icwmpd -c set 
+Fault 9003: Invalid arguments
+root@iopsys:~# icwmpd -c set Device.WiFi.SSID.1.SSID
+Fault 9003: Invalid arguments
+```
 ## icwmpd forced inform parameters
 As per the cwmp inform requirements, cwmp client has list of parameters defined internally. The list contains below parameters:
 
