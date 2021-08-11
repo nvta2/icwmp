@@ -291,6 +291,40 @@ root@iopsys:~# /etc/init.d/icwmpd restart
 > - This JSON file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
 > - Forced inform parameters defined in JSON should be leaf elements
 
+## icwmpd notifications
+As per the cwmp notifications requirements, there is a list parameters specified in the standard that has forced notification type. Those parameters are defined internally in icwmp client. The list contains below parameters:
+
+| Parameter name                        | Notification  |
+| ------------------------------------- |---------------|
+| Device.DeviceInfo.SoftwareVersion     |	2			|
+| Device.DeviceInfo.ProvisioningCode    |	2			|
+
+According to the standard, if the ACS set new notification of one of those parameters so icwmp will return the CWMP fault 9009.
+
+In addition to thos parameters, icwmp gives the possibility to set default notifications of some parameters that the customer choose using a json file, in order to permit icwmp to start with those parameters with default notification type.
+The json file must respect following form:
+
+```bash
+{
+  "custom_notification": [
+    {
+      "parameter": "Device.Users.",
+      "notify_type": "2"
+    },
+    {
+      "parameter": "Device.WiFi.SSID.1.SSID",
+      "notify_type": "1"
+    }
+  ]
+}
+```
+the location of this file should be specified in the uci config option: cwmp.cpe.json_custom_notify_file
+
+Contrary to forced parameters notifications, the ACS has privileges to set new notification type of those custom parameters.
+
+>- The actual update doesn't support wildcard parameters. So parameter like Device.WiFi.SSID.*. will be skipped
+>- The actual update doesn't support multiple json notify files
+
 ## Dependencies
 
 To successfully build icwmp, the following libraries are needed:

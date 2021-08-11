@@ -1313,11 +1313,14 @@ int cwmp_handle_rpc_cpe_add_object(struct session *session, struct rpc *rpc)
 	b = mxmlNewOpaque(b, "1");
 	if (!b)
 		goto fault;
-	FREE(instance);
 
 	if (!cwmp_transaction_commit())
 		goto fault;
 
+	char *object_path = NULL;
+	icwmp_asprintf(&object_path, "%s%s.", object_name, instance);
+	cwmp_set_parameter_attributes(object_path, 0);
+	FREE(instance);
 	cwmp_set_end_session(END_SESSION_RESTART_SERVICES);
 	return 0;
 

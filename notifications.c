@@ -17,6 +17,7 @@
 #include "notifications.h"
 #include "ubus.h"
 #include "cwmp_uci.h"
+#include "log.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
@@ -375,6 +376,72 @@ void cwmp_update_enabled_notify_file(void)
 
 	create_list_param_leaf_notify(NULL, update_notify_file_line, fp);
 	fclose(fp);
+}
+
+/*
+ * Load custom notify json file
+ */
+void load_json_custom_notify_file(struct cwmp *cwmp)
+{
+	struct blob_buf bbuf;
+	struct blob_attr *cur;
+	struct blob_attr *custom_notify_list = NULL;
+	int rem;
+	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
+
+	if (!file_exists("/etc/icwmpd/.icwmpd_notify"))
+		return;
+	remove("/etc/icwmpd/.icwmpd_notify");
+
+	if (cwmp->conf.json_custom_notify_file == NULL || !file_exists(cwmp->conf.json_custom_notify_file))
+		return;
+
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+
+	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.json_custom_notify_file) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.json_custom_notify_file);
+		blob_buf_free(&bbuf);
+		return;
+	}
+	blobmsg_for_each_attr(cur, bbuf.head, rem)
+	{
+		if (blobmsg_type(cur) == BLOBMSG_TYPE_ARRAY) {
+			custom_notify_list = cur;
+			break;
+		}
+	}
+	if (custom_notify_list == NULL) {
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp->conf.json_custom_notify_file);
+		blob_buf_free(&bbuf);
+		return;
+	}
+	const struct blobmsg_policy p[2] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notify_type", BLOBMSG_TYPE_STRING } };
+	blobmsg_for_each_attr(cur, custom_notify_list, rem)
+	{
+		printf("%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
+		struct blob_attr *tb[2] = { NULL, NULL };
+		blobmsg_parse(p, 2, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0] || !tb[1])
+			continue;
+		if (!icwmp_validate_int_in_range(blobmsg_get_string(tb[1]), 0, 6)) {
+			CWMP_LOG(WARNING, "Wrong notification value: %s", blobmsg_get_string(tb[1]));
+			continue;
+		}
+		char *fault = cwmp_set_parameter_attributes(blobmsg_get_string(tb[0]), atoi(blobmsg_get_string(tb[1])));
+		if (fault == NULL)
+			continue;
+		if (strcmp(fault, "9005") == 0) {
+			CWMP_LOG(WARNING, "The parameter %s is wrong path", blobmsg_get_string(tb[0]));
+			continue;
+		}
+		if (strcmp(fault, "9009") == 0) {
+			CWMP_LOG(WARNING, "This parameter %s is force notification parameter, can't be changed", blobmsg_get_string(tb[0]));
+			continue;
+		}
+	}
+	blob_buf_free(&bbuf);
+
 }
 
 /*

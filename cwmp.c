@@ -486,6 +486,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 
 	cwmp_get_deviceid(cwmp);
 	load_forced_inform_json_file(cwmp);
+	load_json_custom_notify_file(cwmp);
 	return CWMP_OK;
 }
 
