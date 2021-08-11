@@ -22,6 +22,15 @@
  */
 char *notifications_test[7] = {"disabled" , "passive", "active", "passive_lw", "passive_passive_lw", "active_lw", "passive_active_lw"};
 
+LIST_HEAD(parameters_list);
+
+static int cwmp_notifications_unit_tests_clean(void **state)
+{
+	icwmp_cleanmem();
+	cwmp_free_all_dm_parameter_list(&parameters_list);
+	return 0;
+}
+
 int check_notify_file(char *param, int *ret_notification)
 {
 	FILE *fp;
@@ -42,6 +51,7 @@ int check_notify_file(char *param, int *ret_notification)
 			*ret_notification = atoi(notification);
 		}
 	}
+	fclose(fp);
 	return nbre_iterations;
 }
 
@@ -109,7 +119,6 @@ static void cwmp_update_notify_file_unit_test_default(void **state)
 static void cwmp_get_parameter_attribute_unit_test_default(void **state)
 {
 
-	LIST_HEAD(parameters_list);
 	char *err = NULL;
 
 	err = cwmp_get_parameter_attributes("Device.DeviceInfo.SoftwareVersion", &parameters_list);
@@ -182,7 +191,6 @@ static void cwmp_set_parameter_attributes_parameter_sub_parameter_1_unit_test(vo
 
 static void cwmp_get_parameter_attributes_parameter_sub_parameter_1_unit_test(void **state)
 {
-	LIST_HEAD(parameters_list);
 	char *err = NULL;
 
 	err = cwmp_get_parameter_attributes("Device.DeviceInfo.UpTime", &parameters_list);
@@ -248,5 +256,5 @@ int main(void)
 		    cmocka_unit_test(cwmp_check_value_change_1_unit_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	return cmocka_run_group_tests(tests, NULL, cwmp_notifications_unit_tests_clean);
 }

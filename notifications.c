@@ -79,7 +79,7 @@ int add_uci_option_notification(char *parameter_name, int notification)
 	int ret = 0;
 
 	cwmp_uci_init(UCI_STANDARD_CONFIG);
-	ret =cwmp_uci_get_section_type("cwmp", "@notifications[0]", &notification_type);
+	ret = cwmp_uci_get_section_type("cwmp", "@notifications[0]", &notification_type);
 	if (notification_type == NULL || notification_type[0] == '\0') {
 		cwmp_uci_add_section("cwmp", "notifications", &s);
 	}
@@ -401,7 +401,7 @@ int check_value_change(void)
 	int int_ret = 0;
 	struct blob_buf bbuf;
 
-	char *parameter = NULL, *value = NULL, *type = NULL;
+	char *parameter = NULL, *value = NULL;
 	int notification = 0;
 	fp = fopen(DM_ENABLED_NOTIFY, "r");
 	if (fp == NULL)
@@ -427,14 +427,14 @@ int check_value_change(void)
 		blobmsg_parse(p, 4, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
 		parameter = blobmsg_get_string(tb[0]);
 		notification = blobmsg_get_u32(tb[1]);
-		type = blobmsg_get_string(tb[2]);
+		//type = blobmsg_get_string(tb[2]);
 		value = blobmsg_get_string(tb[3]);
 		get_parameter_value_from_parameters_list(&list_notify_params, parameter, &dm_value, &dm_type);
 		if (dm_value == NULL && dm_type == NULL){
 			blob_buf_free(&bbuf);
 			parameter = NULL;
 			notification = 0;
-			type = NULL;
+			//type = NULL;
 			value = NULL;
 			continue;
 		}
@@ -456,7 +456,7 @@ int check_value_change(void)
 		FREE(dm_type);
 		parameter = NULL;
 		notification = 0;
-		type = NULL;
+		//type = NULL;
 		value = NULL;
 		blob_buf_free(&bbuf);
 	}

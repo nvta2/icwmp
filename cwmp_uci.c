@@ -425,7 +425,7 @@ int cwmp_uci_get_section_type(char *package, char *section, char **value)
 		return -1;
 	}
 	if (ptr.s) {
-		*value = strdup(ptr.s->type);
+		*value = icwmp_strdup(ptr.s->type);
 	} else {
 		*value = "";
 		return -1;
@@ -450,7 +450,7 @@ char *cwmp_uci_add_section(char *package, char *stype, struct uci_section **s)
 	}
 	if (cwmp_uci_lookup_ptr(cwmp_uci_ctx, &ptr, package, NULL, NULL, NULL) == 0
 		&& uci_add_section(cwmp_uci_ctx, ptr.p, stype, s) == UCI_OK) {
-		val = strdup((*s)->e.name);
+		val = icwmp_strdup((*s)->e.name);
 	}
 	return val;
 }
