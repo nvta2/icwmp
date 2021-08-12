@@ -281,6 +281,7 @@ root@iopsys:~# cat /etc/icwmpd/forced_inform.json
 root@iopsys:~#
 ```
 And then the path of the JSON file can be set in the UCI option: `cwmp.cpe.forced_inform_json` like below:
+
 ```bash
 root@iopsys:~# uci set cwmp.cpe.forced_inform_json=/etc/icwmpd/forced_inform.json
 root@iopsys:~# uci commit cwmp
@@ -290,6 +291,7 @@ root@iopsys:~# /etc/init.d/icwmpd restart
 > - It is required to restart icwmp service after the changes to use the new forced inform parameters    
 > - This JSON file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
 > - Forced inform parameters defined in JSON should be leaf elements
+> - Forced inform parameters appears only in BOOT or BOOTSTRAP inform message.
 
 ## icwmpd notifications
 As per the cwmp notifications requirements, there is a list parameters specified in the standard that has forced notification type. Those parameters are defined internally in icwmp client. The list contains below parameters:

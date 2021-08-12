@@ -160,6 +160,7 @@ static int xml_prepare_events_inform(struct session *session, mxml_node_t *tree)
 	int n = 0;
 	struct list_head *ilist;
 	struct event_container *event_container;
+	struct cwmp *cwmp = &cwmp_main;
 
 	b1 = mxmlFindElement(tree, tree, "Event", NULL, NULL, MXML_DESCEND);
 	if (!b1)
@@ -173,6 +174,8 @@ static int xml_prepare_events_inform(struct session *session, mxml_node_t *tree)
 		b2 = mxmlNewElement(node, "EventCode");
 		if (!b2)
 			goto error;
+		if (event_container->code == EVENT_IDX_0BOOTSTRAP || event_container->code == EVENT_IDX_1BOOT)
+			cwmp->is_boot = true;
 		b2 = mxmlNewOpaque(b2, EVENT_CONST[event_container->code].CODE);
 		if (!b2)
 			goto error;
@@ -299,6 +302,7 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 	if (!b)
 		goto error;
 
+	cwmp->is_boot = false;
 	if (xml_prepare_events_inform(session, tree))
 		goto error;
 
@@ -362,15 +366,15 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
 			goto error;
 	}
-
-	for (i = 0; i < nbre_custom_inform; i++) {
-		char *fault = cwmp_get_single_parameter_value(custom_forced_inform_parameters[i], &cwmp_dm_param);
-		if (fault != NULL)
-			continue;
-		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
-			goto error;
+	if (cwmp->is_boot == true) {
+		for (i = 0; i < nbre_custom_inform; i++) {
+			char *fault = cwmp_get_single_parameter_value(custom_forced_inform_parameters[i], &cwmp_dm_param);
+			if (fault != NULL)
+				continue;
+			if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
+				goto error;
+		}
 	}
-
 	if (snprintf(c, sizeof(c), "cwmp:ParameterValueStruct[%d]", size) == -1)
 		goto error;
 

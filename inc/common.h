@@ -142,6 +142,7 @@ typedef struct cwmp {
 	struct session_status session_status;
 	unsigned int cwmp_id;
 	int cr_socket_desc;
+	bool is_boot;
 } cwmp;
 
 enum action {
