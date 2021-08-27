@@ -1,0 +1,12 @@
+{
+  "custom_notification": 
+    {
+      "parameter": "Device.Users.",
+      "notify_type": "2"
+    },
+    {
+      "parameter": "Device.WiFi.SSID.1.SSID",
+      "notify_type": "1"
+    }
+  ]
+}

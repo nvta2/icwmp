@@ -1,0 +1,12 @@
+{
+  "custom_notification": [
+    {
+      "parameter": "Device.Users.",
+      "notify_type": "2"
+    },
+    {
+      "parameter": "Device.DeviceInfo.ProvisioningCode",
+      "notify_type": "1"
+    }
+  ]
+}

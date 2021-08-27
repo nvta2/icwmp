@@ -435,7 +435,7 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 			continue;
 		}
 		if (strcmp(fault, "9009") == 0) {
-			CWMP_LOG(WARNING, "This parameter %s is force notification parameter, can't be changed", blobmsg_get_string(tb[0]));
+			CWMP_LOG(WARNING, "This parameter %s is forced notification parameter, can't be changed", blobmsg_get_string(tb[0]));
 			continue;
 		}
 	}
