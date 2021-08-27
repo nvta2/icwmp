@@ -644,7 +644,7 @@ void icwmp_restart_services()
  */
 bool icwmp_validate_string_length(char *arg, int max_length)
 {
-	if (arg != NULL && strlen(arg) > max_length)
+	if (arg != NULL && strlen(arg) > (size_t)max_length)
 		return false;
 	return true;
 }

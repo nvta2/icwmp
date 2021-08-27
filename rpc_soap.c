@@ -359,6 +359,7 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 
 	size_t inform_parameters_nbre = sizeof(forced_inform_parameters) / sizeof(forced_inform_parameters[0]);
 	size_t i;
+	int j;
 	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
 	LIST_HEAD(list_inform);
 	for (i = 0; i < inform_parameters_nbre; i++) {
@@ -368,16 +369,16 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
 			goto error;
 	}
-	for (i = 0; i < nbre_custom_inform; i++) {
-		char *fault = cwmp_get_single_parameter_value(custom_forced_inform_parameters[i], &cwmp_dm_param);
+	for (j = 0; j < nbre_custom_inform; j++) {
+		char *fault = cwmp_get_single_parameter_value(custom_forced_inform_parameters[j], &cwmp_dm_param);
 		if (fault != NULL)
 			continue;
 		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
 			goto error;
 	}
 	if (cwmp->is_boot == true) {
-		for (i = 0; i < nbre_boot_inform; i++) {
-			char *fault = cwmp_get_single_parameter_value(boot_inform_parameters[i], &cwmp_dm_param);
+		for (j = 0; j < nbre_boot_inform; j++) {
+			char *fault = cwmp_get_single_parameter_value(boot_inform_parameters[j], &cwmp_dm_param);
 			if (fault != NULL)
 				continue;
 			if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))

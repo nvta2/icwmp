@@ -392,7 +392,7 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 {
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
-	struct blob_attr *custom_forced_inform_list = NULL, *custom_boot_inform_list = NULL;
+	struct blob_attr *custom_forced_inform_list = NULL;
 	int rem;
 	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
 
@@ -407,49 +407,85 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 		blob_buf_free(&bbuf);
 		return;
 	}
-	const struct blobmsg_policy p[2] = { { "forced_inform", BLOBMSG_TYPE_ARRAY }, { "boot_inform_params", BLOBMSG_TYPE_ARRAY } };
-	struct blob_attr *tb[2] = { NULL, NULL };
-	blobmsg_parse(p, 2, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
-	if (!tb[0] && !tb[1])
+	const struct blobmsg_policy p[1] = { { "forced_inform", BLOBMSG_TYPE_ARRAY } };
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
+	if (!tb[0])
 		return;
 	custom_forced_inform_list = tb[0];
-	custom_boot_inform_list = tb[1];
-	if (custom_forced_inform_list) {
-		blobmsg_for_each_attr(cur, custom_forced_inform_list, rem)
-		{
-			char parameter_path[128];
-			snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
-			if (parameter_path[strlen(parameter_path)-1] == '.') {
-				CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
-				continue;
-			}
-			char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
-			if (fault != NULL) {
-				CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
-				continue;
-			}
-			custom_forced_inform_parameters[nbre_custom_inform++] = strdup(parameter_path);
-		}
+	if (custom_forced_inform_list == NULL) {
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a forced inform parameters list", cwmp->conf.json_custom_notify_file);
+		blob_buf_free(&bbuf);
+		return;
 	}
-	if (custom_boot_inform_list) {
-		blobmsg_for_each_attr(cur, custom_boot_inform_list, rem)
-		{
-			char parameter_path[128];
-			snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
-			if (parameter_path[strlen(parameter_path)-1] == '.') {
-				CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
-				continue;
-			}
-			char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
-			if (fault != NULL) {
-				CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
-				continue;
-			}
-			boot_inform_parameters[nbre_boot_inform++] = strdup(parameter_path);
+
+	blobmsg_for_each_attr(cur, custom_forced_inform_list, rem)
+	{
+		char parameter_path[128];
+		snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
+		if (parameter_path[strlen(parameter_path)-1] == '.') {
+			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
+			continue;
 		}
+		char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
+		if (fault != NULL) {
+			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
+			continue;
+		}
+		custom_forced_inform_parameters[nbre_custom_inform++] = strdup(parameter_path);
 	}
 	blob_buf_free(&bbuf);
 
+}
+
+void load_boot_inform_json_file(struct cwmp *cwmp)
+{
+	struct blob_buf bbuf;
+	struct blob_attr *cur;
+	struct blob_attr *custom_boot_inform_list = NULL;
+	int rem;
+	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
+
+	if (cwmp->conf.boot_inform_json_file == NULL || !file_exists(cwmp->conf.boot_inform_json_file))
+		return;
+
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+
+	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.boot_inform_json_file) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.boot_inform_json_file);
+		blob_buf_free(&bbuf);
+		return;
+	}
+	const struct blobmsg_policy p[1] = { { "boot_inform_params", BLOBMSG_TYPE_ARRAY } };
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
+	if (!tb[0])
+		return;
+	custom_boot_inform_list = tb[0];
+
+	if (custom_boot_inform_list == NULL) {
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a boot inform parameters list", cwmp->conf.json_custom_notify_file);
+		blob_buf_free(&bbuf);
+		return;
+	}
+
+	blobmsg_for_each_attr(cur, custom_boot_inform_list, rem)
+	{
+		char parameter_path[128];
+		snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
+		if (parameter_path[strlen(parameter_path)-1] == '.') {
+			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
+			continue;
+		}
+		char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
+		if (fault != NULL) {
+			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
+			continue;
+		}
+		boot_inform_parameters[nbre_boot_inform++] = strdup(parameter_path);
+	}
+	blob_buf_free(&bbuf);
 }
 
 void clean_custom_inform_parameters()
@@ -505,6 +541,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 
 	cwmp_get_deviceid(cwmp);
 	load_forced_inform_json_file(cwmp);
+	load_boot_inform_json_file(cwmp);
 	load_json_custom_notify_file(cwmp);
 	return CWMP_OK;
 }
@@ -529,6 +566,8 @@ static void cwmp_free(struct cwmp *cwmp)
 	FREE(cwmp->conf.connection_request_path);
 	FREE(cwmp->conf.default_wan_iface);
 	FREE(cwmp->conf.forced_inform_json_file);
+	FREE(cwmp->conf.json_custom_notify_file);
+	FREE(cwmp->conf.boot_inform_json_file);
 	clean_list_param_notify();
 	bkp_tree_clean();
 	cwmp_ubus_exit();

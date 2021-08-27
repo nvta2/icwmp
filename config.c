@@ -583,6 +583,17 @@ int get_global_config(struct config *conf)
 		if (conf->forced_inform_json_file)
 			CWMP_LOG(DEBUG, "CWMP CONFIG - cpe forced inform json file: %s", conf->forced_inform_json_file);
 	}
+	if (uci_get_value(UCI_CPE_BOOT_INFORM_JSON, &value) == CWMP_OK) {
+		FREE(conf->boot_inform_json_file);
+		if (value != NULL) {
+			conf->boot_inform_json_file = strdup(value);
+			FREE(value);
+		} else {
+			conf->boot_inform_json_file = NULL;
+		}
+		if (conf->boot_inform_json_file)
+			CWMP_LOG(DEBUG, "CWMP CONFIG - cpe boot inform json file: %s", conf->forced_inform_json_file);
+	}
 	if (uci_get_value(UCI_CPE_JSON_CUSTOM_NOTIFY_FILE, &value) == CWMP_OK) {
 		FREE(conf->json_custom_notify_file);
 		if (value != NULL) {
