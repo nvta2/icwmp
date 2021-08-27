@@ -572,6 +572,7 @@ static void cwmp_free(struct cwmp *cwmp)
 	bkp_tree_clean();
 	cwmp_ubus_exit();
 	clean_custom_inform_parameters();
+	icwmp_cleanmem();
 }
 
 static void *thread_cwmp_signal_handler_thread(void *arg)
