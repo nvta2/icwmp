@@ -253,6 +253,17 @@ Fault 9003: Invalid arguments
 root@iopsys:~# icwmpd -c set Device.WiFi.SSID.1.SSID
 Fault 9003: Invalid arguments
 ```
+## SPV Response and restart services
+In case icwmp receives from the ACS SetParameterValues Request, it will use the uspd setm_values ubus method for all requested parameters.
+
+Basing on setm_values response the icwmp will do the following:
+
+- in case of fault icwmp aborts the set of all parameters and then sends Response to the ACS with FAULT 9003 including all parameters faults as defined in TR069 standard.
+- in case of success icwmp commits the set of all parameters, without applying them so without restarting services, and then sends a success Response to the ACS including the status code 1.
+
+> - All restart services are done in the CWMP end session in order to prevent any session interruption.
+> - icwmp always returns 1 as status value in case of success SPV because all restart services are done in the end session.
+ 
 ## icwmpd forced inform parameters
 As per the cwmp inform requirements, cwmp client has list of parameters defined internally. The list contains below parameters:
 
@@ -291,7 +302,34 @@ root@iopsys:~# /etc/init.d/icwmpd restart
 > - It is required to restart icwmp service after the changes to use the new forced inform parameters    
 > - This JSON file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
 > - Forced inform parameters defined in JSON should be leaf elements
-> - Forced inform parameters appears only in BOOT or BOOTSTRAP inform message.
+
+## Boot inform parameters
+In addition to the above defined forced inform parameters as specified in datamodel standard and forced inform parameters specified by the customer in a json file (defined in previous section), icwmp gives also possibility to add Boot Inform parameter by defining them in a JSON file.
+
+Boot inform parameters will appear in inform messages that includes '0 BOOTSTRAP' or '1 BOOT' events.
+
+inform parameters can be configured in a JSON file as below:
+
+```bash
+root@iopsys:~# cat /etc/icwmpd/boot_inform.json
+{
+  "boot_inform_params":[
+    "Device.DeviceInfo.UpTime"
+    ]
+}
+root@iopsys:~#
+```
+And then the path of the JSON file can be set in the UCI option: `cwmp.cpe.boot_inform_json` like below:
+
+```bash
+root@iopsys:~# uci set cwmp.cpe.boot_inform_json=/etc/icwmpd/boot_inform.json
+root@iopsys:~# uci commit cwmp
+root@iopsys:~# /etc/init.d/icwmpd restart
+```
+> - It is required to restart icwmp service after the changes to use the new boot inform parameters    
+> - This JSON file shouldn't contain duplicate parameters or parameters of the standard inform parameters specified in the datamodel    
+> - Boot inform parameters defined in JSON should be leaf elements
+> - Boot inform parameters appears only in BOOT or BOOTSTRAP inform message.
 
 ## icwmpd notifications
 As per the cwmp notifications requirements, there is a list parameters specified in the standard that has forced notification type. Those parameters are defined internally in icwmp client. The list contains below parameters:
