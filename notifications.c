@@ -386,14 +386,13 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_notify_list = NULL;
-	int rem;
+	int rem, fd;
 
 	if (cwmp->conf.json_custom_notify_file == NULL || !file_exists(cwmp->conf.json_custom_notify_file))
 		return;
 
-	if (!file_exists("/etc/icwmpd/.icwmpd_notify"))
+	if (file_exists("/etc/icwmpd/.icwmpd_notify"))
 		return;
-	remove("/etc/icwmpd/.icwmpd_notify");
 
 	memset(&bbuf, 0, sizeof(struct blob_buf));
 	blob_buf_init(&bbuf, 0);
@@ -401,19 +400,23 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.json_custom_notify_file) == false) {
 		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.json_custom_notify_file);
 		blob_buf_free(&bbuf);
+		creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
 	}
 
 	const struct blobmsg_policy p_notif[1] = { { "custom_notification", BLOBMSG_TYPE_ARRAY } };
 	struct blob_attr *tb_notif[1] = { NULL};
 	blobmsg_parse(p_notif, 1, tb_notif, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
-	if (!tb_notif[0])
+	if (!tb_notif[0]) {
+		creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
+	}
 	custom_notify_list = tb_notif[0];
 
 	if (custom_notify_list == NULL) {
 		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp->conf.json_custom_notify_file);
 		blob_buf_free(&bbuf);
+		creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
 	}
 	const struct blobmsg_policy p[2] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notify_type", BLOBMSG_TYPE_STRING } };
@@ -440,6 +443,7 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 		}
 	}
 	blob_buf_free(&bbuf);
+	creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 }
 

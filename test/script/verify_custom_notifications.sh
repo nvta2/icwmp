@@ -21,8 +21,6 @@ uci commit cwmp
 exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_valid.json"
 uci commit cwmp
 
-touch /etc/icwmpd/.icwmpd_notify
-
 supervisorctl start icwmpd
 sleep 5
 
@@ -38,6 +36,7 @@ if [[ $notif2 != *"Device.WiFi.SSID.1.SSID"* ]]; then
 fi
 
 supervisorctl stop icwmpd
+rm /etc/icwmpd/.icwmpd_notify
 
 echo "PASS test valid custom notification json file"
 
@@ -50,8 +49,6 @@ uci commit cwmp
 
 exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_invalid_json.json"
 uci commit cwmp
-
-touch /etc/icwmpd/.icwmpd_notify
 
 supervisorctl start icwmpd
 sleep 5
@@ -75,6 +72,7 @@ fi
 
 echo "PASS test custom notification invalid json file"
 supervisorctl stop icwmpd
+rm /etc/icwmpd/.icwmpd_notify
 
 #
 # Test custom notification json file containing forced active notification
@@ -85,8 +83,6 @@ uci commit cwmp
 
 exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_forced.json"
 uci commit cwmp
-
-touch /etc/icwmpd/.icwmpd_notify
 
 supervisorctl start icwmpd
 sleep 5
@@ -110,6 +106,7 @@ fi
 
 echo "PASS test custom notification json file containing forced active notification"
 supervisorctl stop icwmpd
+rm /etc/icwmpd/.icwmpd_notify
 
 #
 # Test custom notification json file containing invalid parameter path
@@ -120,8 +117,6 @@ uci commit cwmp
 
 exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_invalid_parameter.json"
 uci commit cwmp
-
-touch /etc/icwmpd/.icwmpd_notify
 
 supervisorctl start icwmpd
 sleep 5
@@ -145,5 +140,6 @@ fi
 
 echo "PASS test custom notification json file containing invalid parameter path"
 supervisorctl stop icwmpd
+rm /etc/icwmpd/.icwmpd_notify
 
 echo "PASS: $TEST_NAME"
