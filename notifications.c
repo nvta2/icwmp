@@ -386,13 +386,14 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_notify_list = NULL;
-	int rem, fd;
+	int rem;
 
 	if (cwmp->conf.json_custom_notify_file == NULL || !file_exists(cwmp->conf.json_custom_notify_file))
 		return;
 
-	if (file_exists("/etc/icwmpd/.icwmpd_notify"))
+	if (!file_exists("/etc/icwmpd/.icwmpd_notify"))
 		return;
+	remove("/etc/icwmpd/.icwmpd_notify");
 
 	memset(&bbuf, 0, sizeof(struct blob_buf));
 	blob_buf_init(&bbuf, 0);
@@ -439,7 +440,6 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 		}
 	}
 	blob_buf_free(&bbuf);
-	creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 }
 
