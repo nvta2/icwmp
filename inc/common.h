@@ -72,7 +72,7 @@ typedef struct config {
 	char *cpe_passwd;
 	char *forced_inform_json_file;
 	char *boot_inform_json_file;
-	char *json_custom_notify_file;
+	char *custom_notify_json;
 	char *ip;
 	char *ipv6;
 	char *interface;

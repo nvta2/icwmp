@@ -18,7 +18,7 @@ rm /var/log/icwmpd.log
 uci delete cwmp.@notifications[0]
 uci commit cwmp
 
-exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_valid.json"
+exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_valid.json"
 uci commit cwmp
 
 supervisorctl start icwmpd
@@ -47,7 +47,7 @@ rm /var/log/icwmpd.log
 uci delete cwmp.@notifications[0]
 uci commit cwmp
 
-exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_invalid_json.json"
+exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_invalid_json.json"
 uci commit cwmp
 
 supervisorctl start icwmpd
@@ -81,7 +81,7 @@ rm /var/log/icwmpd.log
 uci delete cwmp.@notifications[0]
 uci commit cwmp
 
-exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_forced.json"
+exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_forced.json"
 uci commit cwmp
 
 supervisorctl start icwmpd
@@ -115,7 +115,7 @@ rm /var/log/icwmpd.log
 uci delete cwmp.@notifications[0]
 uci commit cwmp
 
-exec_cmd uci set cwmp.cpe.json_custom_notify_file="/etc/icwmpd/custom_notification_invalid_parameter.json"
+exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_invalid_parameter.json"
 uci commit cwmp
 
 supervisorctl start icwmpd

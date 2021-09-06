@@ -357,7 +357,21 @@
                     <td class="td_row_even"><div class="td_row_even">string</div></td>
                     <td class="td_row_even"><div class="td_row_even">no</div></td>
                     <td class="td_row_even"><div class="td_row_even"></div></td>
-                    <td class="td_row_even"><div class="td_row_even">Define additional parameters as forced inform parameter. See readme for examples.</div></td>
+                    <td class="td_row_even"><div class="td_row_even">Define absolute path for the JSON containing additional parameters as forced inform parameter. See readme for examples.</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">boot_inform_json</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Define absolute path for the JSON containing additional parameters as boot inform parameter. These parameters only gets added if the notify event is '0 Bootstrap' or '1 Boot'. To enable value change notification, please use custom_notify_json, See readme for examples.</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">custom_notify_json</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Define absolute path of the JSON containing parameters on which notification get enabled as per the definition. See readme for examples.</div></td>
                   </tr>
                 </tbody>
               </table>

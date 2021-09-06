@@ -282,7 +282,7 @@ In addition to the above defined forced inform parameters as specified in datamo
 Additional inform parameters can be configured in a JSON file as below:
 
 ```bash
-root@iopsys:~# cat /etc/icwmpd/forced_inform.json
+root@iopsys:~# cat /etc/icwmpd/inform.json
 {
   "forced_inform":[
     "Device.DeviceInfo.X_IOPSYS_EU_BaseMACAddress",
@@ -294,7 +294,7 @@ root@iopsys:~#
 And then the path of the JSON file can be set in the UCI option: `cwmp.cpe.forced_inform_json` like below:
 
 ```bash
-root@iopsys:~# uci set cwmp.cpe.forced_inform_json=/etc/icwmpd/forced_inform.json
+root@iopsys:~# uci set cwmp.cpe.forced_inform_json=/etc/icwmpd/inform.json
 root@iopsys:~# uci commit cwmp
 root@iopsys:~# /etc/init.d/icwmpd restart
 ```
@@ -311,9 +311,9 @@ Boot inform parameters will appear in inform messages that includes '0 BOOTSTRAP
 inform parameters can be configured in a JSON file as below:
 
 ```bash
-root@iopsys:~# cat /etc/icwmpd/boot_inform.json
+root@iopsys:~# cat /etc/icwmpd/inform.json
 {
-  "boot_inform_params":[
+  "boot_inform":[
     "Device.DeviceInfo.UpTime"
     ]
 }
@@ -322,7 +322,7 @@ root@iopsys:~#
 And then the path of the JSON file can be set in the UCI option: `cwmp.cpe.boot_inform_json` like below:
 
 ```bash
-root@iopsys:~# uci set cwmp.cpe.boot_inform_json=/etc/icwmpd/boot_inform.json
+root@iopsys:~# uci set cwmp.cpe.boot_inform_json=/etc/icwmpd/inform.json
 root@iopsys:~# uci commit cwmp
 root@iopsys:~# /etc/init.d/icwmpd restart
 ```
@@ -345,6 +345,7 @@ In addition to thos parameters, icwmp gives the possibility to set default notif
 The json file must respect following form:
 
 ```bash
+root@iopsys:~# cat /etc/icwmpd/inform.json
 {
   "custom_notification": [
     {
@@ -358,7 +359,13 @@ The json file must respect following form:
   ]
 }
 ```
-the location of this file should be specified in the uci config option: cwmp.cpe.json_custom_notify_file
+
+The location of this file should be specified in the uci config option: cwmp.cpe.custom_notify_json
+```bash
+root@iopsys:~# uci set cwmp.cpe.custom_notify_json=/etc/icwmpd/inform.json
+root@iopsys:~# uci commit cwmp
+root@iopsys:~# /etc/init.d/icwmpd restart
+```
 
 Contrary to forced parameters notifications, the ACS has privileges to set new notification type of those custom parameters.
 

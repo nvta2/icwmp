@@ -414,7 +414,7 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 		return;
 	custom_forced_inform_list = tb[0];
 	if (custom_forced_inform_list == NULL) {
-		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a forced inform parameters list", cwmp->conf.json_custom_notify_file);
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a forced inform parameters list", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		return;
 	}
@@ -457,7 +457,7 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 		blob_buf_free(&bbuf);
 		return;
 	}
-	const struct blobmsg_policy p[1] = { { "boot_inform_params", BLOBMSG_TYPE_ARRAY } };
+	const struct blobmsg_policy p[1] = { { "boot_inform", BLOBMSG_TYPE_ARRAY } };
 	struct blob_attr *tb[1] = { NULL };
 	blobmsg_parse(p, 1, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
 	if (!tb[0])
@@ -465,7 +465,7 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 	custom_boot_inform_list = tb[0];
 
 	if (custom_boot_inform_list == NULL) {
-		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a boot inform parameters list", cwmp->conf.json_custom_notify_file);
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a boot inform parameters list", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		return;
 	}
@@ -542,7 +542,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	cwmp_get_deviceid(cwmp);
 	load_forced_inform_json_file(cwmp);
 	load_boot_inform_json_file(cwmp);
-	load_json_custom_notify_file(cwmp);
+	load_custom_notify_json(cwmp);
 	return CWMP_OK;
 }
 
@@ -566,7 +566,7 @@ static void cwmp_free(struct cwmp *cwmp)
 	FREE(cwmp->conf.connection_request_path);
 	FREE(cwmp->conf.default_wan_iface);
 	FREE(cwmp->conf.forced_inform_json_file);
-	FREE(cwmp->conf.json_custom_notify_file);
+	FREE(cwmp->conf.custom_notify_json);
 	FREE(cwmp->conf.boot_inform_json_file);
 	clean_list_param_notify();
 	bkp_tree_clean();

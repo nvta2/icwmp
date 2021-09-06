@@ -57,7 +57,7 @@
 #define UCI_CPE_DELAY_REBOOT "cwmp.cpe.delay_reboot"
 #define UCI_CPE_FORCED_INFORM_JSON "cwmp.cpe.forced_inform_json"
 #define UCI_CPE_BOOT_INFORM_JSON "cwmp.cpe.boot_inform_json"
-#define UCI_CPE_JSON_CUSTOM_NOTIFY_FILE "cwmp.cpe.json_custom_notify_file"
+#define UCI_CPE_JSON_CUSTOM_NOTIFY_FILE "cwmp.cpe.custom_notify_json"
 #define LW_NOTIFICATION_ENABLE "cwmp.lwn.enable"
 #define LW_NOTIFICATION_HOSTNAME "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT "cwmp.lwn.port"

@@ -62,7 +62,7 @@ void add_list_value_change(char *param_name, char *param_data, char *param_type)
 void clean_list_value_change();
 char *cwmp_set_parameter_attributes(char *parameter_name, int notification);
 char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list);
-void load_json_custom_notify_file(struct cwmp *cwmp);
+void load_custom_notify_json(struct cwmp *cwmp);
 void add_lw_list_value_change(char *param_name, char *param_data, char *param_type);
 char *calculate_lwnotification_cnonce();
 void cwmp_lwnotification();

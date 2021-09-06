@@ -381,14 +381,14 @@ void cwmp_update_enabled_notify_file(void)
 /*
  * Load custom notify json file
  */
-void load_json_custom_notify_file(struct cwmp *cwmp)
+void load_custom_notify_json(struct cwmp *cwmp)
 {
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_notify_list = NULL;
 	int rem, fd;
 
-	if (cwmp->conf.json_custom_notify_file == NULL || !file_exists(cwmp->conf.json_custom_notify_file))
+	if (cwmp->conf.custom_notify_json == NULL || !file_exists(cwmp->conf.custom_notify_json))
 		return;
 
 	if (file_exists("/etc/icwmpd/.icwmpd_notify"))
@@ -397,8 +397,8 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 	memset(&bbuf, 0, sizeof(struct blob_buf));
 	blob_buf_init(&bbuf, 0);
 
-	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.json_custom_notify_file) == false) {
-		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.json_custom_notify_file);
+	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.custom_notify_json) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
@@ -414,7 +414,7 @@ void load_json_custom_notify_file(struct cwmp *cwmp)
 	custom_notify_list = tb_notif[0];
 
 	if (custom_notify_list == NULL) {
-		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp->conf.json_custom_notify_file);
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;

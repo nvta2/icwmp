@@ -595,15 +595,15 @@ int get_global_config(struct config *conf)
 			CWMP_LOG(DEBUG, "CWMP CONFIG - cpe boot inform json file: %s", conf->forced_inform_json_file);
 	}
 	if (uci_get_value(UCI_CPE_JSON_CUSTOM_NOTIFY_FILE, &value) == CWMP_OK) {
-		FREE(conf->json_custom_notify_file);
+		FREE(conf->custom_notify_json);
 		if (value != NULL) {
-			conf->json_custom_notify_file = strdup(value);
+			conf->custom_notify_json = strdup(value);
 			FREE(value);
 		} else {
-			conf->json_custom_notify_file = NULL;
+			conf->custom_notify_json = NULL;
 		}
-		if (conf->json_custom_notify_file)
-			CWMP_LOG(DEBUG, "CWMP CONFIG - cpe json custom notify file: %s", conf->json_custom_notify_file);
+		if (conf->custom_notify_json)
+			CWMP_LOG(DEBUG, "CWMP CONFIG - cpe json custom notify file: %s", conf->custom_notify_json);
 	}
 	return CWMP_OK;
 }
