@@ -316,8 +316,10 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			if (!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
 				is_notify = check_value_change();
 		}
-		if (is_notify > 0 || !file_exists(DM_ENABLED_NOTIFY))
+		if (is_notify > 0 || !file_exists(DM_ENABLED_NOTIFY) || cwmp->custom_notify_active) {
+			cwmp->custom_notify_active = false;
 			cwmp_update_enabled_notify_file();
+		}
 		cwmp_prepare_value_change(cwmp);
 		clean_list_value_change();
 		if ((error = cwmp_move_session_to_session_send(cwmp, session))) {
@@ -535,7 +537,6 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	memcpy(&(cwmp->env), &env, sizeof(struct env));
 	INIT_LIST_HEAD(&(cwmp->head_session_queue));
 
-	init_list_param_notify();
 	if ((error = global_conf_init(cwmp)))
 		return error;
 
@@ -543,6 +544,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	load_forced_inform_json_file(cwmp);
 	load_boot_inform_json_file(cwmp);
 	load_custom_notify_json(cwmp);
+	init_list_param_notify();
 	return CWMP_OK;
 }
 

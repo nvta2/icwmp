@@ -13,6 +13,8 @@
 #include <openssl/evp.h>
 #include <netdb.h>
 #include <libubox/list.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "notifications.h"
 #include "ubus.h"
@@ -386,8 +388,9 @@ void load_custom_notify_json(struct cwmp *cwmp)
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_notify_list = NULL;
-	int rem, fd;
+	int rem;
 
+	cwmp->custom_notify_active = false;
 	if (cwmp->conf.custom_notify_json == NULL || !file_exists(cwmp->conf.custom_notify_json))
 		return;
 
@@ -444,7 +447,7 @@ void load_custom_notify_json(struct cwmp *cwmp)
 	}
 	blob_buf_free(&bbuf);
 	creat("/etc/icwmpd/.icwmpd_notify", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-
+	cwmp->custom_notify_active = true;
 }
 
 /*

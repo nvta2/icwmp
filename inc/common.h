@@ -144,6 +144,7 @@ typedef struct cwmp {
 	unsigned int cwmp_id;
 	int cr_socket_desc;
 	bool is_boot;
+	bool custom_notify_active;
 } cwmp;
 
 enum action {
