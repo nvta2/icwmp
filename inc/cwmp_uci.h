@@ -62,6 +62,10 @@
 #define LW_NOTIFICATION_HOSTNAME "cwmp.lwn.hostname"
 #define LW_NOTIFICATION_PORT "cwmp.lwn.port"
 #define UCI_DHCP_ACS_URL "cwmp.acs.dhcp_url"
+#define UCI_FIREWALL_ACS_IP "cwmp.acs.ip"
+#define UCI_FIREWALL_ACS_PORT "cwmp.acs.port"
+#define UCI_FIREWALL_ACS_ZONENAME "cwmp.acs.zonename"
+#define UCI_FIREWALL_ACS_IPV6ENABLE "cwmp.acs.ipv6enable"
 
 #define UCI_CONFIG_DIR "/etc/config/"
 #define LIB_DB_CONFIG "/lib/db/config"

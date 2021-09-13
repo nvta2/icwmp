@@ -297,48 +297,6 @@ end:
 }
 
 /*
- * updated firewall.cwmp file
- */
-int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_type)
-{
-	FILE *fp;
-
-	remove(FIREWALL_CWMP);
-	fp = fopen(FIREWALL_CWMP, "a");
-	if (fp == NULL)
-		return -1;
-	fprintf(fp, "zone_name=%s\n", zone_name);
-	fprintf(fp, "port=%d\n", port);
-	fprintf(fp, "if [ \"$zone_name\" = \"\" ]; then\n");
-	fprintf(fp, "	exit 0\n");
-	fprintf(fp, "elif [ \"$zone_name\" = \"icwmp\" ]; then\n");
-	fprintf(fp, "	iptables -nL zone_icwmp_input 2> /dev/null\n");
-	fprintf(fp, "	if [ $? != 0 ]; then\n");
-	fprintf(fp, "		iptables -N zone_icwmp_input\n");
-	fprintf(fp, "		iptables -t filter -A INPUT -j zone_icwmp_input\n");
-	fprintf(fp, "		iptables -I zone_icwmp_input -p tcp --dport $port -j REJECT\n");
-	fprintf(fp, "	else\n");
-	fprintf(fp, "		iptables -F zone_icwmp_input\n");
-	fprintf(fp, "		iptables -I zone_icwmp_input -p tcp --dport $port -j REJECT\n");
-	fprintf(fp, "	fi\n");
-	fprintf(fp, "else\n");
-	fprintf(fp, "	iptables -F zone_icwmp_input 2> /dev/null\n");
-	fprintf(fp, "	iptables -t filter -D INPUT -j zone_icwmp_input 2> /dev/null\n");
-	fprintf(fp, "	iptables -X zone_icwmp_input 2> /dev/null\n");
-	fprintf(fp, "fi\n");
-	if (ip_type == 0)
-		fprintf(fp,
-			"iptables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n",
-			zone_name, ip_addr, port);
-	else
-		fprintf(fp,
-			"ip6tables -I zone_%s_input -p tcp -s %s --dport %d -j ACCEPT -m comment --comment=\"Open ACS port\"\n",
-			zone_name, ip_addr, port);
-	fclose(fp);
-	return 0;
-}
-
-/*
  * Reboot
  */
 void cwmp_reboot(char *command_key)

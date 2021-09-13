@@ -238,7 +238,12 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 			}
 			char *zone_name = NULL;
 			get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
-			update_firewall_cwmp_file(cwmp->conf.connection_request_port, zone_name ? zone_name : "wan", ip_acs, tmp);
+			uci_set_value(UCI_FIREWALL_ACS_IP, ip_acs, CWMP_CMD_SET_STATE);
+			char connection_requset_port_str[10];
+			snprintf(connection_requset_port_str, sizeof(connection_requset_port_str), "%d", cwmp->conf.connection_request_port);
+			uci_set_value(UCI_FIREWALL_ACS_PORT, connection_requset_port_str, CWMP_CMD_SET_STATE);
+			uci_set_value(UCI_FIREWALL_ACS_ZONENAME, zone_name ? zone_name : "wan", CWMP_CMD_SET_STATE);
+			uci_set_value(UCI_FIREWALL_ACS_IPV6ENABLE, tmp ? "1" : "0", CWMP_CMD_SET_STATE);
 
 			/*
 			 * Restart firewall service

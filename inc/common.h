@@ -456,7 +456,6 @@ bool file_exists(const char *path);
 void cwmp_reboot(char *command_key);
 void cwmp_factory_reset();
 void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name);
-int update_firewall_cwmp_file(int port, char *zone_name, char *ip_addr, int ip_type);
 int download_file(const char *file_path, const char *url, const char *username, const char *password);
 long int get_file_size(char *file_name);
 int cwmp_check_image();
