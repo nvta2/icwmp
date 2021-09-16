@@ -291,6 +291,13 @@
           "required": "no",
           "default": "",
           "description": "Define absolute path of the JSON containing parameters on which notification get enabled as per the definition. See readme for examples."
+        },
+        {
+          "name": "incoming_rule",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "This configure firewall rules. Allowed values <IP_Only/Port_Only/IP_Port>. IP_Only means only acs ip as source ip used for firewall input rule, Port_Only means only destination port will be used and IP_Port or empty value meaning both ip and port will be used for firewall input rule."
         }
       ]
     },

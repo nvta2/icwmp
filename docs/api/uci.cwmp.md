@@ -373,6 +373,13 @@
                     <td class="td_row_even"><div class="td_row_even"></div></td>
                     <td class="td_row_even"><div class="td_row_even">Define absolute path of the JSON containing parameters on which notification get enabled as per the definition. See readme for examples.</div></td>
                   </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">incoming_rule</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">This configure firewall rules. Allowed values <IP_Only/Port_Only/IP_Port>. IP_Only means only acs ip as source ip used for firewall input rule, Port_Only means only destination port will be used and IP_Port or empty value meaning both ip and port will be used for firewall input rule.</div></td>
+                  </tr>
                 </tbody>
               </table>
             </td>
