@@ -37,13 +37,13 @@ struct diagnostic_input {
 #define IP_DIAGNOSTICS_OBJECT "Device.IP.Diagnostics."
 #define DNS_DIAGNOSTICS_OBJECT "Device.DNS.Diagnostics."
 
-#define DOWNLOAD_DIAG_ACT_NAME "DownloadDiagnostics"
-#define UPLOAD_DIAG_ACT_NAME "UploadDiagnostics"
-#define IPPING_DIAG_ACT_NAME "IPPing"
-#define SERVER_SELECTION_DIAG_ACT_NAME "ServerSelectionDiagnostics"
-#define TRACE_ROUTE_DIAG_ACT_NAME "TraceRoute"
-#define UDPECHO_DIAG_ACT_NAME "UDPEchoDiagnostics"
-#define NSLOOKUP_DIAG_ACT_NAME "NSLookupDiagnostics"
+#define DOWNLOAD_DIAG_ACT_NAME "DownloadDiagnostics()"
+#define UPLOAD_DIAG_ACT_NAME "UploadDiagnostics()"
+#define IPPING_DIAG_ACT_NAME "IPPing()"
+#define SERVER_SELECTION_DIAG_ACT_NAME "ServerSelectionDiagnostics()"
+#define TRACE_ROUTE_DIAG_ACT_NAME "TraceRoute()"
+#define UDPECHO_DIAG_ACT_NAME "UDPEchoDiagnostics()"
+#define NSLOOKUP_DIAG_ACT_NAME "NSLookupDiagnostics()"
 
 struct diagnostic_input download_diagnostics_array[DOWNLOAD_NUMBER_INPUTS] = {
 	{ "Interface", "Device.IP.Diagnostics.DownloadDiagnostics.Interface", NULL },
