@@ -32,6 +32,7 @@
 #include "upload.h"
 #include "sched_inform.h"
 #include "rpc_soap.h"
+#include "digestauth.h"
 
 static pthread_t periodic_event_thread;
 static pthread_t scheduleInform_thread;
@@ -59,8 +60,8 @@ static int cwmp_get_retry_interval(struct cwmp *cwmp)
 		exp = 10;
 	min = pow(((double)k / 1000), (double)(exp - 1)) * m;
 	max = pow(((double)k / 1000), (double)exp) * m;
-	icwmp_srand(time(NULL));
-	retry_count = icwmp_rand() % ((int)max + 1 - (int)min) + (int)min;
+	srand(time(NULL));
+	retry_count = rand() % ((int)max + 1 - (int)min) + (int)min;
 	return (retry_count);
 }
 
@@ -545,6 +546,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	load_boot_inform_json_file(cwmp);
 	load_custom_notify_json(cwmp);
 	init_list_param_notify();
+	generate_nonce_priv_key();
 	return CWMP_OK;
 }
 
@@ -570,6 +572,7 @@ static void cwmp_free(struct cwmp *cwmp)
 	FREE(cwmp->conf.forced_inform_json_file);
 	FREE(cwmp->conf.custom_notify_json);
 	FREE(cwmp->conf.boot_inform_json_file);
+	FREE(nonce_privacy_key);
 	clean_list_param_notify();
 	bkp_tree_clean();
 	cwmp_ubus_exit();

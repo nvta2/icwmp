@@ -462,8 +462,6 @@ int cwmp_check_image();
 int cwmp_apply_firmware();
 int opkg_install_package(char *package_path);
 int copy(const char *from, const char *to);
-int icwmp_rand(void);
-void icwmp_srand(unsigned int seed);
 int cwmp_get_fault_code(int fault_code);
 int cwmp_get_fault_code_by_string(char *fault_code);
 void *icwmp_malloc(size_t size);
@@ -483,6 +481,7 @@ bool icwmp_validate_unsignedint(char *arg);
 bool icwmp_validate_int_in_range(char *arg, int min, int max);
 void load_forced_inform_json_file(struct cwmp *cwmp);
 void clean_custom_inform_parameters();
+char *generate_random_string(size_t size);
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

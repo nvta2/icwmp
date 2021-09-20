@@ -31,7 +31,6 @@ bool thread_end = false;
 bool signal_exit = false;
 bool ubus_exit = false;
 long int flashsize = 256000000;
-static unsigned long int next_rand_seed = 1;
 struct cwmp cwmp_main = { 0 };
 static int nbre_services = 0;
 static char *list_services[MAX_NBRE_SERVICES] = { 0 };
@@ -421,17 +420,6 @@ bool file_exists(const char *path)
 	return stat(path, &buffer) == 0;
 }
 
-int icwmp_rand(void) // RAND_MAX assumed to be 32767
-{
-	next_rand_seed = next_rand_seed * 1103515245 + 12345;
-	return (unsigned int)(next_rand_seed / 65536) % 32768;
-}
-
-void icwmp_srand(unsigned int seed) //
-{
-	next_rand_seed = seed;
-}
-
 int cwmp_get_fault_code(int fault_code)
 {
 	int i;
@@ -646,4 +634,20 @@ bool icwmp_validate_int_in_range(char *arg, int min, int max)
 			return false;
 	}
 	return arg_int >= min && arg_int <= max;
+}
+
+char *generate_random_string(size_t size)
+{
+	char *str = (char*)calloc(size+1, sizeof(char));
+	const char charset[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+	srand(time(NULL));
+	if (size) {
+		--size;
+		for (size_t n = 0; n < size; n++) {
+			int key = rand() % (int) (sizeof charset - 1);
+			str[n] = charset[key];
+		}
+		str[size] = '\0';
+	}
+	return str;
 }

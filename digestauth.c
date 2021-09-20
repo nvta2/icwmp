@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
+
+#include "common.h"
 #include "digestauth.h"
 #include "md5.h"
 #include "log.h"
@@ -36,7 +38,12 @@
 
 #define MAX_NONCE_LENGTH 1024
 
-#define NONCE_PRIV_KEY "h5ffku7rlxp6tjf2xamnfqjev5ul"
+char *nonce_privacy_key = NULL;
+
+void generate_nonce_priv_key()
+{
+	nonce_privacy_key = generate_random_string(28);
+}
 
 static time_t mhd_monotonic_time(void)
 {
@@ -283,7 +290,7 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char
 	int signal_stale = 0;
 
 	/* Generating the server nonce */
-	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, nonce);
+	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, nonce_privacy_key, strlen(nonce_privacy_key), url, realm, nonce);
 
 	/* Building the authentication header */
 	hlen = snprintf(NULL, 0, "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s", realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
@@ -381,7 +388,7 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 			return MHD_NO;
 		}
 
-		calculate_nonce(nonce_time, http_method, NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, noncehashexp);
+		calculate_nonce(nonce_time, http_method, nonce_privacy_key, strlen(nonce_privacy_key), url, realm, noncehashexp);
 
 		/*
 		 * Second level vetting for the nonce validity

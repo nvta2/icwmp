@@ -667,9 +667,9 @@ char *calculate_lwnotification_cnonce()
 {
 	int i;
 	char *cnonce = malloc(33 * sizeof(char));
-	icwmp_srand((unsigned int)time(NULL));
+	srand((unsigned int)time(NULL));
 	for (i = 0; i < 4; i++) {
-		sprintf(&(cnonce[i * 8]), "%08x", icwmp_rand());
+		sprintf(&(cnonce[i * 8]), "%08x", rand());
 	}
 	cnonce[i * 8] = '\0';
 	return cnonce;
