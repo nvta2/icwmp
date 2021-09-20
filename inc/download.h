@@ -6,6 +6,15 @@
 #define DOWNLOAD_PROTOCOL_FTP "ftp://"
 #define ICWMP_DOWNLOAD_FILE "/tmp/icwmp_download"
 #define FIRMWARE_UPGRADE_IMAGE "/tmp/firmware.bin"
+#define WEB_CONTENT_FILE "/tmp/web_content.ipk"
+#define VENDOR_CONFIG_FILE "/tmp/vendor_configuration_file.cfg"
+
+#define FIRMWARE_UPGRADE_IMAGE_FILE_TYPE "1 Firmware Upgrade Image"
+#define WEB_CONTENT_FILE_TYPE "2 Web Content"
+#define VENDOR_CONFIG_FILE_TYPE "3 Vendor Configuration File"
+#define TONE_FILE_TYPE "4 Tone File"
+#define RINGER_FILE_TYPE "5 Ringer File"
+#define STORED_FIRMWARE_IMAGE_FILE_TYPE "6 Stored Firmware Image"
 
 #define MAX_DOWNLOAD_QUEUE 10
 

@@ -196,7 +196,7 @@ int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struc
 	if (error != FAULT_CPE_NO_FAULT)
 		goto end_download;
 
-	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0 || strcmp(pdownload->file_type, "6 Stored Firmware Image") == 0) {
+	if (strcmp(pdownload->file_type, FIRMWARE_UPGRADE_IMAGE_FILE_TYPE) == 0 || strcmp(pdownload->file_type, STORED_FIRMWARE_IMAGE_FILE_TYPE) == 0) {
 		rename(ICWMP_DOWNLOAD_FILE, FIRMWARE_UPGRADE_IMAGE);
 		if (cwmp_check_image() == 0) {
 			long int file_size = get_file_size(FIRMWARE_UPGRADE_IMAGE);
@@ -212,16 +212,16 @@ int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struc
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 			remove(FIRMWARE_UPGRADE_IMAGE);
 		}
-	} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
-		rename(ICWMP_DOWNLOAD_FILE, "/tmp/web_content.ipk");
-		error = FAULT_CPE_NO_FAULT;
-	} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
-		rename(ICWMP_DOWNLOAD_FILE, "/tmp/vendor_configuration_file.cfg");
-		error = FAULT_CPE_NO_FAULT;
-	}  else if (strcmp(pdownload->file_type, "4 Tone File") == 0) {
+	} else if (strcmp(pdownload->file_type, WEB_CONTENT_FILE_TYPE) == 0) {
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
-	} else if (strcmp(pdownload->file_type, "5 Ringer File") == 0) {
+	} else if (strcmp(pdownload->file_type, VENDOR_CONFIG_FILE_TYPE) == 0) {
+		rename(ICWMP_DOWNLOAD_FILE, VENDOR_CONFIG_FILE);
+		error = FAULT_CPE_NO_FAULT;
+	}  else if (strcmp(pdownload->file_type, TONE_FILE_TYPE) == 0) {
+		//TODO Not Supported
+		error = FAULT_CPE_NO_FAULT;
+	} else if (strcmp(pdownload->file_type, RINGER_FILE_TYPE) == 0) {
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
 
@@ -257,34 +257,31 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 	}
 	bkp_session_insert_transfer_complete(ptransfer_complete);
 	bkp_session_save();
-	if (strcmp(pdownload->file_type, "1 Firmware Upgrade Image") == 0) {
+	if (strcmp(pdownload->file_type, FIRMWARE_UPGRADE_IMAGE_FILE_TYPE) == 0) {
 		uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
 		if (cwmp_apply_firmware() != 0)
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 		sleep(70);
 		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-	} else if (strcmp(pdownload->file_type, "2 Web Content") == 0) {
-		int err = opkg_install_package("/tmp/web_content.ipk");
-		if (err == -1)
-			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-		else
-			error = FAULT_CPE_NO_FAULT;
-	} else if (strcmp(pdownload->file_type, "3 Vendor Configuration File") == 0) {
-		int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+	} else if (strcmp(pdownload->file_type, WEB_CONTENT_FILE_TYPE) == 0) {
+		//TODO Not Supported
+		error = FAULT_CPE_NO_FAULT;
+	} else if (strcmp(pdownload->file_type, VENDOR_CONFIG_FILE_TYPE) == 0) {
+		int err = cwmp_uci_import(NULL, VENDOR_CONFIG_FILE);
 		if (err == CWMP_OK)
 			error = FAULT_CPE_NO_FAULT;
 		else if (err == CWMP_GEN_ERR)
 			error = FAULT_CPE_INTERNAL_ERROR;
 		else if (err == -1)
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-	} else if (strcmp(pdownload->file_type, "4 Tone File") == 0) {
+	} else if (strcmp(pdownload->file_type, TONE_FILE_TYPE) == 0) {
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
-	} else if (strcmp(pdownload->file_type, "5 Ringer File") == 0) {
+	} else if (strcmp(pdownload->file_type, RINGER_FILE_TYPE) == 0) {
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
 
-	} else if (strcmp(pdownload->file_type, "6 Stored Firmware Image") == 0) {
+	} else if (strcmp(pdownload->file_type, STORED_FIRMWARE_IMAGE_FILE_TYPE) == 0) {
 		int err = cwmp_apply_multiple_firmware();
 		if (err == CWMP_OK)
 			error = FAULT_CPE_NO_FAULT;
@@ -674,19 +671,16 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 			bkp_session_insert_transfer_complete(ptransfer_complete);
 			bkp_session_save();
 
-			if (strcmp(apply_download->file_type, "1 Firmware Upgrade Image") == 0) {
+			if (strcmp(apply_download->file_type, FIRMWARE_UPGRADE_IMAGE_FILE_TYPE) == 0) {
 				uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "1", CWMP_CMD_SET);
 				cwmp_apply_firmware();
 				sleep(70);
 				error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-			} else if (strcmp(apply_download->file_type, "2 Web Content") == 0) {
-				int err = opkg_install_package("/tmp/web_content.ipk");
-				if (err == -1)
-					error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-				else
-					error = FAULT_CPE_NO_FAULT;
-			} else if (strcmp(apply_download->file_type, "3 Vendor Configuration File") == 0) {
-				int err = cwmp_uci_import(NULL, "/tmp/vendor_configuration_file.cfg");
+			} else if (strcmp(apply_download->file_type, WEB_CONTENT_FILE_TYPE) == 0) {
+				//TODO Not Supported
+				error = FAULT_CPE_NO_FAULT;
+			} else if (strcmp(apply_download->file_type, VENDOR_CONFIG_FILE_TYPE) == 0) {
+				int err = cwmp_uci_import(NULL, VENDOR_CONFIG_FILE);
 				if (err == CWMP_OK)
 					error = FAULT_CPE_NO_FAULT;
 				else if (err == CWMP_GEN_ERR)

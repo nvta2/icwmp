@@ -90,7 +90,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload = icwmp_calloc(1, sizeof(struct download));
 	pdownload->command_key = icwmp_strdup("download_key");
 	pdownload->file_size = 0;
-	pdownload->file_type = icwmp_strdup("1 Firmware Upgrade Image");
+	pdownload->file_type = icwmp_strdup(FIRMWARE_UPGRADE_IMAGE_FILE_TYPE);
 	pdownload->username = icwmp_strdup("iopsys");
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/firmware_v1.0.bin");
@@ -115,7 +115,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload = icwmp_calloc(1, sizeof(struct download));
 	pdownload->command_key = icwmp_strdup("download_key");
 	pdownload->file_size = 0;
-	pdownload->file_type = icwmp_strdup("1 Firmware Upgrade Image");
+	pdownload->file_type = icwmp_strdup(FIRMWARE_UPGRADE_IMAGE_FILE_TYPE);
 	pdownload->username = icwmp_strdup("iopsys");
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/firmware.bin");
@@ -163,7 +163,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload = icwmp_calloc(1, sizeof(struct download));
 	pdownload->command_key = icwmp_strdup("download_key");
 	pdownload->file_size = 0;
-	pdownload->file_type = icwmp_strdup("1 Firmware Upgrade Image");
+	pdownload->file_type = icwmp_strdup(FIRMWARE_UPGRADE_IMAGE_FILE_TYPE);
 	pdownload->username = icwmp_strdup("iopsys");
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/invalid_firmware_v1.0.bin");

@@ -2035,7 +2035,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	}
 	FREE(str_download_delay);
 
-	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "4 Tone File") && strcmp(file_type, "5 Ringer File") && strcmp(file_type, "6 Stored Firmware Image")) {
+	if (strcmp(file_type, FIRMWARE_UPGRADE_IMAGE_FILE_TYPE) && strcmp(file_type, WEB_CONTENT_FILE_TYPE) && strcmp(file_type, VENDOR_CONFIG_FILE_TYPE) && strcmp(file_type, TONE_FILE_TYPE) && strcmp(file_type, RINGER_FILE_TYPE) && strcmp(file_type, STORED_FIRMWARE_IMAGE_FILE_TYPE)) {
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	} else if (count_download_queue >= MAX_DOWNLOAD_QUEUE) {
 		error = FAULT_CPE_RESOURCES_EXCEEDED;
@@ -2223,7 +2223,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		goto fault;
 	}
 	FREE(str_file_size);
-	if (strcmp(file_type, "1 Firmware Upgrade Image") && strcmp(file_type, "2 Web Content") && strcmp(file_type, "3 Vendor Configuration File") && strcmp(file_type, "4 Tone File") && strcmp(file_type, "5 Ringer File") && strcmp(file_type, "6 Stored Firmware Image")) {
+	if (strcmp(file_type, FIRMWARE_UPGRADE_IMAGE_FILE_TYPE) && strcmp(file_type, WEB_CONTENT_FILE_TYPE) && strcmp(file_type, VENDOR_CONFIG_FILE_TYPE) && strcmp(file_type, TONE_FILE_TYPE) && strcmp(file_type, RINGER_FILE_TYPE) && strcmp(file_type, STORED_FIRMWARE_IMAGE_FILE_TYPE)) {
 		error = FAULT_CPE_INVALID_ARGUMENTS;
 	} else if ((strcmp(windowmode0, "1 At Any Time") && strcmp(windowmode0, "2 Immediately") && strcmp(windowmode0, "3 When Idle")) || (strcmp(windowmode1, "1 At Any Time") && strcmp(windowmode1, "2 Immediately") && strcmp(windowmode1, "3 When Idle"))) {
 		error = FAULT_CPE_REQUEST_DENIED;
@@ -2381,7 +2381,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	}
 	FREE(str_upload_delay);
 
-	if (strncmp(file_type, "1 Vendor Configuration File", sizeof "1 Vendor Configuration File" - 1) != 0 && strncmp(file_type, "3 Vendor Configuration File", sizeof "3 Vendor Configuration File" - 1) != 0 && strncmp(file_type, "2 Vendor Log File", sizeof "2 Vendor Log File" - 1) != 0 &&
+	if (strncmp(file_type, "1 Vendor Configuration File", sizeof "1 Vendor Configuration File" - 1) != 0 && strncmp(file_type, VENDOR_CONFIG_FILE_TYPE, sizeof VENDOR_CONFIG_FILE_TYPE - 1) != 0 && strncmp(file_type, "2 Vendor Log File", sizeof "2 Vendor Log File" - 1) != 0 &&
 	    strncmp(file_type, "4 Vendor Log File", sizeof "4 Vendor Log File" - 1) != 0) {
 		error = FAULT_CPE_REQUEST_DENIED;
 	} else if (count_download_queue >= MAX_DOWNLOAD_QUEUE) {
