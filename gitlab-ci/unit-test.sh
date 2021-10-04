@@ -19,7 +19,10 @@ exec_cmd cp /builds/iopsys/icwmp/invalid_firmware_v1.0.bin /var/www/html
 
 echo "Install Inform json files"
 exec_cmd mkdir -p /etc/icwmpd
-exec_cmd cp test/files/etc/icwmpd/* /etc/icwmpd
+exec_cmd cp /builds/iopsys/icwmp/test/files/etc/icwmpd/* /etc/icwmpd
+
+exec_cmd mkdir -p /var/state
+exec_cmd cp /builds/iopsys/icwmp/test/files/var/state/cwmp /var/state
 
 echo "Starting dependent services"
 supervisorctl status all

@@ -1,0 +1,2 @@
+config acs 'acs'
+	option dhcp_url 'http://192.168.103.160:8080/openacs/acs'
