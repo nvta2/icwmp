@@ -108,7 +108,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 			lookup_vcf_name(pupload->f_instance, &name);
 			if (name && strlen(name) > 0) {
 				snprintf(file_path, sizeof(file_path), "/tmp/%s", name);
-				cwmp_uci_export_package(name, file_path);
+				cwmp_uci_export_package(name, file_path, UCI_STANDARD_CONFIG);
 				FREE(name);
 			} else {
 				error = FAULT_CPE_UPLOAD_FAILURE;
@@ -116,7 +116,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 			}
 		} else {
 			snprintf(file_path, sizeof(file_path), "/tmp/all_configs");
-			cwmp_uci_export(file_path);
+			cwmp_uci_export(file_path, UCI_STANDARD_CONFIG);
 		}
 	} else {
 		if (pupload->f_instance && isdigit(pupload->f_instance[0])) {

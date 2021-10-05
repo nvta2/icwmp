@@ -631,16 +631,11 @@ end:
 
 int cwmp_get_deviceid(struct cwmp *cwmp)
 {
-	if (folder_exists("/lib/db/config"))
-		cwmp_uci_init(UCI_DB_CONFIG);
-	else
-		cwmp_uci_init(UCI_BOARD_DB_CONFIG);
 	cwmp->deviceid.manufacturer = strdup(cwmp_db_get_value_string("device", "deviceinfo", "Manufacturer"));
 	cwmp->deviceid.serialnumber = strdup(cwmp_db_get_value_string("device", "deviceinfo", "SerialNumber"));
 	cwmp->deviceid.productclass = strdup(cwmp_db_get_value_string("device", "deviceinfo", "ProductClass"));
 	cwmp->deviceid.oui = strdup(cwmp_db_get_value_string("device", "deviceinfo", "ManufacturerOUI"));
 	cwmp->deviceid.softwareversion = strdup(cwmp_db_get_value_string("device", "deviceinfo", "SoftwareVersion"));
-	cwmp_uci_exit();
 	return CWMP_OK;
 }
 

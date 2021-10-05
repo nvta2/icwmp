@@ -201,6 +201,7 @@ int run_session_end_func(void)
 {
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
+		cwmp_uci_reinit();
 		cwmp_apply_acs_changes();
 	}
 
@@ -271,7 +272,7 @@ int run_session_end_func(void)
 		cwmp_factory_reset();
 		exit(EXIT_SUCCESS);
 	}
-
+	cwmp_uci_exit();
 	icwmp_cleanmem();
 	end_session_flag = 0;
 	return CWMP_OK;
@@ -311,7 +312,7 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			ilist = (&(cwmp->head_session_queue))->next;
 			retry = false;
 		}
-
+		cwmp_uci_init();
 		session = list_entry(ilist, struct session, list);
 		if (file_exists(DM_ENABLED_NOTIFY)) {
 			if (!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
@@ -338,9 +339,10 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 		CWMP_LOG(INFO, "Start session");
 
 		uci_get_value(UCI_CPE_EXEC_DOWNLOAD, &exec_download);
-		if (strcmp(exec_download, "1") == 0) {
+		if (exec_download && strcmp(exec_download, "1") == 0) {
 			CWMP_LOG(INFO, "Firmware downloaded and applied successfully");
-			uci_set_value(UCI_CPE_EXEC_DOWNLOAD, "0", CWMP_CMD_SET);
+			cwmp_uci_set_value("cwmp", "cpe", "exec_download", "0");
+			cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 		}
 		FREE(exec_download);
 		error = cwmp_schedule_rpc(cwmp, session);
@@ -538,6 +540,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	memcpy(&(cwmp->env), &env, sizeof(struct env));
 	INIT_LIST_HEAD(&(cwmp->head_session_queue));
 
+	cwmp_uci_init();
 	if ((error = global_conf_init(cwmp)))
 		return error;
 
@@ -547,6 +550,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	load_custom_notify_json(cwmp);
 	init_list_param_notify();
 	generate_nonce_priv_key();
+	cwmp_uci_exit();
 	return CWMP_OK;
 }
 
@@ -578,6 +582,7 @@ static void cwmp_free(struct cwmp *cwmp)
 	cwmp_ubus_exit();
 	clean_custom_inform_parameters();
 	icwmp_cleanmem();
+	cwmp_uci_exit();
 }
 
 static void *thread_cwmp_signal_handler_thread(void *arg)

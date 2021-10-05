@@ -24,15 +24,25 @@ char *notifications_test[7] = {"disabled" , "passive", "active", "passive_lw", "
 
 LIST_HEAD(parameters_list);
 
+static int cwmp_notifications_unit_tests_init(void **state)
+{
+	cwmp_uci_init();
+	return 0;
+}
+
 static int cwmp_notifications_unit_tests_clean(void **state)
 {
 	icwmp_cleanmem();
 	cwmp_free_all_dm_parameter_list(&parameters_list);
+	cwmp_uci_exit();
 	return 0;
 }
 
 int check_notify_file(char *param, int *ret_notification)
 {
+	struct blob_buf bbuf;
+	char *parameter = NULL, *value = NULL;
+	int notification = 0;
 	FILE *fp;
 	int nbre_iterations = 0;
 	char buf[1280];
@@ -45,11 +55,26 @@ int check_notify_file(char *param, int *ret_notification)
 			nbre_iterations++;
 			buf[len - 1] = '\0';
 		}
-		char parameter[256] = { 0 }, notification[2] = { 0 }, value[1024] = { 0 }, type[32] = { 0 };
-		sscanf(buf, "parameter:%256s notifcation:%2s type:%32s value:%1024s\n", parameter, notification, type, value);
-		if (strcmp(param, parameter) == 0) {
-			*ret_notification = atoi(notification);
+		memset(&bbuf, 0, sizeof(struct blob_buf));
+		blob_buf_init(&bbuf, 0);
+
+		if (blobmsg_add_json_from_string(&bbuf, buf) == false) {
+			blob_buf_free(&bbuf);
+			continue;
 		}
+
+		const struct blobmsg_policy p[4] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notification", BLOBMSG_TYPE_INT32 }, { "type", BLOBMSG_TYPE_STRING }, { "value", BLOBMSG_TYPE_STRING } };
+
+		struct blob_attr *tb[4] = { NULL, NULL, NULL, NULL };
+		blobmsg_parse(p, 4, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
+		parameter = blobmsg_get_string(tb[0]);
+		notification = blobmsg_get_u32(tb[1]);
+		if (strcmp(param, parameter) == 0) {
+			*ret_notification = notification;
+		}
+		parameter = NULL;
+		notification = 0;
+		blob_buf_free(&bbuf);
 	}
 	fclose(fp);
 	return nbre_iterations;
@@ -70,7 +95,6 @@ int get_parameter_notification_from_notifications_uci_list(char *parameter_name)
 	int i, option_type, notification = 0;
 	struct uci_list *list_notif;
 	struct uci_element *e;
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
 	for (i = 0; i < 7; i++) {
 		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications_test[i], &list_notif);
 		if (list_notif) {
@@ -86,7 +110,6 @@ int get_parameter_notification_from_notifications_uci_list(char *parameter_name)
 		if(notification > 0)
 			break;
 	}
-	cwmp_uci_exit();
 	return notification;
 }
 
@@ -256,5 +279,5 @@ int main(void)
 		    cmocka_unit_test(cwmp_check_value_change_1_unit_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, cwmp_notifications_unit_tests_clean);
+	return cmocka_run_group_tests(tests, cwmp_notifications_unit_tests_init, cwmp_notifications_unit_tests_clean);
 }

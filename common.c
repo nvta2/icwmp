@@ -275,8 +275,7 @@ void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
 	struct uci_section *s;
 	char *network = NULL;
 
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
-	cwmp_uci_foreach_sections("firewall", "zone", s)
+	cwmp_uci_foreach_sections("firewall", "zone", UCI_STANDARD_CONFIG, s)
 	{
 		cwmp_uci_get_value_by_section_string(s, "network", &network);
 		char *net = strtok(network, " ");
@@ -284,15 +283,12 @@ void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
 			if (strcmp(net, if_wan) == 0) {
 				cwmp_uci_get_value_by_section_string(s, "name", zone_name);
 				icwmp_free(network);
-				goto end;
+				return;
 			}
 			net = strtok(NULL, " ");
 		}
 		icwmp_free(network);
 	}
-
-end:
-	cwmp_uci_exit();
 }
 
 /*
@@ -300,8 +296,8 @@ end:
  */
 void cwmp_reboot(char *command_key)
 {
-	uci_set_value(UCI_ACS_PARAMETERKEY_PATH, command_key, CWMP_CMD_SET);
-	cwmp_commit_package("cwmp");
+	cwmp_uci_set_value("cwmp", "acs", "ParameterKey", command_key);
+	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 
 	sync();
 	reboot(RB_AUTOBOOT);

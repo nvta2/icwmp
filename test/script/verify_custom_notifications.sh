@@ -22,7 +22,10 @@ exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_va
 uci commit cwmp
 
 supervisorctl start icwmpd
-sleep 5
+
+sleep 7
+
+supervisorctl stop icwmpd
 
 notif1=`uci get cwmp.@notifications[0].active | grep "Device.Users."`
 if [[ $notif1 != *"Device.Users."* ]]; then
@@ -35,7 +38,6 @@ if [[ $notif2 != *"Device.WiFi.SSID.1.SSID"* ]]; then
 	exit 1
 fi
 
-supervisorctl stop icwmpd
 rm /etc/icwmpd/.icwmpd_notify
 
 echo "PASS test valid custom notification json file"
@@ -51,7 +53,8 @@ exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_in
 uci commit cwmp
 
 supervisorctl start icwmpd
-sleep 5
+sleep 7
+supervisorctl stop icwmpd
 
 notif1=`uci get cwmp.@notifications[0].active | grep "Device.Users."`
 if [[ $notif1 == *"Device.Users."* ]]; then
@@ -71,7 +74,7 @@ if [[ $logfile != *"[WARNING] The file /etc/icwmpd/custom_notification_invalid_j
 fi 
 
 echo "PASS test custom notification invalid json file"
-supervisorctl stop icwmpd
+
 rm /etc/icwmpd/.icwmpd_notify
 
 #
@@ -85,7 +88,8 @@ exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_fo
 uci commit cwmp
 
 supervisorctl start icwmpd
-sleep 5
+sleep 7
+supervisorctl stop icwmpd
 
 notif1=`uci get cwmp.@notifications[0].active | grep "Device.Users."`
 if [[ $notif1 != *"Device.Users."* ]]; then
@@ -105,7 +109,7 @@ if [[ $logfile != *"[WARNING] This parameter Device.DeviceInfo.ProvisioningCode 
 fi 
 
 echo "PASS test custom notification json file containing forced active notification"
-supervisorctl stop icwmpd
+
 rm /etc/icwmpd/.icwmpd_notify
 
 #
@@ -119,7 +123,8 @@ exec_cmd uci set cwmp.cpe.custom_notify_json="/etc/icwmpd/custom_notification_in
 uci commit cwmp
 
 supervisorctl start icwmpd
-sleep 5
+sleep 7
+supervisorctl stop icwmpd
 
 notif1=`uci get cwmp.@notifications[0].active | grep "Device.Users."`
 if [[ $notif1 != *"Device.Users."* ]]; then
@@ -139,7 +144,7 @@ if [[ $logfile != *"[WARNING] The parameter Device.WiFi.SSID.1.SD is wrong path"
 fi 
 
 echo "PASS test custom notification json file containing invalid parameter path"
-supervisorctl stop icwmpd
+
 rm /etc/icwmpd/.icwmpd_notify
 
 echo "PASS: $TEST_NAME"

@@ -44,6 +44,9 @@ mkdir -p /etc/icwmpd
 mkdir -p /etc/config
 cp test/files/etc/config/* /etc/config/
 
+mkdir -p /etc/board-db/config/
+cp test/files/etc/board-db/config/device /etc/board-db/config/
+
 echo "Display cwmp config: "
 cat /etc/config/cwmp 
 

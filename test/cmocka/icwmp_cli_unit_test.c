@@ -22,15 +22,22 @@
 #include <libicwmp/config.h>
 #include <libicwmp/cwmp_time.h>
 #include <libicwmp/event.h>
+#include <libicwmp/cwmp_uci.h>
 #include <libicwmp/cwmp_cli.h>
 
 static char *add_instance = NULL;
+
+static int cwmp_cli_unit_tests_init(void **state)
+{
+	cwmp_uci_init();
+}
 
 static int cwmp_cli_unit_tests_clean(void **state)
 {
 	icwmp_cleanmem();
 	FREE(add_instance);
 	icwmp_free_list_services();
+	cwmp_uci_exit();
 	return 0;
 }
 
@@ -451,5 +458,5 @@ int main(void)
 			cmocka_unit_test(cwmp_get_names_cli_unit_test)
 	};
 
-	return cmocka_run_group_tests(tests, NULL, cwmp_cli_unit_tests_clean);
+	return cmocka_run_group_tests(tests, cwmp_cli_unit_tests_init, cwmp_cli_unit_tests_clean);
 }

@@ -14,6 +14,7 @@
 #include "datamodel_interface.h"
 #include "notifications.h"
 #include "cwmp_cli.h"
+#include "cwmp_uci.h"
 
 LIST_HEAD(parameters_list);
 
@@ -311,6 +312,7 @@ char* execute_cwmp_cli_command(char *cmd, char *args[])
 	char *fault = NULL, *fault_ret = NULL;
 	size_t i;
 	size_t commands_array_size = sizeof(icwmp_commands) / sizeof(struct cwmp_cli_command_struct);
+	cwmp_uci_init();
 	for (i = 0; i < commands_array_size; i++) {
 		if (strcmp(icwmp_commands[i].command_name, cmd) == 0) {
 			fault = icwmp_commands[i].cmd_exec_func(cmd_in, &cmd_out);
@@ -327,5 +329,6 @@ cli_help:
 
 cli_end:
 	icwmp_cleanmem();
+	cwmp_uci_exit();
 	return fault_ret;
 }

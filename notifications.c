@@ -81,14 +81,12 @@ int add_uci_option_notification(char *parameter_name, int notification)
 	struct uci_section *s = NULL;
 	int ret = 0;
 
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
-	ret = cwmp_uci_get_section_type("cwmp", "@notifications[0]", &notification_type);
+	ret = cwmp_uci_get_section_type("cwmp", "@notifications[0]", UCI_STANDARD_CONFIG, &notification_type);
 	if (notification_type == NULL || notification_type[0] == '\0') {
-		cwmp_uci_add_section("cwmp", "notifications", &s);
+		cwmp_uci_add_section("cwmp", "notifications", UCI_STANDARD_CONFIG, &s);
 	}
-	ret = cwmp_uci_add_list_value("cwmp", "@notifications[0]", notifications[notification], parameter_name);
-	ret = cwmp_commit_package("cwmp");
-	cwmp_uci_exit();
+	ret = cwmp_uci_add_list_value("cwmp", "@notifications[0]", notifications[notification], parameter_name, UCI_STANDARD_CONFIG);
+	ret = cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	return ret;
 }
 
@@ -98,7 +96,6 @@ bool check_parent_with_different_notification(char *parameter_name, int notifica
 	struct uci_element *e = NULL;
 	int i;
 	int option_type;
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
 	for (i = 0; i < 7; i++) {
 		if (i == notification)
 			continue;
@@ -112,7 +109,6 @@ bool check_parent_with_different_notification(char *parameter_name, int notifica
 		if (option_type == UCI_TYPE_STRING)
 			cwmp_free_uci_list(list_notif);
 	}
-	cwmp_uci_exit();
 	return false;
 }
 
@@ -123,7 +119,7 @@ bool update_notifications_list(char *parameter_name, int notification)
 	int i, option_type;
 	char *ename = NULL;
 	bool update_ret = true;
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
+
 	for (i = 0; i < 7; i++) {
 		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
 		if (list_notif) {
@@ -132,12 +128,12 @@ bool update_notifications_list(char *parameter_name, int notification)
 					continue;
 				ename = strdup(e->name);
 				if ((strcmp(parameter_name, e->name) == 0 && (i != notification)) || parameter_is_subobject_of_parameter(parameter_name, e->name))
-					cwmp_uci_del_list_value("cwmp", "@notifications[0]", notifications[i], e->name);
+					cwmp_uci_del_list_value("cwmp", "@notifications[0]", notifications[i], e->name, UCI_STANDARD_CONFIG);
 				if (ename && (strcmp(parameter_name, ename) == 0 || parameter_is_subobject_of_parameter(ename, parameter_name) ) && (i == notification))
 					update_ret = false;
 				FREE(ename);
 			}
-			cwmp_commit_package("cwmp");
+			cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 		}
 		if (option_type == UCI_TYPE_STRING)
 			cwmp_free_uci_list(list_notif);
@@ -145,7 +141,6 @@ bool update_notifications_list(char *parameter_name, int notification)
 
 	if (update_ret && notification == 0 && !check_parent_with_different_notification(parameter_name, 0))
 		update_ret = false;
-	cwmp_uci_exit();
 	return update_ret;
 }
 
@@ -177,7 +172,6 @@ int get_parameter_family_notifications(char *parameter_name, struct list_head *c
 	int i, notif_ret = 0, option_type;
 	char *parent_param = NULL;
 
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
 	for (i = 0; i < 7; i++) {
 		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
 		if (list_notif) {
@@ -196,7 +190,6 @@ int get_parameter_family_notifications(char *parameter_name, struct list_head *c
 		if (option_type == UCI_TYPE_STRING)
 			cwmp_free_uci_list(list_notif);
 	}
-	cwmp_uci_exit();
 	return notif_ret;
 }
 
@@ -282,7 +275,6 @@ void create_list_param_obj_notify()
 	struct uci_list *list_notif;
 	struct uci_element *e = NULL;
 	int i, option_type;
-	cwmp_uci_init(UCI_STANDARD_CONFIG);
 	for (i = 0; i < 7; i++) {
 		option_type = cwmp_uci_get_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
 		if (list_notif) {
@@ -293,7 +285,6 @@ void create_list_param_obj_notify()
 		if (option_type == UCI_TYPE_STRING)
 			cwmp_free_uci_list(list_notif);
 	}
-	cwmp_uci_exit();
 }
 
 char* updated_list_param_leaf_notify_with_sub_parameter_list(struct list_head *list_param_leaf_notify, struct cwmp_dm_parameter parent_parameter, void (*update_notify_file_line_arg)(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification), FILE* notify_file_arg)

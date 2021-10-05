@@ -24,8 +24,8 @@ static void *thread_delay_reboot(void *arg)
 
 	CWMP_LOG(INFO, "The device will reboot after %d seconds", cwmp->conf.delay_reboot);
 	sleep(cwmp->conf.delay_reboot);
-	uci_set_value(UCI_CPE_DELAY_REBOOT, "-1", CWMP_CMD_SET);
-
+	cwmp_uci_set_value("cwmp", "cpe", "delay_reboot", "-1");
+	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	/* check if the session is running before calling reboot method */
 	/* if the session is in progress, wait until the end of the session */
 	/* else calling reboot method */
@@ -66,7 +66,8 @@ static void *thread_schedule_reboot(void *arg)
 
 	CWMP_LOG(INFO, "The device will reboot after %ld seconds", remaining_time);
 	sleep(remaining_time);
-	uci_set_value(UCI_CPE_SCHEDULE_REBOOT, "0001-01-01T00:00:00Z", CWMP_CMD_SET);
+	cwmp_uci_set_value("cwmp", "cpe", "schedule_reboot", "0001-01-01T00:00:00Z");
+	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 
 	/* check if the session is running before calling reboot method */
 	/* if the session is in progress, wait until the end of the session */

@@ -94,7 +94,8 @@ int http_client_init(struct cwmp *cwmp)
 		curl_easy_perform(curl);
 		int tmp = inet_pton(AF_INET, ip, buf);
 
-		uci_set_value(UCI_ACS_IP_VERSION, (tmp == 1) ? "4" : "6", CWMP_CMD_SET);
+		cwmp_uci_set_value("cwmp", "acs", "ip_version", (tmp == 1) ? "4" : "6");
+		cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	}
 	return 0;
 }
@@ -236,14 +237,16 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 				else
 					tmp = inet_pton(AF_INET6, ip, buf);
 			}
+			cwmp_uci_add_section_with_specific_name("cwmp", "acs", "acs", UCI_VARSTATE_CONFIG);
 			char *zone_name = NULL;
 			get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
-			uci_set_value(UCI_FIREWALL_ACS_IP, ip_acs, CWMP_CMD_SET_STATE);
+			cwmp_uci_set_varstate_value("cwmp", "acs", "ip", ip_acs);
 			char connection_requset_port_str[10];
 			snprintf(connection_requset_port_str, sizeof(connection_requset_port_str), "%d", cwmp->conf.connection_request_port);
-			uci_set_value(UCI_FIREWALL_ACS_PORT, connection_requset_port_str, CWMP_CMD_SET_STATE);
-			uci_set_value(UCI_FIREWALL_ACS_ZONENAME, zone_name ? zone_name : "wan", CWMP_CMD_SET_STATE);
-			uci_set_value(UCI_FIREWALL_ACS_IPV6ENABLE, tmp ? "1" : "0", CWMP_CMD_SET_STATE);
+			cwmp_uci_set_varstate_value("cwmp", "acs", "port", connection_requset_port_str);
+			cwmp_uci_set_varstate_value("cwmp", "acs", "zonename", zone_name ? zone_name : "wan");
+			cwmp_uci_set_varstate_value("cwmp", "acs", "ipv6_enable", tmp ? "1" : "0");
+			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 
 			/*
 			 * Restart firewall service
@@ -404,7 +407,8 @@ void http_server_init(void)
 	char cr_port_str[6];
 	snprintf(cr_port_str, 6, "%hu", cr_port);
 	cr_port_str[5] = '\0';
-	uci_set_value(UCI_CPE_PORT_PATH, cr_port_str, CWMP_CMD_SET);
+	cwmp_uci_set_value("cwmp", "cpe", "port", cr_port_str);
+	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	connection_request_port_value_change(&cwmp_main, cr_port);
 	CWMP_LOG(INFO, "Connection Request server initiated with the port: %d", cr_port);
 }
