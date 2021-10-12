@@ -230,22 +230,19 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	if (ip && ip[0] != '\0') {
 		if (ip_acs[0] == '\0' || strcmp(ip_acs, ip) != 0) {
 			CWMP_STRNCPY(ip_acs, ip, sizeof(ip_acs));
-			if (cwmp->conf.ipv6_enable) {
-				tmp = inet_pton(AF_INET, ip, buf);
-				if (tmp == 1)
-					tmp = 0;
-				else
-					tmp = inet_pton(AF_INET6, ip, buf);
-			}
+			tmp = inet_pton(AF_INET, ip, buf);
+			if (tmp == 1)
+				tmp = 0;
+			else
+				tmp = inet_pton(AF_INET6, ip, buf);
 			cwmp_uci_add_section_with_specific_name("cwmp", "acs", "acs", UCI_VARSTATE_CONFIG);
 			char *zone_name = NULL;
 			get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
-			cwmp_uci_set_varstate_value("cwmp", "acs", "ip", ip_acs);
+			cwmp_uci_set_varstate_value("cwmp", "acs", tmp ? "ip6" : "ip", ip_acs);
 			char connection_requset_port_str[10];
 			snprintf(connection_requset_port_str, sizeof(connection_requset_port_str), "%d", cwmp->conf.connection_request_port);
 			cwmp_uci_set_varstate_value("cwmp", "acs", "port", connection_requset_port_str);
 			cwmp_uci_set_varstate_value("cwmp", "acs", "zonename", zone_name ? zone_name : "wan");
-			cwmp_uci_set_varstate_value("cwmp", "acs", "ipv6_enable", tmp ? "1" : "0");
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 
 			/*
