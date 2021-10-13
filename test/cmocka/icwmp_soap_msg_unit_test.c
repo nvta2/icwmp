@@ -4,7 +4,7 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2013-2020 iopsys Software Solutions AB
+ *	Copyright (C) 2013-2021 iopsys Software Solutions AB
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
