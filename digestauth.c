@@ -6,6 +6,7 @@
  *  HTTP digest auth functions: originally imported from libmicrohttpd
  *
  *	Copyright (C) 2013 Oussama Ghorbel <oussama.ghorbel@pivasoftware.com>
+ *					   Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
 
