@@ -340,7 +340,7 @@ void bkp_session_insert_schedule_inform(time_t time, char *command_key)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", time);
+	sprintf(schedule_time, "%lld", (long long int)time);
 	struct search_keywords sched_inf_insert_keys[2] = { { "command_key", command_key }, { "time", schedule_time } };
 	b = bkp_session_node_found(bkp_tree, "schedule_inform", sched_inf_insert_keys, 2);
 	if (!b) {
@@ -357,7 +357,7 @@ void bkp_session_delete_schedule_inform(time_t time, char *command_key)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", time);
+	sprintf(schedule_time, "%lld", (long long int)time);
 	struct search_keywords sched_inf_del_keys[2] = { { "command_key", command_key }, { "time", schedule_time } };
 	b = bkp_session_node_found(bkp_tree, "schedule_inform", sched_inf_del_keys, 2);
 	if (b)
@@ -372,7 +372,7 @@ void bkp_session_insert_download(struct download *pdownload)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pdownload->scheduled_time);
+	sprintf(schedule_time, "%lld", (long long int)pdownload->scheduled_time);
 	sprintf(file_size, "%d", pdownload->file_size);
 	struct search_keywords download_insert_keys[7] = { { "url", pdownload->url }, { "command_key", pdownload->command_key }, { "file_type", pdownload->file_type }, { "username", pdownload->username }, { "password", pdownload->password }, { "file_size", file_size }, { "time", schedule_time } };
 
@@ -401,8 +401,8 @@ void bkp_session_insert_schedule_download(struct download *pschedule_download)
 	pthread_mutex_lock(&mutex_backup_session);
 	sprintf(file_size, "%d", pschedule_download->file_size);
 	for (i = 0; i < 2; i++) {
-		sprintf(delay[2 * i], "%ld", pschedule_download->timewindowstruct[i].windowstart);
-		sprintf(delay[2 * i + 1], "%ld", pschedule_download->timewindowstruct[i].windowend);
+		sprintf(delay[2 * i], "%lld", (long long int)pschedule_download->timewindowstruct[i].windowstart);
+		sprintf(delay[2 * i + 1], "%lld", (long long int)pschedule_download->timewindowstruct[i].windowend);
 		sprintf(maxretrie[i], "%d", pschedule_download->timewindowstruct[i].maxretries);
 	}
 	struct search_keywords sched_download_insert_keys[16] = { { "url", pschedule_download->url },
@@ -455,8 +455,8 @@ void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *
 	pthread_mutex_lock(&mutex_backup_session);
 
 	for (i = 0; i < 2; i++) {
-		sprintf(delay[2 * i], "%ld", papply_schedule_download->timeintervals[i].windowstart);
-		sprintf(delay[2 * i + 1], "%ld", papply_schedule_download->timeintervals[i].windowend);
+		sprintf(delay[2 * i], "%lld", (long long int)papply_schedule_download->timeintervals[i].windowstart);
+		sprintf(delay[2 * i + 1], "%lld", (long long int)papply_schedule_download->timeintervals[i].windowend);
 		sprintf(maxretrie[i], "%d", papply_schedule_download->timeintervals[i].maxretries);
 	}
 
@@ -488,7 +488,7 @@ void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *
 	pthread_mutex_unlock(&mutex_backup_session);
 }
 
-void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *papply_schedule_download) //TODO
+void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *ps_download) //TODO
 {
 	char delay[4][128];
 	char maxretrie[2][128];
@@ -497,13 +497,13 @@ void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *
 
 	pthread_mutex_lock(&mutex_backup_session);
 	for (i = 0; i < 2; i++) {
-		sprintf(delay[2 * i], "%ld", papply_schedule_download->timeintervals[i].windowstart);
-		sprintf(delay[2 * i + 1], "%ld", papply_schedule_download->timeintervals[i].windowend);
-		sprintf(maxretrie[i], "%d", papply_schedule_download->timeintervals[i].maxretries);
+		sprintf(delay[2 * i], "%lld", (long long int)ps_download->timeintervals[i].windowstart);
+		sprintf(delay[2 * i + 1], "%lld", (long long int)ps_download->timeintervals[i].windowend);
+		sprintf(maxretrie[i], "%d", ps_download->timeintervals[i].maxretries);
 	}
-	struct search_keywords sched_download_del_app_keys[9] = { { "start_time", papply_schedule_download->start_time },
-								  { "command_key", papply_schedule_download->command_key },
-								  { "file_type", papply_schedule_download->file_type },
+	struct search_keywords sched_download_del_app_keys[9] = { { "start_time", ps_download->start_time },
+								  { "command_key", ps_download->command_key },
+								  { "file_type", ps_download->file_type },
 								  { "windowstart1", delay[0] },
 								  { "windowend1", delay[1] },
 								  { "maxretrie1", maxretrie[0] },
@@ -525,7 +525,7 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 	mxml_node_t *b, *n;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pchange_du_state->timeout);
+	sprintf(schedule_time, "%lld", (long long int)pchange_du_state->timeout);
 	b = bkp_session_insert(bkp_tree, "change_du_state", NULL);
 	bkp_session_insert(b, "command_key", pchange_du_state->command_key);
 	bkp_session_insert(b, "time", schedule_time);
@@ -561,7 +561,7 @@ void bkp_session_delete_change_du_state(struct change_du_state *pchange_du_state
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pchange_du_state->timeout);
+	sprintf(schedule_time, "%lld", (long long int)pchange_du_state->timeout);
 	struct search_keywords cds_del_keys[2] = { { "command_key", pchange_du_state->command_key }, { "time", schedule_time } };
 	b = bkp_session_node_found(bkp_tree, "change_du_state", cds_del_keys, 2);
 	if (b)
@@ -575,7 +575,7 @@ void bkp_session_insert_upload(struct upload *pupload)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pupload->scheduled_time);
+	sprintf(schedule_time, "%lld", (long long int)pupload->scheduled_time);
 	struct search_keywords upload_insert_keys[6] = { { "url", pupload->url }, { "command_key", pupload->command_key }, { "username", pupload->username }, { "password", pupload->password }, { "time", schedule_time }, { "file_type", pupload->file_type } };
 
 	b = bkp_session_node_found(bkp_tree, "upload", upload_insert_keys, 6);
@@ -597,7 +597,7 @@ void bkp_session_delete_download(struct download *pdownload)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pdownload->scheduled_time);
+	sprintf(schedule_time, "%lld", (long long int)pdownload->scheduled_time);
 	sprintf(file_size, "%d", pdownload->file_size);
 	struct search_keywords download_del_keys[7] = { { "url", pdownload->url }, { "command_key", pdownload->command_key }, { "file_type", pdownload->file_type }, { "username", pdownload->username }, { "password", pdownload->password }, { "file_size", file_size }, { "time", schedule_time } };
 
@@ -618,8 +618,8 @@ void bkp_session_delete_schedule_download(struct download *pschedule_download_de
 	pthread_mutex_lock(&mutex_backup_session);
 	sprintf(file_size, "%d", pschedule_download_delete->file_size);
 	for (i = 0; i < 2; i++) {
-		sprintf(delay[2 * i], "%ld", pschedule_download_delete->timewindowstruct[i].windowstart);
-		sprintf(delay[2 * i + 1], "%ld", pschedule_download_delete->timewindowstruct[i].windowend);
+		sprintf(delay[2 * i], "%lld", (long long int)pschedule_download_delete->timewindowstruct[i].windowstart);
+		sprintf(delay[2 * i + 1], "%lld", (long long int)pschedule_download_delete->timewindowstruct[i].windowend);
 		sprintf(maxretrie[i], "%d", pschedule_download_delete->timewindowstruct[i].maxretries);
 	}
 	struct search_keywords sched_download_del_keys[16] = { { "url", pschedule_download_delete->url },
@@ -651,7 +651,7 @@ void bkp_session_delete_upload(struct upload *pupload)
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pupload->scheduled_time);
+	sprintf(schedule_time, "%lld", (long long int)pupload->scheduled_time);
 	struct search_keywords upload_del_keys[6] = { { "url", pupload->url }, { "command_key", pupload->command_key }, { "file_type", pupload->file_type }, { "username", pupload->username }, { "password", pupload->password }, { "time", schedule_time } };
 	b = bkp_session_node_found(bkp_tree, "upload", upload_del_keys, 6);
 	if (b)
@@ -666,7 +666,7 @@ void bkp_session_insert_du_state_change_complete(struct du_state_change_complete
 	mxml_node_t *b, *n;
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pdu_state_change_complete->timeout);
+	sprintf(schedule_time, "%lld", (long long int)pdu_state_change_complete->timeout);
 	b = bkp_session_insert(bkp_tree, "du_state_change_complete", NULL);
 	bkp_session_insert(b, "command_key", pdu_state_change_complete->command_key);
 	bkp_session_insert(b, "time", schedule_time);
@@ -693,7 +693,7 @@ void bkp_session_delete_du_state_change_complete(struct du_state_change_complete
 	char schedule_time[128];
 
 	pthread_mutex_lock(&mutex_backup_session);
-	sprintf(schedule_time, "%ld", pdu_state_change_complete->timeout);
+	sprintf(schedule_time, "%lld", (long long int)pdu_state_change_complete->timeout);
 	struct search_keywords cds_complete_keys[2] = { { "command_key", pdu_state_change_complete->command_key }, { "time", schedule_time } };
 
 	b = bkp_session_node_found(bkp_tree, "du_state_change_complete", cds_complete_keys, 2);

@@ -208,7 +208,7 @@ struct cwmp_namespaces {
 	char *xsd;
 	char *xsi;
 	char *cwmp;
-} ns;
+};
 
 enum rpc_cpe_methods_idx {
 	RPC_CPE_GET_RPC_METHODS = 1,
@@ -441,6 +441,7 @@ typedef struct opfault {
 extern struct cwmp cwmp_main;
 extern long int flashsize;
 extern struct FAULT_CPE FAULT_CPE_ARRAY[];
+extern struct cwmp_namespaces ns;
 
 void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *param_data, char *param_type,
 			      int notification, bool writable);

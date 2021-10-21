@@ -31,7 +31,7 @@ enum NOTIFICATION_STATUS
 };
 
 extern struct cwmp_dm_parameter forced_notifications_parameters[];
-struct list_head list_lw_value_change;
+extern struct list_head list_lw_value_change;
 extern struct list_head list_value_change;
 extern pthread_mutex_t mutex_value_change;
 extern struct list_head list_param_obj_notify;
