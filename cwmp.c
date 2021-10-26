@@ -199,6 +199,11 @@ end:
 
 int run_session_end_func(void)
 {
+	if (end_session_flag & END_SESSION_RESTART_SERVICES) {
+		CWMP_LOG(INFO, "Restart modified services");
+		icwmp_restart_services();
+	}
+
 	if (end_session_flag & END_SESSION_RELOAD) {
 		CWMP_LOG(INFO, "Config reload: end session request");
 		cwmp_uci_reinit();
@@ -248,11 +253,6 @@ int run_session_end_func(void)
 	if (end_session_flag & END_SESSION_UPLOAD_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing upload diagnostic: end session request");
 		cwmp_upload_diagnostics();
-	}
-
-	if (end_session_flag & END_SESSION_RESTART_SERVICES) {
-		CWMP_LOG(INFO, "Restart modified services");
-		icwmp_restart_services();
 	}
 
 	if (end_session_flag & END_SESSION_REBOOT) {
@@ -612,6 +612,23 @@ static void *thread_cwmp_signal_handler_thread(void *arg)
 	return NULL;
 }
 
+static void configure_var_state(struct cwmp *cwmp)
+{
+	char *zone_name = NULL;
+
+	if (!file_exists(VARSTATE_CONFIG"/cwmp"))
+		creat(VARSTATE_CONFIG"/cwmp", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
+	cwmp_uci_reinit();
+	cwmp_uci_add_section_with_specific_name("cwmp", "acs", "acs", UCI_VARSTATE_CONFIG);
+	cwmp_uci_add_section_with_specific_name("cwmp", "cpe", "cpe", UCI_VARSTATE_CONFIG);
+
+	get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
+	cwmp_uci_set_varstate_value("cwmp", "acs", "zonename", zone_name ? zone_name : "wan");
+
+	cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
+}
+
 int main(int argc, char **argv)
 {
 	struct cwmp *cwmp = &cwmp_main;
@@ -630,6 +647,7 @@ int main(int argc, char **argv)
 	if ((error = cwmp_root_cause_events(cwmp)))
 		return error;
 
+	configure_var_state(cwmp);
 	http_server_init();
 
 	sigemptyset(&set);

@@ -235,19 +235,11 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 				tmp = 0;
 			else
 				tmp = inet_pton(AF_INET6, ip, buf);
-			cwmp_uci_add_section_with_specific_name("cwmp", "acs", "acs", UCI_VARSTATE_CONFIG);
-			char *zone_name = NULL;
-			get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
+
 			cwmp_uci_set_varstate_value("cwmp", "acs", tmp ? "ip6" : "ip", ip_acs);
-			char connection_requset_port_str[10];
-			snprintf(connection_requset_port_str, sizeof(connection_requset_port_str), "%d", cwmp->conf.connection_request_port);
-			cwmp_uci_set_varstate_value("cwmp", "acs", "port", connection_requset_port_str);
-			cwmp_uci_set_varstate_value("cwmp", "acs", "zonename", zone_name ? zone_name : "wan");
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 
-			/*
-			 * Restart firewall service
-			 */
+			// Trigger firewall to reload firewall.cwmp
 			cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", { .str_val = "firewall" }, UBUS_String } }, 1, NULL, NULL);
 		}
 	}
