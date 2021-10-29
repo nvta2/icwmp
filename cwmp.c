@@ -45,6 +45,7 @@ static pthread_t ubus_thread;
 static pthread_t http_cr_server_thread;
 static pthread_t periodic_check_notify;
 static pthread_t signal_handler_thread;
+bool g_firewall_restart = false;
 
 static int cwmp_get_retry_interval(struct cwmp *cwmp)
 {
@@ -97,6 +98,42 @@ end:
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 }
 
+int get_firewall_restart_state(char **state)
+{
+	const char *param = "cwmp.cpe.firewall_restart";
+
+	cwmp_uci_reinit();
+	return uci_get_state_value(param, state);
+}
+
+// wait till firewall restart is not complete or 5 sec, whichever is less
+void check_firewall_restart_state()
+{
+	int count = 0;
+
+	do {
+		char *state = NULL;
+
+		if (get_firewall_restart_state(&state) != CWMP_OK)
+			break;
+
+		if (strlen(state) == 0)
+			break;
+
+		if (strcmp(state, "init") == 0) {
+			FREE(state);
+			break;
+		}
+
+		usleep(500 * 1000);
+		FREE(state);
+		count++;
+	} while(count < 10);
+
+	// mark the firewall restart as done
+	g_firewall_restart = false;
+}
+
 static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 {
 	struct list_head *ilist;
@@ -139,6 +176,11 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 			if (session->hold_request || thread_end)
 				break;
 		}
+
+		// If restart service caused firewall restart, wait for firewall restart to complete
+		if (g_firewall_restart == true)
+			check_firewall_restart_state();
+
 		CWMP_LOG(INFO, "Send empty message to the ACS");
 		if (xml_send_message(cwmp, session, NULL) || thread_end)
 			goto retry;

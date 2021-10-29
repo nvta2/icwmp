@@ -35,6 +35,7 @@ struct cwmp cwmp_main = { 0 };
 static int nbre_services = 0;
 static char *list_services[MAX_NBRE_SERVICES] = { 0 };
 LIST_HEAD(cwmp_memory_list);
+extern bool g_firewall_restart;
 
 struct cwmp_mem {
 	struct list_head list;
@@ -570,6 +571,7 @@ void icwmp_free_list_services()
 void icwmp_restart_services()
 {
 	int i;
+
 	for (i = 0; i < nbre_services; i++) {
 		if (strlen(list_services[i]) == 0)
 			continue;
@@ -577,6 +579,14 @@ void icwmp_restart_services()
 		cwmp_ubus_call("uci", "commit",
 			       CWMP_UBUS_ARGS{ { "config", { .str_val = list_services[i] }, UBUS_String } }, 1, NULL,
 			       NULL);
+
+		if (strcmp(list_services[i], "firewall") == 0) {
+			g_firewall_restart = true;
+		}
+	}
+	if (g_firewall_restart) {
+			cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "in_progress");
+			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 	}
 	icwmp_free_list_services();
 }
