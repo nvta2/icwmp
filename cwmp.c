@@ -100,10 +100,8 @@ end:
 
 int get_firewall_restart_state(char **state)
 {
-	const char *param = "cwmp.cpe.firewall_restart";
-
 	cwmp_uci_reinit();
-	return uci_get_state_value(param, state);
+	return uci_get_state_value(UCI_CPE_FIREWALL_RESTART_STATE, state);
 }
 
 // wait till firewall restart is not complete or 5 sec, whichever is less

@@ -59,6 +59,8 @@
 #define LW_NOTIFICATION_PORT "cwmp.lwn.port"
 #define UCI_DHCP_ACS_URL "cwmp.acs.dhcp_url"
 
+#define UCI_CPE_FIREWALL_RESTART_STATE "cwmp.cpe.firewall_restart"
+
 #define UCI_CONFIG_DIR "/etc/config/"
 #define LIB_DB_CONFIG "/lib/db/config"
 #define ETC_DB_CONFIG "/etc/board-db/config"
