@@ -107,18 +107,26 @@ struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_co
 
 void cwmp_root_cause_event_ipdiagnostic(void)
 {
+	CWMP_LOG(INFO, "Diagnostics: open a new session with '8 DIAGNOSTICS COMPLETE' event");
 	struct cwmp *cwmp = &cwmp_main;
 	struct event_container *event_container;
 
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	pthread_mutex_lock(&(cwmp->mutex_session_queue));
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_8DIAGNOSTICS_COMPLETE, "");
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	if (event_container == NULL) {
 		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 		return;
 	}
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	cwmp_save_event_container(event_container);
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	pthread_cond_signal(&(cwmp->threshold_session_send));
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	return;
 }
 

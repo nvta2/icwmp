@@ -19,6 +19,7 @@
 #include "cwmp_uci.h"
 #include "event.h"
 #include "rpc_soap.h"
+#include "log.h"
 
 struct diagnostic_input {
 	char *input_name;
@@ -154,9 +155,11 @@ static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name,
 	for (i = 0; i < number_inputs; i++) {
 		if (diagnostics_array[i].value == NULL || diagnostics_array[i].value[0] == '\0')
 			continue;
+		CWMP_LOG(INFO, "Diagnostics: param_name=%s && param_value=%s", diagnostics_array[i].input_name, diagnostics_array[i].value);
 		add_dm_parameter_to_list(&diagnostics_param_value_list, diagnostics_array[i].input_name, diagnostics_array[i].value, NULL, 0, false);
 	}
 	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{ { "path", {.str_val = diagnostics_object }, UBUS_String }, { "action", {.str_val = action_name }, UBUS_String }, { "input", {.param_value_list = &diagnostics_param_value_list }, UBUS_Obj_Obj } }, 3, empty_ubus_callback, NULL);
+	CWMP_LOG(INFO, "usp.raw operate result e:%d", e);
 	if (e)
 		return -1;
 	return 0;
@@ -164,17 +167,23 @@ static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name,
 
 int cwmp_download_diagnostics()
 {
+	CWMP_LOG(INFO, "Launch Download Diagnostics");
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, DOWNLOAD_DIAG_ACT_NAME, download_diagnostics_array, DOWNLOAD_NUMBER_INPUTS) == -1)
 		return -1;
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	cwmp_root_cause_event_ipdiagnostic();
+	CWMP_LOG(INFO, "Diagnostics: Download is done");
 	return 0;
 }
 
 int cwmp_upload_diagnostics()
 {
+	CWMP_LOG(INFO, "Launch Upload Diagnostics");
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UPLOAD_DIAG_ACT_NAME, upload_diagnostics_array, UPLOAD_NUMBER_INPUTS) == -1)
 		return -1;
+	CWMP_LOG(INFO, "Function=%s :: Line=%d", __FUNCTION__, __LINE__);
 	cwmp_root_cause_event_ipdiagnostic();
+	CWMP_LOG(INFO, "Diagnostics: Upload is done");
 	return 0;
 }
 
