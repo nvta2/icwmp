@@ -93,7 +93,7 @@ int log_set_on_syslog(char *value)
 		setlogmask(LOG_UPTO(log_severity));
 		snprintf(ident, sizeof(ident), "%s[%d]", __progname, getpid());
 		ident[sizeof(ident) - 1] = '\0';
-		openlog(ident, LOG_NDELAY, LOG_LOCAL1);
+		openlog(ident, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 	} else {
 		enable_log_syslog = false;
 	}

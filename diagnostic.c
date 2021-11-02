@@ -19,6 +19,7 @@
 #include "cwmp_uci.h"
 #include "event.h"
 #include "rpc_soap.h"
+#include "log.h"
 
 struct diagnostic_input {
 	char *input_name;
@@ -166,6 +167,8 @@ int cwmp_download_diagnostics()
 {
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, DOWNLOAD_DIAG_ACT_NAME, download_diagnostics_array, DOWNLOAD_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "Download diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
@@ -174,6 +177,8 @@ int cwmp_upload_diagnostics()
 {
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UPLOAD_DIAG_ACT_NAME, upload_diagnostics_array, UPLOAD_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "Upload diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
@@ -182,6 +187,8 @@ int cwmp_ip_ping_diagnostics()
 {
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, IPPING_DIAG_ACT_NAME, ipping_diagnostics_array, IPPING_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "IPPing diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
@@ -190,6 +197,8 @@ int cwmp_nslookup_diagnostics()
 {
 	if (cwmp_diagnostics_operate(DNS_DIAGNOSTICS_OBJECT, NSLOOKUP_DIAG_ACT_NAME, nslookup_diagnostics_array, NSLKUP_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "Nslookup diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
@@ -198,6 +207,8 @@ int cwmp_traceroute_diagnostics()
 {
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, TRACE_ROUTE_DIAG_ACT_NAME, traceroute_diagnostics_array, TRACEROUTE_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "Trace Route diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
@@ -206,6 +217,8 @@ int cwmp_udp_echo_diagnostics()
 {
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, UDPECHO_DIAG_ACT_NAME, udpecho_diagnostics_array, UDPECHO_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "UDPEcho diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
@@ -214,6 +227,8 @@ int cwmp_serverselection_diagnostics()
 {
 	if (cwmp_diagnostics_operate(IP_DIAGNOSTICS_OBJECT, SERVER_SELECTION_DIAG_ACT_NAME, seserverselection_diagnostics_array, SESERVERSELECT_NUMBER_INPUTS) == -1)
 		return -1;
+
+	CWMP_LOG(INFO, "Server Selection diagnostic is successfully executed");
 	cwmp_root_cause_event_ipdiagnostic();
 	return 0;
 }
