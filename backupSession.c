@@ -1102,10 +1102,8 @@ int bkp_session_check_file()
 int cwmp_init_backup_session(struct cwmp *cwmp, char **ret, enum backup_loading load)
 {
 	int error;
-
 	if (bkp_session_check_file())
 		return 0;
-
 	error = cwmp_load_saved_session(cwmp, ret, load);
 	return error;
 }

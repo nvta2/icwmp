@@ -16,7 +16,7 @@ struct uci_paths uci_save_conf_paths[] = {
 		[UCI_STANDARD_CONFIG] = { "/etc/config", "/tmp/.uci", NULL },
 		[UCI_DB_CONFIG] = { "/lib/db/config", NULL, NULL },
 		[UCI_BOARD_DB_CONFIG] = { "/etc/board-db/config", NULL, NULL },
-		[UCI_VARSTATE_CONFIG] = { "/var/state", NULL, NULL },
+		[UCI_VARSTATE_CONFIG] = { "/var/state", NULL, NULL }
 };
 
 /*
@@ -315,7 +315,6 @@ int cwmp_uci_set_varstate_value(char *package, char*section, char *option, char 
 	return cwmp_uci_set_value_string(package, section, option, value, UCI_VARSTATE_CONFIG);
 }
 
-
 int uci_set_value_by_path(char *path, char *value, uci_config_paths uci_type)
 {
 	struct uci_ptr ptr;
@@ -413,7 +412,7 @@ char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
 	return NULL;
 }
 
-int cwmp_uci_get_option_value_list(char *package, char *section, char *option, struct uci_list **value)
+int cwmp_uci_get_option_value_list(char *package, char *section, char *option, uci_config_paths uci_type, struct uci_list **value)
 {
 	struct uci_element *e = NULL;
 	struct uci_ptr ptr = {0};
@@ -422,7 +421,7 @@ int cwmp_uci_get_option_value_list(char *package, char *section, char *option, s
 	int option_type;
 	*value = NULL;
 
-	if (cwmp_uci_lookup_ptr(uci_save_conf_paths[UCI_STANDARD_CONFIG].uci_ctx, &ptr, package, section, option, NULL))
+	if (cwmp_uci_lookup_ptr(uci_save_conf_paths[uci_type].uci_ctx, &ptr, package, section, option, NULL))
 		return UCI_ERR_PARSE;
 
 	if (ptr.o) {
@@ -455,6 +454,16 @@ int cwmp_uci_get_option_value_list(char *package, char *section, char *option, s
 		return UCI_ERR_NOTFOUND;
 	}
 	return option_type;
+}
+
+int cwmp_uci_get_cwmp_standard_option_value_list(char *package, char *section, char *option, struct uci_list **value)
+{
+	return cwmp_uci_get_option_value_list(package, section, option, UCI_STANDARD_CONFIG, value);
+}
+
+int cwmp_uci_get_cwmp_varstate_option_value_list(char *package, char *section, char *option, struct uci_list **value)
+{
+	return cwmp_uci_get_option_value_list(package, section, option, UCI_VARSTATE_CONFIG, value);
 }
 
 int cwmp_uci_add_list_value(char *package, char *section, char *option, char *value, uci_config_paths uci_type)

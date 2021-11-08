@@ -11,6 +11,7 @@ date +%s > timestamp.log
 echo "Compiling icmwp"
 build_icwmp
 
+mkdir -p /var/state/icwmpd
 echo "Starting dependent services"
 supervisorctl status all
 supervisorctl update

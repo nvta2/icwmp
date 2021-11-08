@@ -50,6 +50,7 @@
 #define DEFAULT_ACSURL "http://192.168.1.1:8080/openacs/acs"
 #define MAX_NBRE_SERVICES 256
 #define FIREWALL_CWMP "/etc/firewall.cwmp"
+#define CWMP_VARSTATE_UCI_PACKAGE "/var/state/cwmp"
 
 extern char *commandKey;
 extern bool thread_end;
@@ -483,6 +484,7 @@ bool icwmp_validate_int_in_range(char *arg, int min, int max);
 void load_forced_inform_json_file(struct cwmp *cwmp);
 void clean_custom_inform_parameters();
 char *generate_random_string(size_t size);
+int copy_file(char *source_file, char *target_file);
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

@@ -548,6 +548,27 @@ void clean_custom_inform_parameters()
 	nbre_boot_inform = 0;
 }
 
+int create_cwmp_var_state_files()
+{
+	/*
+	 * Create Notifications empty uci package
+	 */
+	if (!file_exists(CWMP_VARSTATE_UCI_PACKAGE)) {
+		FILE *fptr = fopen(CWMP_VARSTATE_UCI_PACKAGE, "w+");
+		if (fptr)
+			fclose(fptr);
+		else
+			return CWMP_GEN_ERR;
+	}
+	if (!folder_exists("/var/state/icwmpd")) {
+		if (mkdir("/var/state/icwmpd", S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
+			CWMP_LOG(INFO, "Not able to create the folder /var/state/icwmpd");
+			return CWMP_GEN_ERR;
+		}
+	}
+	return CWMP_OK;
+}
+
 static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 {
 	int error;
@@ -558,6 +579,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 		return error;
 
 	icwmp_init_list_services();
+
 	/* Only One instance should run*/
 	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
 	fcntl(fileno(cwmp->pid_file), F_SETFD, fcntl(fileno(cwmp->pid_file), F_GETFD) | FD_CLOEXEC);
@@ -580,6 +602,9 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	memcpy(&(cwmp->env), &env, sizeof(struct env));
 	INIT_LIST_HEAD(&(cwmp->head_session_queue));
 
+	if ((error = create_cwmp_var_state_files()))
+		return error;
+
 	cwmp_uci_init();
 	if ((error = global_conf_init(cwmp)))
 		return error;
@@ -596,6 +621,7 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 
 static void cwmp_free(struct cwmp *cwmp)
 {
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	FREE(cwmp->deviceid.manufacturer);
 	FREE(cwmp->deviceid.serialnumber);
 	FREE(cwmp->deviceid.productclass);
@@ -627,6 +653,8 @@ static void cwmp_free(struct cwmp *cwmp)
 
 static void *thread_cwmp_signal_handler_thread(void *arg)
 {
+
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	sigset_t *set = (sigset_t *)arg;
 	int s, signal_num;
 
@@ -638,7 +666,8 @@ static void *thread_cwmp_signal_handler_thread(void *arg)
 			CWMP_LOG(INFO, "Catch of Signal(%d)", signal_num);
 
 			if (signal_num == SIGINT || signal_num == SIGTERM) {
-
+				//copy_file(CWMP_BKP_FILE, "/etc/icwmpd/.icwmpd_backup_session.xml");
+				CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 				signal_exit = true;
 
 				if (!ubus_exit)
@@ -675,20 +704,25 @@ int main(int argc, char **argv)
 	sigset_t set;
 	int error;
 
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if ((error = cwmp_init(argc, argv, cwmp)))
 		return error;
 
 	CWMP_LOG(INFO, "STARTING ICWMP with PID :%d", getpid());
 	cwmp->start_time = time(NULL);
 
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if ((error = cwmp_init_backup_session(cwmp, NULL, ALL)))
 		return error;
 
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if ((error = cwmp_root_cause_events(cwmp)))
 		return error;
 
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	configure_var_state(cwmp);
 	http_server_init();
+	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 
 	sigemptyset(&set);
 	sigaddset(&set, SIGINT);

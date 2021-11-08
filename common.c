@@ -297,11 +297,10 @@ void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
  */
 void cwmp_reboot(char *command_key)
 {
-	cwmp_uci_set_value("cwmp", "acs", "ParameterKey", command_key);
-	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
+	cwmp_uci_set_varstate_value("cwmp", "cpe", "ParameterKey", command_key);
+	cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 
-	sync();
-	reboot(RB_AUTOBOOT);
+	cwmp_ubus_call("rpc-sys", "reboot", CWMP_UBUS_ARGS{ {} }, 0, NULL, NULL);
 }
 
 /*
@@ -656,4 +655,28 @@ char *generate_random_string(size_t size)
 		str[size] = '\0';
 	}
 	return str;
+}
+
+int copy_file(char *source_file, char *target_file)
+{
+        char ch;
+        FILE *source, *target;
+        source = fopen(source_file, "r");
+        if (source == NULL) {
+                printf("Not able to open the source file: %s\n", source_file);
+                return -1;
+        }
+        target = fopen(target_file, "w");
+        if (target == NULL) {
+                fclose(source);
+                printf("Not able to open the target file: %s\n", target_file);
+                return -1;
+        }
+        while( (ch = fgetc(source) ) != EOF)
+                fputc(ch, target);
+
+        printf("File copied successfully.\n");
+        fclose(source);
+        fclose(target);
+        return 0;
 }

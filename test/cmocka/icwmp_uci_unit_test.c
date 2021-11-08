@@ -186,7 +186,7 @@ static void cwmp_uci_list_tests(void **state)
 	error = cwmp_uci_add_list_value("cwmp", "cpe", "optionlist", "val2", UCI_STANDARD_CONFIG);
 	assert_int_equal(error, UCI_OK);
 	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
-	error = cwmp_uci_get_option_value_list("cwmp", "cpe", "optionlist", &list);
+	error = cwmp_uci_get_cwmp_standard_option_value_list("cwmp", "cpe", "optionlist", &list);
 	assert_int_equal(error, UCI_TYPE_LIST);
 	list_string = cwmp_uci_list_to_string(list, ",");
 	assert_non_null(list_string);
@@ -200,7 +200,7 @@ static void cwmp_uci_list_tests(void **state)
 	error = cwmp_uci_add_list_value("cwmp", "wrong_section", "optionlist", "val2", UCI_STANDARD_CONFIG);
 	assert_int_equal(error, UCI_ERR_INVAL);
 	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
-	error = cwmp_uci_get_option_value_list("cwmp", "wrong_section", "optionlist", &list);
+	error = cwmp_uci_get_cwmp_standard_option_value_list("cwmp", "wrong_section", "optionlist", &list);
 	assert_int_equal(error, UCI_ERR_NOTFOUND);
 	assert_null(list);
 	list_string = cwmp_uci_list_to_string(list, ",");

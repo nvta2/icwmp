@@ -24,6 +24,8 @@ configure_genieacs
 echo "Configuring ACS URL"
 configure_acs_url
 
+mkdir -p /var/state/icwmpd 
+
 echo "Starting icwmpd deamon"
 supervisorctl start icwmpd
 sleep 5

@@ -5,7 +5,6 @@ include:
 stages:
     - static_code_analysis
     - unit_test
-    - api_test
     - functional_test
     
 variables:
@@ -28,7 +27,7 @@ run_unit_test:
          - unit-test-coverage.xml
          
 run_api_test:
-    stage: api_test
+    stage: functional_test
     image: iopsys/code-analysis:latest
     allow_failure: false
     script:

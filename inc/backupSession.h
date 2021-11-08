@@ -21,7 +21,7 @@
 #define RPC_SEND 1
 
 #define CWMP_BACKUP_SESSION "<cwmp></cwmp>"
-#define CWMP_BKP_FILE "/etc/icwmpd/.icwmpd_backup_session.xml"
+#define CWMP_BKP_FILE "/var/state/icwmpd/.icwmpd_backup_session.xml"
 typedef enum backup_loading
 {
 	ALL,
