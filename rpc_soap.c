@@ -1978,14 +1978,13 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileType")) {
 			if (download->file_type == NULL) {
 				download->file_type = strdup(b->value.opaque);
-				file_type = strdup(b->value.opaque);
+				file_type = icwmp_strdup(b->value.opaque);
 			} else {
 				tmp = file_type;
 				if (cwmp_asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
 					error = FAULT_CPE_INTERNAL_ERROR;
 					goto fault;
 				}
-				FREE(tmp);
 			}
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "URL")) {
@@ -2047,8 +2046,6 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	} else if (strncmp(download->url, DOWNLOAD_PROTOCOL_HTTP, strlen(DOWNLOAD_PROTOCOL_HTTP)) != 0 && strncmp(download->url, DOWNLOAD_PROTOCOL_HTTPS, strlen(DOWNLOAD_PROTOCOL_HTTPS)) != 0 && strncmp(download->url, DOWNLOAD_PROTOCOL_FTP, strlen(DOWNLOAD_PROTOCOL_FTP)) != 0) {
 		error = FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL;
 	}
-
-	FREE(file_type);
 	if (error != FAULT_CPE_NO_FAULT)
 		goto fault;
 
@@ -2138,7 +2135,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 				}
 			} else {
 				schedule_download->file_type = strdup(b->value.opaque);
-				file_type = strdup(b->value.opaque);
+				file_type = icwmp_strdup(b->value.opaque);
 			}
 		}
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "URL")) {
@@ -2172,9 +2169,9 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 					if (schedule_download->timewindowstruct[i].windowmode == NULL) {
 						schedule_download->timewindowstruct[i].windowmode = strdup(t->value.opaque);
 						if (i == 0)
-							windowmode0 = strdup(t->value.opaque);
+							windowmode0 = icwmp_strdup(t->value.opaque);
 						else
-							windowmode1 = strdup(t->value.opaque);
+							windowmode1 = icwmp_strdup(t->value.opaque);
 					} else if (i == 0) {
 						tmp = windowmode0;
 						if (cwmp_asprintf(&windowmode0, "%s %s", tmp, t->value.opaque) == -1) {
@@ -2245,9 +2242,6 @@ int cwmp_handle_rpc_cpe_schedule_download(struct session *session, struct rpc *r
 		}
 	}
 
-	FREE(file_type);
-	FREE(windowmode0);
-	FREE(windowmode1);
 	if (error != FAULT_CPE_NO_FAULT)
 		goto fault;
 
@@ -2332,7 +2326,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileType")) {
 			if (upload->file_type == NULL) {
 				upload->file_type = strdup(b->value.opaque);
-				file_type = strdup(b->value.opaque);
+				file_type = icwmp_strdup(b->value.opaque);
 			} else {
 				tmp = file_type;
 				if (cwmp_asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
