@@ -616,8 +616,8 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	load_boot_inform_json_file(cwmp);
 	load_custom_notify_json(cwmp);
 	init_list_param_notify();
-	generate_nonce_priv_key();
 	cwmp_uci_exit();
+	generate_nonce_priv_key();
 	return CWMP_OK;
 }
 

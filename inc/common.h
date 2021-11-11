@@ -483,6 +483,7 @@ bool icwmp_validate_unsignedint(char *arg);
 bool icwmp_validate_int_in_range(char *arg, int min, int max);
 void load_forced_inform_json_file(struct cwmp *cwmp);
 void clean_custom_inform_parameters();
+char *string_to_hex(const unsigned char *str, size_t size);
 char *generate_random_string(size_t size);
 int copy_file(char *source_file, char *target_file);
 #ifndef FREE

@@ -41,9 +41,12 @@
 
 char *nonce_privacy_key = NULL;
 
-void generate_nonce_priv_key()
+int generate_nonce_priv_key()
 {
 	nonce_privacy_key = generate_random_string(28);
+	if (nonce_privacy_key == NULL)
+		return CWMP_GEN_ERR;
+	return CWMP_OK;
 }
 
 static time_t mhd_monotonic_time(void)
@@ -286,11 +289,12 @@ static void digest_calc_response(const char *ha1, const char *nonce, const char 
 
 int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char *url, const char *realm, const char *opaque)
 {
-	size_t hlen;
+	size_t hlen, nonce_key_len = 0;
 	char nonce[HASH_MD5_HEX_LEN + 9];
 
 	/* Generating the server nonce */
-	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, nonce_privacy_key, strlen(nonce_privacy_key), url, realm, nonce);
+	nonce_key_len = nonce_privacy_key ? strlen(nonce_privacy_key) : 0;
+	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, nonce_privacy_key, nonce_key_len, url, realm, nonce);
 
 	/* Building the authentication header */
 	hlen = snprintf(NULL, 0, "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"", realm, nonce, opaque);
@@ -367,6 +371,8 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 		uint32_t nonce_time;
 		unsigned long int nci;
 		uint32_t t;
+		size_t nonce_key_len = 0;
+
 
 		if (0 == lookup_sub_value(uri, sizeof(uri), header, "uri"))
 			return MHD_NO;
@@ -387,9 +393,13 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 
 			return MHD_NO;
 		}
-
-		calculate_nonce(nonce_time, http_method, nonce_privacy_key, strlen(nonce_privacy_key), url, realm, noncehashexp);
-
+		if (nonce_privacy_key == NULL) {
+			if (generate_nonce_priv_key() != CWMP_OK)
+				return -1;
+		}
+		nonce_key_len = strlen(nonce_privacy_key);
+		calculate_nonce(nonce_time, http_method, nonce_privacy_key, nonce_key_len, url, realm, noncehashexp);
+		
 		/*
 		 * Second level vetting for the nonce validity
 		 * if the timestamp attached to the nonce is valid

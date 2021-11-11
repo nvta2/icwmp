@@ -33,6 +33,6 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char
 
 int http_digest_auth_check(const char *http_method, const char *url, const char *header, const char *realm, const char *username, const char *password, unsigned int nonce_timeout);
 
-void generate_nonce_priv_key();
+int generate_nonce_priv_key();
 
 #endif /* DIGESTAUTH_H_ */

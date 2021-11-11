@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <sys/file.h>
 #include <regex.h>
+#include <openssl/rand.h>
 
 #include "common.h"
 #include "cwmp_uci.h"
@@ -643,42 +644,75 @@ bool icwmp_validate_int_in_range(char *arg, int min, int max)
 	return arg_int >= min && arg_int <= max;
 }
 
+char *string_to_hex(const unsigned char *str, size_t size)
+{
+	size_t i;
+
+	if (size == 0)
+		return "";
+
+	char* hex = (char*) calloc(size * 2 + 1, sizeof(char));
+
+	if (!hex) {
+		CWMP_LOG(ERROR, "Unable to allocate memory for hex string\n");
+		return NULL;
+	}
+
+	for (i = 0; i < size; i++)
+		sprintf(hex + (i * 2), "%02X", str[i]);
+
+	return hex;
+}
+
 char *generate_random_string(size_t size)
 {
-	char *str = (char*)calloc(size+1, sizeof(char));
-	const char charset[] = "abcdefghijklmnopqrstuvwxyz0123456789";
-	srand(time(NULL));
-	if (size) {
-		--size;
-		for (size_t n = 0; n < size; n++) {
-			int key = rand() % (int) (sizeof charset - 1);
-			str[n] = charset[key];
-		}
-		str[size] = '\0';
+	unsigned char *buf = NULL;
+
+	buf = (unsigned char *)calloc(size + 1, sizeof(unsigned char));
+
+	if (buf == NULL) {
+		CWMP_LOG(ERROR, "Unable to allocate memory for buf string\n");
+		goto end;
 	}
-	return str;
+
+	if (RAND_bytes(buf, size) != 1) {
+		CWMP_LOG(ERROR, "Failed to get random bytes");
+		goto end;
+	}
+
+	char * hex = string_to_hex(buf, size);
+
+	if (hex == NULL)
+			goto end;
+
+	hex[size] = '\0';
+
+end:
+	FREE(buf);
+	return hex;
 }
+
 
 int copy_file(char *source_file, char *target_file)
 {
-        char ch;
-        FILE *source, *target;
-        source = fopen(source_file, "r");
-        if (source == NULL) {
-                printf("Not able to open the source file: %s\n", source_file);
-                return -1;
-        }
-        target = fopen(target_file, "w");
-        if (target == NULL) {
-                fclose(source);
-                printf("Not able to open the target file: %s\n", target_file);
-                return -1;
-        }
-        while( (ch = fgetc(source) ) != EOF)
-                fputc(ch, target);
+	char ch;
+	FILE *source, *target;
+	source = fopen(source_file, "r");
+	if (source == NULL) {
+		CWMP_LOG(ERROR, "Not able to open the source file: %s\n", source_file);
+		return -1;
+	}
+	target = fopen(target_file, "w");
+	if (target == NULL) {
+		fclose(source);
+		CWMP_LOG(ERROR, "Not able to open the target file: %s\n", target_file);
+		return -1;
+	}
+	while( (ch = fgetc(source) ) != EOF)
+		fputc(ch, target);
 
-        printf("File copied successfully.\n");
-        fclose(source);
-        fclose(target);
-        return 0;
+	CWMP_LOG(ERROR, "File copied successfully.\n");
+	fclose(source);
+	fclose(target);
+	return 0;
 }

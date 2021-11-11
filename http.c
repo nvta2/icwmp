@@ -293,6 +293,8 @@ static void http_cr_new_client(int client, bool service_available)
 	int8_t auth_status = 0;
 	bool auth_digest_checked = false;
 	bool method_is_get = false;
+	bool internal_error = false;
+
 	char cr_http_get_head[512];
 
 	pthread_mutex_lock(&mutex_config_load);
@@ -322,7 +324,12 @@ static void http_cr_new_client(int client, bool service_available)
 	if (!service_available || !method_is_get) {
 		goto http_end;
 	}
-	if (auth_digest_checked && http_digest_auth_check("GET", "/", auth_digest_buffer + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
+	int auth_check = http_digest_auth_check("GET", "/", auth_digest_buffer + strlen("Authorization: Digest "), REALM, username, password, 300);
+	if (auth_check == -1) {
+		internal_error = true;
+		goto http_end;
+	}
+	if (auth_digest_checked && auth_check == MHD_YES)
 		auth_status = 1;
 	else
 		auth_status = 0;
@@ -338,7 +345,13 @@ http_end:
 		fputs("Connection: close\r\n", fp);
 		fputs("Content-Length: 0\r\n", fp);
 		http_success_cr();
-	} else {
+	} else if (internal_error) {
+		CWMP_LOG(INFO, "Receive Connection Request: Return 500 Internal Error");
+		fputs("HTTP/1.1 500 500 Internal Server Error\r\n", fp);
+		fputs("Connection: close\r\n", fp);
+		fputs("Content-Length: 0\r\n", fp);
+	}
+	else {
 		CWMP_LOG(INFO, "Receive Connection Request: Return 401 Unauthorized");
 		fputs("HTTP/1.1 401 Unauthorized\r\n", fp);
 		fputs("Connection: close\r\n", fp);
