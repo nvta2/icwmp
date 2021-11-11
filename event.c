@@ -140,9 +140,6 @@ int event_remove_all_event_container(struct session *session, int rem_from)
 	while (session->head_event_container.next != &(session->head_event_container)) {
 		event_container = list_entry(session->head_event_container.next, struct event_container, list);
 		bkp_session_delete_event(event_container->id, rem_from ? "send" : "queue");
-		if (event_container->code == EVENT_IDX_1BOOT && rem_from == RPC_SEND) {
-			remove("/etc/icwmpd/.icwmpd_boot");
-		}
 		free(event_container->command_key);
 		cwmp_free_all_dm_parameter_list(&(event_container->head_dm_parameter));
 		list_del(&(event_container->list));
