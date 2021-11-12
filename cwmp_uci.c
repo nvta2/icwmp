@@ -199,7 +199,7 @@ int cwmp_uci_get_value_by_path(char *path, uci_config_paths uci_type, char **val
 			CWMP_LOG(INFO, "%s not found or empty value", path);
 			return UCI_OK;
 		}
-		*value = icwmp_strdup(ptr.o->v.string);
+		*value = strdup(ptr.o->v.string);
 	}
 	return UCI_OK;
 }
