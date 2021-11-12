@@ -621,7 +621,6 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 
 static void cwmp_free(struct cwmp *cwmp)
 {
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	FREE(cwmp->deviceid.manufacturer);
 	FREE(cwmp->deviceid.serialnumber);
 	FREE(cwmp->deviceid.productclass);
@@ -654,7 +653,6 @@ static void cwmp_free(struct cwmp *cwmp)
 static void *thread_cwmp_signal_handler_thread(void *arg)
 {
 
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	sigset_t *set = (sigset_t *)arg;
 	int s, signal_num;
 
@@ -667,7 +665,6 @@ static void *thread_cwmp_signal_handler_thread(void *arg)
 
 			if (signal_num == SIGINT || signal_num == SIGTERM) {
 				//copy_file(CWMP_BKP_FILE, "/etc/icwmpd/.icwmpd_backup_session.xml");
-				CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 				signal_exit = true;
 
 				if (!ubus_exit)
@@ -704,25 +701,20 @@ int main(int argc, char **argv)
 	sigset_t set;
 	int error;
 
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if ((error = cwmp_init(argc, argv, cwmp)))
 		return error;
 
 	CWMP_LOG(INFO, "STARTING ICWMP with PID :%d", getpid());
 	cwmp->start_time = time(NULL);
 
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if ((error = cwmp_init_backup_session(cwmp, NULL, ALL)))
 		return error;
 
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	if ((error = cwmp_root_cause_events(cwmp)))
 		return error;
 
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 	configure_var_state(cwmp);
 	http_server_init();
-	CWMP_LOG(INFO, "%s:%s line %d", __FILE__, __FUNCTION__, __LINE__);
 
 	sigemptyset(&set);
 	sigaddset(&set, SIGINT);
