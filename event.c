@@ -159,15 +159,16 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 
 	list_for_each_safe (ilist, q, &(session->head_event_container)) {
 		event_container = list_entry(ilist, struct event_container, list);
+
+		if (EVENT_CONST[event_container->code].CODE[0] == '6')
+			cwmp->cwmp_cr_event = 1;
+
 		if (EVENT_CONST[event_container->code].RETRY == 0) {
 			free(event_container->command_key);
 			cwmp_free_all_dm_parameter_list(&(event_container->head_dm_parameter));
 			list_del(&(event_container->list));
 			free(event_container);
 		}
-
-		if (EVENT_CONST[event_container->code].CODE[0] == '6')
-			cwmp->cwmp_cr_event = 1;
 	}
 	return CWMP_OK;
 }

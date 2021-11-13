@@ -111,12 +111,12 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		pthread_cond_signal(&threshold_apply_schedule_download);
 		pthread_cond_signal(&threshold_upload);
 
-		uloop_end();
-
 		shutdown(cwmp_main.cr_socket_desc, SHUT_RDWR);
 
 		if (!signal_exit)
 			kill(getpid(), SIGTERM);
+
+		uloop_end();
 
 		if (snprintf(info, sizeof(info), "icwmpd daemon stopped") == -1)
 			return -1;
