@@ -16,6 +16,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <syslog.h>
 
 #include "common.h"
 #include "session.h"
@@ -701,6 +702,8 @@ int main(int argc, char **argv)
 	sigset_t set;
 	int error;
 
+	openlog("cwmp", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
 	if ((error = cwmp_init(argc, argv, cwmp)))
 		return error;
 
@@ -794,5 +797,6 @@ int main(int argc, char **argv)
 	cwmp_free(cwmp);
 
 	CWMP_LOG(INFO, "EXIT ICWMP");
+	closelog();
 	return CWMP_OK;
 }

@@ -81,19 +81,10 @@ int log_set_on_file(char *value)
 	return 1;
 }
 
-extern char *__progname;
-
 int log_set_on_syslog(char *value)
 {
 	if ((strcasecmp(value, "TRUE") == 0) || (strcmp(value, "1") == 0) || (strcasecmp(value, "enable") == 0)) {
-		char ident[256];
-
 		enable_log_syslog = true;
-
-		setlogmask(LOG_UPTO(log_severity));
-		snprintf(ident, sizeof(ident), "%s[%d]", __progname, getpid());
-		ident[sizeof(ident) - 1] = '\0';
-		openlog(ident, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 	} else {
 		enable_log_syslog = false;
 	}
@@ -155,11 +146,8 @@ void puts_log(int severity, const char *fmt, ...)
 
 	if (enable_log_syslog) {
 		va_start(args, fmt);
-		vsnprintf(buf, strlen(buf), fmt, args);
-		buf[sizeof(buf) - 1] = '\0';
+		vsyslog(severity, fmt, args);
 		va_end(args);
-
-		syslog(severity, "%s", buf);
 	}
 end:
 	pthread_mutex_unlock(&mutex_log);
