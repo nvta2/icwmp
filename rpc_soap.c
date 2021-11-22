@@ -262,14 +262,8 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 	if (session == NULL || this == NULL)
 		return -1;
 
-#ifdef DUMMY_MODE
-	FILE *fp;
-	fp = fopen("./ext/soap_msg_templates/cwmp_inform_message.xml", "r");
-	tree = mxmlLoadFile(NULL, fp, MXML_OPAQUE_CALLBACK);
-	fclose(fp);
-#else
 	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_OPAQUE_CALLBACK);
-#endif
+
 	if (!tree)
 		goto error;
 	b = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);

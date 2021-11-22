@@ -33,11 +33,7 @@ static struct http_client http_c;
 
 static CURL *curl = NULL;
 
-#ifdef DUMMY_MODE
-char *fc_cookies = "./ext/tmp/icwmp_cookies";
-#else
 char *fc_cookies = "/tmp/icwmp_cookies";
-#endif
 
 void http_set_timeout(void)
 {

@@ -211,20 +211,15 @@ int xml_prepare_msg_out(struct session *session)
 	struct cwmp *cwmp = &cwmp_main;
 	struct config *conf;
 	conf = &(cwmp->conf);
-#ifdef DUMMY_MODE
-	FILE *fp;
-	fp = fopen("./ext/soap_msg_templates/cwmp_response_message.xml", "r");
-	session->tree_out = mxmlLoadFile(NULL, fp, MXML_OPAQUE_CALLBACK);
-	fclose(fp);
-#else
 	mxml_node_t *n;
+
 	session->tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if (!n) {
 		return -1;
 	}
+
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(conf->amd_version) - 1]);
-#endif
 	if (!session->tree_out)
 		return -1;
 
