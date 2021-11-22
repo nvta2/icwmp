@@ -40,11 +40,11 @@ int download_file(const char *file_path, const char *url, const char *username, 
 	int res_code = 0;
 	CURL *curl = curl_easy_init();
 	if (curl) {
-		char userpass[1024];
 		curl_easy_setopt(curl, CURLOPT_URL, url);
 		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
 		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 		if (username != NULL && strlen(username) > 0) {
+			char userpass[1024];
 			snprintf(userpass, sizeof(userpass), "%s:%s", username, password);
 			curl_easy_setopt(curl, CURLOPT_USERPWD, userpass);
 		}
@@ -84,7 +84,7 @@ void ubus_check_image_callback(struct ubus_request *req, int type __attribute__(
 
 int cwmp_check_image()
 {
-	int code, e;
+	int code = 0, e;
 	CWMP_LOG(INFO, "Check downloaded image ...");
 	e = cwmp_ubus_call("rpc-sys", "upgrade_test", CWMP_UBUS_ARGS{ {} }, 0, ubus_check_image_callback, &code);
 	if (e != 0) {
@@ -263,7 +263,8 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 		if (cwmp_apply_firmware() != 0)
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 		sleep(70);
-		error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+		if (error == FAULT_CPE_NO_FAULT)
+			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
 	} else if (strcmp(pdownload->file_type, WEB_CONTENT_FILE_TYPE) == 0) {
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
@@ -409,7 +410,7 @@ int cwmp_add_apply_schedule_download(struct download *schedule_download, char *s
 	apply_schedule_download = calloc(1, sizeof(struct apply_schedule_download));
 	if (apply_schedule_download == NULL) {
 		error = FAULT_CPE_INTERNAL_ERROR;
-		goto fault;
+		goto end;
 	}
 	if (error == FAULT_CPE_NO_FAULT) {
 		pthread_mutex_lock(&mutex_apply_schedule_download);
@@ -428,8 +429,7 @@ int cwmp_add_apply_schedule_download(struct download *schedule_download, char *s
 		pthread_mutex_unlock(&mutex_apply_schedule_download);
 		pthread_cond_signal(&threshold_apply_schedule_download);
 	}
-	return 0;
-fault:
+end:
 	cwmp_free_apply_schedule_download_request(apply_schedule_download);
 	return 0;
 }
@@ -438,7 +438,6 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 {
 	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec download_timeout = { 0, 0 };
-	time_t current_time;
 	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
 	int min_time = 0;
@@ -446,6 +445,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 	struct download *p, *_p;
 
 	for (;;) {
+		time_t current_time;
 
 		if (thread_end)
 			break;
@@ -588,7 +588,6 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 {
 	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec apply_timeout = { 0, 0 };
-	time_t current_time;
 	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
 	int min_time = 0;
@@ -596,6 +595,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 	struct apply_schedule_download *p, *_p;
 
 	for (;;) {
+		time_t current_time;
 
 		if (thread_end)
 			break;
@@ -804,10 +804,9 @@ int cwmp_free_apply_schedule_download_request(struct apply_schedule_download *ap
 
 int cwmp_scheduledDownload_remove_all()
 {
-	struct download *download;
-
 	pthread_mutex_lock(&mutex_download);
 	while (list_download.next != &(list_download)) {
+		struct download *download;
 		download = list_entry(list_download.next, struct download, list);
 		list_del(&(download->list));
 		bkp_session_delete_download(download);
@@ -822,10 +821,9 @@ int cwmp_scheduledDownload_remove_all()
 
 int cwmp_scheduled_Download_remove_all()
 {
-	struct download *schedule_download;
-
 	pthread_mutex_lock(&mutex_schedule_download);
 	while (list_schedule_download.next != &(list_schedule_download)) {
+		struct download *schedule_download;
 		schedule_download = list_entry(list_schedule_download.next, struct download, list);
 		list_del(&(schedule_download->list));
 		bkp_session_delete_schedule_download(schedule_download);
@@ -840,10 +838,9 @@ int cwmp_scheduled_Download_remove_all()
 
 int cwmp_apply_scheduled_Download_remove_all()
 {
-	struct apply_schedule_download *apply_schedule_download;
-
 	pthread_mutex_lock(&mutex_apply_schedule_download);
 	while (list_apply_schedule_download.next != &(list_apply_schedule_download)) {
+		struct apply_schedule_download *apply_schedule_download;
 		apply_schedule_download = list_entry(list_apply_schedule_download.next, struct apply_schedule_download, list);
 		list_del(&(apply_schedule_download->list));
 		bkp_session_delete_apply_schedule_download(apply_schedule_download);
@@ -858,9 +855,8 @@ int cwmp_apply_scheduled_Download_remove_all()
 
 int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
 {
-	struct transfer_complete *p;
 	if (rpc->extra_data != NULL) {
-		p = (struct transfer_complete *)rpc->extra_data;
+		struct transfer_complete *p = (struct transfer_complete *)rpc->extra_data;
 		bkp_session_delete_transfer_complete(p);
 		bkp_session_save();
 		FREE(p->command_key);

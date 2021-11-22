@@ -249,7 +249,7 @@ static char *get_exec_env_name(char *environment_path)
 
 static int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass, char *env, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete)
 {
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	char *fault_code;
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
@@ -258,6 +258,7 @@ static int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass,
 
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
+			int i;
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
 				if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
 					error = i;
@@ -272,7 +273,7 @@ static int cwmp_launch_du_install(char *url, char *uuid, char *user, char *pass,
 
 static int cwmp_launch_du_update(char *uuid, char *url, char *user, char *pass, char **package_version, char **package_name, char **package_uuid, char **package_env, struct opresult **pchange_du_state_complete)
 {
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	char *fault_code;
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
@@ -280,6 +281,7 @@ static int cwmp_launch_du_update(char *uuid, char *url, char *user, char *pass, 
 	cwmp_du_update(url, uuid, user, pass, package_version, package_name, package_uuid, package_env, &fault_code);
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
+			int i;
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
 				if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
 					error = i;
@@ -294,7 +296,7 @@ static int cwmp_launch_du_update(char *uuid, char *url, char *user, char *pass, 
 
 static int cwmp_launch_du_uninstall(char *package_name, char *package_env, struct opresult **pchange_du_state_complete)
 {
-	int i, error = FAULT_CPE_NO_FAULT;
+	int error = FAULT_CPE_NO_FAULT;
 	char *fault_code;
 
 	(*pchange_du_state_complete)->start_time = strdup(mix_get_time());
@@ -303,6 +305,7 @@ static int cwmp_launch_du_uninstall(char *package_name, char *package_env, struc
 
 	if (fault_code != NULL) {
 		if (fault_code[0] == '9') {
+			int i;
 			for (i = 1; i < __FAULT_CPE_MAX; i++) {
 				if (strcmp(FAULT_CPE_ARRAY[i].CODE, fault_code) == 0) {
 					error = i;
@@ -484,7 +487,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 							du_ref = (package_name && package_env) ? get_deployment_unit_reference(package_name, package_env) : NULL;
 							res->du_ref = strdup(du_ref ? du_ref : "");
 							res->uuid = strdup(p->uuid);
-							res->version = strdup(package_version ? package_version : "");
+							res->version = strdup(package_version);
 							res->complete_time = strdup(mix_get_time());
 							res->fault = error;
 							FREE(du_ref);
@@ -526,8 +529,8 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 
 int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
 {
-	struct du_state_change_complete *p;
 	if (rpc->extra_data != NULL) {
+		struct du_state_change_complete *p;
 		p = (struct du_state_change_complete *)rpc->extra_data;
 		bkp_session_delete_du_state_change_complete(p);
 		bkp_session_save();

@@ -160,7 +160,7 @@ void ubus_transaction_commit_callback(struct ubus_request *req __attribute__((un
 		blobmsg_for_each_attr(cur, updated_services, rem)
 		{
 			char *service_name = blobmsg_get_string(cur);
-			if (!service_name || strlen(service_name) <= 0 || strcmp(service_name, "cwmp") == 0)
+			if (!service_name || strlen(service_name) == 0 || strcmp(service_name, "cwmp") == 0)
 				continue;
 			CWMP_LOG(INFO, "Detected service: %s will be restarted in the end session", service_name);
 			/*Add the service to the list*/
@@ -407,11 +407,11 @@ void ubus_setm_values_callback(struct ubus_request *req, int type __attribute__(
 	int rem;
 	blobmsg_for_each_attr(cur, faults_params, rem)
 	{
-		struct blob_attr *tb[3] = { NULL, NULL, NULL };
-		blobmsg_parse(pfault, 3, tb, blobmsg_data(cur), blobmsg_len(cur));
-		if (!tb[0] || !tb[1])
+		struct blob_attr *tbi[3] = { NULL, NULL, NULL };
+		blobmsg_parse(pfault, 3, tbi, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tbi[0] || !tbi[1])
 			continue;
-		cwmp_add_list_fault_param(blobmsg_get_string(tb[0]), blobmsg_get_u32(tb[1]), set_result->faults_list);
+		cwmp_add_list_fault_param(blobmsg_get_string(tbi[0]), blobmsg_get_u32(tbi[1]), set_result->faults_list);
 	}
 }
 

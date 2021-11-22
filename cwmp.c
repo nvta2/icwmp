@@ -321,8 +321,6 @@ int run_session_end_func(void)
 
 static void cwmp_schedule_session(struct cwmp *cwmp)
 {
-	struct list_head *ilist;
-	struct session *session;
 	int t, error = CWMP_OK;
 	static struct timespec time_to_wait = { 0, 0 };
 	bool retry = false;
@@ -331,6 +329,9 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 
 	cwmp->cwmp_cr_event = 0;
 	while (1) {
+		struct list_head *ilist;
+		struct session *session;
+
 		pthread_mutex_lock(&(cwmp->mutex_session_send));
 		ilist = (&(cwmp->head_session_queue))->next;
 		while ((ilist == &(cwmp->head_session_queue)) || retry) {
@@ -653,11 +654,10 @@ static void cwmp_free(struct cwmp *cwmp)
 
 static void *thread_cwmp_signal_handler_thread(void *arg)
 {
-
 	sigset_t *set = (sigset_t *)arg;
-	int s, signal_num;
 
 	for (;;) {
+		int s, signal_num;
 		s = sigwait(set, &signal_num);
 		if (s == -1) {
 			CWMP_LOG(ERROR, "Error in sigwait");

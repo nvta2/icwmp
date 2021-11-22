@@ -49,7 +49,7 @@ int http_client_init(struct cwmp *cwmp)
 {
 	char *dhcp_dis = NULL;
 	char *acs_var_stat = NULL;
-	unsigned char buf[sizeof(struct in6_addr)];
+
 	uci_get_value(UCI_DHCP_DISCOVERY_PATH, &dhcp_dis);
 
 	if (dhcp_dis && cwmp->retry_count_session > 0 && strcmp(dhcp_dis, "enable") == 0) {
@@ -86,6 +86,8 @@ int http_client_init(struct cwmp *cwmp)
 		return -1;
 
 	if (cwmp->conf.ipv6_enable) {
+		unsigned char buf[sizeof(struct in6_addr)];
+
 		char *ip = NULL;
 		curl_easy_setopt(curl, CURLOPT_URL, http_c.url);
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, HTTP_TIMEOUT);
@@ -150,14 +152,12 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	if (!http_c.header_list)
 		return -1;
 #ifdef ACS_FUSION
-	char *expect_header = "Expect:";
-	http_c.header_list = curl_slist_append(http_c.header_list, expect_header);
+	http_c.header_list = curl_slist_append(http_c.header_list, "Expect:");
 	if (!http_c.header_list)
 		return -1;
 #endif /* ACS_FUSION */
 	if (cwmp->conf.http_disable_100continue) {
-		char *expect_header = "Expect:";
-		http_c.header_list = curl_slist_append(http_c.header_list, expect_header);
+		http_c.header_list = curl_slist_append(http_c.header_list, "Expect:");
 		if (!http_c.header_list)
 			return -1;
 	}
@@ -407,8 +407,6 @@ void http_server_listen(void)
 	int client_sock, c;
 	static int cr_request = 0;
 	static time_t restrict_start_time = 0;
-	time_t current_time;
-	bool service_available;
 	struct sockaddr_in6 client;
 
 	//Listen
@@ -417,6 +415,8 @@ void http_server_listen(void)
 	//Accept and incoming connection
 	c = sizeof(struct sockaddr_in);
 	while ((client_sock = accept(cwmp_main.cr_socket_desc, (struct sockaddr *)&client, (socklen_t *)&c))) {
+		bool service_available;
+		time_t current_time;
 		
 		if (thread_end)
 			return;

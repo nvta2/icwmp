@@ -92,10 +92,11 @@ int get_parameter_notification_from_list_head(struct list_head *params_list, cha
 
 int get_parameter_notification_from_notifications_uci_list(char *parameter_name)
 {
-	int i, option_type, notification = 0;
+	int i, notification = 0;
 	struct uci_list *list_notif;
 	struct uci_element *e;
 	for (i = 0; i < 7; i++) {
+		int option_type;
 		option_type = cwmp_uci_get_cwmp_varstate_option_value_list("cwmp", "@notifications[0]", notifications_test[i], &list_notif);
 		if (list_notif) {
 			uci_foreach_element(list_notif, e) {

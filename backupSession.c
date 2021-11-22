@@ -124,18 +124,19 @@ void load_specific_backup_attributes(mxml_node_t *tree, struct backup_attributes
 	mxml_node_t *b = tree, *c;
 	int idx = -1;
 	void **ptr;
-	char **str;
-	int *intgr;
-	bool *bol;
-	time_t *time;
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 	while (b) {
-		if (b && b->type == MXML_ELEMENT) {
+		if (b->type == MXML_ELEMENT) {
 			idx = get_bkp_attribute_index_type(b->value.element.name);
 			c = mxmlWalkNext(b, b, MXML_DESCEND);
 			if (c && c->type == MXML_OPAQUE) {
 				if (c->value.opaque != NULL) {
+					char **str;
+					int *intgr;
+					bool *bol;
+					time_t *time;
+
 					ptr = (void **)((char *)bkp_attrs + idx * sizeof(char *));
 					switch (bkp_attrs_names[idx].bkp_type) {
 					case BKP_STRING:
@@ -205,7 +206,7 @@ mxml_node_t *bkp_session_node_found(mxml_node_t *tree, char *name, struct search
 		return NULL;
 	b = mxmlFindElement(b, b, name, NULL, NULL, MXML_DESCEND_FIRST);
 	while (b) {
-		if (b && b->child) {
+		if (b->child) {
 			c = b->child;
 			i = 0;
 			while (c && i < size) {
@@ -310,7 +311,7 @@ void bkp_session_move_inform_to_inform_send()
 
 	pthread_mutex_lock(&mutex_backup_session);
 	while (b) {
-		if (b && b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "queue_event") && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "cwmp")) {
+		if (b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "queue_event") && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "cwmp")) {
 			FREE(b->value.element.name);
 			b->value.element.name = strdup("send_event");
 		}
@@ -325,7 +326,7 @@ void bkp_session_move_inform_to_inform_queue()
 
 	pthread_mutex_lock(&mutex_backup_session);
 	while (b) {
-		if (b && b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "send_event") && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "cwmp")) {
+		if (b->type == MXML_ELEMENT && !strcmp(b->value.element.name, "send_event") && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "cwmp")) {
 			FREE(b->value.element.name);
 			b->value.element.name = strdup("queue_event");
 		}
@@ -663,7 +664,7 @@ void bkp_session_insert_du_state_change_complete(struct du_state_change_complete
 {
 	char schedule_time[128], resolved[8], fault_code[8];
 	struct opresult *p;
-	mxml_node_t *b, *n;
+	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
 	sprintf(schedule_time, "%lld", (long long int)pdu_state_change_complete->timeout);
@@ -671,6 +672,7 @@ void bkp_session_insert_du_state_change_complete(struct du_state_change_complete
 	bkp_session_insert(b, "command_key", pdu_state_change_complete->command_key);
 	bkp_session_insert(b, "time", schedule_time);
 	list_for_each_entry (p, &(pdu_state_change_complete->list_opresult), list) {
+		mxml_node_t *n;
 		n = bkp_session_insert(b, "opresult", NULL);
 		sprintf(resolved, "%d", p->resolved);
 		sprintf(fault_code, "%d", p->fault);
@@ -796,7 +798,7 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
 	while (b) {
-		if (b && b->type == MXML_ELEMENT) {
+		if (b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name, "command_key") == 0) {
 				if (idx != -1) {
 					if (EVENT_CONST[idx].RETRY & EVENT_RETRY_AFTER_REBOOT) {
@@ -974,7 +976,7 @@ void load_change_du_state(mxml_node_t *tree)
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
 	while (b) {
-		if (b && b->type == MXML_ELEMENT) {
+		if (b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name, "update") == 0) {
 				elem = (operations *)calloc(1, sizeof(operations));
 				elem->type = DU_UPDATE;
@@ -1016,7 +1018,7 @@ void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
 
 	while (b) {
-		if (b && b->type == MXML_ELEMENT) {
+		if (b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name, "opresult") == 0) {
 				elem = (opresult *)calloc(1, sizeof(opresult));
 				list_add_tail(&(elem->list), &(du_state_change_complete_request->list_opresult));
@@ -1077,14 +1079,13 @@ void bkp_session_create_file()
 
 int bkp_session_check_file()
 {
-	FILE *pFile;
-
 	if (!file_exists(CWMP_BKP_FILE)) {
 		bkp_session_create_file();
 		return -1;
 	}
 
 	if (bkp_tree == NULL) {
+		FILE *pFile;
 		pFile = fopen(CWMP_BKP_FILE, "r");
 		bkp_tree = mxmlLoadFile(NULL, pFile, MXML_OPAQUE_CALLBACK);
 		fclose(pFile);

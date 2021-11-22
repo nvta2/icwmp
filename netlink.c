@@ -56,24 +56,31 @@ static int itfcmp(char *itf1, char *itf2)
 	index = (int)(str - itf1);
 	if (!index)
 		goto end;
+
 	buf1 = malloc(index);
-	strncpy(buf1, itf1, index);
 	if (!buf1)
 		goto end;
+
+	strncpy(buf1, itf1, index);
 	buf1[index] = '\0';
 	if (itf2[0] == '\0')
 		goto end;
+
 	str = strchr(itf2, '.');
 	if (str == NULL)
 		goto end;
+
 	index = (int)(str - itf2);
 	if (!index)
 		goto end;
+
 	buf2 = malloc(index);
 	if (!buf2)
 		goto end;
-	buf2[index] = '\0';
+
 	strncpy(buf2, itf1, index);
+	buf2[index] = '\0';
+
 	if (strcmp(buf1, buf2) == 0)
 		status = 0;
 end:
@@ -94,7 +101,6 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 	memset(&if_name, 0, sizeof(if_name));
 	memset(&if_addr, 0, sizeof(if_addr));
 
-	char pradd_v6[128];
 	if (ifa->ifa_family == AF_INET) { //CASE IPv4
 		while (rtl && RTA_OK(rth, rtl)) {
 			if (rth->rta_type != IFA_LOCAL) {
@@ -127,6 +133,7 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 		}
 	} else { //CASE IPv6
 		while (rtl && RTA_OK(rth, rtl)) {
+			char pradd_v6[128];
 			if (rth->rta_type != IFA_ADDRESS || ifa->ifa_scope == RT_SCOPE_LINK) {
 				rth = RTA_NEXT(rth, rtl);
 				continue;

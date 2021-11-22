@@ -99,7 +99,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	struct transfer_complete *p;
 	char *name = "";
 	upload_startTime = mix_get_time();
-	char file_path[128];
+	char file_path[128] = {'\0'};
 	bkp_session_delete_upload(pupload);
 	bkp_session_save();
 
@@ -131,7 +131,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 		} else
 			error = FAULT_CPE_UPLOAD_FAILURE;
 	}
-	if (error != FAULT_CPE_NO_FAULT || strlen(file_path) <= 0) {
+	if (error != FAULT_CPE_NO_FAULT || strlen(file_path) == 0) {
 		error = FAULT_CPE_UPLOAD_FAILURE;
 		goto end_upload;
 	}
@@ -272,10 +272,9 @@ int cwmp_free_upload_request(struct upload *upload)
 
 int cwmp_scheduledUpload_remove_all()
 {
-	struct upload *upload;
-
 	pthread_mutex_lock(&mutex_upload);
 	while (list_upload.next != &(list_upload)) {
+		struct upload *upload;
 		upload = list_entry(list_upload.next, struct upload, list);
 		list_del(&(upload->list));
 		bkp_session_delete_upload(upload);

@@ -67,9 +67,8 @@ void clean_name_space()
 
 void unit_test_remove_all_events_by_session(struct session *session)
 {
-	struct event_container *event_container;
-
 	while (session->head_event_container.next != &(session->head_event_container)) {
+		struct event_container *event_container;
 		event_container = list_entry(session->head_event_container.next, struct event_container, list);
 		free(event_container->command_key);
 		cwmp_free_all_dm_parameter_list(&(event_container->head_dm_parameter));
@@ -122,7 +121,6 @@ static int soap_unit_tests_clean(void **state)
  */
 static void get_config_test(void **state)
 {
-	struct cwmp *cwmp_test = &cwmp_main_test;
 	int error = get_global_config(&(cwmp_test->conf));
 	assert_int_equal(error, CWMP_OK);
 	log_set_severity_idx("INFO");
@@ -130,7 +128,6 @@ static void get_config_test(void **state)
 
 static void get_deviceid_test(void **state)
 {
-	struct cwmp *cwmp_test = &cwmp_main_test;
 	int error = cwmp_get_deviceid(cwmp_test);
 	assert_int_equal(error, CWMP_OK);
 }
@@ -1123,11 +1120,10 @@ static void prepare_download_soap_request(struct session *session, char *url, ch
 
 void free_download()
 {
-	struct download *download;
-	struct list_head *ilist, *q;
-
 	if (list_download.next != &(list_download)) {
+		struct list_head *ilist, *q;
 		list_for_each_safe (ilist, q, &(list_download)) {
+			struct download *download;
 			download = list_entry(ilist, struct download, list);
 			bkp_session_delete_download(download);
 			cwmp_free_download_request(download);

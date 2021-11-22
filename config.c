@@ -143,11 +143,9 @@ int get_global_config(struct config *conf)
 	}
 
 	if ((error = uci_get_value(UCI_CPE_AMD_VERSION, &value)) == CWMP_OK) {
-		int a = 0;
-
 		conf->amd_version = DEFAULT_AMD_VERSION;
 		if (value != NULL) {
-			a = atoi(value);
+			int a = atoi(value);
 			if (a >= 1) {
 				conf->amd_version = a;
 			}
@@ -182,7 +180,7 @@ int get_global_config(struct config *conf)
 		conf->retry_min_wait_interval = DEFAULT_RETRY_MINIMUM_WAIT_INTERVAL;
 		if (conf->amd_version >= AMD_3 && value != NULL) {
 			int a = atoi(value);
-			if (a <= 65535 || a >= 1) {
+			if (a <= 65535 && a >= 1) {
 				conf->retry_min_wait_interval = a;
 			}
 		}
@@ -197,7 +195,7 @@ int get_global_config(struct config *conf)
 		conf->retry_interval_multiplier = DEFAULT_RETRY_INTERVAL_MULTIPLIER;
 		if (conf->amd_version >= AMD_3 && value != NULL) {
 			int a = atoi(value);
-			if (a <= 65535 || a >= 1000) {
+			if (a <= 65535 && a >= 1000) {
 				conf->retry_interval_multiplier = a;
 			}
 		}
@@ -481,11 +479,9 @@ int get_global_config(struct config *conf)
 	}
 
 	if ((error = uci_get_value(UCI_CPE_SESSION_TIMEOUT, &value)) == CWMP_OK) {
-		int a = 0;
-
 		conf->session_timeout = DEFAULT_SESSION_TIMEOUT;
 		if (value != NULL) {
-			a = atoi(value);
+			int a = atoi(value);
 			if (a >= 1) {
 				conf->session_timeout = a;
 			}
@@ -529,10 +525,8 @@ int get_global_config(struct config *conf)
 	}
 
 	if ((error = uci_get_value(LW_NOTIFICATION_PORT, &value)) == CWMP_OK) {
-		int a = 0;
-
 		if (value != NULL) {
-			a = atoi(value);
+			int a = atoi(value);
 			conf->lw_notification_port = a;
 			FREE(value);
 		} else {

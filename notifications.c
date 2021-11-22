@@ -82,10 +82,16 @@ int add_uci_option_notification(char *parameter_name, int notification)
 	int ret = 0;
 
 	ret = cwmp_uci_get_section_type("cwmp", "@notifications[0]", UCI_VARSTATE_CONFIG, &notification_type);
+	if (ret != UCI_OK)
+		return -1;
+
 	if (notification_type == NULL || notification_type[0] == '\0') {
 		cwmp_uci_add_section("cwmp", "notifications", UCI_VARSTATE_CONFIG, &s);
 	}
 	ret = cwmp_uci_add_list_value("cwmp", "@notifications[0]", notifications[notification], parameter_name, UCI_VARSTATE_CONFIG);
+	if (ret != UCI_OK)
+		return -1;
+
 	ret = cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 	return ret;
 }
@@ -95,8 +101,9 @@ bool check_parent_with_different_notification(char *parameter_name, int notifica
 	struct uci_list *list_notif;
 	struct uci_element *e = NULL;
 	int i;
-	int option_type;
 	for (i = 0; i < 7; i++) {
+		int option_type;
+
 		if (i == notification)
 			continue;
 		option_type = cwmp_uci_get_cwmp_varstate_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
@@ -116,11 +123,12 @@ bool update_notifications_list(char *parameter_name, int notification)
 {
 	struct uci_list *list_notif;
 	struct uci_element *e = NULL, *tmp = NULL;
-	int i, option_type;
+	int i;
 	char *ename = NULL;
 	bool update_ret = true;
 
 	for (i = 0; i < 7; i++) {
+		int option_type;
 		option_type = cwmp_uci_get_cwmp_varstate_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
 		if (list_notif) {
 			uci_foreach_element_safe(list_notif, tmp, e) {
@@ -169,10 +177,12 @@ int get_parameter_family_notifications(char *parameter_name, struct list_head *c
 
 	struct uci_list *list_notif;
 	struct uci_element *e = NULL;
-	int i, notif_ret = 0, option_type;
+	int i, notif_ret = 0;
 	char *parent_param = NULL;
 
 	for (i = 0; i < 7; i++) {
+		int option_type;
+
 		option_type = cwmp_uci_get_cwmp_varstate_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
 		if (list_notif) {
 			uci_foreach_element(list_notif, e) {
@@ -221,7 +231,6 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 		return error;
 	LIST_HEAD(childs_notifs);
 	int notification = get_parameter_family_notifications(parameter_name, &childs_notifs);
-	int notif_leaf;
 	LIST_HEAD(params_list);
 	error = cwmp_get_parameter_values(parameter_name, &params_list);
 	if (error != NULL) {
@@ -230,6 +239,7 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 	}
 	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &params_list, list) {
+		int notif_leaf;
 		notif_leaf = check_parameter_forced_notification(param_value->name);
 		if (notif_leaf > 0) {
 			add_dm_parameter_to_list(parameters_list, param_value->name, "", "", notif_leaf, false);
@@ -274,8 +284,9 @@ void create_list_param_obj_notify()
 {
 	struct uci_list *list_notif;
 	struct uci_element *e = NULL;
-	int i, option_type;
+	int i;
 	for (i = 0; i < 7; i++) {
+		int option_type;
 		option_type = cwmp_uci_get_cwmp_varstate_option_value_list("cwmp", "@notifications[0]", notifications[i], &list_notif);
 		if (list_notif) {
 			uci_foreach_element(list_notif, e) {
@@ -687,8 +698,8 @@ void del_list_lw_notify(struct cwmp_dm_parameter *dm_parameter)
 
 static void free_all_list_lw_notify()
 {
-	struct cwmp_dm_parameter *dm_parameter;
 	while (list_lw_value_change.next != &list_lw_value_change) {
+		struct cwmp_dm_parameter *dm_parameter;
 		dm_parameter = list_entry(list_lw_value_change.next, struct cwmp_dm_parameter, list);
 		del_list_lw_notify(dm_parameter);
 	}
@@ -706,7 +717,7 @@ void cwmp_lwnotification()
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
 	message_compute_signature(msg_out, signature);
-	snprintf(msg, sizeof(msg), "%s \n %s: %s \n %s: %s \n %s: %zd\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
+	snprintf(msg, sizeof(msg), "%s \n %s: %s \n %s: %s \n %s: %zu\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
 
 	send_udp_message(servaddr, msg);
 	free_all_list_lw_notify();

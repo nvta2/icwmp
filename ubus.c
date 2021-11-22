@@ -28,7 +28,6 @@
 #include "rpc_soap.h"
 
 static struct ubus_context *ctx = NULL;
-static struct blob_buf b;
 
 static const char *arr_session_status[] = {
 		[SESSION_WAITING] = "waiting",
@@ -50,6 +49,7 @@ static const struct blobmsg_policy command_policy[] = {
 static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)), struct ubus_request_data *req, const char *method __attribute__((unused)), struct blob_attr *msg)
 {
 	struct blob_attr *tb[__COMMAND_MAX];
+	static struct blob_buf b;
 
 	blobmsg_parse(command_policy, ARRAYSIZEOF(command_policy), tb, blob_data(msg), blob_len(msg));
 
@@ -154,6 +154,7 @@ static int cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj 
 {
 	void *c;
 	time_t ntime = 0;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -205,8 +206,7 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 	struct blob_attr *tb[__INFORM_MAX];
 	bool grm = false;
 	char *event = "";
-	struct event_container *event_container;
-	struct session *session;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -219,6 +219,9 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 		event = blobmsg_data(tb[INFORM_EVENT]);
 	}
 	if (grm) {
+		struct event_container *event_container;
+		struct session *session;
+
 		pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 		event_container = cwmp_add_event_container(&cwmp_main, EVENT_IDX_2PERIODIC, "");
 		if (event_container == NULL) {
@@ -314,11 +317,9 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 
 	struct ubus_context *ubus_ctx = NULL;
 
-	if (ubus_ctx == NULL) {
-		ubus_ctx = ubus_connect(NULL);
-		if (ubus_ctx == NULL)
-			return -1;
-	}
+	ubus_ctx = ubus_connect(NULL);
+	if (ubus_ctx == NULL)
+		return -1;
 
 	blob_buf_init(&b, 0);
 	for (i = 0; i < u_args_size; i++) {
@@ -327,13 +328,14 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 		else if (u_args[i].type == UBUS_Integer) {
 			blobmsg_add_u32(&b, u_args[i].key, u_args[i].val.int_val);
 		} else if (u_args[i].type == UBUS_Array_Obj || u_args[i].type == UBUS_Array_Str) {
-			void *a, *t;
+			void *a;
 			int j;
 			a = blobmsg_open_array(&b, u_args[i].key);
 			if (u_args[i].type == UBUS_Array_Obj) {
+				void *t;
 				t = blobmsg_open_table(&b, "");
 				for (j = 0; j < ARRAY_MAX; j++) {
-					if (u_args[i].val.array_value[j].param_value.key == NULL || strlen(u_args[i].val.array_value[j].param_value.key) <= 0)
+					if (u_args[i].val.array_value[j].param_value.key == NULL || strlen(u_args[i].val.array_value[j].param_value.key) == 0)
 						break;
 					blobmsg_add_string(&b, u_args[i].val.array_value[j].param_value.key, u_args[i].val.array_value[j].param_value.value);
 				}
@@ -341,7 +343,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 			}
 			if (u_args[i].type == UBUS_Array_Str) {
 				for (j = 0; j < ARRAY_MAX; j++) {
-					if (u_args[i].val.array_value[j].str_value == NULL || strlen(u_args[i].val.array_value[j].str_value) <= 0)
+					if (u_args[i].val.array_value[j].str_value == NULL || strlen(u_args[i].val.array_value[j].str_value) == 0)
 						break;
 					blobmsg_add_string(&b, NULL, u_args[i].val.array_value[j].str_value);
 				}
@@ -349,9 +351,10 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_List_Param_Set) {
 			struct cwmp_dm_parameter *param_value;
-			void *a, *t;
+			void *a;
 			a = blobmsg_open_array(&b, u_args[i].key);
 			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
+				void *t;
 				if (!param_value->name)
 					break;
 				t = blobmsg_open_table(&b, "");

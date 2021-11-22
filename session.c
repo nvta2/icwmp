@@ -147,10 +147,8 @@ int cwmp_session_destructor(struct session *session)
 int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *session)
 {
 	struct list_head *ilist, *jlist;
-	struct rpc *rpc_acs, *queue_rpc_acs, *rpc_cpe;
-	struct event_container *event_container_old, *event_container_new;
+	struct rpc *rpc_acs, *queue_rpc_acs;
 	struct session *session_queue;
-	bool dup;
 
 	pthread_mutex_lock(&(cwmp->mutex_session_queue));
 	cwmp->retry_count_session++;
@@ -175,6 +173,7 @@ int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *sessio
 			}
 		}
 		while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
+			struct rpc *rpc_cpe;
 			rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
 			cwmp_session_rpc_destructor(rpc_cpe);
 		}
@@ -184,6 +183,7 @@ int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *sessio
 		return CWMP_OK;
 	}
 	list_for_each (ilist, &(session->head_event_container)) {
+		struct event_container *event_container_new, *event_container_old;
 		event_container_old = list_entry(ilist, struct event_container, list);
 		event_container_new = cwmp_add_event_container(cwmp, event_container_old->code, event_container_old->command_key);
 		if (event_container_new == NULL) {
@@ -196,6 +196,7 @@ int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *sessio
 	session_queue = list_entry(cwmp->head_event_container, struct session, head_event_container);
 	list_for_each (ilist, &(session->head_rpc_acs)) {
 		rpc_acs = list_entry(ilist, struct rpc, list);
+		bool dup;
 		dup = false;
 		list_for_each (jlist, &(session_queue->head_rpc_acs)) {
 			queue_rpc_acs = list_entry(jlist, struct rpc, list);

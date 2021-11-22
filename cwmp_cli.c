@@ -77,7 +77,7 @@ void display_get_cmd_result(struct cmd_input in __attribute__((unused)), union c
 char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)))
 {
 	int flag;
-	if (in.first_input == NULL || in.second_input == NULL || strlen(in.first_input) <= 0 || strlen(in.second_input) <= 0)
+	if (in.first_input == NULL || in.second_input == NULL || strlen(in.first_input) == 0 || strlen(in.second_input) == 0)
 		return "9003";
 	if (transaction_id == 0) {
 		if (!cwmp_transaction_start("cwmp"))
@@ -301,7 +301,7 @@ const struct cwmp_cli_command_struct icwmp_commands[] = {
 
 char* execute_cwmp_cli_command(char *cmd, char *args[])
 {
-	if (!cmd || strlen(cmd) <= 0) {
+	if (!cmd || strlen(cmd) == 0) {
 		printf("You must add a command as input: \n\n");
 		goto cli_help;
 	}

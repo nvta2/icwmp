@@ -44,7 +44,6 @@ void free_download(struct download *p)
 	icwmp_free(p->password);
 	icwmp_free(p->url);
 	icwmp_free(p);
-	p = NULL;
 }
 
 static int download_unit_tests_clean(void **state)

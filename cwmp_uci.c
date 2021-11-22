@@ -612,9 +612,8 @@ int cwmp_uci_get_section_type(char *package, char *section, uci_config_paths uci
 		*value = icwmp_strdup(ptr.s->type);
 	} else {
 		*value = "";
-		return -1;
 	}
-	return 0;
+	return UCI_OK;
 }
 
 struct uci_section *cwmp_uci_walk_section(char *package, char *stype, void *arg1, void *arg2, int cmp, int (*filter)(struct uci_section *s, void *value), struct uci_section *prev_section, uci_config_paths uci_type, int walk)

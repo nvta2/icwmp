@@ -50,11 +50,11 @@ mxmlFindElementOpaque(mxml_node_t *node, /* I - Current node */
 int xml_recreate_namespace(mxml_node_t *tree)
 {
 	const char *cwmp_urn;
-	char *c;
 	int i;
 	mxml_node_t *b = tree;
 
 	do {
+		char *c;
 		FREE(ns.soap_env);
 		FREE(ns.soap_enc);
 		FREE(ns.xsd);
@@ -211,13 +211,13 @@ int xml_prepare_msg_out(struct session *session)
 	struct cwmp *cwmp = &cwmp_main;
 	struct config *conf;
 	conf = &(cwmp->conf);
-	mxml_node_t *n;
 #ifdef DUMMY_MODE
 	FILE *fp;
 	fp = fopen("./ext/soap_msg_templates/cwmp_response_message.xml", "r");
 	session->tree_out = mxmlLoadFile(NULL, fp, MXML_OPAQUE_CALLBACK);
 	fclose(fp);
 #else
+	mxml_node_t *n;
 	session->tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if (!n) {

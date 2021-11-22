@@ -26,6 +26,10 @@
 #include "cwmp_cli.h"
 #include "cwmp_du_state.h"
 
+#ifndef CWMP_REVISION
+#define CWMP_REVISION "8.2.10"
+#endif
+
 char *commandKey = NULL;
 bool thread_end = false;
 bool signal_exit = false;
@@ -152,8 +156,9 @@ void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *pa
 {
 	struct cwmp_dm_parameter *dm_parameter;
 	struct list_head *ilist;
-	int cmp;
+
 	list_for_each (ilist, head) {
+		int cmp;
 		dm_parameter = list_entry(ilist, struct cwmp_dm_parameter, list);
 		cmp = strcmp(dm_parameter->name, param_name);
 		if (cmp == 0) {
@@ -173,8 +178,8 @@ void add_dm_parameter_to_list(struct list_head *head, char *param_name, char *pa
 		dm_parameter->name = strdup(param_name);
 	if (param_val)
 		dm_parameter->value = strdup(param_val);
-	if (param_type)
-		dm_parameter->type = strdup(param_type ? param_type : "xsd:string");
+
+	dm_parameter->type = strdup(param_type ? param_type : "xsd:string");
 	dm_parameter->notification = notification;
 	dm_parameter->writable = writable;
 }
@@ -190,8 +195,8 @@ void delete_dm_parameter_from_list(struct cwmp_dm_parameter *dm_parameter)
 
 void cwmp_free_all_dm_parameter_list(struct list_head *list)
 {
-	struct cwmp_dm_parameter *dm_parameter;
 	while (list->next != list) {
+		struct cwmp_dm_parameter *dm_parameter;
 		dm_parameter = list_entry(list->next, struct cwmp_dm_parameter, list);
 		delete_dm_parameter_from_list(dm_parameter);
 	}
@@ -221,8 +226,8 @@ void cwmp_del_list_fault_param(struct cwmp_param_fault *param_fault)
 
 void cwmp_free_all_list_param_fault(struct list_head *list_param_fault)
 {
-	struct cwmp_param_fault *param_fault;
 	while (list_param_fault->next != list_param_fault) {
+		struct cwmp_param_fault *param_fault;
 		param_fault = list_entry(list_param_fault->next, struct cwmp_param_fault, list);
 		cwmp_del_list_fault_param(param_fault);
 	}
@@ -237,6 +242,8 @@ int cwmp_asprintf(char **s, const char *format, ...)
 	va_copy(argcopy, arg);
 	size = vsnprintf(NULL, 0, format, argcopy);
 	if (size < 0) {
+		va_end(argcopy);
+		va_end(arg);
 		return -1;
 	}
 	va_end(argcopy);
@@ -263,13 +270,6 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
 	size_t written = fwrite(ptr, size, nmemb, stream);
 	return written;
 }
-
-struct transfer_status {
-	CURL *easy;
-	int halted;
-	int counter; /* count write callback invokes */
-	int please; /* number of times xferinfo is called while halted */
-};
 
 void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
 {
@@ -336,8 +336,8 @@ int opkg_install_package(char *package_path)
 
 	CWMP_LOG(INFO, "Apply downloaded config ...");
 
-	snprintf(cmd, sizeof(cmd), "opkg --force-depends --force-maintainer install %s", package_path);
-	if (cmd == NULL)
+	int ret = snprintf(cmd, sizeof(cmd), "opkg --force-depends --force-maintainer install %s", package_path);
+	if (ret < 0 || ret > 512)
 		return -1;
 	fp = popen(cmd, "r");
 	if (fp == NULL) {
@@ -505,8 +505,10 @@ int icwmp_asprintf(char **s, const char *format, ...)
 	size = vsnprintf(NULL, 0, format, argcopy);
 	va_end(argcopy);
 
-	if (size < 0)
+	if (size < 0) {
+		va_end(arg);
 		return -1;
+	}
 	str = (char *)calloc(sizeof(char), size + 1);
 	vsnprintf(str, size + 1, format, arg);
 	va_end(arg);

@@ -94,10 +94,9 @@ void *thread_cwmp_rpc_cpe_scheduleInform(void *v)
 
 int cwmp_scheduleInform_remove_all()
 {
-	struct schedule_inform *schedule_inform;
-
 	pthread_mutex_lock(&mutex_schedule_inform);
 	while (list_schedule_inform.next != &(list_schedule_inform)) {
+		struct schedule_inform *schedule_inform;
 		schedule_inform = list_entry(list_schedule_inform.next, struct schedule_inform, list);
 
 		list_del(&(schedule_inform->list));

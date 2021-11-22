@@ -34,11 +34,9 @@ static void kernel_api_cwmp_value_change_listener(struct sk_buff *skb)
 {
 	struct nlmsghdr *nlh;
 	int pid;
-	struct sk_buff *skb_out;
-	int msg_size;
 	char *msg;
 	char *recv;
-	int i, res;
+	int i;
 
 	nlh = (struct nlmsghdr *)skb->data;
 	recv = (char *)nlmsg_data(nlh);
@@ -58,6 +56,9 @@ static void kernel_api_cwmp_value_change_listener(struct sk_buff *skb)
 	mutex_lock(&(kernel_cwmp_input.mutex));
 
 	for (i = 0; i <= kernel_cwmp_input.argc; i++) {
+		struct sk_buff *skb_out;
+		int msg_size, res;
+
 		if (i < kernel_cwmp_input.argc) {
 			msg = kernel_cwmp_input.argv[i];
 		} else {

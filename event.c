@@ -44,14 +44,14 @@ const struct EVENT_CONST_STRUCT EVENT_CONST[] = {[EVENT_IDX_0BOOTSTRAP] = { "0 B
 
 void cwmp_save_event_container(struct event_container *event_container) //to be moved to backupsession
 {
-	struct list_head *ilist;
-	struct cwmp_dm_parameter *dm_parameter;
-	mxml_node_t *b;
-
 	if (EVENT_CONST[event_container->code].RETRY & EVENT_RETRY_AFTER_REBOOT) {
+		struct list_head *ilist;
+		mxml_node_t *b;
+
 		b = bkp_session_insert_event(event_container->code, event_container->command_key, event_container->id, "queue");
 
 		list_for_each (ilist, &(event_container->head_dm_parameter)) {
+			struct cwmp_dm_parameter *dm_parameter;
 			dm_parameter = list_entry(ilist, struct cwmp_dm_parameter, list);
 			bkp_session_insert_parameter(b, dm_parameter->name);
 		}
@@ -118,8 +118,8 @@ void cwmp_root_cause_event_ipdiagnostic(void)
 
 int cwmp_root_cause_event_boot(struct cwmp *cwmp)
 {
-	struct event_container *event_container;
 	if (cwmp->env.boot == CWMP_START_BOOT) {
+		struct event_container *event_container;
 		pthread_mutex_lock(&(cwmp->mutex_session_queue));
 		cwmp->env.boot = 0;
 		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_1BOOT, "");
@@ -135,9 +135,8 @@ int cwmp_root_cause_event_boot(struct cwmp *cwmp)
 
 int event_remove_all_event_container(struct session *session, int rem_from)
 {
-	struct event_container *event_container;
-
 	while (session->head_event_container.next != &(session->head_event_container)) {
+		struct event_container *event_container;
 		event_container = list_entry(session->head_event_container.next, struct event_container, list);
 		bkp_session_delete_event(event_container->id, rem_from ? "send" : "queue");
 		free(event_container->command_key);
@@ -151,10 +150,10 @@ int event_remove_all_event_container(struct session *session, int rem_from)
 
 int event_remove_noretry_event_container(struct session *session, struct cwmp *cwmp)
 {
-	struct event_container *event_container;
 	struct list_head *ilist, *q;
 
 	list_for_each_safe (ilist, q, &(session->head_event_container)) {
+		struct event_container *event_container;
 		event_container = list_entry(ilist, struct event_container, list);
 
 		if (EVENT_CONST[event_container->code].CODE[0] == '6')
@@ -172,19 +171,20 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 
 int cwmp_root_cause_event_bootstrap(struct cwmp *cwmp)
 {
+
+	struct event_container *event_container;
 	char *acsurl = NULL;
 	int cmp = 0;
-	struct event_container *event_container;
-	struct session *session;
 
 	cwmp_load_saved_session(cwmp, &acsurl, ACS);
 
 	if (acsurl == NULL)
 		save_acs_bkp_config(cwmp);
 
-	if (acsurl == NULL || ((acsurl != NULL) && (cmp = strcmp(cwmp->conf.acsurl, acsurl)))) {
+	if (acsurl == NULL || ((cmp = strcmp(cwmp->conf.acsurl, acsurl)) != 0)) {
 		pthread_mutex_lock(&(cwmp->mutex_session_queue));
 		if (cwmp->head_event_container != NULL && cwmp->head_session_queue.next != &(cwmp->head_session_queue)) {
+			struct session *session;
 			session = list_entry(cwmp->head_event_container, struct session, head_event_container);
 			event_remove_all_event_container(session, RPC_QUEUE);
 		}
@@ -303,10 +303,10 @@ int cwmp_root_cause_changedustate_complete(struct cwmp *cwmp, struct du_state_ch
 
 int cwmp_root_cause_get_rpc_method(struct cwmp *cwmp)
 {
-	struct event_container *event_container;
-	struct session *session;
-
 	if (cwmp->env.periodic == CWMP_START_PERIODIC) {
+		struct event_container *event_container;
+		struct session *session;
+
 		pthread_mutex_lock(&(cwmp->mutex_session_queue));
 		cwmp->env.periodic = 0;
 		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_2PERIODIC, "");
@@ -433,7 +433,6 @@ int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
 void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 {
 	char *bip = NULL;
-	struct event_container *event_container;
 	char *ip_version = (version == IPv6) ? "ipv6" : "ip";
 	char *ip_value = (version == IPv6) ? cwmp->conf.ipv6 : cwmp->conf.ip;
 
@@ -448,6 +447,7 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 		return;
 	}
 	if (strcmp(bip, ip_value) != 0) {
+		struct event_container *event_container;
 		pthread_mutex_lock(&(cwmp->mutex_session_queue));
 		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL) {
@@ -467,7 +467,6 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 void connection_request_port_value_change(struct cwmp *cwmp, int port)
 {
 	char *bport = NULL;
-	struct event_container *event_container;
 	char bufport[16];
 
 	snprintf(bufport, sizeof(bufport), "%d", port);
@@ -480,6 +479,7 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port)
 		return;
 	}
 	if (strcmp(bport, bufport) != 0) {
+		struct event_container *event_container;
 		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL) {
 			FREE(bport);
