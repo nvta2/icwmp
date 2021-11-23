@@ -665,7 +665,6 @@ static void *thread_cwmp_signal_handler_thread(void *arg)
 			CWMP_LOG(INFO, "Catch of Signal(%d)", signal_num);
 
 			if (signal_num == SIGINT || signal_num == SIGTERM) {
-				//copy_file(CWMP_BKP_FILE, "/etc/icwmpd/.icwmpd_backup_session.xml");
 				signal_exit = true;
 
 				if (!ubus_exit)

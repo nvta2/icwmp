@@ -119,12 +119,15 @@ static size_t http_get_response(void *buffer, size_t size, size_t rxed, char **m
 {
 	char *c;
 
+	if (*msg_in == NULL)
+		return 0;
+
 	if (cwmp_asprintf(&c, "%s%.*s", *msg_in, (int)(size * rxed), (char *)buffer) == -1) {
 		FREE(*msg_in);
 		return -1;
 	}
 
-	free(*msg_in);
+	FREE(*msg_in);
 	*msg_in = c;
 
 	return size * rxed;
