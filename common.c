@@ -675,10 +675,14 @@ char *generate_random_string(size_t size)
 		goto end;
 	}
 
-	if (RAND_bytes(buf, size) != 1) {
-		CWMP_LOG(ERROR, "Failed to get random bytes");
-		goto end;
-	}
+	int written = RAND_bytes(buf, size);
+
+    RAND_seed(buf, written);
+
+    if (written != 1) {
+            printf("Failed to get random bytes");
+            goto end;
+    }
 
 	char * hex = string_to_hex(buf, size);
 

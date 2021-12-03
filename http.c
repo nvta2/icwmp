@@ -325,7 +325,7 @@ static void http_cr_new_client(int client, bool service_available)
 		goto http_end;
 	}
 	int auth_check = http_digest_auth_check("GET", "/", auth_digest_buffer + strlen("Authorization: Digest "), REALM, username, password, 300);
-	if (auth_check == -1) {
+	if (auth_check == MHD_INVALID_NONCE) {
 		internal_error = true;
 		goto http_end;
 	}
@@ -347,7 +347,7 @@ http_end:
 		http_success_cr();
 	} else if (internal_error) {
 		CWMP_LOG(INFO, "Receive Connection Request: Return 500 Internal Error");
-		fputs("HTTP/1.1 500 500 Internal Server Error\r\n", fp);
+		fputs("HTTP/1.1 500 Internal Server Error\r\n", fp);
 		fputs("Connection: close\r\n", fp);
 		fputs("Content-Length: 0\r\n", fp);
 	}

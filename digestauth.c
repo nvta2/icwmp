@@ -385,17 +385,18 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 		 * attached to the nonce exceeds `nonce_timeout' then the nonce is
 		 * invalid.
 		 */
-		if ((t > nonce_time + nonce_timeout) || (nonce_time + nonce_timeout < nonce_time))
-			return MHD_INVALID_NONCE;
+		if ((t > nonce_time + nonce_timeout) || (nonce_time + nonce_timeout < nonce_time)) {
+			CWMP_LOG(ERROR, "Timestamp attached to the nonce exceeds");
+			return MHD_NO;
+		}
 
 		if (0 != strncmp(uri, url, strlen(url))) {
 			DD(DEBUG, "Authentication failed: URI does not match.");
-
 			return MHD_NO;
 		}
 		if (nonce_privacy_key == NULL) {
 			if (generate_nonce_priv_key() != CWMP_OK)
-				return -1;
+				return MHD_NO;
 		}
 		nonce_key_len = strlen(nonce_privacy_key);
 		calculate_nonce(nonce_time, http_method, nonce_privacy_key, nonce_key_len, url, realm, noncehashexp);
@@ -410,8 +411,10 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 		 * very hard to achieve.
 		 */
 
-		if (0 != strcmp(nonce, noncehashexp))
+		if (0 != strcmp(nonce, noncehashexp)) {
+			CWMP_LOG(ERROR, "Nonce value is valid and possibly fabricated");
 			return MHD_INVALID_NONCE;
+		}
 
 		if ((0 == lookup_sub_value(cnonce, sizeof(cnonce), header, "cnonce")) || (0 == lookup_sub_value(qop, sizeof(qop), header, "qop")) || ((0 != strcmp(qop, "auth")) && (0 != strcmp(qop, ""))) || (0 == lookup_sub_value(nc, sizeof(nc), header, "nc")) ||
 		    (0 == lookup_sub_value(response, sizeof(response), header, "response"))) {
