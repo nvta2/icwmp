@@ -345,7 +345,7 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			}
 
 			pthread_cond_timedwait(&(cwmp->threshold_session_send), &(cwmp->mutex_session_send), &time_to_wait);
-	
+
 			if (thread_end) {
 				pthread_mutex_unlock(&(cwmp->mutex_session_send));
 				return;
@@ -571,6 +571,87 @@ int create_cwmp_var_state_files()
 	return CWMP_OK;
 }
 
+static bool g_usp_object_available = false;
+
+static void lookup_event_cb(struct ubus_context *ctx, struct ubus_event_handler *ev,
+			  const char *type, struct blob_attr *msg)
+{
+	static const struct blobmsg_policy policy = {
+		"path", BLOBMSG_TYPE_STRING
+	};
+	struct blob_attr *attr;
+	const char *path;
+
+	if (strcmp(type, "ubus.object.add") != 0)
+		return;
+
+	blobmsg_parse(&policy, 1, &attr, blob_data(msg), blob_len(msg));
+	if (!attr)
+		return;
+
+	path = blobmsg_data(attr);
+	if (strcmp(path, USP_OBJECT_NAME) == 0) {
+		g_usp_object_available = true;
+		uloop_end();
+	}
+}
+
+static void lookup_timeout_cb(struct uloop_timeout *timeout)
+{
+	uloop_end();
+}
+
+static int wait_for_usp_raw_object()
+{
+#define USP_RAW_WAIT_TIMEOUT 60
+
+	struct ubus_context *uctx;
+	int ret;
+	uint32_t ubus_id;
+	struct ubus_event_handler add_event;
+	struct uloop_timeout u_timeout;
+
+	g_usp_object_available = false;
+	uctx = ubus_connect(NULL);
+	if (uctx == NULL) {
+		CWMP_LOG(ERROR, "Can't create ubus context");
+		return FAULT_CPE_INTERNAL_ERROR;
+	}
+
+	uloop_init();
+	ubus_add_uloop(uctx);
+
+	// register for add event
+	memset(&add_event, 0, sizeof(struct ubus_event_handler));
+	add_event.cb = lookup_event_cb;
+	ubus_register_event_handler(uctx, &add_event, "ubus.object.add");
+
+	// check if object already present
+	ret = ubus_lookup_id(uctx, USP_OBJECT_NAME, &ubus_id);
+	if (ret == 0) {
+		g_usp_object_available = true;
+		goto end;
+	}
+
+	// Set timeout to expire lookup
+	memset(&u_timeout, 0, sizeof(struct uloop_timeout));
+	u_timeout.cb = lookup_timeout_cb;
+	uloop_timeout_set(&u_timeout, USP_RAW_WAIT_TIMEOUT * 1000);
+
+	uloop_run();
+	uloop_done();
+
+end:
+	ubus_free(uctx);
+
+	if (g_usp_object_available == false) {
+		CWMP_LOG(ERROR, "%s object not found", USP_OBJECT_NAME);
+		return FAULT_CPE_INTERNAL_ERROR;
+	}
+
+	return 0;
+}
+
 static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 {
 	int error;
@@ -578,6 +659,10 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 
 	memset(&env, 0, sizeof(struct env));
 	if ((error = global_env_init(argc, argv, &env)))
+		return error;
+
+	error = wait_for_usp_raw_object();
+	if (error)
 		return error;
 
 	icwmp_init_list_services();

@@ -29,6 +29,7 @@
 
 #define ARRAYSIZEOF(a) (sizeof(a) / sizeof((a)[0]))
 
+#define USP_OBJECT_NAME "usp.raw"
 #define MAX_EVENTS 64
 #define MAX_INT32 2147483646
 #define MAX_INT_ID MAX_INT32

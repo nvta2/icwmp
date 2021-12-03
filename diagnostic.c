@@ -157,7 +157,7 @@ static int cwmp_diagnostics_operate(char *diagnostics_object, char *action_name,
 			continue;
 		add_dm_parameter_to_list(&diagnostics_param_value_list, diagnostics_array[i].input_name, diagnostics_array[i].value, NULL, 0, false);
 	}
-	e = cwmp_ubus_call("usp.raw", "operate", CWMP_UBUS_ARGS{ { "path", {.str_val = diagnostics_object }, UBUS_String }, { "action", {.str_val = action_name }, UBUS_String }, { "input", {.param_value_list = &diagnostics_param_value_list }, UBUS_Obj_Obj } }, 3, empty_ubus_callback, NULL);
+	e = cwmp_ubus_call(USP_OBJECT_NAME, "operate", CWMP_UBUS_ARGS{ { "path", {.str_val = diagnostics_object }, UBUS_String }, { "action", {.str_val = action_name }, UBUS_String }, { "input", {.param_value_list = &diagnostics_param_value_list }, UBUS_Obj_Obj } }, 3, empty_ubus_callback, NULL);
 	if (e)
 		return -1;
 	return 0;
