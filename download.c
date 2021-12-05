@@ -262,9 +262,12 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 		cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 		if (cwmp_apply_firmware() != 0)
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
-		sleep(70);
-		if (error == FAULT_CPE_NO_FAULT)
+
+		if (error == FAULT_CPE_NO_FAULT) {
+			sleep(70);
 			error = FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED;
+		}
+
 	} else if (strcmp(pdownload->file_type, WEB_CONTENT_FILE_TYPE) == 0) {
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
