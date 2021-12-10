@@ -32,6 +32,9 @@
 #include "upload.h"
 #include "sched_inform.h"
 
+#define PROCESSING_DELAY (1) // In download/upload the message enqueued before sending the response, which cause the download/upload
+			     // to start just before the time. This delay is to compensate the time lapsed during the message enqueue and response
+
 struct cwmp_namespaces ns;
 const struct rpc_cpe_method rpc_cpe_methods[] = { [RPC_CPE_GET_RPC_METHODS] = { "GetRPCMethods", cwmp_handle_rpc_cpe_get_rpc_methods, AMD_1 },
 						  [RPC_CPE_SET_PARAMETER_VALUES] = { "SetParameterValues", cwmp_handle_rpc_cpe_set_parameter_values, AMD_1 },
@@ -2046,7 +2049,7 @@ int cwmp_handle_rpc_cpe_download(struct session *session, struct rpc *rpc)
 	if (error == FAULT_CPE_NO_FAULT) {
 		pthread_mutex_lock(&mutex_download);
 		if (download_delay != 0)
-			scheduled_time = time(NULL) + download_delay;
+			scheduled_time = time(NULL) + download_delay + PROCESSING_DELAY;
 
 		list_for_each (ilist, &(list_download)) {
 			idownload = list_entry(ilist, struct download, list);
@@ -2391,7 +2394,7 @@ int cwmp_handle_rpc_cpe_upload(struct session *session, struct rpc *rpc)
 	if (error == FAULT_CPE_NO_FAULT) {
 		pthread_mutex_lock(&mutex_upload);
 		if (upload_delay != 0)
-			scheduled_time = time(NULL) + upload_delay;
+			scheduled_time = time(NULL) + upload_delay + PROCESSING_DELAY;
 
 		list_for_each (ilist, &(list_upload)) {
 			iupload = list_entry(ilist, struct upload, list);
