@@ -573,8 +573,9 @@ int create_cwmp_var_state_files()
 
 static bool g_usp_object_available = false;
 
-static void lookup_event_cb(struct ubus_context *ctx, struct ubus_event_handler *ev,
-			  const char *type, struct blob_attr *msg)
+static void lookup_event_cb(struct ubus_context *ctx __attribute__((unused)),
+		struct ubus_event_handler *ev __attribute__((unused)),
+		const char *type, struct blob_attr *msg)
 {
 	static const struct blobmsg_policy policy = {
 		"path", BLOBMSG_TYPE_STRING
@@ -596,7 +597,7 @@ static void lookup_event_cb(struct ubus_context *ctx, struct ubus_event_handler 
 	}
 }
 
-static void lookup_timeout_cb(struct uloop_timeout *timeout)
+static void lookup_timeout_cb(struct uloop_timeout *timeout __attribute__((unused)))
 {
 	uloop_end();
 }

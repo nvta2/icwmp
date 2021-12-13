@@ -708,8 +708,12 @@ int copy_file(char *source_file, char *target_file)
 		CWMP_LOG(ERROR, "Not able to open the target file: %s\n", target_file);
 		return -1;
 	}
-	while( (ch = fgetc(source) ) != EOF)
+
+	ch = fgetc(source);
+	while( feof(source) != EOF) {
 		fputc(ch, target);
+		ch = fgetc(source);
+	}
 
 	CWMP_LOG(ERROR, "File copied successfully.\n");
 	fclose(source);
