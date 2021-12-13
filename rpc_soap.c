@@ -34,6 +34,7 @@
 
 #define PROCESSING_DELAY (1) // In download/upload the message enqueued before sending the response, which cause the download/upload
 			     // to start just before the time. This delay is to compensate the time lapsed during the message enqueue and response
+#define DM_CONN_REQ_URL "Device.ManagementServer.ConnectionRequestURL"
 
 struct cwmp_namespaces ns;
 const struct rpc_cpe_method rpc_cpe_methods[] = { [RPC_CPE_GET_RPC_METHODS] = { "GetRPCMethods", cwmp_handle_rpc_cpe_get_rpc_methods, AMD_1 },
@@ -67,7 +68,7 @@ char *boot_inform_parameters[MAX_NBRE_CUSTOM_INFORM] = { 0 };
 int nbre_custom_inform = 0;
 int nbre_boot_inform = 0;
 char *forced_inform_parameters[] = {
-	"Device.RootDataModelVersion", "Device.DeviceInfo.HardwareVersion", "Device.DeviceInfo.SoftwareVersion", "Device.DeviceInfo.ProvisioningCode", "Device.ManagementServer.ParameterKey", "Device.ManagementServer.ConnectionRequestURL", "Device.ManagementServer.AliasBasedAddressing"
+	"Device.RootDataModelVersion", "Device.DeviceInfo.HardwareVersion", "Device.DeviceInfo.SoftwareVersion", "Device.DeviceInfo.ProvisioningCode", "Device.ManagementServer.ParameterKey", DM_CONN_REQ_URL, "Device.ManagementServer.AliasBasedAddressing"
 };
 
 int xml_handle_message(struct session *session)
@@ -364,6 +365,13 @@ int cwmp_rpc_acs_prepare_message_inform(struct cwmp *cwmp, struct session *sessi
 		char *fault = cwmp_get_single_parameter_value(forced_inform_parameters[i], &cwmp_dm_param);
 		if (fault != NULL)
 			continue;
+
+		// An empty connection url cause CDR test to break
+		if (strcmp(forced_inform_parameters[i], DM_CONN_REQ_URL) == 0 && cwmp_dm_param.value != NULL && strlen(cwmp_dm_param.value) == 0) {
+			CWMP_LOG(ERROR, "# Empty CR URL[%s] value", forced_inform_parameters[i]);
+			goto error;
+		}
+
 		if (xml_prepare_parameters_inform(&cwmp_dm_param, parameter_list, &size))
 			goto error;
 	}
