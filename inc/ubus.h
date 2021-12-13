@@ -18,7 +18,6 @@
 #include "common.h"
 #define ARRAY_MAX 8
 
-extern struct ubus_context *ubus_ctx;
 int cwmp_ubus_init(struct cwmp *cwmp);
 void cwmp_ubus_exit(void);
 

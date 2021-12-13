@@ -540,6 +540,24 @@ int check_value_change(void)
 	return int_ret;
 }
 
+void cwmp_prepare_value_change(struct cwmp *cwmp)
+{
+	struct event_container *event_container;
+	if (list_value_change.next == &(list_value_change))
+		return;
+	pthread_mutex_lock(&(cwmp->mutex_session_queue));
+	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+	if (!event_container)
+		goto end;
+	pthread_mutex_lock(&(mutex_value_change));
+	list_splice_init(&(list_value_change), &(event_container->head_dm_parameter));
+	pthread_mutex_unlock(&(mutex_value_change));
+	cwmp_save_event_container(event_container);
+
+end:
+	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+}
+
 void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p)
 {
 	char *current_software_version = NULL;

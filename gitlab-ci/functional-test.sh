@@ -39,7 +39,7 @@ echo "## Running script verification of functionalities ##"
 echo > ./funl-test-result.log
 echo > ./funl-test-debug.log
 test_num=0
-for test in `ls -I "common.sh" -I "verify_custom_notifications.sh" test/script/`; do
+for test in `ls -I "common.sh" -I "verify_custom_notifications.sh" -I "verify_download_method.sh" test/script/`; do
 	test_num=$(( test_num + 1 ))
 	./test/script/${test}
 	if [ "$?" -eq 0 ]; then
@@ -55,16 +55,16 @@ supervisorctl stop icwmpd
 cp test/files/etc/config/users /etc/config/
 cp test/files/etc/config/wireless /etc/config/
 
-echo "Verify Custom notifications"
-./test/script/verify_custom_notifications.sh
-if [ "$?" -eq 0 ]; then
-	echo "ok - verify_custom_notifications" >> ./funl-test-result.log
-else
-	echo "not ok - verify_custom_notifications" >> ./funl-test-result.log
-fi
-
-test_num=$(( test_num + 1 ))
-echo "1..${test_num}" >> ./funl-test-result.log
+#echo "Verify Custom notifications"
+#./test/script/verify_custom_notifications.sh
+#if [ "$?" -eq 0 ]; then
+#	echo "ok - verify_custom_notifications" >> ./funl-test-result.log
+#else
+#	echo "not ok - verify_custom_notifications" >> ./funl-test-result.log
+#fi
+#
+#test_num=$(( test_num + 1 ))
+#echo "1..${test_num}" >> ./funl-test-result.log
 
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./funl-test-coverage.xml

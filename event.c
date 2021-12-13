@@ -23,6 +23,8 @@
 #include "upload.h"
 #include "sched_inform.h"
 
+pthread_mutex_t add_event_mutext = PTHREAD_MUTEX_INITIALIZER;
+
 const struct EVENT_CONST_STRUCT EVENT_CONST[] = {[EVENT_IDX_0BOOTSTRAP] = { "0 BOOTSTRAP", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL | EVENT_RETRY_AFTER_REBOOT },
 						 [EVENT_IDX_1BOOT] = { "1 BOOT", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL },
 						 [EVENT_IDX_2PERIODIC] = { "2 PERIODIC", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL | EVENT_RETRY_AFTER_REBOOT },
@@ -59,7 +61,7 @@ void cwmp_save_event_container(struct event_container *event_container) //to be 
 	}
 }
 
-struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_code, char *command_key)
+struct event_container *__cwmp_add_event_container(struct cwmp *cwmp, int event_code, char *command_key)
 {
 	static int id;
 	struct event_container *event_container;
@@ -97,6 +99,14 @@ struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_co
 	id++;
 	event_container->id = id;
 	return event_container;
+}
+
+struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_code, char *command_key)
+{
+	pthread_mutex_lock(&add_event_mutext);
+	struct event_container *event = __cwmp_add_event_container(cwmp, event_code, command_key);
+	pthread_mutex_unlock(&add_event_mutext);
+	return event;
 }
 
 void cwmp_root_cause_event_ipdiagnostic(void)

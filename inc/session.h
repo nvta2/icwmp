@@ -15,6 +15,9 @@
 #include <microxml.h>
 #include "common.h"
 
+extern struct uloop_timeout retry_session_timer;
+extern pthread_mutex_t start_session_mutext;
+
 typedef struct session {
 	struct list_head list;
 	struct list_head head_event_container;
@@ -62,10 +65,14 @@ void cwmp_set_end_session(unsigned int flag);
 struct rpc *cwmp_add_session_rpc_cpe(struct session *session, int type);
 struct session *cwmp_add_queue_session(struct cwmp *cwmp);
 struct rpc *cwmp_add_session_rpc_acs(struct session *session, int type);
-int cwmp_apply_acs_changes();
 int cwmp_move_session_to_session_send(struct cwmp *cwmp, struct session *session);
 struct rpc *cwmp_add_session_rpc_acs_head(struct session *session, int type);
 int cwmp_session_rpc_destructor(struct rpc *rpc);
 int cwmp_session_destructor(struct session *session);
 int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *session);
+void trigger_cwmp_session_timer();
+void initiate_cwmp_periodic_session_feature();
+int run_session_end_func(void);
+void cwmp_schedule_session(struct uloop_timeout *timeout);
+void start_cwmp_session(struct cwmp *cwmp);
 #endif /* SRC_INC_SESSION_H_ */

@@ -12,6 +12,7 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 #include "common.h"
+#include "event.h"
 
 typedef struct event_container {
 	struct list_head list;
@@ -65,6 +66,7 @@ enum event_idx_enum
 };
 
 extern const struct EVENT_CONST_STRUCT EVENT_CONST[__EVENT_IDX_MAX];
+extern pthread_mutex_t add_event_mutext;
 
 struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_idx, char *command_key);
 int event_remove_all_event_container(struct session *session, int rem_from);

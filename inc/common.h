@@ -16,10 +16,12 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <math.h>
 #include <libubox/list.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <libubox/uloop.h>
 
 #ifndef CWMP_VERSION
 #define CWMP_VERSION "3.0.0"
@@ -57,6 +59,8 @@ extern char *commandKey;
 extern bool thread_end;
 extern bool signal_exit;
 extern bool ubus_exit;
+extern struct uloop_timeout session_timer;
+extern bool g_firewall_restart;
 
 typedef struct env {
 	unsigned short boot;
@@ -86,6 +90,7 @@ typedef struct config {
 	int periodic_notify_interval;
 	int compression;
 	int delay_reboot;
+	int cr_auth_type;
 	time_t schedule_reboot;
 	time_t time;
 	bool periodic_enable;
@@ -147,6 +152,7 @@ typedef struct cwmp {
 	int cr_socket_desc;
 	bool is_boot;
 	bool custom_notify_active;
+	struct uloop_fd http_event;
 } cwmp;
 
 enum action {
@@ -154,6 +160,11 @@ enum action {
 	START,
 	STOP,
 	RESTART,
+};
+
+enum auth_type_enum {
+	AUTH_BASIC,
+	AUTH_DIGEST
 };
 
 enum cwmp_start { CWMP_START_BOOT = 1, CWMP_START_PERIODIC = 2 };
@@ -487,6 +498,8 @@ void clean_custom_inform_parameters();
 char *string_to_hex(const unsigned char *str, size_t size);
 char *generate_random_string(size_t size);
 int copy_file(char *source_file, char *target_file);
+int cwmp_get_session_retry_interval(struct cwmp *cwmp);
+int cwmp_apply_acs_changes();
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

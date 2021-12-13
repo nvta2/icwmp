@@ -26,8 +26,8 @@ int http_client_init(struct cwmp *cwmp);
 void http_client_exit(void);
 int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **msg_in);
 
-void http_server_init(void);
-void http_server_listen(void);
+int http_cr_server_init(void);
+void http_server_start(void);
 void http_success_cr(void);
 
 #endif

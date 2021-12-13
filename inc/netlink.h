@@ -15,5 +15,6 @@
 
 int netlink_init(void);
 int netlink_init_v6(void);
+void cwmp_netlink_init(void);
 
 #endif

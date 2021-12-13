@@ -286,3 +286,16 @@ int netlink_init(void)
 
 	return 0;
 }
+
+void cwmp_netlink_init(void)
+{
+	if (netlink_init()) {
+		CWMP_LOG(ERROR, "netlink initialization failed");
+	}
+
+	if (cwmp_main.conf.ipv6_enable) {
+		if (netlink_init_v6()) {
+			CWMP_LOG(ERROR, "netlink initialization failed");
+		}
+	}
+}

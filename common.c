@@ -40,7 +40,6 @@ struct cwmp cwmp_main = { 0 };
 static int nbre_services = 0;
 static char *list_services[MAX_NBRE_SERVICES] = { 0 };
 LIST_HEAD(cwmp_memory_list);
-extern bool g_firewall_restart;
 
 struct cwmp_mem {
 	struct list_head list;

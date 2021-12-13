@@ -16,7 +16,6 @@
 #include "ubus.h"
 #include "session.h"
 #include "log.h"
-#include "netlink.h"
 #include "cwmp_time.h"
 #include "event.h"
 #include "backupSession.h"
@@ -222,28 +221,20 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 		struct event_container *event_container;
 		struct session *session;
 
-		pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 		event_container = cwmp_add_event_container(&cwmp_main, EVENT_IDX_2PERIODIC, "");
-		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
+		if (event_container == NULL)
 			return 0;
-		}
 		cwmp_save_event_container(event_container);
 		session = list_entry(cwmp_main.head_event_container, struct session, head_event_container);
-		if (cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL) {
-			pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
+		if (cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL)
 			return 0;
-		}
-		pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
-		pthread_cond_signal(&(cwmp_main.threshold_session_send));
+		trigger_cwmp_session_timer();
 		blobmsg_add_u32(&b, "status", 1);
 		blobmsg_add_string(&b, "info", "Session with GetRPCMethods will start");
 	} else {
 		int event_code = cwmp_get_int_event_code(event);
-		pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 		cwmp_add_event_container(&cwmp_main, event_code, "");
-		pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
-		pthread_cond_signal(&(cwmp_main.threshold_session_send));
+		trigger_cwmp_session_timer();
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
 			blobmsg_add_u32(&b, "status", -1);
 			blobmsg_add_string(&b, "info", "Session already running, event will be sent at the end of the session");
@@ -275,17 +266,6 @@ static struct ubus_object main_object = {
 
 int cwmp_ubus_init(struct cwmp *cwmp)
 {
-	uloop_init();
-
-	if (netlink_init()) {
-		CWMP_LOG(ERROR, "netlink initialization failed");
-	}
-
-	if (cwmp->conf.ipv6_enable) {
-		if (netlink_init_v6()) {
-			CWMP_LOG(ERROR, "netlink initialization failed");
-		}
-	}
 	ctx = ubus_connect(cwmp->conf.ubus_socket);
 	if (!ctx)
 		return -1;
@@ -295,8 +275,6 @@ int cwmp_ubus_init(struct cwmp *cwmp)
 	if (ubus_add_object(ctx, &main_object))
 		return -1;
 
-	uloop_run();
-	uloop_done();
 	return 0;
 }
 

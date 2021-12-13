@@ -17,6 +17,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "log.h"
 #include "config.h"
@@ -25,16 +29,20 @@
 #include "digestauth.h"
 #include "cwmp_uci.h"
 #include "ubus.h"
+#include "session.h"
 
 #define REALM "authenticate@cwmp"
 #define OPAQUE "11733b200778ce33060f31c9af70a870ba96ddd4"
 
 static struct http_client http_c;
 
+static pthread_t http_cr_server_thread;
+
 static CURL *curl = NULL;
 
 char *fc_cookies = "/tmp/icwmp_cookies";
 
+struct uloop_fd http_event6;
 void http_set_timeout(void)
 {
 	if (curl)
@@ -279,10 +287,10 @@ error:
 void http_success_cr(void)
 {
 	CWMP_LOG(INFO, "Connection Request thread: add connection request event in the queue");
-	pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 	cwmp_add_event_container(&cwmp_main, EVENT_IDX_6CONNECTION_REQUEST, "");
-	pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
-	pthread_cond_signal(&(cwmp_main.threshold_session_send));
+	pthread_mutex_lock(&start_session_mutext);
+	start_cwmp_session(&cwmp_main);
+	pthread_mutex_unlock(&start_session_mutext);
 }
 
 static void http_cr_new_client(int client, bool service_available)
@@ -429,7 +437,7 @@ void http_server_listen(void)
 	while ((client_sock = accept(cwmp_main.cr_socket_desc, (struct sockaddr *)&client, (socklen_t *)&c))) {
 		bool service_available;
 		time_t current_time;
-		
+
 		if (thread_end)
 			return;
 
@@ -452,5 +460,32 @@ void http_server_listen(void)
 	if (client_sock < 0) {
 		CWMP_LOG(ERROR, "Could not accept connections for Connection Requests!");
 		return;
+	}
+}
+
+void http_server_listen_uloop(struct uloop_fd *ufd, unsigned events)
+{
+	http_server_listen();
+}
+
+void http_server_start_uloop(void)
+{
+	http_server_init();
+	http_event6.fd = cwmp_main.cr_socket_desc;
+	http_event6.cb = http_server_listen_uloop;
+	uloop_fd_add(&http_event6, ULOOP_READ | ULOOP_EDGE_TRIGGER);
+}
+
+static void *thread_http_cr_server_listen(void *v __attribute__((unused)))
+{
+	http_server_listen();
+	return NULL;
+}
+
+void http_server_start(void)
+{
+	int error = pthread_create(&http_cr_server_thread, NULL, &thread_http_cr_server_listen, NULL);
+	if (error < 0) {
+		CWMP_LOG(ERROR, "Error when creating the http connection request server thread!");
 	}
 }

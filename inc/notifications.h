@@ -69,4 +69,5 @@ void cwmp_lwnotification();
 void clean_list_param_notify();
 void init_list_param_notify();
 void reinit_list_param_notify();
+void cwmp_prepare_value_change(struct cwmp *cwmp);
 #endif /* SRC_INC_NOTIFICATIONS_H_ */
