@@ -575,7 +575,7 @@ void icwmp_restart_services()
 	int i;
 
 	for (i = 0; i < nbre_services; i++) {
-		if (strlen(list_services[i]) == 0)
+		if (list_services[i] == NULL)
 			continue;
 
 		cwmp_ubus_call("uci", "commit",
@@ -587,6 +587,7 @@ void icwmp_restart_services()
 		}
 	}
 	if (g_firewall_restart) {
+			CWMP_LOG(INFO, "Initiating Firewall restart")
 			cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "in_progress");
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 	}

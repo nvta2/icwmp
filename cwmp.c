@@ -109,6 +109,7 @@ int get_firewall_restart_state(char **state)
 void check_firewall_restart_state()
 {
 	int count = 0;
+	bool init = false;
 
 	do {
 		char *state = NULL;
@@ -116,10 +117,8 @@ void check_firewall_restart_state()
 		if (get_firewall_restart_state(&state) != CWMP_OK)
 			break;
 
-		if (strlen(state) == 0)
-			break;
-
-		if (strcmp(state, "init") == 0) {
+		if (state != NULL && strcmp(state, "init") == 0) {
+			init = true;
 			FREE(state);
 			break;
 		}
@@ -131,6 +130,11 @@ void check_firewall_restart_state()
 
 	// mark the firewall restart as done
 	g_firewall_restart = false;
+	if (init == false) { // In case of timeout reset the firewall_restart flag
+		CWMP_LOG(ERROR, "Firewall restart took longer than usual");
+		cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "init");
+		cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
+	}
 }
 
 static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
