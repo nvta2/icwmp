@@ -26,22 +26,28 @@ LIST_HEAD(parameters_list);
 
 static int cwmp_notifications_unit_tests_init(void **state)
 {
-	cwmp_uci_init();
+	cwmp_main = (struct cwmp*)calloc(1, sizeof(struct cwmp));
+	create_cwmp_session_structure();
+	memcpy(&(cwmp_main->env), &cwmp_main, sizeof(struct env));
+	cwmp_session_init();
 	return 0;
 }
 
 static int cwmp_notifications_unit_tests_clean(void **state)
 {
-	icwmp_cleanmem();
+	clean_list_param_notify();
+	clean_list_value_change();
 	cwmp_free_all_dm_parameter_list(&parameters_list);
-	cwmp_uci_exit();
+	cwmp_session_exit();
+	FREE(cwmp_main->session);
+	FREE(cwmp_main);
 	return 0;
 }
 
 int check_notify_file(char *param, int *ret_notification)
 {
 	struct blob_buf bbuf;
-	char *parameter = NULL, *value = NULL;
+	char *parameter = NULL;
 	int notification = 0;
 	FILE *fp;
 	int nbre_iterations = 0;
@@ -265,6 +271,7 @@ static void cwmp_check_value_change_1_unit_test(void **state)
 	assert_int_equal((int)list_empty(&list_value_change), 0);
 	assert_int_equal((int)list_empty(&list_lw_value_change), 1);
 	assert_int_equal(get_parameter_in_list_value_change("Device.DeviceInfo.UpTime"), 1);
+	clean_list_value_change();
 }
 
 int main(void)

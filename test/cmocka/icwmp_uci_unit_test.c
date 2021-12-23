@@ -31,9 +31,9 @@ static int cwmp_uci_unit_tests_init(void **state)
 static int cwmp_uci_unit_tests_clean(void **state)
 {
 	icwmp_cleanmem();
-	cwmp_uci_exit();
 	if (list != NULL)
 		cwmp_free_uci_list(list);
+	cwmp_uci_exit();
 	return 0;
 }
 
@@ -142,21 +142,19 @@ static void cwmp_uci_set_tests(void **state)
 static void cwmp_uci_add_tests(void **state)
 {
 	struct uci_section *s = NULL;
-	int error = UCI_OK;
+	int error = UCI_OK, cmp_cfg = 0;
 
 	error = cwmp_uci_add_section("cwmp", "acs", UCI_STANDARD_CONFIG, &s);
 	assert_non_null(s);
 	assert_int_equal(error, UCI_OK);
-	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	assert_int_equal(strncmp(section_name(s), "cfg", 3), 0);
-	s = NULL;
+	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 
 	error = cwmp_uci_add_section("new_package", "new_section", UCI_STANDARD_CONFIG, &s);
 	assert_non_null(s);
 	assert_int_equal(error, UCI_OK);
-	cwmp_commit_package("new_package", UCI_STANDARD_CONFIG);
 	assert_int_equal(strncmp(section_name(s), "cfg", 3), 0);
-	s = NULL;
+	cwmp_commit_package("new_package", UCI_STANDARD_CONFIG);
 
 	error = cwmp_uci_add_section_with_specific_name("cwmp", "acs", "new_acs", UCI_STANDARD_CONFIG);
 	assert_int_equal(error, UCI_OK);
@@ -170,7 +168,6 @@ static void cwmp_uci_add_tests(void **state)
 
 static void cwmp_uci_list_tests(void **state)
 {
-	struct uci_section *s = NULL;
 	int error = UCI_OK;
 	char *list_string = NULL;
 
@@ -178,28 +175,26 @@ static void cwmp_uci_list_tests(void **state)
 	assert_int_equal(error, UCI_OK);
 	error = cwmp_uci_add_list_value("cwmp", "cpe", "optionlist", "val2", UCI_STANDARD_CONFIG);
 	assert_int_equal(error, UCI_OK);
-	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	error = cwmp_uci_get_cwmp_standard_option_value_list("cwmp", "cpe", "optionlist", &list);
 	assert_int_equal(error, UCI_TYPE_LIST);
 	list_string = cwmp_uci_list_to_string(list, ",");
 	assert_non_null(list_string);
 	assert_string_equal(list_string, "val1,val2");
 	list_string = NULL;
-	if(list != NULL)
+	if(list != NULL) {
 		cwmp_free_uci_list(list);
+		list = NULL;
+	}
 
 	error = cwmp_uci_add_list_value("cwmp", "wrong_section", "optionlist", "val1", UCI_STANDARD_CONFIG);
 	assert_int_equal(error, UCI_ERR_INVAL);
 	error = cwmp_uci_add_list_value("cwmp", "wrong_section", "optionlist", "val2", UCI_STANDARD_CONFIG);
 	assert_int_equal(error, UCI_ERR_INVAL);
-	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	error = cwmp_uci_get_cwmp_standard_option_value_list("cwmp", "wrong_section", "optionlist", &list);
 	assert_int_equal(error, UCI_ERR_NOTFOUND);
 	assert_null(list);
 	list_string = cwmp_uci_list_to_string(list, ",");
 	assert_null(list_string);
-	if(list != NULL)
-		cwmp_free_uci_list(list);
 }
 
 int main(void)

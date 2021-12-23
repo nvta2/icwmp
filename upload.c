@@ -160,9 +160,8 @@ end_upload:
 	return error;
 }
 
-void *thread_cwmp_rpc_cpe_upload(void *v)
+void *thread_cwmp_rpc_cpe_upload(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct upload *pupload;
 	struct timespec upload_timeout = { 0, 0 };
 	time_t current_time, stime;
@@ -172,7 +171,7 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 
 	for (;;) {
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 
 		if (list_upload.next != &(list_upload)) {
@@ -196,7 +195,7 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 					ptransfer_complete->fault_code = error;
 					ptransfer_complete->type = TYPE_UPLOAD;
 					bkp_session_insert_transfer_complete(ptransfer_complete);
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(ptransfer_complete);
 				}
 				list_del(&(pupload->list));
 				if (pupload->scheduled_time != 0)
@@ -206,23 +205,20 @@ void *thread_cwmp_rpc_cpe_upload(void *v)
 				continue;
 			}
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
-				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				CWMP_LOG(INFO, "Launch upload file %s", pupload->url);
 				error = cwmp_launch_upload(pupload, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 					ptransfer_complete->fault_code = error;
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(ptransfer_complete);
 				}
-				pthread_mutex_unlock(&(cwmp->mutex_session_send));
-				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_upload);
 				list_del(&(pupload->list));
 				if (pupload->scheduled_time != 0)

@@ -23,7 +23,13 @@ run_unit_test:
       when: always
       paths:
          - timestamp.log
-         - memory-report.xml
+         - icwmp_datamodel_interface_unit_testd-mem-report.xml
+         - icwmp_soap_msg_unit_testd-mem-report.xml
+         - icwmp_backup_session_unit_testd-mem-report.xml
+         - icwmp_custom_inform_parameters_unit_testd-mem-report.xml
+         - icwmp_notifications_unit_testd-mem-report.xml
+         - icwmp_uci_unit_testd-mem-report.xml
+         - icwmp_cli_unit_testd-mem-report.xml
          - unit-test-coverage.xml
          
 run_api_test:

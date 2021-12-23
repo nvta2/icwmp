@@ -18,7 +18,7 @@
 #include "ubus.h"
 #include "cwmp_uci.h"
 #include "event.h"
-#include "rpc_soap.h"
+#include "soap.h"
 #include "log.h"
 
 struct diagnostic_input {

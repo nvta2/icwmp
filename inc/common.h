@@ -56,10 +56,11 @@
 #define CWMP_VARSTATE_UCI_PACKAGE "/var/state/cwmp"
 
 extern char *commandKey;
-extern bool thread_end;
-extern bool signal_exit;
+extern bool cwmp_stop;
 extern bool ubus_exit;
 extern struct uloop_timeout session_timer;
+extern struct uloop_timeout priodic_session_timer;
+extern struct uloop_timeout retry_session_timer;
 extern bool g_firewall_restart;
 
 typedef struct env {
@@ -90,7 +91,6 @@ typedef struct config {
 	int periodic_notify_interval;
 	int compression;
 	int delay_reboot;
-	int cr_auth_type;
 	time_t schedule_reboot;
 	time_t time;
 	bool periodic_enable;
@@ -117,42 +117,20 @@ struct deviceid {
 	char *softwareversion;
 };
 
-typedef struct session_status {
-	time_t last_start_time;
-	time_t last_end_time;
-	int last_status;
-	time_t next_periodic;
-	time_t next_retry;
-	unsigned int success_session;
-	unsigned int failure_session;
-} session_status;
-
 typedef struct cwmp {
 	struct env env;
 	struct config conf;
 	struct deviceid deviceid;
-	struct list_head head_session_queue;
-	pthread_mutex_t mutex_session_queue;
-	struct session *session_send;
+	struct session *session;
 	bool cwmp_cr_event;
-	pthread_mutex_t mutex_session_send;
-	pthread_cond_t threshold_session_send;
-	pthread_mutex_t mutex_periodic;
-	pthread_mutex_t mutex_notify_periodic;
-	pthread_cond_t threshold_periodic;
-	pthread_cond_t threshold_notify_periodic;
-	pthread_cond_t threshold_handle_notify;
 	int count_handle_notify;
 	int retry_count_session;
-	struct list_head *head_event_container;
 	FILE *pid_file;
 	time_t start_time;
-	struct session_status session_status;
 	unsigned int cwmp_id;
 	int cr_socket_desc;
 	bool is_boot;
 	bool custom_notify_active;
-	struct uloop_fd http_event;
 } cwmp;
 
 enum action {
@@ -331,15 +309,15 @@ enum client_server_faults { FAULT_CPE_TYPE_CLIENT, FAULT_CPE_TYPE_SERVER };
 
 struct rpc_cpe_method {
 	const char *name;
-	int (*handler)(struct session *session, struct rpc *rpc);
+	int (*handler)(struct rpc *rpc);
 	int amd;
 };
 
 struct rpc_acs_method {
 	const char *name;
-	int (*prepare_message)(struct cwmp *cwmp, struct session *session, struct rpc *rpc);
-	int (*parse_response)(struct cwmp *cwmp, struct session *session, struct rpc *rpc);
-	int (*extra_clean)(struct session *session, struct rpc *rpc);
+	int (*prepare_message)(struct rpc *rpc);
+	int (*parse_response)(struct rpc *rpc);
+	int (*extra_clean)(struct rpc *rpc);
 };
 
 typedef struct FAULT_CPE {
@@ -451,7 +429,7 @@ typedef struct opfault {
 	char *fault_string;
 } opfault;
 
-extern struct cwmp cwmp_main;
+extern struct cwmp *cwmp_main;
 extern long int flashsize;
 extern struct FAULT_CPE FAULT_CPE_ARRAY[];
 extern struct cwmp_namespaces ns;
@@ -493,13 +471,16 @@ bool icwmp_validate_string_length(char *arg, int max_length);
 bool icwmp_validate_boolean_value(char *arg);
 bool icwmp_validate_unsignedint(char *arg);
 bool icwmp_validate_int_in_range(char *arg, int min, int max);
-void load_forced_inform_json_file(struct cwmp *cwmp);
+void load_forced_inform_json_file();
 void clean_custom_inform_parameters();
 char *string_to_hex(const unsigned char *str, size_t size);
 char *generate_random_string(size_t size);
 int copy_file(char *source_file, char *target_file);
-int cwmp_get_session_retry_interval(struct cwmp *cwmp);
+int cwmp_get_session_retry_interval();
 int cwmp_apply_acs_changes();
+void check_firewall_restart_state();
+void cwmp_end_handler(int signal_num __attribute__((unused)));
+
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

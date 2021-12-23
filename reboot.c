@@ -18,38 +18,35 @@
 static pthread_t delay_reboot_thread;
 static pthread_t delay_schedule_thread;
 
-static void *thread_delay_reboot(void *arg)
+static void *thread_delay_reboot(void *arg __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)arg;
-
-	CWMP_LOG(INFO, "The device will reboot after %d seconds", cwmp->conf.delay_reboot);
-	sleep(cwmp->conf.delay_reboot);
+	CWMP_LOG(INFO, "The device will reboot after %d seconds", cwmp_main->conf.delay_reboot);
+	sleep(cwmp_main->conf.delay_reboot);
 	cwmp_uci_set_value("cwmp", "cpe", "delay_reboot", "-1");
 	cwmp_commit_package("cwmp", UCI_STANDARD_CONFIG);
 	/* check if the session is running before calling reboot method */
 	/* if the session is in progress, wait until the end of the session */
 	/* else calling reboot method */
-	if (cwmp->session_status.last_status == SESSION_RUNNING) {
+	if (cwmp_main->session->session_status.last_status == SESSION_RUNNING) {
 		cwmp_set_end_session(END_SESSION_REBOOT);
 	} else {
 		cwmp_reboot("delay_reboot");
 		exit(EXIT_SUCCESS);
 	}
-
 	return NULL;
 }
 
-static void create_delay_reboot_thread(struct cwmp *cwmp, bool thread_exist)
+static void create_delay_reboot_thread(bool thread_exist)
 {
 	if (thread_exist) {
 		CWMP_LOG(INFO, "There is already a delay reboot thread!, Cancel the current thread");
 
 		pthread_cancel(delay_reboot_thread);
-		create_delay_reboot_thread(cwmp, false);
+		create_delay_reboot_thread(false);
 	} else {
 		CWMP_LOG(INFO, "Create a delay reboot thread");
 
-		if (pthread_create(&delay_reboot_thread, NULL, &thread_delay_reboot, (void *)cwmp)) {
+		if (pthread_create(&delay_reboot_thread, NULL, &thread_delay_reboot, (void *)cwmp_main)) {
 			CWMP_LOG(ERROR, "Error when creating the delay reboot thread!");
 		}
 
@@ -59,10 +56,9 @@ static void create_delay_reboot_thread(struct cwmp *cwmp, bool thread_exist)
 	}
 }
 
-static void *thread_schedule_reboot(void *arg)
+static void *thread_schedule_reboot(void *arg __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)arg;
-	time_t remaining_time = cwmp->conf.schedule_reboot - time(NULL);
+	time_t remaining_time = cwmp_main->conf.schedule_reboot - time(NULL);
 
 	CWMP_LOG(INFO, "The device will reboot after %ld seconds", remaining_time);
 	sleep(remaining_time);
@@ -72,7 +68,7 @@ static void *thread_schedule_reboot(void *arg)
 	/* check if the session is running before calling reboot method */
 	/* if the session is in progress, wait until the end of the session */
 	/* else calling reboot method */
-	if (cwmp->session_status.last_status == SESSION_RUNNING) {
+	if (cwmp_main->session->session_status.last_status == SESSION_RUNNING) {
 		cwmp_set_end_session(END_SESSION_REBOOT);
 	} else {
 		cwmp_reboot("schedule_reboot");
@@ -82,17 +78,17 @@ static void *thread_schedule_reboot(void *arg)
 	return NULL;
 }
 
-static void create_schedule_reboot_thread(struct cwmp *cwmp, bool thread_exist)
+static void create_schedule_reboot_thread(bool thread_exist)
 {
 	if (thread_exist) {
 		CWMP_LOG(INFO, "There is already a schedule reboot thread!, Cancel the current thread");
 
 		pthread_cancel(delay_schedule_thread);
-		create_schedule_reboot_thread(cwmp, false);
+		create_schedule_reboot_thread(false);
 	} else {
 		CWMP_LOG(INFO, "Create a schedule reboot thread");
 
-		if (pthread_create(&delay_schedule_thread, NULL, &thread_schedule_reboot, (void *)cwmp)) {
+		if (pthread_create(&delay_schedule_thread, NULL, &thread_schedule_reboot, (void *)cwmp_main)) {
 			CWMP_LOG(ERROR, "Error when creating the schedule reboot thread!");
 		}
 
@@ -102,20 +98,20 @@ static void create_schedule_reboot_thread(struct cwmp *cwmp, bool thread_exist)
 	}
 }
 
-void launch_reboot_methods(struct cwmp *cwmp)
+void launch_reboot_methods()
 {
 	static int curr_delay_reboot = -1;
 	static time_t curr_schedule_redoot = 0;
 
-	if (cwmp->conf.delay_reboot != curr_delay_reboot && cwmp->conf.delay_reboot > 0) {
+	if (cwmp_main->conf.delay_reboot != curr_delay_reboot && cwmp_main->conf.delay_reboot > 0) {
 
-		create_delay_reboot_thread(cwmp, (curr_delay_reboot != -1));
-		curr_delay_reboot = cwmp->conf.delay_reboot;
+		create_delay_reboot_thread(curr_delay_reboot != -1);
+		curr_delay_reboot = cwmp_main->conf.delay_reboot;
 	}
 
-	if (cwmp->conf.schedule_reboot != curr_schedule_redoot && (cwmp->conf.schedule_reboot - time(NULL)) > 0) {
+	if (cwmp_main->conf.schedule_reboot != curr_schedule_redoot && (cwmp_main->conf.schedule_reboot - time(NULL)) > 0) {
 
-		create_schedule_reboot_thread(cwmp, (curr_schedule_redoot != 0));
-		curr_schedule_redoot = cwmp->conf.schedule_reboot;
+		create_schedule_reboot_thread((curr_schedule_redoot != 0));
+		curr_schedule_redoot = cwmp_main->conf.schedule_reboot;
 	}
 }

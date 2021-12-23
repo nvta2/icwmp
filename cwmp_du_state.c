@@ -318,9 +318,8 @@ static int cwmp_launch_du_uninstall(char *package_name, char *package_env, struc
 	return error;
 }
 
-void *thread_cwmp_rpc_cpe_change_du_state(void *v)
+void *thread_cwmp_rpc_cpe_change_du_state(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec change_du_state_timeout = { 50, 0 };
 	int error = FAULT_CPE_NO_FAULT;
 	struct du_state_change_complete *pdu_state_change_complete;
@@ -337,7 +336,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 
 	for (;;) {
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 		
 		if (list_change_du_state.next != &(list_change_du_state)) {
@@ -365,7 +364,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					}
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_changedustate_complete(cwmp, pdu_state_change_complete);
+					cwmp_root_cause_changedustate_complete(pdu_state_change_complete);
 				}
 				list_del(&(pchange_du_state->list));
 				cwmp_free_change_du_state_request(pchange_du_state);
@@ -374,7 +373,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 			}
 
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
-				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				pdu_state_change_complete = calloc(1, sizeof(struct du_state_change_complete));
 				if (pdu_state_change_complete != NULL) {
 					error = FAULT_CPE_NO_FAULT;
@@ -502,17 +500,13 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					bkp_session_save();
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_changedustate_complete(cwmp, pdu_state_change_complete);
+					cwmp_root_cause_changedustate_complete(pdu_state_change_complete);
 				}
 			}
 
 			pthread_mutex_lock(&mutex_change_du_state);
 			pthread_cond_timedwait(&threshold_change_du_state, &mutex_change_du_state, &change_du_state_timeout);
 			pthread_mutex_unlock(&mutex_change_du_state);
-
-			pthread_mutex_unlock(&(cwmp->mutex_session_send));
-			pthread_cond_signal(&(cwmp->threshold_session_send));
-
 			pthread_mutex_lock(&mutex_change_du_state);
 			list_del(&(pchange_du_state->list));
 			cwmp_free_change_du_state_request(pchange_du_state);
@@ -527,7 +521,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 	return NULL;
 }
 
-int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
+int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct rpc *rpc)
 {
 	if (rpc->extra_data != NULL) {
 		struct du_state_change_complete *p;

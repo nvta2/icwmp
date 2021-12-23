@@ -385,15 +385,15 @@ void cwmp_update_enabled_notify_file(void)
 /*
  * Load custom notify json file
  */
-void load_custom_notify_json(struct cwmp *cwmp)
+void load_custom_notify_json()
 {
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_notify_list = NULL;
 	int rem;
 
-	cwmp->custom_notify_active = false;
-	if (cwmp->conf.custom_notify_json == NULL || !file_exists(cwmp->conf.custom_notify_json))
+	cwmp_main->custom_notify_active = false;
+	if (cwmp_main->conf.custom_notify_json == NULL || !file_exists(cwmp_main->conf.custom_notify_json))
 		return;
 
 	if (file_exists(NOTIFY_FILE))
@@ -402,8 +402,8 @@ void load_custom_notify_json(struct cwmp *cwmp)
 	memset(&bbuf, 0, sizeof(struct blob_buf));
 	blob_buf_init(&bbuf, 0);
 
-	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.custom_notify_json) == false) {
-		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.custom_notify_json);
+	if (blobmsg_add_json_from_file(&bbuf, cwmp_main->conf.custom_notify_json) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp_main->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		creat(NOTIFY_FILE , S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
@@ -419,7 +419,7 @@ void load_custom_notify_json(struct cwmp *cwmp)
 	custom_notify_list = tb_notif[0];
 
 	if (custom_notify_list == NULL) {
-		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp->conf.custom_notify_json);
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp_main->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		creat(NOTIFY_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
@@ -449,7 +449,7 @@ void load_custom_notify_json(struct cwmp *cwmp)
 	}
 	blob_buf_free(&bbuf);
 	creat(NOTIFY_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	cwmp->custom_notify_active = true;
+	cwmp_main->custom_notify_active = true;
 }
 
 /*
@@ -540,75 +540,59 @@ int check_value_change(void)
 	return int_ret;
 }
 
-void cwmp_prepare_value_change(struct cwmp *cwmp)
+void cwmp_prepare_value_change()
 {
 	struct event_container *event_container;
 	if (list_value_change.next == &(list_value_change))
 		return;
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+	event_container = cwmp_add_event_container(EVENT_IDX_4VALUE_CHANGE, "");
 	if (!event_container)
-		goto end;
+		return;
 	pthread_mutex_lock(&(mutex_value_change));
 	list_splice_init(&(list_value_change), &(event_container->head_dm_parameter));
 	pthread_mutex_unlock(&(mutex_value_change));
 	cwmp_save_event_container(event_container);
-
-end:
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 }
 
-void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p)
+void sotfware_version_value_change(struct transfer_complete *p)
 {
 	char *current_software_version = NULL;
 
 	if (!p->old_software_version || p->old_software_version[0] == 0)
 		return;
 
-	current_software_version = cwmp->deviceid.softwareversion;
+	current_software_version = cwmp_main->deviceid.softwareversion;
 	if (p->old_software_version && current_software_version && strcmp(p->old_software_version, current_software_version) != 0) {
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+		cwmp_add_event_container(EVENT_IDX_4VALUE_CHANGE, "");
 	}
 }
 
-void *thread_periodic_check_notify(void *v)
+void *thread_periodic_check_notify(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
-	static int periodic_interval;
+	//static int periodic_interval;
 	static bool periodic_enable;
-	static struct timespec periodic_timeout = { 0, 0 };
-	time_t current_time;
 	int is_notify = 0;
 
-	periodic_interval = cwmp->conf.periodic_notify_interval;
-	periodic_enable = cwmp->conf.periodic_notify_enable;
+	//periodic_interval = cwmp_main->conf.periodic_notify_interval;
+	periodic_enable = cwmp_main->conf.periodic_notify_enable;
 
 	for (;;) {
 		if (periodic_enable) {
-			pthread_mutex_lock(&(cwmp->mutex_notify_periodic));
-			current_time = time(NULL);
-			periodic_timeout.tv_sec = current_time + periodic_interval;
+		//	pthread_mutex_lock(&(cwmp_main->mutex_notify_periodic));
 
-			if (thread_end)
+			if (cwmp_stop)
 				break;
 
-			pthread_cond_timedwait(&(cwmp->threshold_notify_periodic), &(cwmp->mutex_notify_periodic), &periodic_timeout);
+			//pthread_cond_timedwait(&(cwmp_main->threshold_notify_periodic), &(cwmp_main->mutex_notify_periodic), &periodic_timeout);
 
-			if (thread_end)
-				break;
-
-			pthread_mutex_lock(&(cwmp->mutex_session_send));
 			is_notify = check_value_change();
 			if (is_notify > 0)
 				cwmp_update_enabled_notify_file();
-			pthread_mutex_unlock(&(cwmp->mutex_session_send));
 			if (is_notify & NOTIF_ACTIVE)
 				send_active_value_change();
 			if (is_notify & NOTIF_LW_ACTIVE)
 				cwmp_lwnotification();
-			pthread_mutex_unlock(&(cwmp->mutex_notify_periodic));
+			//pthread_mutex_unlock(&(cwmp_main->mutex_notify_periodic));
 		} else
 			break;
 	}
@@ -631,19 +615,14 @@ void clean_list_value_change()
 
 void send_active_value_change(void)
 {
-	struct cwmp *cwmp = &cwmp_main;
 	struct event_container *event_container;
 
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+	event_container = cwmp_add_event_container(EVENT_IDX_4VALUE_CHANGE, "");
 	if (event_container == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 		return;
 	}
 
 	cwmp_save_event_container(event_container);
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-	pthread_cond_signal(&(cwmp->threshold_session_send));
 	return;
 }
 
@@ -654,10 +633,9 @@ void add_lw_list_value_change(char *param_name, char *param_data, char *param_ty
 static void udplw_server_param(struct addrinfo **res)
 {
 	struct addrinfo hints = { 0 };
-	struct cwmp *cwmp = &cwmp_main;
-	struct config *conf;
+	struct config *conf = &(cwmp_main->conf);
 	char port[32];
-	conf = &(cwmp->conf);
+
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	snprintf(port, sizeof(port), "%d", conf->lw_notification_port);
@@ -669,9 +647,7 @@ static void message_compute_signature(char *msg_out, char *signature)
 	int i;
 	int result_len = 20;
 	unsigned char *result;
-	struct cwmp *cwmp = &cwmp_main;
-	struct config *conf;
-	conf = &(cwmp->conf);
+	struct config *conf = &(cwmp_main->conf);
 	/*	unsigned char *HMAC(const EVP_MD *evp_md, const void *key, int key_len,
 	                    const unsigned char *d, size_t n, unsigned char *md,
 	                    unsigned int *md_len);*/
@@ -728,9 +704,7 @@ void cwmp_lwnotification()
 	char msg[1024], *msg_out;
 	char signature[41];
 	struct addrinfo *servaddr;
-	struct cwmp *cwmp = &cwmp_main;
-	struct config *conf;
-	conf = &(cwmp->conf);
+	struct config *conf = &(cwmp_main->conf);
 
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);

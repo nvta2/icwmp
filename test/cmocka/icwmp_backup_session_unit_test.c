@@ -23,22 +23,30 @@
 
 struct cwmp cwmp_main_test = { 0 };
 
+static int bkp_session_unit_tests_init(void **state)
+{
+	cwmp_main = (struct cwmp*)calloc(1, sizeof(struct cwmp));
+	create_cwmp_session_structure();
+	return 0;
+}
+
 static int bkp_session_unit_tests_clean(void **state)
 {
 	icwmp_cleanmem();
+	clean_cwmp_session_structure();
+	FREE(cwmp_main);
 	return 0;
 }
 
 static void cwmp_backup_session_unit_test(void **state)
 {
 	remove(CWMP_BKP_FILE);
-	struct cwmp *cwmp_test = &cwmp_main_test;
 	mxml_node_t *backup_tree = NULL, *n = NULL;
 
 	/*
 	 * Init backup session
 	 */
-	int error = cwmp_init_backup_session(cwmp_test, NULL, ALL);
+	int error = cwmp_init_backup_session(NULL, ALL);
 	assert_int_equal(error, 0);
 	bkp_session_save();
 	FILE *pFile;
@@ -301,5 +309,5 @@ int main(void)
 		    cmocka_unit_test(cwmp_backup_session_unit_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, bkp_session_unit_tests_clean);
+	return cmocka_run_group_tests(tests, bkp_session_unit_tests_init, bkp_session_unit_tests_clean);
 }

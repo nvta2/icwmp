@@ -64,7 +64,7 @@ cp test/files/etc/config/wireless /etc/config/
 #fi
 #
 #test_num=$(( test_num + 1 ))
-#echo "1..${test_num}" >> ./funl-test-result.log
+echo "1..${test_num}" >> ./funl-test-result.log
 
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./funl-test-coverage.xml

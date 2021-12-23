@@ -37,7 +37,7 @@ int cwmp_free_apply_schedule_download_request(struct apply_schedule_download *ap
 int cwmp_scheduledDownload_remove_all();
 int cwmp_scheduled_Download_remove_all();
 int cwmp_apply_scheduled_Download_remove_all();
-int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session, struct rpc *rpc);
+int cwmp_rpc_acs_destroy_data_transfer_complete(struct rpc *rpc);
 void *thread_cwmp_rpc_cpe_download(void *v);
 void *thread_cwmp_rpc_cpe_schedule_download(void *v);
 void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v);

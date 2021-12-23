@@ -18,7 +18,7 @@
 #include "common.h"
 #define ARRAY_MAX 8
 
-int cwmp_ubus_init(struct cwmp *cwmp);
+int cwmp_ubus_init();
 void cwmp_ubus_exit(void);
 
 enum cwmp_ubus_arg_type

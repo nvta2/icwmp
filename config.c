@@ -18,8 +18,9 @@
 
 pthread_mutex_t mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
-static int check_global_config(struct config *conf)
+static int check_global_config()
 {
+	struct config *conf = &(cwmp_main->conf);
 	if (conf->acsurl == NULL) {
 		conf->acsurl = strdup(DEFAULT_ACSURL);
 	}
@@ -42,8 +43,9 @@ static time_t convert_datetime_to_timestamp(char *value)
 	return mktime(&tm);
 }
 
-int get_global_config(struct config *conf)
+int get_global_config()
 {
+	struct config *conf = &(cwmp_main->conf);
 	int error, error2, error3;
 	char *value = NULL, *value2 = NULL, *value3 = NULL;
 
@@ -604,20 +606,19 @@ int get_global_config(struct config *conf)
 	return CWMP_OK;
 }
 
-int global_conf_init(struct cwmp *cwmp)
+int global_conf_init()
 {
 	int error = CWMP_OK;
 
 	pthread_mutex_lock(&mutex_config_load);
-
-	if ((error = get_global_config(&(cwmp->conf))))
+	if ((error = get_global_config(&(cwmp_main->conf))))
 		goto end;
 
-	if ((error = check_global_config(&(cwmp->conf))))
+	if ((error = check_global_config(&(cwmp_main->conf))))
 		goto end;
 
 	/* Launch reboot methods if needed */
-	launch_reboot_methods(cwmp);
+	launch_reboot_methods();
 
 end:
 	pthread_mutex_unlock(&mutex_config_load);
@@ -625,7 +626,7 @@ end:
 	return error;
 }
 
-int cwmp_get_deviceid(struct cwmp *cwmp)
+int cwmp_get_deviceid()
 {
 	cwmp_get_leaf_value("Device.DeviceInfo.Manufacturer", &cwmp->deviceid.manufacturer);
 	cwmp_get_leaf_value("Device.DeviceInfo.SerialNumber", &cwmp->deviceid.serialnumber);
@@ -635,9 +636,9 @@ int cwmp_get_deviceid(struct cwmp *cwmp)
 	return CWMP_OK;
 }
 
-int cwmp_config_reload(struct cwmp *cwmp)
+int cwmp_config_reload()
 {
-	memset(&cwmp->env, 0, sizeof(struct env));
+	memset(&cwmp_main->env, 0, sizeof(struct env));
 
-	return global_conf_init(cwmp);
+	return global_conf_init();
 }

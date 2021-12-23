@@ -25,7 +25,7 @@ icwmpd_SOURCES =			\
 	../upload.c				\
 	../sched_inform.c		\
 	../xml.c				\
-	../rpc_soap.c			\
+	../soap.c			\
 	../diagnostic.c			\
 	../reboot.c 			\
 	../cwmp.c	
@@ -37,7 +37,7 @@ icwmpd_CFLAGS =			\
 	$(LIBUBUS_CFLAGS)	\
 	$(MICROXML_CFLAGS)	\
 	$(LIBCURL_CFLAGS) 	\
-	-Wall -Wextra 		\
+	-g -Wall -Wextra 		\
 	-Wformat
 
 icwmpd_LDFLAGS =		\

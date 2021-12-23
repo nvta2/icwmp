@@ -38,9 +38,9 @@ struct search_keywords {
 
 extern pthread_mutex_t mutex_backup_session;
 
-int cwmp_init_backup_session(struct cwmp *cwmp, char **ret, enum backup_loading load);
+int cwmp_init_backup_session(char **ret, enum backup_loading load);
 void bkp_session_save();
-int cwmp_load_saved_session(struct cwmp *cwmp, char **acsurl, enum backup_loading load);
+int cwmp_load_saved_session(char **acsurl, enum backup_loading load);
 mxml_node_t *bkp_session_insert_event(int index, char *command_key, int id, char *status);
 void bkp_session_delete_event(int id, char *status);
 void bkp_session_simple_insert_in_parent(char *parent, char *child, char *value);
@@ -58,7 +58,7 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 void bkp_session_delete_change_du_state(struct change_du_state *pchange_du_state);
 void bkp_session_insert_transfer_complete(struct transfer_complete *ptransfer_complete);
 void bkp_session_delete_transfer_complete(struct transfer_complete *ptransfer_complete);
-int save_acs_bkp_config(struct cwmp *cwmp);
+int save_acs_bkp_config();
 
 void bkp_session_insert_schedule_download(struct download *pschedule_download);
 void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *papply_schedule_download);

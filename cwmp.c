@@ -32,65 +32,25 @@
 #include "download.h"
 #include "upload.h"
 #include "sched_inform.h"
-#include "rpc_soap.h"
 #include "digestauth.h"
+#include "soap.h"
 #include "netlink.h"
 
-bool g_firewall_restart = false;
-
-int get_firewall_restart_state(char **state)
-{
-	cwmp_uci_reinit();
-	return uci_get_state_value(UCI_CPE_FIREWALL_RESTART_STATE, state);
-}
-
-// wait till firewall restart is not complete or 5 sec, whichever is less
-void check_firewall_restart_state()
-{
-	int count = 0;
-	bool init = false;
-
-	do {
-		char *state = NULL;
-
-		if (get_firewall_restart_state(&state) != CWMP_OK)
-			break;
-
-		if (state != NULL && strcmp(state, "init") == 0) {
-			init = true;
-			FREE(state);
-			break;
-		}
-
-		usleep(500 * 1000);
-		FREE(state);
-		count++;
-	} while(count < 10);
-
-	// mark the firewall restart as done
-	g_firewall_restart = false;
-	if (init == false) { // In case of timeout reset the firewall_restart flag
-		CWMP_LOG(ERROR, "Firewall restart took longer than usual");
-		cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "init");
-		cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
-	}
-}
-
-void load_forced_inform_json_file(struct cwmp *cwmp)
+void load_forced_inform_json_file()
 {
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_forced_inform_list = NULL;
 	int rem;
 
-	if (cwmp->conf.forced_inform_json_file == NULL || !file_exists(cwmp->conf.forced_inform_json_file))
+	if (cwmp_main->conf.forced_inform_json_file == NULL || !file_exists(cwmp_main->conf.forced_inform_json_file))
 		return;
 
 	memset(&bbuf, 0, sizeof(struct blob_buf));
 	blob_buf_init(&bbuf, 0);
 
-	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.forced_inform_json_file) == false) {
-		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.forced_inform_json_file);
+	if (blobmsg_add_json_from_file(&bbuf, cwmp_main->conf.forced_inform_json_file) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp_main->conf.forced_inform_json_file);
 		blob_buf_free(&bbuf);
 		return;
 	}
@@ -101,7 +61,7 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 		return;
 	custom_forced_inform_list = tb[0];
 	if (custom_forced_inform_list == NULL) {
-		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a forced inform parameters list", cwmp->conf.custom_notify_json);
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a forced inform parameters list", cwmp_main->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		return;
 	}
@@ -127,21 +87,36 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 
 }
 
-void load_boot_inform_json_file(struct cwmp *cwmp)
+void clean_custom_inform_parameters()
+{
+	int i;
+	for (i=0; i < nbre_custom_inform; i++) {
+		free(custom_forced_inform_parameters[i]);
+		custom_forced_inform_parameters[i] = NULL;
+	}
+	nbre_custom_inform = 0;
+	for (i=0; i < nbre_boot_inform; i++) {
+		free(boot_inform_parameters[i]);
+		boot_inform_parameters[i] = NULL;
+	}
+	nbre_boot_inform = 0;
+}
+
+void load_boot_inform_json_file()
 {
 	struct blob_buf bbuf;
 	struct blob_attr *cur;
 	struct blob_attr *custom_boot_inform_list = NULL;
 	int rem;
 
-	if (cwmp->conf.boot_inform_json_file == NULL || !file_exists(cwmp->conf.boot_inform_json_file))
+	if (cwmp_main->conf.boot_inform_json_file == NULL || !file_exists(cwmp_main->conf.boot_inform_json_file))
 		return;
 
 	memset(&bbuf, 0, sizeof(struct blob_buf));
 	blob_buf_init(&bbuf, 0);
 
-	if (blobmsg_add_json_from_file(&bbuf, cwmp->conf.boot_inform_json_file) == false) {
-		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp->conf.boot_inform_json_file);
+	if (blobmsg_add_json_from_file(&bbuf, cwmp_main->conf.boot_inform_json_file) == false) {
+		CWMP_LOG(WARNING, "The file %s is not a valid JSON file", cwmp_main->conf.boot_inform_json_file);
 		blob_buf_free(&bbuf);
 		return;
 	}
@@ -153,7 +128,7 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 	custom_boot_inform_list = tb[0];
 
 	if (custom_boot_inform_list == NULL) {
-		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a boot inform parameters list", cwmp->conf.custom_notify_json);
+		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a boot inform parameters list", cwmp_main->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		return;
 	}
@@ -177,21 +152,6 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 		FREE(val);
 	}
 	blob_buf_free(&bbuf);
-}
-
-void clean_custom_inform_parameters()
-{
-	int i;
-	for (i=0; i < nbre_custom_inform; i++) {
-		free(custom_forced_inform_parameters[i]);
-		custom_forced_inform_parameters[i] = NULL;
-	}
-	nbre_custom_inform = 0;
-	for (i=0; i < nbre_boot_inform; i++) {
-		free(boot_inform_parameters[i]);
-		boot_inform_parameters[i] = NULL;
-	}
-	nbre_boot_inform = 0;
 }
 
 int create_cwmp_var_state_files()
@@ -301,20 +261,43 @@ int cwmp_apply_acs_changes(void)
 {
 	int error;
 
-	if ((error = cwmp_config_reload(&cwmp_main)))
+	if ((error = cwmp_config_reload()))
 		return error;
 
-	if ((error = cwmp_root_cause_events(&cwmp_main)))
+	if ((error = cwmp_root_cause_events()))
 		return error;
 
 	return CWMP_OK;
 }
 
+static void configure_var_state()
+{
+	char *zone_name = NULL;
 
-static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
+	cwmp_uci_init();
+	if (!file_exists(VARSTATE_CONFIG"/cwmp"))
+		creat(VARSTATE_CONFIG"/cwmp", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
+	cwmp_uci_add_section_with_specific_name("cwmp", "acs", "acs", UCI_VARSTATE_CONFIG);
+	cwmp_uci_add_section_with_specific_name("cwmp", "cpe", "cpe", UCI_VARSTATE_CONFIG);
+
+	get_firewall_zone_name_by_wan_iface(cwmp_main->conf.default_wan_iface, &zone_name);
+	cwmp_uci_set_varstate_value("cwmp", "acs", "zonename", zone_name ? zone_name : "wan");
+
+	cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
+	cwmp_uci_exit();
+}
+
+static int cwmp_init(int argc, char **argv)
 {
 	int error;
 	struct env env;
+
+	openlog("cwmp", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+	CWMP_LOG(INFO, "STARTING ICWMP with PID :%d", getpid());
+
+	cwmp_main = (struct cwmp*)calloc(1, sizeof(struct cwmp));
 
 	memset(&env, 0, sizeof(struct env));
 	if ((error = global_env_init(argc, argv, &env)))
@@ -326,9 +309,9 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	icwmp_init_list_services();
 
 	/* Only One instance should run*/
-	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
-	fcntl(fileno(cwmp->pid_file), F_SETFD, fcntl(fileno(cwmp->pid_file), F_GETFD) | FD_CLOEXEC);
-	int rc = flock(fileno(cwmp->pid_file), LOCK_EX | LOCK_NB);
+	cwmp_main->pid_file = fopen("/var/run/icwmpd.pid", "w+");
+	fcntl(fileno(cwmp_main->pid_file), F_SETFD, fcntl(fileno(cwmp_main->pid_file), F_GETFD) | FD_CLOEXEC);
+	int rc = flock(fileno(cwmp_main->pid_file), LOCK_EX | LOCK_NB);
 	if (rc) {
 		if (EWOULDBLOCK != errno) {
 			char *piderr = "PID file creation failed: Quit the daemon!";
@@ -338,135 +321,107 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 		} else
 			exit(EXIT_SUCCESS);
 	}
-	if (cwmp->pid_file)
-		fclose(cwmp->pid_file);
+	if (cwmp_main->pid_file)
+		fclose(cwmp_main->pid_file);
 
-	pthread_mutex_init(&cwmp->mutex_periodic, NULL);
-	pthread_mutex_init(&cwmp->mutex_session_queue, NULL);
-	pthread_mutex_init(&cwmp->mutex_session_send, NULL);
-	memcpy(&(cwmp->env), &env, sizeof(struct env));
-	INIT_LIST_HEAD(&(cwmp->head_session_queue));
+	memcpy(&(cwmp_main->env), &env, sizeof(struct env));
 
 	if ((error = create_cwmp_var_state_files()))
 		return error;
 
 	cwmp_uci_init();
-	if ((error = global_conf_init(cwmp)))
+	if ((error = global_conf_init()))
 		return error;
 
-	cwmp_get_deviceid(cwmp);
-	load_forced_inform_json_file(cwmp);
-	load_boot_inform_json_file(cwmp);
-	load_custom_notify_json(cwmp);
+	cwmp_get_deviceid();
+	load_forced_inform_json_file();
+	load_boot_inform_json_file();
+	load_custom_notify_json();
 	init_list_param_notify();
-	http_server_init();
+	//http_server_init();
+	create_cwmp_session_structure();
 	cwmp_uci_exit();
 	generate_nonce_priv_key();
+	cwmp_main->start_time = time(NULL);
 	return CWMP_OK;
 }
 
-static void cwmp_free(struct cwmp *cwmp)
+static void cwmp_exit()
 {
-	FREE(cwmp->deviceid.manufacturer);
-	FREE(cwmp->deviceid.serialnumber);
-	FREE(cwmp->deviceid.productclass);
-	FREE(cwmp->deviceid.oui);
-	FREE(cwmp->deviceid.softwareversion);
-	FREE(cwmp->conf.lw_notification_hostname);
-	FREE(cwmp->conf.ip);
-	FREE(cwmp->conf.ipv6);
-	FREE(cwmp->conf.acsurl);
-	FREE(cwmp->conf.acs_userid);
-	FREE(cwmp->conf.acs_passwd);
-	FREE(cwmp->conf.interface);
-	FREE(cwmp->conf.cpe_userid);
-	FREE(cwmp->conf.cpe_passwd);
-	FREE(cwmp->conf.ubus_socket);
-	FREE(cwmp->conf.connection_request_path);
-	FREE(cwmp->conf.default_wan_iface);
-	FREE(cwmp->conf.forced_inform_json_file);
-	FREE(cwmp->conf.custom_notify_json);
-	FREE(cwmp->conf.boot_inform_json_file);
+	pthread_join(http_cr_server_thread, NULL);
+
+	FREE(cwmp_main->deviceid.manufacturer);
+	FREE(cwmp_main->deviceid.serialnumber);
+	FREE(cwmp_main->deviceid.productclass);
+	FREE(cwmp_main->deviceid.oui);
+	FREE(cwmp_main->deviceid.softwareversion);
+	FREE(cwmp_main->conf.lw_notification_hostname);
+	FREE(cwmp_main->conf.ip);
+	FREE(cwmp_main->conf.ipv6);
+	FREE(cwmp_main->conf.acsurl);
+	FREE(cwmp_main->conf.acs_userid);
+	FREE(cwmp_main->conf.acs_passwd);
+	FREE(cwmp_main->conf.interface);
+	FREE(cwmp_main->conf.cpe_userid);
+	FREE(cwmp_main->conf.cpe_passwd);
+	FREE(cwmp_main->conf.ubus_socket);
+	FREE(cwmp_main->conf.connection_request_path);
+	FREE(cwmp_main->conf.default_wan_iface);
+	FREE(cwmp_main->conf.forced_inform_json_file);
+	FREE(cwmp_main->conf.custom_notify_json);
+	FREE(cwmp_main->conf.boot_inform_json_file);
 	FREE(nonce_privacy_key);
+
 	clean_list_param_notify();
 	bkp_tree_clean();
 	cwmp_ubus_exit();
 	clean_custom_inform_parameters();
 	icwmp_cleanmem();
 	cwmp_uci_exit();
+	CWMP_LOG(INFO, "EXIT ICWMP");
+	closelog();
+	clean_cwmp_session_structure();
+	FREE(cwmp_main);
 }
 
-/*static void *thread_cwmp_signal_handler_thread(void *arg)
+void cwmp_end_handler(int signal_num __attribute__((unused)))
 {
-	sigset_t *set = (sigset_t *)arg;
+	cwmp_stop = true;
 
-	for (;;) {
-		int s, signal_num;
-		s = sigwait(set, &signal_num);
-		if (s == -1) {
-			CWMP_LOG(ERROR, "Error in sigwait");
-		} else {
-			CWMP_LOG(INFO, "Catch of Signal(%d)", signal_num);
+	if (cwmp_main->session->session_status.last_status == SESSION_RUNNING)
+		http_set_timeout();
 
-			if (signal_num == SIGINT || signal_num == SIGTERM) {
-				signal_exit = true;
-
-				if (!ubus_exit)
-					cwmp_ubus_call("tr069", "command", CWMP_UBUS_ARGS{ { "command", { .str_val = "exit" }, UBUS_String } }, 1, NULL, NULL);
-
-				break;
-			}
-		}
-	}
-
-	return NULL;
-}*/
-
-static void configure_var_state(struct cwmp *cwmp)
-{
-	char *zone_name = NULL;
-
-	if (!file_exists(VARSTATE_CONFIG"/cwmp"))
-		creat(VARSTATE_CONFIG"/cwmp", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-
-	cwmp_uci_reinit();
-	cwmp_uci_add_section_with_specific_name("cwmp", "acs", "acs", UCI_VARSTATE_CONFIG);
-	cwmp_uci_add_section_with_specific_name("cwmp", "cpe", "cpe", UCI_VARSTATE_CONFIG);
-
-	get_firewall_zone_name_by_wan_iface(cwmp->conf.default_wan_iface, &zone_name);
-	cwmp_uci_set_varstate_value("cwmp", "acs", "zonename", zone_name ? zone_name : "wan");
-
-	cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
+	uloop_timeout_cancel(&retry_session_timer);
+	uloop_timeout_cancel(&priodic_session_timer);
+	uloop_timeout_cancel(&session_timer);
+	uloop_end();
+	shutdown(cwmp_main->cr_socket_desc, SHUT_RDWR);
 }
 
 int main(int argc, char **argv)
 {
-	struct cwmp *cwmp = &cwmp_main;
-	sigset_t set;
 	int error;
 
-	openlog("cwmp", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-	if ((error = cwmp_init(argc, argv, cwmp)))
+	if ((error = cwmp_init(argc, argv)))
 		return error;
 
-
-	CWMP_LOG(INFO, "STARTING ICWMP with PID :%d", getpid());
-	cwmp->start_time = time(NULL);
-
-	if ((error = cwmp_init_backup_session(cwmp, NULL, ALL)))
+	if ((error = cwmp_init_backup_session(NULL, ALL)))
 		return error;
 
-	if ((error = cwmp_root_cause_events(cwmp)))
+	if ((error = cwmp_root_cause_events()))
 		return error;
 
-	configure_var_state(cwmp);
+	signal(SIGINT, cwmp_end_handler);
+	signal(SIGTERM, cwmp_end_handler);
+
+	configure_var_state();
+	http_server_init();
 
 	uloop_init();
 
 	cwmp_netlink_init();
 
-	cwmp_ubus_init(cwmp);
+	cwmp_ubus_init();
 
 	trigger_cwmp_session_timer();
 
@@ -474,15 +429,10 @@ int main(int argc, char **argv)
 
 	http_server_start();
 
-
 	uloop_run();
 	uloop_done();
 
+	cwmp_exit();
 
-	/* Free all memory allocation */
-	cwmp_free(cwmp);
-
-	CWMP_LOG(INFO, "EXIT ICWMP");
-	closelog();
 	return CWMP_OK;
 }

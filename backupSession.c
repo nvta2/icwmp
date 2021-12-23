@@ -19,7 +19,7 @@
 #include "event.h"
 #include "download.h"
 #include "cwmp_du_state.h"
-#include "rpc_soap.h"
+#include "soap.h"
 #include "upload.h"
 #include "sched_inform.h"
 
@@ -753,11 +753,9 @@ void bkp_session_delete_transfer_complete(struct transfer_complete *ptransfer_co
 	pthread_mutex_unlock(&mutex_backup_session);
 }
 
-int save_acs_bkp_config(struct cwmp *cwmp)
+int save_acs_bkp_config()
 {
-	struct config *conf;
-
-	conf = &(cwmp->conf);
+	struct config *conf = &(cwmp_main->conf);
 	bkp_session_simple_insert("acs", "url", conf->acsurl);
 	bkp_session_save();
 	return CWMP_OK;
@@ -785,7 +783,7 @@ char *load_child_value(mxml_node_t *tree, char *sub_name)
 	return value;
 }
 
-void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
+void load_queue_event(mxml_node_t *tree)
 {
 	char *command_key = NULL;
 	mxml_node_t *b = tree, *c;
@@ -802,7 +800,7 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 			if (strcmp(b->value.element.name, "command_key") == 0) {
 				if (idx != -1) {
 					if (EVENT_CONST[idx].RETRY & EVENT_RETRY_AFTER_REBOOT) {
-						event_container_save = cwmp_add_event_container(cwmp, idx, ((command_key != NULL) ? command_key : ""));
+						event_container_save = cwmp_add_event_container(idx, ((command_key != NULL) ? command_key : ""));
 						if (event_container_save != NULL) {
 							event_container_save->id = id;
 						}
@@ -1003,7 +1001,7 @@ void load_change_du_state(mxml_node_t *tree)
 	list_add_tail(&(change_du_state_request->list_operation), &(list_change_du_state));
 }
 
-void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
+void load_du_state_change_complete(mxml_node_t *tree)
 {
 	mxml_node_t *b = tree;
 	struct du_state_change_complete *du_state_change_complete_request = NULL;
@@ -1037,10 +1035,10 @@ void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
 		}
 		b = mxmlWalkNext(b, tree, MXML_NO_DESCEND);
 	}
-	cwmp_root_cause_changedustate_complete(cwmp, du_state_change_complete_request);
+	cwmp_root_cause_changedustate_complete(du_state_change_complete_request);
 }
 
-void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
+void load_transfer_complete(mxml_node_t *tree)
 {
 	struct transfer_complete *ptransfer_complete;
 
@@ -1054,8 +1052,8 @@ void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
 					       .type = &ptransfer_complete->type };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
-	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-	sotfware_version_value_change(cwmp, ptransfer_complete);
+	cwmp_root_cause_transfer_complete(ptransfer_complete);
+	sotfware_version_value_change(ptransfer_complete);
 }
 
 void bkp_session_create_file()
@@ -1100,16 +1098,16 @@ int bkp_session_check_file()
 	return 0;
 }
 
-int cwmp_init_backup_session(struct cwmp *cwmp, char **ret, enum backup_loading load)
+int cwmp_init_backup_session(char **ret, enum backup_loading load)
 {
 	int error;
 	if (bkp_session_check_file())
 		return 0;
-	error = cwmp_load_saved_session(cwmp, ret, load);
+	error = cwmp_load_saved_session(ret, load);
 	return error;
 }
 
-int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading load)
+int cwmp_load_saved_session(char **ret, enum backup_loading load)
 {
 	mxml_node_t *b;
 
@@ -1142,19 +1140,19 @@ int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading l
 		}
 		if (load == ALL) {
 			if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "queue_event") == 0) {
-				load_queue_event(b, cwmp);
+				load_queue_event(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "download") == 0) {
 				load_download(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "upload") == 0) {
 				load_upload(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "transfer_complete") == 0) {
-				load_transfer_complete(b, cwmp);
+				load_transfer_complete(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_inform") == 0) {
 				load_schedule_inform(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "change_du_state") == 0) {
 				load_change_du_state(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "du_state_change_complete") == 0) {
-				load_du_state_change_complete(b, cwmp);
+				load_du_state_change_complete(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_download") == 0) {
 				load_schedule_download(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "apply_schedule_download") == 0) {

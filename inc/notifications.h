@@ -19,7 +19,7 @@
 #include "common.h"
 #include "event.h"
 #include "datamodel_interface.h"
-#include "rpc_soap.h"
+#include "soap.h"
 
 enum NOTIFICATION_STATUS
 {
@@ -55,19 +55,19 @@ void cwmp_update_enabled_notify_file(void);
 int check_value_change(void);
 void create_list_param_obj_notify();
 void create_list_param_leaf_notify();
-void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *p);
+void sotfware_version_value_change(struct transfer_complete *p);
 void *thread_periodic_check_notify(void *v);
 void send_active_value_change(void);
 void add_list_value_change(char *param_name, char *param_data, char *param_type);
 void clean_list_value_change();
 char *cwmp_set_parameter_attributes(char *parameter_name, int notification);
 char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *parameters_list);
-void load_custom_notify_json(struct cwmp *cwmp);
+void load_custom_notify_json();
 void add_lw_list_value_change(char *param_name, char *param_data, char *param_type);
 char *calculate_lwnotification_cnonce();
 void cwmp_lwnotification();
 void clean_list_param_notify();
 void init_list_param_notify();
 void reinit_list_param_notify();
-void cwmp_prepare_value_change(struct cwmp *cwmp);
+void cwmp_prepare_value_change();
 #endif /* SRC_INC_NOTIFICATIONS_H_ */

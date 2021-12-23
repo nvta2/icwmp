@@ -264,11 +264,11 @@ char *get_file_name_by_download_url(char *url)
         return slash+1;
 }
 
-int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, char *download_file_name, struct transfer_complete *ptransfer_complete)
+int apply_downloaded_file(struct download *pdownload, char *download_file_name, struct transfer_complete *ptransfer_complete)
 {
 	int error = FAULT_CPE_NO_FAULT;
 	if (pdownload->file_type[0] == '1') {
-		ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
+		ptransfer_complete->old_software_version = cwmp_main->deviceid.softwareversion;
 	}
 	bkp_session_insert_transfer_complete(ptransfer_complete);
 	bkp_session_save();
@@ -336,11 +336,11 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, char *d
 	}
 	bkp_session_insert_transfer_complete(ptransfer_complete);
 	bkp_session_save();
-	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+	cwmp_root_cause_transfer_complete(ptransfer_complete);
 	return error;
 }
 
-struct transfer_complete *set_download_error_transfer_complete(struct cwmp *cwmp, struct download *pdownload, enum load_type ltype)
+struct transfer_complete *set_download_error_transfer_complete(struct download *pdownload, enum load_type ltype)
 {
 	struct transfer_complete *ptransfer_complete;
 	ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
@@ -351,14 +351,13 @@ struct transfer_complete *set_download_error_transfer_complete(struct cwmp *cwmp
 		ptransfer_complete->fault_code = ltype == TYPE_DOWNLOAD ? FAULT_CPE_DOWNLOAD_FAILURE : FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
 		ptransfer_complete->type = ltype;
 		bkp_session_insert_transfer_complete(ptransfer_complete);
-		cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+		cwmp_root_cause_transfer_complete(ptransfer_complete);
 	}
 	return ptransfer_complete;
 }
 
-void *thread_cwmp_rpc_cpe_download(void *v)
+void *thread_cwmp_rpc_cpe_download(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct download *pdownload;
 	struct timespec download_timeout = { 0, 0 };
 	time_t current_time, stime;
@@ -368,7 +367,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 
 	for (;;) {
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 		
 		if (list_download.next != &(list_download)) {
@@ -383,7 +382,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 				pthread_mutex_lock(&mutex_download);
 				bkp_session_delete_download(pdownload);
 				error = FAULT_CPE_DOWNLOAD_FAILURE;
-				ptransfer_complete = set_download_error_transfer_complete(cwmp, pdownload, TYPE_DOWNLOAD);
+				ptransfer_complete = set_download_error_transfer_complete(pdownload, TYPE_DOWNLOAD);
 				list_del(&(pdownload->list));
 				if (pdownload->scheduled_time != 0)
 					count_download_queue--;
@@ -392,7 +391,6 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 				continue;
 			}
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
-				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				char *download_file_name = get_file_name_by_download_url(pdownload->url);
 				CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
 				error = cwmp_launch_download(pdownload, download_file_name, TYPE_DOWNLOAD, &ptransfer_complete);
@@ -400,17 +398,15 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					error = apply_downloaded_file(cwmp, pdownload, download_file_name, ptransfer_complete);
+					error = apply_downloaded_file(pdownload, download_file_name, ptransfer_complete);
 					if (error || pdownload->file_type[0] == '6')
 						bkp_session_delete_transfer_complete(ptransfer_complete);
 				}
 				if (pdownload->file_type[0] == '6')
 					sleep(30);
-				pthread_mutex_unlock(&(cwmp->mutex_session_send));
-				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_download);
 				list_del(&(pdownload->list));
 				if (pdownload->scheduled_time != 0)
@@ -465,9 +461,8 @@ end:
 	return 0;
 }
 
-void *thread_cwmp_rpc_cpe_schedule_download(void *v)
+void *thread_cwmp_rpc_cpe_schedule_download(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec download_timeout = { 0, 0 };
 	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
@@ -478,7 +473,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 	for (;;) {
 		time_t current_time;
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 
 		current_time = time(NULL);
@@ -495,7 +490,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 						pthread_mutex_lock(&mutex_schedule_download);
 						bkp_session_delete_schedule_download(p);
 						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-						ptransfer_complete = set_download_error_transfer_complete(cwmp, p, TYPE_SCHEDULE_DOWNLOAD);
+						ptransfer_complete = set_download_error_transfer_complete(p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						if (p->timewindowstruct[0].windowstart != 0)
 							count_download_queue--;
@@ -519,7 +514,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 						pthread_mutex_lock(&mutex_schedule_download);
 						bkp_session_delete_schedule_download(p);
 						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-						ptransfer_complete = set_download_error_transfer_complete(cwmp, p, TYPE_SCHEDULE_DOWNLOAD);
+						ptransfer_complete = set_download_error_transfer_complete(p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						if (p->timewindowstruct[0].windowstart != 0)
 							count_download_queue--;
@@ -546,24 +541,24 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					pthread_mutex_unlock(&mutex_schedule_download);
-					if (pthread_mutex_trylock(&(cwmp->mutex_session_send)) == 0) {
+					/*pthread_mutex_unlock(&mutex_schedule_download);
+					if (pthread_mutex_trylock(&(cwmp_main->mutex_session_send)) == 0) {
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						pthread_mutex_lock(&mutex_schedule_download);
-						error = apply_downloaded_file(cwmp, current_download, download_file_name, ptransfer_complete);
+						error = apply_downloaded_file(cwmp, current_download, ptransfer_complete);
 						if (error == FAULT_CPE_NO_FAULT)
 							exit(EXIT_SUCCESS);
 
 						pthread_mutex_unlock(&mutex_schedule_download);
 						pthread_mutex_unlock(&mutex_apply_schedule_download);
-						pthread_mutex_unlock(&(cwmp->mutex_session_send));
-						pthread_cond_signal(&(cwmp->threshold_session_send));
-					} else {
-						cwmp_add_apply_schedule_download(current_download, ptransfer_complete->start_time);
-					}
+						pthread_mutex_unlock(&(cwmp_main->mutex_session_send));
+						pthread_cond_signal(&(cwmp_main->threshold_session_send));
+					} else {*/
+					cwmp_add_apply_schedule_download(current_download, ptransfer_complete->start_time);
+					//}
 				}
 				pthread_mutex_lock(&mutex_schedule_download);
 				bkp_session_delete_schedule_download(current_download);
@@ -576,21 +571,18 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 				continue;
 			} //AT ANY TIME OR WHEN IDLE
 			else {
-				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				CWMP_LOG(INFO, "Launch download file %s", current_download->url);
 				error = cwmp_launch_download(current_download, download_file_name, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
-					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+					cwmp_root_cause_transfer_complete(ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					error = apply_downloaded_file(cwmp, current_download, download_file_name,  ptransfer_complete);
+					error = apply_downloaded_file(current_download, download_file_name, ptransfer_complete);
 					if (error == FAULT_CPE_NO_FAULT)
 						exit(EXIT_SUCCESS);
 				}
-				pthread_mutex_unlock(&(cwmp->mutex_session_send));
-				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_schedule_download);
 				list_del(&(current_download->list));
 				if (current_download->timewindowstruct[0].windowstart != 0)
@@ -616,9 +608,8 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 	return NULL;
 }
 
-void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
+void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec apply_timeout = { 0, 0 };
 	int error = FAULT_CPE_NO_FAULT;
 	struct transfer_complete *ptransfer_complete;
@@ -629,7 +620,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 	for (;;) {
 		time_t current_time;
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 
 		current_time = time(NULL);
@@ -646,7 +637,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						bkp_session_delete_apply_schedule_download(p);
 						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-						ptransfer_complete = set_download_error_transfer_complete(cwmp, (struct download *)p, TYPE_SCHEDULE_DOWNLOAD);
+						ptransfer_complete = set_download_error_transfer_complete((struct download *)p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						if (p->timeintervals[0].windowstart != 0)
 							count_download_queue--;
@@ -670,7 +661,7 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						bkp_session_delete_apply_schedule_download(p);
 						error = FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW;
-						ptransfer_complete = set_download_error_transfer_complete(cwmp, (struct download *)p, TYPE_SCHEDULE_DOWNLOAD);
+						ptransfer_complete = set_download_error_transfer_complete((struct download *)p, TYPE_SCHEDULE_DOWNLOAD);
 						list_del(&(p->list));
 						/*if(p->timewindowintervals[0].windowstart != 0)
 				            count_download_queue--;*/
@@ -688,13 +679,12 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 		if (min_time == 0) {
 			continue;
 		} else if (min_time <= current_time) {
-			pthread_mutex_lock(&(cwmp->mutex_session_send));
 			pthread_mutex_lock(&mutex_schedule_download);
 			bkp_session_delete_apply_schedule_download(apply_download);
 			bkp_session_save();
 			ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
 			if (apply_download->file_type[0] == '1') {
-				ptransfer_complete->old_software_version = cwmp->deviceid.softwareversion;
+				ptransfer_complete->old_software_version = cwmp_main->deviceid.softwareversion;
 			}
 			ptransfer_complete->command_key = strdup(apply_download->command_key);
 			ptransfer_complete->start_time = strdup(apply_download->start_time);
@@ -737,11 +727,9 @@ void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v)
 			}
 			bkp_session_insert_transfer_complete(ptransfer_complete);
 			bkp_session_save();
-			cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
+			cwmp_root_cause_transfer_complete(ptransfer_complete);
 
 			pthread_mutex_unlock(&mutex_schedule_download);
-			pthread_mutex_unlock(&(cwmp->mutex_session_send));
-			pthread_cond_signal(&(cwmp->threshold_session_send));
 			pthread_mutex_lock(&mutex_apply_schedule_download);
 			list_del(&(apply_download->list));
 			/*if(pdownload->timeintervals[0].windowstart != 0)
@@ -887,7 +875,7 @@ int cwmp_apply_scheduled_Download_remove_all()
 	return CWMP_OK;
 }
 
-int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
+int cwmp_rpc_acs_destroy_data_transfer_complete(struct rpc *rpc)
 {
 	if (rpc->extra_data != NULL) {
 		struct transfer_complete *p = (struct transfer_complete *)rpc->extra_data;
