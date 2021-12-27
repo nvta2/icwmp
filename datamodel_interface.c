@@ -320,7 +320,9 @@ void ubus_get_parameter_callback(struct ubus_request *req, int type __attribute_
 		return;
 	}
 	result->type = LIST;
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	fault_code = get_parameters_list_from_parameters_blob_array(parameters, result->parameters_list);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (fault_code != FAULT_CPE_NO_FAULT) {
 		snprintf(result->fault, 5, "%d", fault_code);
 		result->type = FAULT;

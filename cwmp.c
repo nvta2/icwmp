@@ -180,6 +180,7 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 				break;
 		}
 
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		// If restart service caused firewall restart, wait for firewall restart to complete
 		if (g_firewall_restart == true)
 			check_firewall_restart_state();
@@ -187,15 +188,19 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 		CWMP_LOG(INFO, "Send empty message to the ACS");
 		if (xml_send_message(cwmp, session, NULL) || thread_end)
 			goto retry;
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		if (!session->tree_in || thread_end)
 			goto next;
 
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		CWMP_LOG(INFO, "Receive request from the ACS");
 		if (xml_handle_message(session) || thread_end)
 			goto retry;
 
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
 
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
 			if (!rpc_cpe->type || thread_end)
 				goto retry;
@@ -203,16 +208,22 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 			CWMP_LOG(INFO, "Preparing the %s%s message", rpc_cpe_methods[rpc_cpe->type].name, (rpc_cpe->type != RPC_CPE_FAULT) ? "Response" : "");
 			if (cwmp_rpc_cpe_handle_message(session, rpc_cpe) || thread_end)
 				goto retry;
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			MXML_DELETE(session->tree_in);
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 			CWMP_LOG(INFO, "Send the %s%s message to the ACS", rpc_cpe_methods[rpc_cpe->type].name, (rpc_cpe->type != RPC_CPE_FAULT) ? "Response" : "");
 			if (xml_send_message(cwmp, session, rpc_cpe) || thread_end)
 				goto retry;
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			MXML_DELETE(session->tree_out);
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 			cwmp_session_rpc_destructor(rpc_cpe);
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			if (!session->tree_in || thread_end)
 				break;
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 			CWMP_LOG(INFO, "Receive request from the ACS");
 			if (xml_handle_message(session) || thread_end)

@@ -83,6 +83,7 @@ int xml_handle_message(struct session *session)
 
 	/* get method */
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (icwmp_asprintf(&c, "%s:%s", ns.soap_env, "Body") == -1) {
 		CWMP_LOG(INFO, "Internal error");
 		session->fault_code = FAULT_CPE_INTERNAL_ERROR;
@@ -96,6 +97,7 @@ int xml_handle_message(struct session *session)
 		session->fault_code = FAULT_CPE_REQUEST_DENIED;
 		goto fault;
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	session->body_in = b;
 
 	while (1) {
@@ -133,6 +135,7 @@ int xml_handle_message(struct session *session)
 	CWMP_LOG(INFO, "SOAP RPC message: %s", c);
 	rpc_cpe = NULL;
 	for (i = 1; i < __RPC_CPE_MAX; i++) {
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		if (i != RPC_CPE_FAULT && strcmp(c, rpc_cpe_methods[i].name) == 0 && rpc_cpe_methods[i].amd <= conf->amd_version) {
 			CWMP_LOG(INFO, "%s RPC is supported", c);
 			rpc_cpe = cwmp_add_session_rpc_cpe(session, i);
@@ -141,11 +144,13 @@ int xml_handle_message(struct session *session)
 			break;
 		}
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (!rpc_cpe) {
 		CWMP_LOG(INFO, "%s RPC is not supported", c);
 		session->fault_code = FAULT_CPE_METHOD_NOT_SUPPORTED;
 		goto fault;
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	return 0;
 fault:
 	rpc_cpe = cwmp_add_session_rpc_cpe(session, RPC_CPE_FAULT);
@@ -777,13 +782,17 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 			parameter_name = "";
 		}
 		if (parameter_name) {
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			char *err = cwmp_get_parameter_values(parameter_name, &parameters_list);
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			if (err) {
 				fault_code = cwmp_get_fault_code_by_string(err);
 				goto fault;
 			}
 			struct cwmp_dm_parameter *param_value = NULL;
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			list_for_each_entry (param_value, &parameters_list, list) {
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 				n = mxmlNewElement(parameter_list, "ParameterValueStruct");
 				if (!n)
 					goto fault;
@@ -792,26 +801,34 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 				if (!n)
 					goto fault;
 
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 				n = mxmlNewOpaque(n, param_value->name);
 				if (!n)
 					goto fault;
-
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 				n = n->parent->parent;
 				n = mxmlNewElement(n, "Value");
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 				if (!n)
 					goto fault;
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 #ifdef ACS_MULTI
 				mxmlElementSetAttr(n, "xsi:type", param_value->type);
 #endif
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 				n = mxmlNewOpaque(n, param_value->value);
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 				if (!n)
 					goto fault;
+				CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 				counter++;
 			}
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			cwmp_free_all_dm_parameter_list(&parameters_list);
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		}
 		b = mxmlWalkNext(b, session->body_in, MXML_DESCEND);
 		parameter_name = NULL;
@@ -831,9 +848,12 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 	return 0;
 
 fault:
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	cwmp_free_all_dm_parameter_list(&parameters_list);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (cwmp_create_fault_message(session, rpc, fault_code))
 		goto error;
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	return 0;
 
 error:

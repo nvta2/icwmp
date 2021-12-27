@@ -144,6 +144,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	char errbuf[CURL_ERROR_SIZE];
 
 	http_c.header_list = NULL;
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: iopsys-cwmp");
 	if (!http_c.header_list)
 		return -1;
@@ -160,6 +161,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 		if (!http_c.header_list)
 			return -1;
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	curl_easy_setopt(curl, CURLOPT_URL, http_c.url);
 	curl_easy_setopt(curl, CURLOPT_USERNAME, cwmp->conf.acs_userid);
 	curl_easy_setopt(curl, CURLOPT_PASSWORD, cwmp->conf.acs_passwd);
@@ -169,6 +171,7 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
 	curl_easy_setopt(curl, CURLOPT_NOBODY, 0);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	switch (cwmp->conf.compression) {
 	case COMP_NONE:
 		break;
@@ -181,15 +184,21 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 		http_c.header_list = curl_slist_append(http_c.header_list, "Content-Encoding: deflate");
 		break;
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_c.header_list);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, msg_out);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (msg_out)
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)msg_out_len);
 	else
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_get_response);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, msg_in);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 #ifdef DEVEL
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
@@ -199,19 +208,25 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 	curl_easy_setopt(curl, CURLOPT_COOKIEFILE, fc_cookies);
 	curl_easy_setopt(curl, CURLOPT_COOKIEJAR, fc_cookies);
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (cwmp->conf.acs_ssl_capath)
 		curl_easy_setopt(curl, CURLOPT_CAPATH, cwmp->conf.acs_ssl_capath);
 	if (cwmp->conf.insecure_enable) {
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 
 	curl_easy_setopt(curl, CURLOPT_INTERFACE, cwmp->conf.interface);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	*msg_in = (char *)calloc(1, sizeof(char));
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	res = curl_easy_perform(curl);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	if (res != CURLE_OK) {
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		size_t len = strlen(errbuf);
 		if (len) {
 			if (errbuf[len - 1] == '\n')
@@ -220,13 +235,17 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 		} else {
 			CWMP_LOG(ERROR, "libcurl: (%d) %s", res, curl_easy_strerror(res));
 		}
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	}
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (!strlen(*msg_in))
 		FREE(*msg_in);
 
 	curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (ip && ip[0] != '\0') {
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		if (ip_acs[0] == '\0' || strcmp(ip_acs, ip) != 0) {
 			CWMP_STRNCPY(ip_acs, ip, sizeof(ip_acs));
 			tmp = inet_pton(AF_INET, ip, buf);
@@ -238,25 +257,33 @@ int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **
 			cwmp_uci_set_varstate_value("cwmp", "acs", tmp ? "ip6" : "ip", ip_acs);
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			// Trigger firewall to reload firewall.cwmp
 			cwmp_ubus_call("uci", "commit", CWMP_UBUS_ARGS{ { "config", { .str_val = "firewall" }, UBUS_String } }, 1, NULL, NULL);
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		}
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (http_code == 204) {
 		CWMP_LOG(INFO, "Receive HTTP 204 No Content");
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	if (http_code == 415) {
 		cwmp->conf.compression = COMP_NONE;
 		goto error;
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (http_code != 200 && http_code != 204)
 		goto error;
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	/* TODO add check for 301, 302 and 307 HTTP Redirect*/
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;

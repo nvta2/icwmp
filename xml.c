@@ -123,9 +123,12 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 	int msg_out_len = 0, f, r = 0;
 	mxml_node_t *b;
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (session->tree_out) {
 		unsigned char *zmsg_out;
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		msg_out = mxmlSaveAllocString(session->tree_out, whitespace_cb);
+		CWMP_LOG(INFO, "%s:%s line %d s\n", __FILE__, __FUNCTION__, __LINE__);
 		CWMP_LOG_XML_MSG(DEBUG, msg_out, XML_MSG_OUT);
 		if (cwmp->conf.compression != COMP_NONE) {
 			if (zlib_compress(msg_out, &zmsg_out, &msg_out_len, cwmp->conf.compression)) {
@@ -137,12 +140,16 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 			msg_out_len = strlen(msg_out);
 		}
 	}
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	while (1) {
 		f = 0;
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		if (http_send_message(cwmp, msg_out, msg_out_len, &msg_in)) {
 			goto error;
 		}
+		CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 		if (msg_in) {
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			CWMP_LOG_XML_MSG(DEBUG, msg_in, XML_MSG_IN);
 			if ((s = strstr(msg_in, "<FaultCode>")))
 				sscanf(s, "<FaultCode>%d</FaultCode>", &f);
@@ -163,10 +170,12 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 				break;
 			}
 		} else {
+			CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 			goto end;
 		}
 	}
 
+	CWMP_LOG(INFO, "%s:%s line %d\n", __FILE__, __FUNCTION__, __LINE__);
 	session->tree_in = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
 	if (!session->tree_in)
 		goto error;
