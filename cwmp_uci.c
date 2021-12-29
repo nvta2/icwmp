@@ -707,9 +707,8 @@ int cwmp_uci_import(char *package_name, const char *input_path, uci_config_paths
 	struct uci_element *e = NULL;
 	int ret = CWMP_OK;
 	FILE *input = fopen(input_path, "r");
-	if (!input) {
+	if (!input)
 		return -1;
-	}
 
 	if (uci_import(uci_save_conf_paths[uci_type].uci_ctx, input, package_name, &package, (package_name != NULL)) != UCI_OK) {
 		ret = -1;

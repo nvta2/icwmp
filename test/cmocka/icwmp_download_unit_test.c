@@ -94,7 +94,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/firmware_v1.0.bin");
 
-	int error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
+	int error = cwmp_launch_download(pdownload, "firmware_v1.0.bin", TYPE_DOWNLOAD, &ptransfer_complete);
 	transfer_complete_test = ptransfer_complete;
 
 	assert_int_equal(error, FAULT_CPE_NO_FAULT);
@@ -119,7 +119,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/firmware.bin");
 
-	error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
+	error = cwmp_launch_download(pdownload, "firmware_v1.0.bin", TYPE_DOWNLOAD, &ptransfer_complete);
 	transfer_complete_test = ptransfer_complete;
 
 	assert_int_equal(error, FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER);
@@ -143,7 +143,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/firmware_v1.0.bin");
 
-	error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
+	error = cwmp_launch_download(pdownload, "firmware_v1.0.bin", TYPE_DOWNLOAD, &ptransfer_complete);
 	transfer_complete_test = ptransfer_complete;
 
 	assert_int_equal(error, FAULT_CPE_INVALID_ARGUMENTS);
@@ -167,7 +167,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	pdownload->password = icwmp_strdup("iopsys");
 	pdownload->url = icwmp_strdup("http://127.0.0.1/invalid_firmware_v1.0.bin");
 
-	error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
+	error = cwmp_launch_download(pdownload, "firmware_v1.0.bin", TYPE_DOWNLOAD, &ptransfer_complete);
 	transfer_complete_test = ptransfer_complete;
 
 	assert_int_equal(error, FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED);

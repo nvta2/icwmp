@@ -18,6 +18,7 @@
 #include "log.h"
 #include "cwmp_time.h"
 #include "event.h"
+#include "cwmp_uci.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_schedule_download);
@@ -168,7 +169,7 @@ int cwmp_apply_multiple_firmware()
 	return CWMP_OK;
 }
 
-int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struct transfer_complete **ptransfer_complete)
+int cwmp_launch_download(struct download *pdownload, char *download_file_name, enum load_type ltype, struct transfer_complete **ptransfer_complete)
 {
 	int error = FAULT_CPE_NO_FAULT;
 	char *download_startTime;
@@ -216,7 +217,13 @@ int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struc
 		//TODO Not Supported
 		error = FAULT_CPE_NO_FAULT;
 	} else if (strcmp(pdownload->file_type, VENDOR_CONFIG_FILE_TYPE) == 0) {
-		rename(ICWMP_DOWNLOAD_FILE, VENDOR_CONFIG_FILE);
+		if (download_file_name != NULL) {
+			char file_path[512];
+			snprintf(file_path, sizeof(file_path), "/tmp/%s", download_file_name);
+			rename(ICWMP_DOWNLOAD_FILE, file_path);
+		} else
+			rename(ICWMP_DOWNLOAD_FILE, VENDOR_CONFIG_FILE);
+
 		error = FAULT_CPE_NO_FAULT;
 	}  else if (strcmp(pdownload->file_type, TONE_FILE_TYPE) == 0) {
 		//TODO Not Supported
@@ -249,7 +256,15 @@ end_download:
 	return error;
 }
 
-int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct transfer_complete *ptransfer_complete)
+char *get_file_name_by_download_url(char *url)
+{
+        char *slash = strrchr(url, '/');
+        if (slash == NULL)
+                return NULL;
+        return slash+1;
+}
+
+int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, char *download_file_name, struct transfer_complete *ptransfer_complete)
 {
 	int error = FAULT_CPE_NO_FAULT;
 	if (pdownload->file_type[0] == '1') {
@@ -273,7 +288,17 @@ int apply_downloaded_file(struct cwmp *cwmp, struct download *pdownload, struct 
 		error = FAULT_CPE_NO_FAULT;
 	} else if (strcmp(pdownload->file_type, VENDOR_CONFIG_FILE_TYPE) == 0) {
 		cwmp_uci_init();
-		int err = cwmp_uci_import(NULL, VENDOR_CONFIG_FILE, UCI_STANDARD_CONFIG);
+		int err = CWMP_OK;
+		if (download_file_name != NULL) {
+			char file_path[512];
+			snprintf(file_path, sizeof(file_path), "/tmp/%s", download_file_name);
+			err = cwmp_uci_import(download_file_name, file_path, UCI_STANDARD_CONFIG);
+			remove(file_path);
+		} else {
+			err = cwmp_uci_import("vendor_conf_file", VENDOR_CONFIG_FILE, UCI_STANDARD_CONFIG);
+			remove(VENDOR_CONFIG_FILE);
+		}
+
 		cwmp_uci_exit();
 		if (err == CWMP_OK)
 			error = FAULT_CPE_NO_FAULT;
@@ -368,8 +393,9 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 			}
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
+				char *download_file_name = get_file_name_by_download_url(pdownload->url);
 				CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
-				error = cwmp_launch_download(pdownload, TYPE_DOWNLOAD, &ptransfer_complete);
+				error = cwmp_launch_download(pdownload, download_file_name, TYPE_DOWNLOAD, &ptransfer_complete);
 				sleep(3);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
@@ -377,7 +403,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					error = apply_downloaded_file(cwmp, pdownload, ptransfer_complete);
+					error = apply_downloaded_file(cwmp, pdownload, download_file_name, ptransfer_complete);
 					if (error || pdownload->file_type[0] == '6')
 						bkp_session_delete_transfer_complete(ptransfer_complete);
 				}
@@ -511,11 +537,12 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 		if (min_time == 0) {
 			continue;
 		} else if (min_time <= current_time) {
+			char *download_file_name = get_file_name_by_download_url(current_download->url);
 			if ((min_time == current_download->timewindowstruct[0].windowstart && (current_download->timewindowstruct[0].windowmode)[0] == '2') || (min_time == current_download->timewindowstruct[1].windowstart && (current_download->timewindowstruct[1].windowmode)[0] == '2')) {
 				pthread_mutex_lock(&mutex_schedule_download);
 				ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
 				ptransfer_complete->type = TYPE_SCHEDULE_DOWNLOAD;
-				error = cwmp_launch_download(current_download, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
+				error = cwmp_launch_download(current_download, download_file_name, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
@@ -526,7 +553,7 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 					if (pthread_mutex_trylock(&(cwmp->mutex_session_send)) == 0) {
 						pthread_mutex_lock(&mutex_apply_schedule_download);
 						pthread_mutex_lock(&mutex_schedule_download);
-						error = apply_downloaded_file(cwmp, current_download, ptransfer_complete);
+						error = apply_downloaded_file(cwmp, current_download, download_file_name, ptransfer_complete);
 						if (error == FAULT_CPE_NO_FAULT)
 							exit(EXIT_SUCCESS);
 
@@ -551,14 +578,14 @@ void *thread_cwmp_rpc_cpe_schedule_download(void *v)
 			else {
 				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				CWMP_LOG(INFO, "Launch download file %s", current_download->url);
-				error = cwmp_launch_download(current_download, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
+				error = cwmp_launch_download(current_download, download_file_name, TYPE_SCHEDULE_DOWNLOAD, &ptransfer_complete);
 				if (error != FAULT_CPE_NO_FAULT) {
 					bkp_session_insert_transfer_complete(ptransfer_complete);
 					bkp_session_save();
 					cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
 					bkp_session_delete_transfer_complete(ptransfer_complete);
 				} else {
-					error = apply_downloaded_file(cwmp, current_download, ptransfer_complete);
+					error = apply_downloaded_file(cwmp, current_download, download_file_name,  ptransfer_complete);
 					if (error == FAULT_CPE_NO_FAULT)
 						exit(EXIT_SUCCESS);
 				}

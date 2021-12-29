@@ -7,7 +7,7 @@
 #define ICWMP_DOWNLOAD_FILE "/tmp/icwmp_download"
 #define FIRMWARE_UPGRADE_IMAGE "/tmp/firmware.bin"
 #define WEB_CONTENT_FILE "/tmp/web_content.ipk"
-#define VENDOR_CONFIG_FILE "/tmp/vendor_configuration_file.cfg"
+#define VENDOR_CONFIG_FILE "/tmp/vendor_conf_file"
 
 #define FIRMWARE_UPGRADE_IMAGE_FILE_TYPE "1 Firmware Upgrade Image"
 #define WEB_CONTENT_FILE_TYPE "2 Web Content"
@@ -41,5 +41,5 @@ int cwmp_rpc_acs_destroy_data_transfer_complete(struct session *session, struct 
 void *thread_cwmp_rpc_cpe_download(void *v);
 void *thread_cwmp_rpc_cpe_schedule_download(void *v);
 void *thread_cwmp_rpc_cpe_apply_schedule_download(void *v);
-int cwmp_launch_download(struct download *pdownload, enum load_type ltype, struct transfer_complete **ptransfer_complete);
+int cwmp_launch_download(struct download *pdownload, char *download_file_name, enum load_type ltype, struct transfer_complete **ptransfer_complete);
 #endif
