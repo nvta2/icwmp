@@ -566,9 +566,9 @@ int create_cwmp_var_state_files()
 		else
 			return CWMP_GEN_ERR;
 	}
-	if (!folder_exists("/var/state/icwmpd")) {
-		if (mkdir("/var/state/icwmpd", S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
-			CWMP_LOG(INFO, "Not able to create the folder /var/state/icwmpd");
+	if (!folder_exists("/var/run/icwmpd")) {
+		if (mkdir("/var/run/icwmpd", S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
+			CWMP_LOG(INFO, "Not able to create the folder /var/run/icwmpd");
 			return CWMP_GEN_ERR;
 		}
 	}

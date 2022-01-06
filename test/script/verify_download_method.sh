@@ -19,7 +19,7 @@ if [ "$status" != "1" ]; then
 	exit 1
 fi
 
-rm /etc/icwmpd/.dm_enabled_notify
+rm /etc/icwmpd/dm_enabled_notify
 remove_icwmp_log
 echo "Restarting icwmpd in order to apply the new firmware"  >> ./funl-test-debug.log
 supervisorctl restart icwmpd  >> ./funl-test-debug.log

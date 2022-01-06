@@ -38,7 +38,7 @@ if [[ $notif2 != *"Device.WiFi.SSID.1.SSID"* ]]; then
 	exit 1
 fi
 
-rm /etc/icwmpd/.icwmpd_notify
+rm /etc/icwmpd/icwmpd_notify
 
 echo "PASS test valid custom notification json file"
 
@@ -75,7 +75,7 @@ fi
 
 echo "PASS test custom notification invalid json file"
 
-rm /etc/icwmpd/.icwmpd_notify
+rm /etc/icwmpd/icwmpd_notify
 
 #
 # Test custom notification json file containing forced active notification
@@ -110,7 +110,7 @@ fi
 
 echo "PASS test custom notification json file containing forced active notification"
 
-rm /etc/icwmpd/.icwmpd_notify
+rm /etc/icwmpd/icwmpd_notify
 
 #
 # Test custom notification json file containing invalid parameter path
@@ -145,6 +145,6 @@ fi
 
 echo "PASS test custom notification json file containing invalid parameter path"
 
-rm /etc/icwmpd/.icwmpd_notify
+rm /etc/icwmpd/icwmpd_notify
 
 echo "PASS: $TEST_NAME"
