@@ -14,8 +14,6 @@
 
 struct uci_paths uci_save_conf_paths[] = {
 		[UCI_STANDARD_CONFIG] = { "/etc/config", "/tmp/.uci", NULL },
-		[UCI_DB_CONFIG] = { "/lib/db/config", NULL, NULL },
-		[UCI_BOARD_DB_CONFIG] = { "/etc/board-db/config", NULL, NULL },
 		[UCI_VARSTATE_CONFIG] = { "/var/state", NULL, NULL }
 };
 
@@ -169,15 +167,6 @@ int cwmp_uci_get_option_value_string(char *package, char *section, char *option,
 		return UCI_ERR_NOTFOUND;
 	}
 	return UCI_OK;
-}
-
-char* cwmp_db_get_value_string(char *package, char *section, char *option)
-{
-	char *value = NULL;
-	cwmp_uci_get_option_value_string(package, section, option, folder_exists("/lib/db/config") ? UCI_DB_CONFIG : UCI_BOARD_DB_CONFIG, &value);
-	if (value == NULL)
-		value = "";
-	return value;
 }
 
 int cwmp_uci_get_value_by_path(char *path, uci_config_paths uci_type, char **value)

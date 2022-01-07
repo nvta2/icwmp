@@ -12,6 +12,7 @@ bool cwmp_transaction_commit();
 bool cwmp_transaction_abort();
 bool cwmp_transaction_status();
 char *cwmp_get_parameter_values(char *parameter_name, struct list_head *parameters_list);
+int cwmp_usp_get_single(char *param, char **value);
 char *cwmp_get_multiple_parameters_values(struct list_head *arg_params_list, struct list_head *parameters_list);
 char *cwmp_get_single_parameter_value(char *parameter_name, struct cwmp_dm_parameter *dm_parameter);
 int cwmp_set_multiple_parameters_values(struct list_head *parameters_values_list, char *parameter_key, int *flag, struct list_head *faults_list);

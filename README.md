@@ -37,6 +37,18 @@ config lwn 'lwn'
 	option port ''
 ```
 
+> Note: icwmp depends on usp.raw for all datamodel parameters, some `DeviceId` related parameters can be overwritten by writing them directly on `/etc/config/cwmp` file.
+
+```bash
+uci set cwmp.cpe.manufacturer="ABC"
+uci set cwmp.cpe.manufacturer_oui="XXX"
+uci set cwmp.cpe.product_class="TEST_CLASS"
+uci set cwmp.cpe.serial_number="1234567890"
+uci set cwmp.cpe.software_version="X.Y.Z"
+uci set cwmp.cpe.model_name="MODELXXX"
+uci set cwmp.cpe.description="This is a test device"
+uci commit cwmp
+```
 > Complete UCI for `cwmp` configuration available in [link](./docs/api/uci.cwmp.md) or [raw schema](./schemas/uci/cwmp.json)
 
 ## RPCs Method supported
@@ -233,6 +245,7 @@ Valid commands:
         set_notif [path-expr] [notification]    => set parameter notifications
 ```
 > Note: icwmpd CLI is a debug utility and hence it is advised to use for debug and development purpose only.
+> icwmpd CLI utility is independent of icwmpd daemon.
 
 icwmp CLI command success result is displayed in the terminal as following:
 

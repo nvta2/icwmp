@@ -506,3 +506,25 @@ char *cwmp_delete_object(char *object_name, char *key)
 
 	return NULL;
 }
+
+
+int cwmp_usp_get_single(char *param, char **value)
+{
+	struct cwmp_dm_parameter *pv = NULL;
+	LIST_HEAD(params_list);
+
+	if (param == NULL || value == NULL)
+		return -1;
+
+	cwmp_get_parameter_values(param, &params_list);
+	list_for_each_entry (pv, &params_list, list) {
+		if (strncmp(param, pv->name, strlen(param)) == 0) {
+			*value = (pv->value)?strdup(pv->value):strdup("");
+			break;
+		}
+	}
+
+	cwmp_free_all_dm_parameter_list(&params_list);
+
+	return 0;
+}

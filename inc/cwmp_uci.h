@@ -70,8 +70,6 @@
 typedef enum uci_config_paths
 {
 	UCI_STANDARD_CONFIG,
-	UCI_DB_CONFIG,
-	UCI_BOARD_DB_CONFIG,
 	UCI_VARSTATE_CONFIG
 }uci_config_paths;
 
@@ -132,7 +130,6 @@ int uci_set_value_by_path(char *cmd, char *value, uci_config_paths uci_type);
 int cwmp_uci_set_value_by_path(char *path, char *value);
 int cwmp_uci_set_varstate_value_by_path(char *path, char *value);
 int uci_get_value(char *cmd, char **value);
-char* cwmp_db_get_value_string(char *package, char *section, char *option);
 struct uci_section *cwmp_uci_walk_section(char *package, char *stype, void *arg1, void *arg2, int cmp, int (*filter)(struct uci_section *s, void *value), struct uci_section *prev_section, uci_config_paths uci_type, int walk);
 int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, char **value);
 int cwmp_uci_get_option_value_string(char *package, char *section, char *option, uci_config_paths uci_type, char **value);

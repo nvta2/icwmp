@@ -59,13 +59,6 @@ static void cwmp_uci_get_tests(void **state)
 	assert_int_equal(error, UCI_OK);
 	assert_null(value);
 
-	value = cwmp_db_get_value_string("device", "deviceinfo", "ProductClass");
-	assert_string_equal(value, "FirstClass");
-
-
-	value = cwmp_db_get_value_string("device", "deviceinfo", "wrong_option");
-	assert_string_equal(value, "");
-
 	error = cwmp_uci_get_option_value_string("cwmp", "acs", "dhcp_url", UCI_VARSTATE_CONFIG, &value);
 	assert_int_equal(error, UCI_OK);
 	assert_string_equal(value, "http://192.168.103.160:8080/openacs/acs");

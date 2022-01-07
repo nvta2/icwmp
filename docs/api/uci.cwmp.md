@@ -174,6 +174,55 @@
                     <td><div style="font-weight: bold; font-size: 14px;">description</div></td>
                   </tr>
                   <tr>
+                    <td class="td_row_even"><div class="td_row_even">manufacturer</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">manufacturer_oui</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">product_class</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">serial_number</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">software_version</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">model_name</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
+                    <td class="td_row_even"><div class="td_row_even">description</div></td>
+                    <td class="td_row_even"><div class="td_row_even">string</div></td>
+                    <td class="td_row_even"><div class="td_row_even">no</div></td>
+                    <td class="td_row_even"><div class="td_row_even"></div></td>
+                    <td class="td_row_even"><div class="td_row_even">Overwrite DeviceId parameter</div></td>
+                  </tr>
+                  <tr>
                     <td class="td_row_even"><div class="td_row_even">interface</div></td>
                     <td class="td_row_even"><div class="td_row_even">string</div></td>
                     <td class="td_row_even"><div class="td_row_even">no</div></td>

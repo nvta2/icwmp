@@ -132,6 +132,55 @@
       "multi": false,
       "options": [
         {
+          "name": "manufacturer",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
+          "name": "manufacturer_oui",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
+          "name": "product_class",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
+          "name": "serial_number",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
+          "name": "software_version",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
+          "name": "model_name",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": "no",
+          "default": "",
+          "description": "Overwrite DeviceId parameter"
+        },
+        {
           "name": "interface",
           "type": "string",
           "required": "no",
