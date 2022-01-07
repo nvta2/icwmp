@@ -14,6 +14,7 @@
 #include "cwmp_uci.h"
 #include "log.h"
 #include "reboot.h"
+#include "datamodel_interface.h"
 
 pthread_mutex_t mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
