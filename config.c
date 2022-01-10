@@ -49,7 +49,7 @@ int get_global_config()
 	int error, error2, error3;
 	char *value = NULL, *value2 = NULL, *value3 = NULL;
 
-	cwmp_main.conf.cr_auth_type = AUTH_DIGEST;
+	//cwmp_main->conf.cr_auth_type = AUTH_DIGEST;
 	if ((error = uci_get_value(UCI_CPE_LOG_FILE_NAME, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			log_set_log_file_name(value);

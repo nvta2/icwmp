@@ -35,6 +35,7 @@ extern struct list_head list_lw_value_change;
 extern struct list_head list_value_change;
 extern pthread_mutex_t mutex_value_change;
 extern struct list_head list_param_obj_notify;
+extern struct uloop_timeout check_notify_timer;
 
 /*#define foreach_parameter_notification(function, parameter, notification) \
 	#ifndef NOTIF_VARIABLES_##function \
@@ -70,4 +71,6 @@ void clean_list_param_notify();
 void init_list_param_notify();
 void reinit_list_param_notify();
 void cwmp_prepare_value_change();
+void periodic_check_notifiy(struct uloop_timeout *timeout  __attribute__((unused)));
+void trigger_periodic_notify_check();
 #endif /* SRC_INC_NOTIFICATIONS_H_ */

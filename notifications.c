@@ -25,6 +25,7 @@ LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
 LIST_HEAD(list_param_obj_notify);
 pthread_mutex_t mutex_value_change = PTHREAD_MUTEX_INITIALIZER;
+struct uloop_timeout check_notify_timer = { .cb = periodic_check_notifiy };
 
 char *notifications[7] = {"disabled" , "passive", "active", "passive_lw", "passive_passive_lw", "active_lw", "passive_active_lw"};
 
@@ -567,36 +568,26 @@ void sotfware_version_value_change(struct transfer_complete *p)
 	}
 }
 
-void *thread_periodic_check_notify(void *v __attribute__((unused)))
+void periodic_check_notifiy(struct uloop_timeout *timeout  __attribute__((unused)))
 {
-	//static int periodic_interval;
-	static bool periodic_enable;
+	int periodic_interval = cwmp_main->conf.periodic_notify_interval;
 	int is_notify = 0;
+	if (cwmp_stop)
+		return;
+	is_notify = check_value_change();
+	if (is_notify > 0)
+		cwmp_update_enabled_notify_file();
+	if (is_notify & NOTIF_ACTIVE)
+		send_active_value_change();
+	if (is_notify & NOTIF_LW_ACTIVE)
+		cwmp_lwnotification();
 
-	//periodic_interval = cwmp_main->conf.periodic_notify_interval;
-	periodic_enable = cwmp_main->conf.periodic_notify_enable;
+	uloop_timeout_set(&check_notify_timer, cwmp_main->conf.periodic_notify_interval * 1000);
+}
 
-	for (;;) {
-		if (periodic_enable) {
-		//	pthread_mutex_lock(&(cwmp_main->mutex_notify_periodic));
-
-			if (cwmp_stop)
-				break;
-
-			//pthread_cond_timedwait(&(cwmp_main->threshold_notify_periodic), &(cwmp_main->mutex_notify_periodic), &periodic_timeout);
-
-			is_notify = check_value_change();
-			if (is_notify > 0)
-				cwmp_update_enabled_notify_file();
-			if (is_notify & NOTIF_ACTIVE)
-				send_active_value_change();
-			if (is_notify & NOTIF_LW_ACTIVE)
-				cwmp_lwnotification();
-			//pthread_mutex_unlock(&(cwmp_main->mutex_notify_periodic));
-		} else
-			break;
-	}
-	return NULL;
+void trigger_periodic_notify_check()
+{
+	uloop_timeout_set(&check_notify_timer, 10);
 }
 
 void add_list_value_change(char *param_name, char *param_data, char *param_type)

@@ -94,7 +94,7 @@ int cwmp_session_exit()
 
 static int cwmp_rpc_cpe_handle_message(struct rpc *rpc_cpe)
 {
-	if (xml_prepare_msg_out(cwmp_main->session))
+	if (xml_prepare_msg_out())
 		return -1;
 
 	if (rpc_cpe_methods[rpc_cpe->type].handler(rpc_cpe))
@@ -236,12 +236,14 @@ void start_cwmp_session()
 	char *exec_download = NULL;
 	int is_notify = 0;
 
+	uloop_timeout_cancel(&check_notify_timer);
 	if (cwmp_session_init() != CWMP_OK) {
 		CWMP_LOG(ERROR, "Not able to init a CWMP session");
 		t = cwmp_get_session_retry_interval();
 		CWMP_LOG(INFO, "Retry session, retry count = %d, retry in %ds", cwmp_main->retry_count_session, t);
 		set_cwmp_session_status(SESSION_FAILURE, t);
-		uloop_timeout_set(&retry_session_timer, 1000 * t);
+		trigger_periodic_notify_check();
+		return;
 	}
 
 	/*
@@ -281,6 +283,7 @@ void start_cwmp_session()
 
 	if (cwmp_stop) {
 		event_remove_all_event_container(RPC_SEND);
+		event_remove_all_event_container(RPC_QUEUE);
 		run_session_end_func();
 		return;
 	}
@@ -293,13 +296,14 @@ void start_cwmp_session()
 		uloop_timeout_set(&retry_session_timer, 1000 * t);
 	} else {
 		event_remove_all_event_container(RPC_SEND);
+		event_remove_all_event_container(RPC_QUEUE);
 		cwmp_main->retry_count_session = 0;
 		set_cwmp_session_status(SESSION_SUCCESS, 0);
 	}
 	run_session_end_func();
 	cwmp_session_exit();
 	CWMP_LOG(INFO, "Waiting the next session");
-
+	trigger_periodic_notify_check();
 }
 
 void trigger_cwmp_session_timer()
