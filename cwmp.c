@@ -445,7 +445,6 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 	struct blob_attr *cur;
 	struct blob_attr *custom_forced_inform_list = NULL;
 	int rem;
-	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
 
 	if (cwmp->conf.forced_inform_json_file == NULL || !file_exists(cwmp->conf.forced_inform_json_file))
 		return;
@@ -473,17 +472,19 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 	blobmsg_for_each_attr(cur, custom_forced_inform_list, rem)
 	{
 		char parameter_path[128];
+		char *val = NULL;
 		snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
 		if (parameter_path[strlen(parameter_path)-1] == '.') {
 			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
 			continue;
 		}
-		char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
-		if (fault != NULL) {
+		int fault = cwmp_get_leaf_value(parameter_path, &val);
+		if (fault != 0) {
 			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
 			continue;
 		}
 		custom_forced_inform_parameters[nbre_custom_inform++] = strdup(parameter_path);
+		FREE(val);
 	}
 	blob_buf_free(&bbuf);
 
@@ -495,7 +496,6 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 	struct blob_attr *cur;
 	struct blob_attr *custom_boot_inform_list = NULL;
 	int rem;
-	struct cwmp_dm_parameter cwmp_dm_param = { 0 };
 
 	if (cwmp->conf.boot_inform_json_file == NULL || !file_exists(cwmp->conf.boot_inform_json_file))
 		return;
@@ -524,17 +524,20 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 	blobmsg_for_each_attr(cur, custom_boot_inform_list, rem)
 	{
 		char parameter_path[128];
+		char *val = NULL;
+
 		snprintf(parameter_path, sizeof(parameter_path), "%s", blobmsg_get_string(cur));
 		if (parameter_path[strlen(parameter_path)-1] == '.') {
 			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Only leaf parameters are allowed.", parameter_path);
 			continue;
 		}
-		char *fault = cwmp_get_single_parameter_value(parameter_path, &cwmp_dm_param);
-		if (fault != NULL) {
+		int fault = cwmp_get_leaf_value(parameter_path, &val);
+		if (fault != 0) {
 			CWMP_LOG(WARNING, "%s is rejected as inform parameter. Wrong parameter path.", parameter_path);
 			continue;
 		}
 		boot_inform_parameters[nbre_boot_inform++] = strdup(parameter_path);
+		FREE(val);
 	}
 	blob_buf_free(&bbuf);
 }

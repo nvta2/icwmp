@@ -305,6 +305,43 @@ char *cwmp_get_single_parameter_value(char *parameter_name, struct cwmp_dm_param
 	return NULL;
 }
 
+int cwmp_get_leaf_value(char *leaf, char **value)
+{
+	struct cwmp_dm_parameter dm_param = {0};
+	size_t llen;
+
+	if (leaf == NULL || value == NULL) {
+		CWMP_LOG(INFO, "Empty parameter/value in arguments")
+		return FAULT_CPE_INVALID_ARGUMENTS;
+	}
+
+	llen = strlen(leaf);
+	if (llen == 0) {
+		CWMP_LOG(INFO, "Empty parameter in arguments")
+		return FAULT_CPE_INVALID_ARGUMENTS;
+	}
+
+	if (leaf[llen - 1] == '.') {
+		CWMP_LOG(INFO, "Non-leaf parameter parameter")
+		return FAULT_CPE_INVALID_ARGUMENTS;
+	}
+
+	cwmp_get_single_parameter_value(leaf, &dm_param);
+	if (dm_param.name == NULL) {
+		CWMP_LOG(INFO, "Fault in getting the parameter %s", leaf)
+		return FAULT_CPE_INTERNAL_ERROR;
+	}
+
+	if (strncmp(leaf, dm_param.name, llen) == 0) {
+		*value = (dm_param.value) ? strdup(dm_param.value) : strdup("");
+	} else {
+		CWMP_LOG(WARNING, "Param %s, does not return a value", leaf);
+		return FAULT_CPE_INTERNAL_ERROR;
+	}
+
+	return 0;
+}
+
 /*
  * Get parameter Values/Names/Notify
  */
@@ -505,26 +542,4 @@ char *cwmp_delete_object(char *object_name, char *key)
 	}
 
 	return NULL;
-}
-
-
-int cwmp_usp_get_single(char *param, char **value)
-{
-	struct cwmp_dm_parameter *pv = NULL;
-	LIST_HEAD(params_list);
-
-	if (param == NULL || value == NULL)
-		return -1;
-
-	cwmp_get_parameter_values(param, &params_list);
-	list_for_each_entry (pv, &params_list, list) {
-		if (strncmp(param, pv->name, strlen(param)) == 0) {
-			*value = (pv->value)?strdup(pv->value):strdup("");
-			break;
-		}
-	}
-
-	cwmp_free_all_dm_parameter_list(&params_list);
-
-	return 0;
 }

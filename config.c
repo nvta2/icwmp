@@ -626,11 +626,11 @@ end:
 
 int cwmp_get_deviceid(struct cwmp *cwmp)
 {
-	cwmp_usp_get_single("Device.DeviceInfo.Manufacturer", &cwmp->deviceid.manufacturer);
-	cwmp_usp_get_single("Device.DeviceInfo.SerialNumber", &cwmp->deviceid.serialnumber);
-	cwmp_usp_get_single("Device.DeviceInfo.ProductClass", &cwmp->deviceid.productclass);
-	cwmp_usp_get_single("Device.DeviceInfo.ManufacturerOUI", &cwmp->deviceid.oui);
-	cwmp_usp_get_single("Device.DeviceInfo.SoftwareVersion", &cwmp->deviceid.softwareversion);
+	cwmp_get_leaf_value("Device.DeviceInfo.Manufacturer", &cwmp->deviceid.manufacturer);
+	cwmp_get_leaf_value("Device.DeviceInfo.SerialNumber", &cwmp->deviceid.serialnumber);
+	cwmp_get_leaf_value("Device.DeviceInfo.ProductClass", &cwmp->deviceid.productclass);
+	cwmp_get_leaf_value("Device.DeviceInfo.ManufacturerOUI", &cwmp->deviceid.oui);
+	cwmp_get_leaf_value("Device.DeviceInfo.SoftwareVersion", &cwmp->deviceid.softwareversion);
 	return CWMP_OK;
 }
 
