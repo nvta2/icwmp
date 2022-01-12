@@ -11,7 +11,6 @@ date +%s > timestamp.log
 echo "Compiling icmwp"
 build_icwmp
 
-mkdir -p /var/state/icwmpd
 echo "Starting dependent services"
 supervisorctl status all
 supervisorctl update
@@ -24,7 +23,7 @@ ubus-api-validator -f ./test/api/json/tr069.validation.json > ./api-test-result.
 check_ret $?
 
 echo "Stop all services"
-supervisorctl stop icwmpd
+supervisorctl stop all
 
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./api-test-coverage.xml

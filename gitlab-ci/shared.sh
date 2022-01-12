@@ -56,16 +56,22 @@ function configure_genieacs()
 	#check_ret $?
 
 	echo "upload firmware image to genieacs server"
-	exec_cmd dd if=/dev/zero of=/builds/iopsys/icwmp/firmware_v1.0.bin bs=25MB count=1
-	echo "Valid" > /builds/iopsys/icwmp/firmware_v1.0.bin
-	curl -X PUT 'http://localhost:7557/files/firmware_v1.0.bin' --data-binary '@/builds/iopsys/icwmp/firmware_v1.0.bin' --header "fileType: 1 Firmware Upgrade Image" --header "oui: XXX" --header "productClass: FirstClass" --header "version: 000000001" >/dev/null 2>&1
+	exec_cmd dd if=/dev/zero of=/tmp/firmware_v1.0.bin bs=25MB count=1
+	echo "Valid" > /tmp/firmware_v1.0.bin
+	curl -X PUT 'http://localhost:7557/files/firmware_v1.0.bin' --data-binary '@/tmp/firmware_v1.0.bin' --header "fileType: 1 Firmware Upgrade Image" --header "oui: XXX" --header "productClass: FirstClass" --header "version: 000000001" >/dev/null 2>&1
 	check_ret $?
+
+	exec_cmd ubus call tr069 inform
+	sleep 5
+	echo "## Restarting cwmp client ##"
+	supervisorctl restart icwmpd
+	exec_cmd ubus wait_for tr069
 }
 
 function configure_acs_url()
 {
-	url="http://`hostname -i`:7547"
-	uci set cwmp.acs.url=$url
+	uci set cwmp.acs.url="http://127.0.0.1:7547"
+	uci set cwmp.cpe.interface="lo"
 	uci commit cwmp
 	echo "Current ACS URL=$url"
 }
@@ -89,7 +95,7 @@ function clean_icwmp()
 		find -name '*.gcov' -exec rm {} -fv \;
 		find -name '*.deps' -exec rm {} -rfv \;
 		find -name '*.so' -exec rm {} -fv \;
-		rm -f *.o *.log *.xml vgcore.* firmware_v1.0.bin
+		rm -f *.o *.log *.xml firmware_v1.0.bin
 		rm -rf report
 	fi
 }
@@ -102,6 +108,10 @@ function build_icwmp()
 
 	# clean icwmp
 	clean_icwmp
+
+	mkdir -p /var/state
+	mkdir -p /var/run
+	mkdir -p /var/run/icwmpd
 
 	# compile icwmp
 	autoreconf -i >/dev/null 2>&1

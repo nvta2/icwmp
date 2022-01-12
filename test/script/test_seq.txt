@@ -1,0 +1,5 @@
+verify_add_method.sh
+verify_delete_method.sh
+verify_get_method.sh
+verify_set_method.sh
+verify_cmd_line.sh

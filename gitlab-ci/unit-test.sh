@@ -12,8 +12,8 @@ exec_cmd mkdir -p /etc/icwmpd
 exec_cmd cp /builds/iopsys/icwmp/test/files/etc/icwmpd/* /etc/icwmpd
 
 exec_cmd mkdir -p /var/state
+mkdir -p /var/run/icwmpd
 exec_cmd cp /builds/iopsys/icwmp/test/files/var/state/cwmp /var/state
-mkdir -p /var/state/icwmpd
 
 echo "Starting dependent services"
 supervisorctl status all

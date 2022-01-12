@@ -11,24 +11,15 @@ date +%s > timestamp.log
 echo "Compiling icmwp"
 build_icwmp
 
-echo "Starting dependent services"
-supervisorctl status all
+echo "Starting all services"
 supervisorctl update
-supervisorctl restart all
-supervisorctl stop icwmpd
 supervisorctl status all
+supervisorctl restart all
+supervisorctl status all
+exec_cmd ubus wait_for usp.raw tr069
 
 echo "Configuring genieacs"
 configure_genieacs
-
-echo "Configuring ACS URL"
-configure_acs_url
-
-mkdir -p /var/state/icwmpd 
-
-echo "Starting icwmpd deamon"
-supervisorctl start icwmpd
-sleep 5
 
 echo "Checking cwmp status"
 check_cwmp_status
@@ -39,7 +30,7 @@ echo "## Running script verification of functionalities ##"
 echo > ./funl-test-result.log
 echo > ./funl-test-debug.log
 test_num=0
-for test in `ls -I "common.sh" -I "verify_custom_notifications.sh" -I "verify_download_method.sh" test/script/`; do
+for test in `cat test/script/test_seq.txt`; do
 	test_num=$(( test_num + 1 ))
 	./test/script/${test}
 	if [ "$?" -eq 0 ]; then
@@ -50,10 +41,7 @@ for test in `ls -I "common.sh" -I "verify_custom_notifications.sh" -I "verify_do
 done
 
 echo "Stop all services"
-supervisorctl stop icwmpd
-
-cp test/files/etc/config/users /etc/config/
-cp test/files/etc/config/wireless /etc/config/
+supervisorctl stop all
 
 #echo "Verify Custom notifications"
 #./test/script/verify_custom_notifications.sh

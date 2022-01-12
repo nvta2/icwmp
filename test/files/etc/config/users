@@ -1,8 +1,0 @@
-
-config user 'user'
-	option enabled '1'
-	option remote_access '1'
-	list _access_w 'admin'
-	list _access_w 'support'
-	list _access_w 'user'
-
