@@ -77,6 +77,7 @@ struct rpc *cwmp_add_session_rpc_acs(int type);
 struct rpc *cwmp_add_session_rpc_acs_head(int type);
 int cwmp_session_rpc_destructor(struct rpc *rpc);
 void trigger_cwmp_session_timer();
+void trigger_session_by_ubus(char *event);
 void initiate_cwmp_periodic_session_feature();
 int run_session_end_func(void);
 void cwmp_schedule_session(struct uloop_timeout *timeout);

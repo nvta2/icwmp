@@ -79,5 +79,5 @@ bool event_exist_in_list(int event);
 int cwmp_root_cause_events();
 int cwmp_root_cause_transfer_complete(struct transfer_complete *p);
 int cwmp_root_cause_changedustate_complete(struct du_state_change_complete *p);
-void cwmp_root_cause_event_ipdiagnostic(void);
+void cwmp_root_cause_event_diagnostic(void);
 #endif /* SRC_INC_EVENT_H_ */

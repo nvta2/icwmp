@@ -343,6 +343,7 @@ static int cwmp_init(int argc, char **argv)
 	cwmp_uci_exit();
 	generate_nonce_priv_key();
 	cwmp_main->start_time = time(NULL);
+	cwmp_main->start_diagnostics = false;
 	return CWMP_OK;
 }
 

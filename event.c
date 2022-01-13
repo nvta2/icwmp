@@ -22,6 +22,7 @@
 #include "soap.h"
 #include "upload.h"
 #include "sched_inform.h"
+#include "ubus.h"
 
 pthread_mutex_t add_event_mutext = PTHREAD_MUTEX_INITIALIZER;
 
@@ -97,7 +98,7 @@ struct event_container *cwmp_add_event_container(int event_code, char *command_k
 	return event;
 }
 
-void cwmp_root_cause_event_ipdiagnostic(void)
+void cwmp_root_cause_event_diagnostic(void)
 {
 	struct event_container *event_container;
 
@@ -106,6 +107,7 @@ void cwmp_root_cause_event_ipdiagnostic(void)
 		return;
 	}
 	cwmp_save_event_container(event_container);
+	cwmp_main->start_diagnostics = true;
 	return;
 }
 

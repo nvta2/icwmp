@@ -19,6 +19,7 @@
 #include "notifications.h"
 #include "diagnostic.h"
 #include "soap.h"
+#include "ubus.h"
 
 pthread_mutex_t start_session_mutext = PTHREAD_MUTEX_INITIALIZER;
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout);
@@ -296,7 +297,7 @@ void start_cwmp_session()
 		uloop_timeout_set(&retry_session_timer, 1000 * t);
 	} else {
 		event_remove_all_event_container(RPC_SEND);
-		event_remove_all_event_container(RPC_QUEUE);
+		//event_remove_all_event_container(RPC_QUEUE);
 		cwmp_main->retry_count_session = 0;
 		set_cwmp_session_status(SESSION_SUCCESS, 0);
 	}
@@ -317,6 +318,10 @@ void cwmp_schedule_session(struct uloop_timeout *timeout  __attribute__((unused)
 	pthread_mutex_lock(&start_session_mutext);
 	start_cwmp_session();
 	pthread_mutex_unlock(&start_session_mutext);
+	if (cwmp_main->start_diagnostics) {
+		cwmp_main->start_diagnostics = false;
+		trigger_cwmp_session_timer();
+	}
 }
 
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout  __attribute__((unused)))
