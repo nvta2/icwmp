@@ -20,6 +20,8 @@
 #include "diagnostic.h"
 #include "soap.h"
 #include "ubus.h"
+#include "download.h"
+#include "upload.h"
 
 pthread_mutex_t start_session_mutext = PTHREAD_MUTEX_INITIALIZER;
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout);
@@ -71,23 +73,6 @@ int cwmp_session_rpc_destructor(struct rpc *rpc)
 
 int cwmp_session_exit()
 {
-	struct rpc *rpc;
-	while (cwmp_main->session->head_rpc_acs.next != &(cwmp_main->session->head_rpc_acs)) {
-		rpc = list_entry(cwmp_main->session->head_rpc_acs.next, struct rpc, list);
-		if (!rpc)
-			break;
-		if (rpc_acs_methods[rpc->type].extra_clean != NULL)
-			rpc_acs_methods[rpc->type].extra_clean(rpc);
-		cwmp_session_rpc_destructor(rpc);
-	}
-
-	while (cwmp_main->session->head_rpc_cpe.next != &(cwmp_main->session->head_rpc_cpe)) {
-		rpc = list_entry(cwmp_main->session->head_rpc_cpe.next, struct rpc, list);
-		if (!rpc)
-			break;
-		cwmp_session_rpc_destructor(rpc);
-	}
-
 	cwmp_uci_exit();
 	icwmp_cleanmem();
 	return CWMP_OK;
@@ -97,16 +82,13 @@ static int cwmp_rpc_cpe_handle_message(struct rpc *rpc_cpe)
 {
 	if (xml_prepare_msg_out())
 		return -1;
-
 	if (rpc_cpe_methods[rpc_cpe->type].handler(rpc_cpe))
 		return -1;
-
 	if (xml_set_cwmp_id_rpc_cpe())
 		return -1;
 
 	return 0;
 }
-
 
 static int cwmp_schedule_rpc()
 {
@@ -231,6 +213,26 @@ void set_cwmp_session_status(int status, int retry_time)
 	}
 }
 
+void rpc_exit()
+{
+	struct rpc *rpc;
+	while (cwmp_main->session->head_rpc_acs.next != &(cwmp_main->session->head_rpc_acs)) {
+		rpc = list_entry(cwmp_main->session->head_rpc_acs.next, struct rpc, list);
+		if (!rpc)
+			break;
+		if (rpc_acs_methods[rpc->type].extra_clean != NULL)
+			rpc_acs_methods[rpc->type].extra_clean(rpc);
+		cwmp_session_rpc_destructor(rpc);
+	}
+
+	while (cwmp_main->session->head_rpc_cpe.next != &(cwmp_main->session->head_rpc_cpe)) {
+		rpc = list_entry(cwmp_main->session->head_rpc_cpe.next, struct rpc, list);
+		if (!rpc)
+			break;
+		cwmp_session_rpc_destructor(rpc);
+	}
+}
+
 void start_cwmp_session()
 {
 	int t, error;
@@ -286,6 +288,8 @@ void start_cwmp_session()
 		event_remove_all_event_container(RPC_SEND);
 		event_remove_all_event_container(RPC_QUEUE);
 		run_session_end_func();
+		cwmp_session_exit();
+		rpc_exit();
 		return;
 	}
 
@@ -300,6 +304,7 @@ void start_cwmp_session()
 		//event_remove_all_event_container(RPC_QUEUE);
 		cwmp_main->retry_count_session = 0;
 		set_cwmp_session_status(SESSION_SUCCESS, 0);
+		rpc_exit();
 	}
 	run_session_end_func();
 	cwmp_session_exit();
@@ -506,6 +511,34 @@ int run_session_end_func(void)
 		cwmp_factory_reset();
 		exit(EXIT_SUCCESS);
 	}
+
+	if (end_session_flag & END_SESSION_DOWNLOAD) {
+		CWMP_LOG(INFO, "Trigger Uloop Downaload Calls");
+		struct list_head *ilist;
+		list_for_each (ilist, &(list_download)) {
+			struct download *download = list_entry(ilist, struct download, list);
+			int download_delay = 0;
+			if (download->scheduled_time > time(NULL)) {
+				download_delay = download->scheduled_time - time(NULL);
+			}
+			uloop_timeout_set(&download->handler_timer, 1000 * download_delay);
+		}
+	}
+
+
+	if (end_session_flag & END_SESSION_UPLOAD) {
+		CWMP_LOG(INFO, "Trigger Uloop Upload Calls");
+		struct list_head *ilist;
+		list_for_each (ilist, &(list_upload)) {
+			struct download *upload = list_entry(ilist, struct download, list);
+			int upload_delay = 0;
+			if (upload->scheduled_time > time(NULL)) {
+				upload_delay = upload->scheduled_time - time(NULL);
+			}
+			uloop_timeout_set(&upload->handler_timer, 1000 * upload_delay);
+		}
+	}
+
 	end_session_flag = 0;
 	return CWMP_OK;
 }

@@ -24,6 +24,8 @@ configure_genieacs
 echo "Checking cwmp status"
 check_cwmp_status
 
+mkdir -p /var/run/icwmpd
+
 [ -f funl-test-result.log ] && rm -f funl-test-result.log
 
 echo "## Running script verification of functionalities ##"

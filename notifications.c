@@ -570,7 +570,6 @@ void sotfware_version_value_change(struct transfer_complete *p)
 
 void periodic_check_notifiy(struct uloop_timeout *timeout  __attribute__((unused)))
 {
-	int periodic_interval = cwmp_main->conf.periodic_notify_interval;
 	int is_notify = 0;
 	if (cwmp_stop)
 		return;

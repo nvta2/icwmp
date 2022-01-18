@@ -218,6 +218,9 @@ int cwmp_root_cause_transfer_complete(struct transfer_complete *p)
 	if (event_container == NULL) {
 		return CWMP_MEM_ERR;
 	}
+	if ((rpc_acs = cwmp_add_session_rpc_acs(RPC_ACS_TRANSFER_COMPLETE)) == NULL) {
+		return CWMP_MEM_ERR;
+	}
 	switch (p->type) {
 	case TYPE_DOWNLOAD:
 		event_container = cwmp_add_event_container(EVENT_IDX_M_Download, p->command_key ? p->command_key : "");
@@ -238,9 +241,7 @@ int cwmp_root_cause_transfer_complete(struct transfer_complete *p)
 		}
 		break;
 	}
-	if ((rpc_acs = cwmp_add_session_rpc_acs(RPC_ACS_TRANSFER_COMPLETE)) == NULL) {
-		return CWMP_MEM_ERR;
-	}
+
 	rpc_acs->extra_data = (void *)p;
 	return CWMP_OK;
 }

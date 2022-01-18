@@ -182,7 +182,7 @@ int xml_send_message(struct rpc *rpc)
 	if (b) {
 		b = mxmlWalkNext(b, cwmp_main->session->tree_in, MXML_DESCEND_FIRST);
 		if (b && b->type == MXML_OPAQUE && b->value.opaque)
-			cwmp_main->session->hold_request = atoi(b->value.opaque);
+			cwmp_main->session->hold_request = (atoi(b->value.opaque)) ? true : false;
 	} else {
 		if (snprintf(c, sizeof(c), "%s:%s", ns.cwmp, "HoldRequests") == -1)
 			goto error;
@@ -191,7 +191,7 @@ int xml_send_message(struct rpc *rpc)
 		if (b) {
 			b = mxmlWalkNext(b, cwmp_main->session->tree_in, MXML_DESCEND_FIRST);
 			if (b && b->type == MXML_OPAQUE && b->value.opaque)
-				cwmp_main->session->hold_request = atoi(b->value.opaque);
+				cwmp_main->session->hold_request = (atoi(b->value.opaque)) ? true : false;
 		}
 	}
 

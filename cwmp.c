@@ -387,16 +387,7 @@ static void cwmp_exit()
 
 void cwmp_end_handler(int signal_num __attribute__((unused)))
 {
-	cwmp_stop = true;
-
-	if (cwmp_main->session->session_status.last_status == SESSION_RUNNING)
-		http_set_timeout();
-
-	uloop_timeout_cancel(&retry_session_timer);
-	uloop_timeout_cancel(&priodic_session_timer);
-	uloop_timeout_cancel(&session_timer);
-	uloop_end();
-	shutdown(cwmp_main->cr_socket_desc, SHUT_RDWR);
+	cwmp_ubus_call("tr069", "exit", CWMP_UBUS_ARGS{ {} }, 0, NULL, NULL);
 }
 
 int main(int argc, char **argv)

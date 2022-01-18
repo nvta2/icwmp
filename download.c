@@ -9,6 +9,7 @@
  */
 
 #include <curl/curl.h>
+#include <libubox/blobmsg_json.h>
 
 #include "common.h"
 #include "download.h"
@@ -19,13 +20,14 @@
 #include "cwmp_time.h"
 #include "event.h"
 #include "cwmp_uci.h"
+#include "session.h"
+#include "subprocess.h"
 
 LIST_HEAD(list_download);
 LIST_HEAD(list_schedule_download);
 LIST_HEAD(list_apply_schedule_download);
 
 pthread_mutex_t mutex_download = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t threshold_download;
 pthread_mutex_t mutex_schedule_download = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t threshold_schedule_download;
 pthread_mutex_t mutex_apply_schedule_download = PTHREAD_MUTEX_INITIALIZER;
@@ -70,6 +72,57 @@ int download_file(const char *file_path, const char *url, const char *username, 
 	return res_code;
 }
 
+char *download_file_task_function(char *task)
+{
+
+	struct blob_buf bbuf;
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+
+	if (blobmsg_add_json_from_string(&bbuf, task) == false) {
+		blob_buf_free(&bbuf);
+		return NULL;
+	}
+	const struct blobmsg_policy p[5] = { { "task", BLOBMSG_TYPE_STRING }, { "file_path", BLOBMSG_TYPE_STRING }, { "url", BLOBMSG_TYPE_STRING }, { "username", BLOBMSG_TYPE_STRING }, { "password", BLOBMSG_TYPE_STRING } };
+
+	struct blob_attr *tb[5] = { NULL, NULL, NULL, NULL, NULL};
+	blobmsg_parse(p, 5, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
+	char *task_name = blobmsg_get_string(tb[0]);
+	if (!task_name || strcmp(task_name, "download") != 0)
+		return NULL;
+	char *file_path = blobmsg_get_string(tb[1]);
+	char *url = blobmsg_get_string(tb[2]);
+	char *username = blobmsg_get_string(tb[3]);
+	char *password = blobmsg_get_string(tb[4]);
+
+	int http_code = download_file(file_path, url, username, password);
+	char *http_ret = (char *)malloc(4 * sizeof(char));
+	snprintf(http_ret, 4, "%d", http_code);
+	http_ret[3] = 0;
+	return http_ret;
+}
+
+int download_file_in_subprocess(const char *file_path, const char *url, const char *username, const char *password)
+{
+	subprocess_start(download_file_task_function);
+
+	struct blob_buf bbuf;
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+	blobmsg_add_string(&bbuf, "task", "download");
+	blobmsg_add_string(&bbuf, "file_path", file_path ? file_path : "");
+	blobmsg_add_string(&bbuf, "url", url ? url : "");
+	blobmsg_add_string(&bbuf, "username", username ? username : "");
+	blobmsg_add_string(&bbuf, "password", password ? password : "");
+	char *download_task = blobmsg_format_json(bbuf.head, true);
+	blob_buf_free(&bbuf);
+
+	if (download_task != NULL) {
+		char *ret = execute_task_in_subprocess(download_task);
+		return atoi(ret);
+	}
+	return 500;
+}
 /*
  * Check if the downloaded image can be applied
  */
@@ -141,6 +194,58 @@ int get_available_bank_id()
 }
 
 /*
+ * Get Bank Status
+ */
+void ubus_get_bank_status_callback(struct ubus_request *req, int type __attribute__((unused)), struct blob_attr *msg)
+{
+	int *bank_id = (int *)req->priv;
+	int *status = bank_id;
+	bool bank_found = false;
+	struct blob_attr *banks = NULL;
+	struct blob_attr *cur;
+	int rem;
+
+	blobmsg_for_each_attr(cur, msg, rem)
+	{
+		if (blobmsg_type(cur) == BLOBMSG_TYPE_ARRAY) {
+			banks = cur;
+			break;
+		}
+	}
+
+	const struct blobmsg_policy p[8] = { { "name", BLOBMSG_TYPE_STRING },  { "id", BLOBMSG_TYPE_INT32 },	 { "active", BLOBMSG_TYPE_BOOL },  { "upgrade", BLOBMSG_TYPE_BOOL },
+					     { "fwver", BLOBMSG_TYPE_STRING }, { "swver", BLOBMSG_TYPE_STRING }, { "fwver", BLOBMSG_TYPE_STRING }, { "status", BLOBMSG_TYPE_STRING } };
+
+	blobmsg_for_each_attr(cur, banks, rem)
+	{
+		struct blob_attr *tb[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+		blobmsg_parse(p, 8, tb, blobmsg_data(cur), blobmsg_len(cur));
+		if (!tb[0])
+			continue;
+
+		if (blobmsg_get_u32(tb[1]) == (uint32_t)*bank_id) {
+			bank_found = true;
+			if (strcmp(blobmsg_get_string(tb[7]), "Available") == 0 || strcmp(blobmsg_get_string(tb[7]), "Active"))
+				*status = 1;
+			else
+				*status = 0;
+		}
+	}
+	if (bank_found == false)
+		*status = 0;
+}
+
+int get_applied_firmware_status(int *bank_id_status)
+{
+	int e;
+	e = cwmp_ubus_call("fwbank", "dump", CWMP_UBUS_ARGS{ {} }, 0, ubus_get_bank_status_callback, &bank_id_status);
+	if (e != 0) {
+		CWMP_LOG(INFO, "fwbank dump ubus method failed: Ubus err code: %d", e);
+	}
+	return e;
+}
+
+/*
  * Apply the new firmware
  */
 int cwmp_apply_firmware()
@@ -152,6 +257,24 @@ int cwmp_apply_firmware()
 		CWMP_LOG(INFO, "rpc-sys upgrade_start ubus method failed: Ubus err code: %d", e);
 	}
 	return e;
+}
+
+void wait_firmware_to_be_applied(int bank_id)
+{
+	int count = 0;
+
+	do {
+		int bank_id_status = bank_id;
+
+		if (get_applied_firmware_status(&bank_id_status) != CWMP_OK)
+			break;
+
+		if (bank_id_status == 1)
+			break;
+
+		usleep(1000 * 1000);
+		count++;
+	} while(count < 15);
 }
 
 int cwmp_apply_multiple_firmware()
@@ -166,7 +289,26 @@ int cwmp_apply_multiple_firmware()
 		CWMP_LOG(INFO, "fwbank upgrade ubus method failed: Ubus err code: %d", e);
 		return -1;
 	}
+	//wait until the apply completes
+	wait_firmware_to_be_applied(bank_id);
 	return CWMP_OK;
+}
+
+char *apply_multiple_firmware_task_function(char *task __attribute__((unused)))
+{
+	int ret = cwmp_apply_multiple_firmware();
+
+	char *ret_str = (char *)malloc(2 * sizeof(char));
+	snprintf(ret_str, 2, "%d", ret);
+	ret_str[1] = 0;
+	return ret_str;
+}
+
+int cwmp_apply_multiple_firmware_in_subprocess()
+{
+	subprocess_start(apply_multiple_firmware_task_function);
+	char *ret = execute_task_in_subprocess("{}"); //empty json object
+	return atoi(ret);
 }
 
 int cwmp_launch_download(struct download *pdownload, char *download_file_name, enum load_type ltype, struct transfer_complete **ptransfer_complete)
@@ -185,7 +327,7 @@ int cwmp_launch_download(struct download *pdownload, char *download_file_name, e
 		goto end_download;
 	}
 
-	int http_code = download_file(ICWMP_DOWNLOAD_FILE, pdownload->url, pdownload->username, pdownload->password);
+	int http_code = download_file_in_subprocess(ICWMP_DOWNLOAD_FILE, pdownload->url, pdownload->username, pdownload->password);
 	if (http_code == 404)
 		error = FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER;
 	else if (http_code == 401)
@@ -314,7 +456,7 @@ int apply_downloaded_file(struct download *pdownload, char *download_file_name, 
 		error = FAULT_CPE_NO_FAULT;
 
 	} else if (strcmp(pdownload->file_type, STORED_FIRMWARE_IMAGE_FILE_TYPE) == 0) {
-		int err = cwmp_apply_multiple_firmware();
+		int err = cwmp_apply_multiple_firmware_in_subprocess();
 		if (err == CWMP_OK)
 			error = FAULT_CPE_NO_FAULT;
 		else
@@ -330,10 +472,12 @@ int apply_downloaded_file(struct download *pdownload, char *download_file_name, 
 		}
 		return FAULT_CPE_NO_FAULT;
 	}
+
 	if (error != FAULT_CPE_NO_FAULT) {
 		bkp_session_delete_transfer_complete(ptransfer_complete);
 		ptransfer_complete->fault_code = error;
 	}
+
 	bkp_session_insert_transfer_complete(ptransfer_complete);
 	bkp_session_save();
 	cwmp_root_cause_transfer_complete(ptransfer_complete);
@@ -354,78 +498,6 @@ struct transfer_complete *set_download_error_transfer_complete(struct download *
 		cwmp_root_cause_transfer_complete(ptransfer_complete);
 	}
 	return ptransfer_complete;
-}
-
-void *thread_cwmp_rpc_cpe_download(void *v __attribute__((unused)))
-{
-	struct download *pdownload;
-	struct timespec download_timeout = { 0, 0 };
-	time_t current_time, stime;
-	int error = FAULT_CPE_NO_FAULT;
-	struct transfer_complete *ptransfer_complete;
-	long int time_of_grace = 3600, timeout;
-
-	for (;;) {
-
-		if (cwmp_stop)
-			break;
-		
-		if (list_download.next != &(list_download)) {
-			pdownload = list_entry(list_download.next, struct download, list);
-			stime = pdownload->scheduled_time;
-			current_time = time(NULL);
-			if (pdownload->scheduled_time != 0)
-				timeout = current_time - pdownload->scheduled_time;
-			else
-				timeout = 0;
-			if ((timeout >= 0) && (timeout > time_of_grace)) {
-				pthread_mutex_lock(&mutex_download);
-				bkp_session_delete_download(pdownload);
-				error = FAULT_CPE_DOWNLOAD_FAILURE;
-				ptransfer_complete = set_download_error_transfer_complete(pdownload, TYPE_DOWNLOAD);
-				list_del(&(pdownload->list));
-				if (pdownload->scheduled_time != 0)
-					count_download_queue--;
-				cwmp_free_download_request(pdownload);
-				pthread_mutex_unlock(&mutex_download);
-				continue;
-			}
-			if ((timeout >= 0) && (timeout <= time_of_grace)) {
-				char *download_file_name = get_file_name_by_download_url(pdownload->url);
-				CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
-				error = cwmp_launch_download(pdownload, download_file_name, TYPE_DOWNLOAD, &ptransfer_complete);
-				sleep(3);
-				if (error != FAULT_CPE_NO_FAULT) {
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					cwmp_root_cause_transfer_complete(ptransfer_complete);
-					bkp_session_delete_transfer_complete(ptransfer_complete);
-				} else {
-					error = apply_downloaded_file(pdownload, download_file_name, ptransfer_complete);
-					if (error || pdownload->file_type[0] == '6')
-						bkp_session_delete_transfer_complete(ptransfer_complete);
-				}
-				if (pdownload->file_type[0] == '6')
-					sleep(30);
-				pthread_mutex_lock(&mutex_download);
-				list_del(&(pdownload->list));
-				if (pdownload->scheduled_time != 0)
-					count_download_queue--;
-				cwmp_free_download_request(pdownload);
-				pthread_mutex_unlock(&mutex_download);
-				continue;
-			}
-			pthread_mutex_lock(&mutex_download);
-			download_timeout.tv_sec = stime;
-			pthread_cond_timedwait(&threshold_download, &mutex_download, &download_timeout);
-			pthread_mutex_unlock(&mutex_download);
-		} else {
-			pthread_mutex_lock(&mutex_download);
-			pthread_cond_wait(&threshold_download, &mutex_download);
-			pthread_mutex_unlock(&mutex_download);
-		}
-	}
-	return NULL;
 }
 
 int cwmp_add_apply_schedule_download(struct download *schedule_download, char *start_time)
@@ -888,4 +960,46 @@ int cwmp_rpc_acs_destroy_data_transfer_complete(struct rpc *rpc)
 	}
 	FREE(rpc->extra_data);
 	return 0;
+}
+
+void cwmp_start_download(struct uloop_timeout *timeout)
+{
+	struct download *pdownload;
+	int error = FAULT_CPE_NO_FAULT;
+	struct transfer_complete *ptransfer_complete;
+	pdownload = container_of(timeout, struct download, handler_timer);
+
+	char *download_file_name = get_file_name_by_download_url(pdownload->url);
+	CWMP_LOG(INFO, "Launch download file %s", pdownload->url);
+	error = cwmp_launch_download(pdownload, download_file_name, TYPE_DOWNLOAD, &ptransfer_complete);
+	sleep(3);
+	if (error != FAULT_CPE_NO_FAULT) {
+		CWMP_LOG(ERROR, "Error while downloading the file: %s", pdownload->url);
+		bkp_session_insert_transfer_complete(ptransfer_complete);
+		bkp_session_save();
+		cwmp_root_cause_transfer_complete(ptransfer_complete);
+		bkp_session_delete_transfer_complete(ptransfer_complete);
+	} else {
+		error = apply_downloaded_file(pdownload, download_file_name, ptransfer_complete);
+		if (error != FAULT_CPE_NO_FAULT) {
+			CWMP_LOG(ERROR, "Error while applying the downloaded file: %s", download_file_name);
+			bkp_session_insert_transfer_complete(ptransfer_complete);
+			bkp_session_save();
+			cwmp_root_cause_transfer_complete(ptransfer_complete);
+			bkp_session_delete_transfer_complete(ptransfer_complete);
+		}
+	}
+	if (error == FAULT_CPE_NO_FAULT && pdownload->file_type[0] == '3') {
+		cwmp_root_cause_transfer_complete(ptransfer_complete);
+		bkp_session_delete_download(pdownload);
+		bkp_session_delete_transfer_complete(ptransfer_complete);
+		bkp_session_save();
+	}
+	pthread_mutex_lock(&mutex_download);
+	list_del(&(pdownload->list));
+	if (pdownload->scheduled_time != 0)
+		count_download_queue--;
+	cwmp_free_download_request(pdownload);
+	pthread_mutex_unlock(&mutex_download);
+	trigger_cwmp_session_timer();
 }

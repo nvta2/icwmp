@@ -10,6 +10,7 @@
 
 #include <pthread.h>
 #include <curl/curl.h>
+#include <libubox/blobmsg_json.h>
 
 #include "common.h"
 #include "upload.h"
@@ -20,12 +21,13 @@
 #include "backupSession.h"
 #include "cwmp_uci.h"
 #include "event.h"
+#include "subprocess.h"
+#include  "session.h"
 
 #define CURL_TIMEOUT 20
 
 LIST_HEAD(list_upload);
 
-pthread_cond_t threshold_upload;
 pthread_mutex_t mutex_upload = PTHREAD_MUTEX_INITIALIZER;
 
 int lookup_vcf_name(char *instance, char **value)
@@ -62,6 +64,9 @@ int lookup_vlf_name(char *instance, char **value)
 	return 0;
 }
 
+/*
+ * Upload file
+ */
 int upload_file(const char *file_path, const char *url, const char *username, const char *password)
 {
 	int res_code = 0;
@@ -90,6 +95,58 @@ int upload_file(const char *file_path, const char *url, const char *username, co
 	}
 
 	return res_code;
+}
+
+char *upload_file_task_function(char *task)
+{
+
+	struct blob_buf bbuf;
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+
+	if (blobmsg_add_json_from_string(&bbuf, task) == false) {
+		blob_buf_free(&bbuf);
+		return NULL;
+	}
+	const struct blobmsg_policy p[5] = { { "task", BLOBMSG_TYPE_STRING }, { "file_path", BLOBMSG_TYPE_STRING }, { "url", BLOBMSG_TYPE_STRING }, { "username", BLOBMSG_TYPE_STRING }, { "password", BLOBMSG_TYPE_STRING } };
+
+	struct blob_attr *tb[5] = { NULL, NULL, NULL, NULL, NULL};
+	blobmsg_parse(p, 5, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
+	char *task_name = blobmsg_get_string(tb[0]);
+	if (!task_name || strcmp(task_name, "upload") != 0)
+		return NULL;
+	char *file_path = blobmsg_get_string(tb[1]);
+	char *url = blobmsg_get_string(tb[2]);
+	char *username = blobmsg_get_string(tb[3]);
+	char *password = blobmsg_get_string(tb[4]);
+
+	int http_code = upload_file(file_path, url, username, password);
+	char *http_ret = (char *)malloc(4 * sizeof(char));
+	snprintf(http_ret, 4, "%d", http_code);
+	http_ret[3] = 0;
+	return http_ret;
+}
+
+int upload_file_in_subprocess(const char *file_path, const char *url, const char *username, const char *password)
+{
+	subprocess_start(upload_file_task_function);
+
+	struct blob_buf bbuf;
+	memset(&bbuf, 0, sizeof(struct blob_buf));
+	blob_buf_init(&bbuf, 0);
+	blobmsg_add_string(&bbuf, "task", "upload");
+	blobmsg_add_string(&bbuf, "file_path", file_path);
+	blobmsg_add_string(&bbuf, "url", url);
+	blobmsg_add_string(&bbuf, "username", username);
+	blobmsg_add_string(&bbuf, "password", password);
+	char *upload_task = blobmsg_format_json(bbuf.head, true);
+	blob_buf_free(&bbuf);
+
+	if (upload_task != NULL) {
+		char *ret = execute_task_in_subprocess(upload_task);
+		return atoi(ret);
+	}
+	return 500;
 }
 
 int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptransfer_complete)
@@ -160,86 +217,6 @@ end_upload:
 	return error;
 }
 
-void *thread_cwmp_rpc_cpe_upload(void *v __attribute__((unused)))
-{
-	struct upload *pupload;
-	struct timespec upload_timeout = { 0, 0 };
-	time_t current_time, stime;
-	int error = FAULT_CPE_NO_FAULT;
-	struct transfer_complete *ptransfer_complete;
-	long int time_of_grace = 3600, timeout;
-
-	for (;;) {
-
-		if (cwmp_stop)
-			break;
-
-		if (list_upload.next != &(list_upload)) {
-			pupload = list_entry(list_upload.next, struct upload, list);
-			stime = pupload->scheduled_time;
-			current_time = time(NULL);
-			if (pupload->scheduled_time != 0)
-				timeout = current_time - pupload->scheduled_time;
-			else
-				timeout = 0;
-			if ((timeout >= 0) && (timeout > time_of_grace)) {
-				pthread_mutex_lock(&mutex_upload);
-				bkp_session_delete_upload(pupload);
-				ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
-				if (ptransfer_complete != NULL) {
-					error = FAULT_CPE_DOWNLOAD_FAILURE;
-
-					ptransfer_complete->command_key = strdup(pupload->command_key);
-					ptransfer_complete->start_time = strdup(mix_get_time());
-					ptransfer_complete->complete_time = strdup(ptransfer_complete->start_time);
-					ptransfer_complete->fault_code = error;
-					ptransfer_complete->type = TYPE_UPLOAD;
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					cwmp_root_cause_transfer_complete(ptransfer_complete);
-				}
-				list_del(&(pupload->list));
-				if (pupload->scheduled_time != 0)
-					count_download_queue--;
-				cwmp_free_upload_request(pupload);
-				pthread_mutex_unlock(&mutex_download);
-				continue;
-			}
-			if ((timeout >= 0) && (timeout <= time_of_grace)) {
-				CWMP_LOG(INFO, "Launch upload file %s", pupload->url);
-				error = cwmp_launch_upload(pupload, &ptransfer_complete);
-				if (error != FAULT_CPE_NO_FAULT) {
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					cwmp_root_cause_transfer_complete(ptransfer_complete);
-					bkp_session_delete_transfer_complete(ptransfer_complete);
-				} else {
-					bkp_session_delete_transfer_complete(ptransfer_complete);
-					ptransfer_complete->fault_code = error;
-					bkp_session_insert_transfer_complete(ptransfer_complete);
-					bkp_session_save();
-					cwmp_root_cause_transfer_complete(ptransfer_complete);
-				}
-				pthread_mutex_lock(&mutex_upload);
-				list_del(&(pupload->list));
-				if (pupload->scheduled_time != 0)
-					count_download_queue--;
-				cwmp_free_upload_request(pupload);
-				pthread_mutex_unlock(&mutex_upload);
-				continue;
-			}
-			pthread_mutex_lock(&mutex_upload);
-			upload_timeout.tv_sec = stime;
-			pthread_cond_timedwait(&threshold_upload, &mutex_upload, &upload_timeout);
-			pthread_mutex_unlock(&mutex_upload);
-		} else {
-			pthread_mutex_lock(&mutex_upload);
-			pthread_cond_wait(&threshold_upload, &mutex_upload);
-			pthread_mutex_unlock(&mutex_upload);
-		}
-	}
-	return NULL;
-}
-
 int cwmp_free_upload_request(struct upload *upload)
 {
 	if (upload != NULL) {
@@ -281,4 +258,31 @@ int cwmp_scheduledUpload_remove_all()
 	pthread_mutex_unlock(&mutex_upload);
 
 	return CWMP_OK;
+}
+
+void cwmp_start_upload(struct uloop_timeout *timeout)
+{
+	struct upload *pupload;
+	int error = FAULT_CPE_NO_FAULT;
+	struct transfer_complete *ptransfer_complete;
+
+	pupload = container_of(timeout, struct upload, handler_timer);
+
+	CWMP_LOG(INFO, "Launch download file %s", pupload->url);
+	error = cwmp_launch_upload(pupload, &ptransfer_complete);
+	sleep(3);
+	if (error != FAULT_CPE_NO_FAULT) {
+		CWMP_LOG(ERROR, "Error while uploading the file: %s", pupload->url);
+	}
+
+	bkp_session_insert_transfer_complete(ptransfer_complete);
+	bkp_session_save();
+	cwmp_root_cause_transfer_complete(ptransfer_complete);
+	pthread_mutex_lock(&mutex_upload);
+	list_del(&(pupload->list));
+	if (pupload->scheduled_time != 0)
+		count_download_queue--;
+	cwmp_free_upload_request(pupload);
+	pthread_mutex_unlock(&mutex_upload);
+	trigger_cwmp_session_timer();
 }

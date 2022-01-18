@@ -19,6 +19,10 @@
 #include "session.h"
 #include "xml.h"
 
+
+#define PROCESSING_DELAY (1) // In download/upload the message enqueued before sending the response, which cause the download/upload
+			     // to start just before the time. This delay is to compensate the time lapsed during the message enqueue and response
+
 #define MAX_NBRE_CUSTOM_INFORM 256
 extern char *custom_forced_inform_parameters[MAX_NBRE_CUSTOM_INFORM];
 extern char *boot_inform_parameters[MAX_NBRE_CUSTOM_INFORM];

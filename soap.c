@@ -32,8 +32,6 @@
 #include "upload.h"
 #include "sched_inform.h"
 
-#define PROCESSING_DELAY (1) // In download/upload the message enqueued before sending the response, which cause the download/upload
-			     // to start just before the time. This delay is to compensate the time lapsed during the message enqueue and response
 #define DM_CONN_REQ_URL "Device.ManagementServer.ConnectionRequestURL"
 
 struct cwmp_namespaces ns;
@@ -533,7 +531,6 @@ int cwmp_rpc_acs_prepare_transfer_complete(struct rpc *rpc)
 {
 	mxml_node_t *tree, *n;
 	struct transfer_complete *p;
-
 	p = (struct transfer_complete *)rpc->extra_data;
 	tree = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	n = mxmlFindElement(tree, tree, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
@@ -2064,6 +2061,7 @@ int cwmp_handle_rpc_cpe_download(struct rpc *rpc)
 			count_download_queue++;
 			download->scheduled_time = scheduled_time;
 		}
+		download->handler_timer.cb = cwmp_start_download;
 		bkp_session_insert_download(download);
 		bkp_session_save();
 		if (download_delay != 0) {
@@ -2071,9 +2069,9 @@ int cwmp_handle_rpc_cpe_download(struct rpc *rpc)
 		} else {
 			CWMP_LOG(INFO, "Download will start at the end of session");
 		}
-
+		cwmp_set_end_session(END_SESSION_DOWNLOAD);
 		pthread_mutex_unlock(&mutex_download);
-		pthread_cond_signal(&threshold_download);
+
 	}
 
 	return 0;
@@ -2409,15 +2407,17 @@ int cwmp_handle_rpc_cpe_upload(struct rpc *rpc)
 			count_download_queue++;
 			upload->scheduled_time = scheduled_time;
 		}
-		bkp_session_insert_upload(upload);
+		upload->handler_timer.cb = cwmp_start_upload;
+		bkp_session_save(upload);
 		bkp_session_save();
 		if (upload_delay != 0) {
-			CWMP_LOG(INFO, "Upload will start in %us", upload_delay);
+			CWMP_LOG(INFO, "Download will start in %us", upload_delay);
 		} else {
-			CWMP_LOG(INFO, "Upload will start at the end of session");
+			CWMP_LOG(INFO, "Download will start at the end of session");
 		}
+		cwmp_set_end_session(END_SESSION_UPLOAD);
 		pthread_mutex_unlock(&mutex_upload);
-		pthread_cond_signal(&threshold_upload);
+
 	}
 	return 0;
 

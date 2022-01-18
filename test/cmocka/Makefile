@@ -10,7 +10,7 @@ UNIT_TESTS = icwmp_datamodel_interface_unit_testd icwmp_soap_msg_unit_testd icwm
 VALGRIND = valgrind --leak-check=full --show-reachable=yes --show-leak-kinds=all --errors-for-leak-kinds=all
 
 libobj:
-	$(CC) $(LIBCFLAGS) ../../download.c ../../upload.c ../../log.c ../../md5.c ../../digestauth.c ../../netlink.c ../../cwmp_cli.c ../../cwmp_du_state.c ../../sched_inform.c \
+	$(CC) $(LIBCFLAGS) ../../subprocess.c ../../download.c ../../upload.c ../../log.c ../../md5.c ../../digestauth.c ../../netlink.c ../../cwmp_cli.c ../../cwmp_du_state.c ../../sched_inform.c \
 	 ../../diagnostic.c ../../reboot.c ../../notifications.c ../../cwmp_zlib.c  ../../datamodel_interface.c ../../http.c ../../backupSession.c \
 	 ../../cwmp_time.c ../../config.c ../../event.c ../../session.c ../../ubus.c ../../common.c ../../xml.c ../../soap.c ../../cwmp_uci.c ../../cwmp.c $(LDFLAGS)  
 

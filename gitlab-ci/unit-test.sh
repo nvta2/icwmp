@@ -7,6 +7,16 @@ source ./gitlab-ci/shared.sh
 trap cleanup EXIT
 trap cleanup SIGINT
 
+echo "Install lighttpd"
+apt-get update
+apt-get install -y lighttpd
+exec_cmd dd if=/dev/zero of=/builds/iopsys/icwmp/firmware_v1.0.bin bs=25MB count=1
+echo "Valid" > /builds/iopsys/icwmp/firmware_v1.0.bin
+exec_cmd cp /builds/iopsys/icwmp/firmware_v1.0.bin /var/www/html
+exec_cmd dd if=/dev/zero of=/builds/iopsys/icwmp/invalid_firmware_v1.0.bin bs=25MB count=1
+echo "Invalid" > /builds/iopsys/icwmp/invalid_firmware_v1.0.bin
+exec_cmd cp /builds/iopsys/icwmp/invalid_firmware_v1.0.bin /var/www/html
+
 echo "Install Inform json files"
 exec_cmd mkdir -p /etc/icwmpd
 exec_cmd cp /builds/iopsys/icwmp/test/files/etc/icwmpd/* /etc/icwmpd

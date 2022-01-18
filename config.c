@@ -628,11 +628,11 @@ end:
 
 int cwmp_get_deviceid()
 {
-	cwmp_get_leaf_value("Device.DeviceInfo.Manufacturer", &cwmp->deviceid.manufacturer);
-	cwmp_get_leaf_value("Device.DeviceInfo.SerialNumber", &cwmp->deviceid.serialnumber);
-	cwmp_get_leaf_value("Device.DeviceInfo.ProductClass", &cwmp->deviceid.productclass);
-	cwmp_get_leaf_value("Device.DeviceInfo.ManufacturerOUI", &cwmp->deviceid.oui);
-	cwmp_get_leaf_value("Device.DeviceInfo.SoftwareVersion", &cwmp->deviceid.softwareversion);
+	cwmp_get_leaf_value("Device.DeviceInfo.Manufacturer", &cwmp_main->deviceid.manufacturer);
+	cwmp_get_leaf_value("Device.DeviceInfo.SerialNumber", &cwmp_main->deviceid.serialnumber);
+	cwmp_get_leaf_value("Device.DeviceInfo.ProductClass", &cwmp_main->deviceid.productclass);
+	cwmp_get_leaf_value("Device.DeviceInfo.ManufacturerOUI", &cwmp_main->deviceid.oui);
+	cwmp_get_leaf_value("Device.DeviceInfo.SoftwareVersion", &cwmp_main->deviceid.softwareversion);
 	return CWMP_OK;
 }
 

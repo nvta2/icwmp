@@ -97,7 +97,16 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		if (snprintf(info, sizeof(info), "icwmpd daemon stopped") == -1)
 					return -1;
 
-		cwmp_end_handler(SIGTERM);
+		cwmp_stop = true;
+
+		if (cwmp_main->session->session_status.last_status == SESSION_RUNNING)
+			http_set_timeout();
+
+		uloop_timeout_cancel(&retry_session_timer);
+		uloop_timeout_cancel(&priodic_session_timer);
+		uloop_timeout_cancel(&session_timer);
+		uloop_end();
+		shutdown(cwmp_main->cr_socket_desc, SHUT_RDWR);
 
 	} else {
 		blobmsg_add_u32(&b, "status", -1);

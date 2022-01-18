@@ -344,6 +344,7 @@ typedef struct timewindow {
 
 typedef struct download {
 	struct list_head list;
+	struct uloop_timeout handler_timer ;
 	time_t scheduled_time;
 	int file_size;
 	char *command_key;
@@ -388,6 +389,7 @@ typedef struct operations {
 
 typedef struct upload {
 	struct list_head list;
+	struct uloop_timeout handler_timer ;
 	time_t scheduled_time;
 	char *command_key;
 	char *file_type;

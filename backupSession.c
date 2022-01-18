@@ -862,6 +862,7 @@ void load_download(mxml_node_t *tree)
 					       .file_size = &download_request->file_size,
 					       .time = &download_request->scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);
+	download_request->handler_timer.cb = cwmp_start_download;
 
 	list_for_each (ilist, &(list_download)) {
 		idownload_request = list_entry(ilist, struct download, list);
@@ -872,6 +873,7 @@ void load_download(mxml_node_t *tree)
 	list_add(&(download_request->list), ilist->prev);
 	if (download_request->scheduled_time != 0)
 		count_download_queue++;
+	cwmp_set_end_session(END_SESSION_DOWNLOAD);
 }
 
 void load_schedule_download(mxml_node_t *tree)

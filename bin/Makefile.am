@@ -21,6 +21,7 @@ icwmpd_SOURCES =			\
 	../notifications.c		\
 	../cwmp_zlib.c			\
 	../cwmp_du_state.c		\
+	../subprocess.c			\
 	../download.c			\
 	../upload.c				\
 	../sched_inform.c		\
