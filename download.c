@@ -366,6 +366,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 	struct transfer_complete *ptransfer_complete;
 	long int time_of_grace = 3600, timeout;
 
+	sleep(3);
 	for (;;) {
 
 		if (thread_end)
