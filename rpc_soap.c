@@ -792,7 +792,7 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 				if (!n)
 					goto fault;
 
-				n = mxmlNewOpaque(n, param_value->name);
+				n = mxmlNewOpaque(n, param_value->name ? param_value->name : "");
 				if (!n)
 					goto fault;
 
@@ -802,10 +802,10 @@ int cwmp_handle_rpc_cpe_get_parameter_values(struct session *session, struct rpc
 					goto fault;
 
 #ifdef ACS_MULTI
-				mxmlElementSetAttr(n, "xsi:type", param_value->type);
+				mxmlElementSetAttr(n, "xsi:type", param_value->type ? param_value->type : "");
 #endif
 
-				n = mxmlNewOpaque(n, param_value->value);
+				n = mxmlNewOpaque(n, param_value->value ? param_value->value : "");
 				if (!n)
 					goto fault;
 
