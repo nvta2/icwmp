@@ -144,7 +144,11 @@ typedef struct cwmp {
 	time_t start_time;
 	struct session_status session_status;
 	unsigned int cwmp_id;
+	int event_id;
 	int cr_socket_desc;
+	int cwmp_period;
+	time_t cwmp_periodic_time;
+	bool cwmp_periodic_enable;
 	bool is_boot;
 	bool custom_notify_active;
 } cwmp;

@@ -326,7 +326,7 @@ int run_session_end_func(void)
 static void cwmp_schedule_session(struct cwmp *cwmp)
 {
 	int t, error = CWMP_OK;
-	static struct timespec time_to_wait = { 0, 0 };
+	struct timespec time_to_wait = { 0, 0 };
 	bool retry = false;
 	char *exec_download = NULL;
 	int is_notify = 0;
@@ -584,7 +584,7 @@ static void lookup_event_cb(struct ubus_context *ctx __attribute__((unused)),
 		struct ubus_event_handler *ev __attribute__((unused)),
 		const char *type, struct blob_attr *msg)
 {
-	static const struct blobmsg_policy policy = {
+	const struct blobmsg_policy policy = {
 		"path", BLOBMSG_TYPE_STRING
 	};
 	struct blob_attr *attr;
@@ -674,7 +674,10 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 		return error;
 
 	icwmp_init_list_services();
-
+	cwmp->event_id = 0;
+	cwmp->cwmp_period = 0;
+	cwmp->cwmp_periodic_time = 0;
+	cwmp->cwmp_periodic_enable = false;
 	/* Only One instance should run*/
 	cwmp->pid_file = fopen("/var/run/icwmpd.pid", "w+");
 	fcntl(fileno(cwmp->pid_file), F_SETFD, fcntl(fileno(cwmp->pid_file), F_GETFD) | FD_CLOEXEC);

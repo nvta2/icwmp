@@ -417,8 +417,8 @@ void http_server_init(void)
 void http_server_listen(void)
 {
 	int client_sock, c;
-	static int cr_request = 0;
-	static time_t restrict_start_time = 0;
+	int cr_request = 0;
+	time_t restrict_start_time = 0;
 	struct sockaddr_in6 client;
 
 	//Listen
