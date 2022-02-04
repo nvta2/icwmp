@@ -49,14 +49,14 @@ static const struct blobmsg_policy command_policy[] = {
 static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj __attribute__((unused)), struct ubus_request_data *req, const char *method __attribute__((unused)), struct blob_attr *msg)
 {
 	struct blob_attr *tb[__COMMAND_MAX];
-	static struct blob_buf b;
+	struct blob_buf blob_command;
 
 	blobmsg_parse(command_policy, ARRAYSIZEOF(command_policy), tb, blob_data(msg), blob_len(msg));
 
 	if (!tb[COMMAND_NAME])
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
-	blob_buf_init(&b, 0);
+	blob_buf_init(&blob_command, 0);
 
 	char *cmd = blobmsg_data(tb[COMMAND_NAME]);
 	char info[128] = {0};
@@ -64,34 +64,34 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 	if (!strcmp("reload_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload_end_session");
 		cwmp_set_end_session(END_SESSION_RELOAD);
-		blobmsg_add_u32(&b, "status", 0);
+		blobmsg_add_u32(&blob_command, "status", 0);
 		if (snprintf(info, sizeof(info), "icwmpd config will reload at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("reload", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reload");
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
 			cwmp_set_end_session(END_SESSION_RELOAD);
-			blobmsg_add_u32(&b, "status", 0);
+			blobmsg_add_u32(&blob_command, "status", 0);
 			if (snprintf(info, sizeof(info), "Session running, reload at the end of the session") == -1)
 				return -1;
 		} else {
 			pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
 			cwmp_apply_acs_changes();
 			pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
-			blobmsg_add_u32(&b, "status", 0);
+			blobmsg_add_u32(&blob_command, "status", 0);
 			if (snprintf(info, sizeof(info), "icwmpd config reloaded") == -1)
 				return -1;
 		}
 	} else if (!strcmp("reboot_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus reboot_end_session");
 		cwmp_set_end_session(END_SESSION_REBOOT);
-		blobmsg_add_u32(&b, "status", 0);
+		blobmsg_add_u32(&blob_command, "status", 0);
 		if (snprintf(info, sizeof(info), "icwmpd will reboot at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("action_end_session", cmd)) {
 		CWMP_LOG(INFO, "triggered ubus action_end_session");
 		cwmp_set_end_session(END_SESSION_EXTERNAL_ACTION);
-		blobmsg_add_u32(&b, "status", 0);
+		blobmsg_add_u32(&blob_command, "status", 0);
 		if (snprintf(info, sizeof(info), "icwmpd will execute the scheduled action commands at the end of the session") == -1)
 			return -1;
 	} else if (!strcmp("exit", cmd)) {
@@ -121,14 +121,14 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 		if (snprintf(info, sizeof(info), "icwmpd daemon stopped") == -1)
 			return -1;
 	} else {
-		blobmsg_add_u32(&b, "status", -1);
+		blobmsg_add_u32(&blob_command, "status", -1);
 		if (snprintf(info, sizeof(info), "%s command is not supported", cmd) == -1)
 			return -1;
 	}
 
-	blobmsg_add_string(&b, "info", info);
-	ubus_send_reply(ctx, req, b.head);
-	blob_buf_free(&b);
+	blobmsg_add_string(&blob_command, "info", info);
+	ubus_send_reply(ctx, req, blob_command.head);
+	blob_buf_free(&blob_command);
 
 	return 0;
 }
@@ -154,37 +154,37 @@ static int cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj 
 {
 	void *c;
 	time_t ntime = 0;
-	static struct blob_buf b;
+	struct blob_buf blob_status;
 
-	blob_buf_init(&b, 0);
+	blob_buf_init(&blob_status, 0);
 
-	c = blobmsg_open_table(&b, "cwmp");
-	blobmsg_add_string(&b, "status", "up");
-	blobmsg_add_string(&b, "start_time", mix_get_time_of(cwmp_main.start_time));
-	blobmsg_add_string(&b, "acs_url", cwmp_main.conf.acsurl);
-	blobmsg_close_table(&b, c);
+	c = blobmsg_open_table(&blob_status, "cwmp");
+	blobmsg_add_string(&blob_status, "status", "up");
+	blobmsg_add_string(&blob_status, "start_time", mix_get_time_of(cwmp_main.start_time));
+	blobmsg_add_string(&blob_status, "acs_url", cwmp_main.conf.acsurl);
+	blobmsg_close_table(&blob_status, c);
 
-	c = blobmsg_open_table(&b, "last_session");
-	blobmsg_add_string(&b, "status", cwmp_main.session_status.last_start_time ? arr_session_status[cwmp_main.session_status.last_status] : "N/A");
-	blobmsg_add_string(&b, "start_time", cwmp_main.session_status.last_start_time ? mix_get_time_of(cwmp_main.session_status.last_start_time) : "N/A");
-	blobmsg_add_string(&b, "end_time", cwmp_main.session_status.last_end_time ? mix_get_time_of(cwmp_main.session_status.last_end_time) : "N/A");
-	blobmsg_close_table(&b, c);
+	c = blobmsg_open_table(&blob_status, "last_session");
+	blobmsg_add_string(&blob_status, "status", cwmp_main.session_status.last_start_time ? arr_session_status[cwmp_main.session_status.last_status] : "N/A");
+	blobmsg_add_string(&blob_status, "start_time", cwmp_main.session_status.last_start_time ? mix_get_time_of(cwmp_main.session_status.last_start_time) : "N/A");
+	blobmsg_add_string(&blob_status, "end_time", cwmp_main.session_status.last_end_time ? mix_get_time_of(cwmp_main.session_status.last_end_time) : "N/A");
+	blobmsg_close_table(&blob_status, c);
 
-	c = blobmsg_open_table(&b, "next_session");
-	blobmsg_add_string(&b, "status", arr_session_status[SESSION_WAITING]);
+	c = blobmsg_open_table(&blob_status, "next_session");
+	blobmsg_add_string(&blob_status, "status", arr_session_status[SESSION_WAITING]);
 	ntime = get_session_status_next_time();
-	blobmsg_add_string(&b, "start_time", ntime ? mix_get_time_of(ntime) : "N/A");
-	blobmsg_add_string(&b, "end_time", "N/A");
-	blobmsg_close_table(&b, c);
+	blobmsg_add_string(&blob_status, "start_time", ntime ? mix_get_time_of(ntime) : "N/A");
+	blobmsg_add_string(&blob_status, "end_time", "N/A");
+	blobmsg_close_table(&blob_status, c);
 
-	c = blobmsg_open_table(&b, "statistics");
-	blobmsg_add_u32(&b, "success_sessions", cwmp_main.session_status.success_session);
-	blobmsg_add_u32(&b, "failure_sessions", cwmp_main.session_status.failure_session);
-	blobmsg_add_u32(&b, "total_sessions", cwmp_main.session_status.success_session + cwmp_main.session_status.failure_session);
-	blobmsg_close_table(&b, c);
+	c = blobmsg_open_table(&blob_status, "statistics");
+	blobmsg_add_u32(&blob_status, "success_sessions", cwmp_main.session_status.success_session);
+	blobmsg_add_u32(&blob_status, "failure_sessions", cwmp_main.session_status.failure_session);
+	blobmsg_add_u32(&blob_status, "total_sessions", cwmp_main.session_status.success_session + cwmp_main.session_status.failure_session);
+	blobmsg_close_table(&blob_status, c);
 
-	ubus_send_reply(ctx, req, b.head);
-	blob_buf_free(&b);
+	ubus_send_reply(ctx, req, blob_status.head);
+	blob_buf_free(&blob_status);
 
 	return 0;
 }
@@ -206,9 +206,9 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 	struct blob_attr *tb[__INFORM_MAX];
 	bool grm = false;
 	char *event = "";
-	static struct blob_buf b;
+	struct blob_buf blob_inform;
 
-	blob_buf_init(&b, 0);
+	blob_buf_init(&blob_inform, 0);
 
 	blobmsg_parse(inform_policy, ARRAYSIZEOF(inform_policy), tb, blob_data(msg), blob_len(msg));
 
@@ -236,8 +236,8 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 		}
 		pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
 		pthread_cond_signal(&(cwmp_main.threshold_session_send));
-		blobmsg_add_u32(&b, "status", 1);
-		blobmsg_add_string(&b, "info", "Session with GetRPCMethods will start");
+		blobmsg_add_u32(&blob_inform, "status", 1);
+		blobmsg_add_string(&blob_inform, "info", "Session with GetRPCMethods will start");
 	} else {
 		int event_code = cwmp_get_int_event_code(event);
 		pthread_mutex_lock(&(cwmp_main.mutex_session_queue));
@@ -245,15 +245,15 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 		pthread_mutex_unlock(&(cwmp_main.mutex_session_queue));
 		pthread_cond_signal(&(cwmp_main.threshold_session_send));
 		if (cwmp_main.session_status.last_status == SESSION_RUNNING) {
-			blobmsg_add_u32(&b, "status", -1);
-			blobmsg_add_string(&b, "info", "Session already running, event will be sent at the end of the session");
+			blobmsg_add_u32(&blob_inform, "status", -1);
+			blobmsg_add_string(&blob_inform, "info", "Session already running, event will be sent at the end of the session");
 		} else {
-			blobmsg_add_u32(&b, "status", 1);
-			blobmsg_add_string(&b, "info", "Session started");
+			blobmsg_add_u32(&blob_inform, "status", 1);
+			blobmsg_add_string(&blob_inform, "info", "Session started");
 		}
 	}
-	ubus_send_reply(ctx, req, b.head);
-	blob_buf_free(&b);
+	ubus_send_reply(ctx, req, blob_inform.head);
+	blob_buf_free(&blob_inform);
 
 	return 0;
 }
