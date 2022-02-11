@@ -61,7 +61,6 @@ void cwmp_save_event_container(struct event_container *event_container) //to be 
 
 struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_code, char *command_key)
 {
-	static int id;
 	struct event_container *event_container;
 	struct session *session;
 	struct list_head *ilist;
@@ -91,11 +90,11 @@ struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_co
 	list_add(&(event_container->list), ilist->prev);
 	event_container->code = event_code;
 	event_container->command_key = command_key ? strdup(command_key) : strdup("");
-	if ((id < 0) || (id >= MAX_INT_ID)) {
-		id = 0;
+	if ((cwmp->event_id < 0) || (cwmp->event_id >= MAX_INT_ID)) {
+		cwmp->event_id = 0;
 	}
-	id++;
-	event_container->id = id;
+	cwmp->event_id++;
+	event_container->id = cwmp->event_id;
 	return event_container;
 }
 
@@ -330,10 +329,10 @@ void *thread_event_periodic(void *v)
 {
 	struct cwmp *cwmp = (struct cwmp *)v;
 	struct event_container *event_container;
-	static int periodic_interval;
-	static bool periodic_enable;
-	static time_t periodic_time;
-	static struct timespec periodic_timeout = { 0, 0 };
+	int periodic_interval;
+	bool periodic_enable;
+	time_t periodic_time;
+	struct timespec periodic_timeout = { 0, 0 };
 	time_t current_time;
 	long int delta_time;
 
@@ -397,22 +396,19 @@ bool event_exist_in_list(struct cwmp *cwmp, int event)
 
 int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
 {
-	static int period = 0;
-	static bool periodic_enable = false;
-	static time_t periodic_time = 0;
 	char local_time[27] = { 0 };
 	struct tm *t_tm;
 
-	if (period == cwmp->conf.period && periodic_enable == cwmp->conf.periodic_enable && periodic_time == cwmp->conf.time)
+	if (cwmp->cwmp_period == cwmp->conf.period && cwmp->cwmp_periodic_enable == cwmp->conf.periodic_enable && cwmp->cwmp_periodic_time == cwmp->conf.time)
 		return CWMP_OK;
 
 	pthread_mutex_lock(&(cwmp->mutex_periodic));
-	period = cwmp->conf.period;
-	periodic_enable = cwmp->conf.periodic_enable;
-	periodic_time = cwmp->conf.time;
-	CWMP_LOG(INFO, periodic_enable ? "Periodic event is enabled. Interval period = %ds" : "Periodic event is disabled", period);
+	cwmp->cwmp_period = cwmp->conf.period;
+	cwmp->cwmp_periodic_enable = cwmp->conf.periodic_enable;
+	cwmp->cwmp_periodic_time = cwmp->conf.time;
+	CWMP_LOG(INFO, cwmp->cwmp_periodic_enable ? "Periodic event is enabled. Interval period = %ds" : "Periodic event is disabled", cwmp->cwmp_period);
 
-	t_tm = localtime(&periodic_time);
+	t_tm = localtime(&cwmp->cwmp_periodic_time);
 	if (t_tm == NULL)
 		return CWMP_GEN_ERR;
 
@@ -424,7 +420,7 @@ int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
 	local_time[22] = ':';
 	local_time[26] = '\0';
 
-	CWMP_LOG(INFO, periodic_time ? "Periodic time is %s" : "Periodic time is Unknown", local_time);
+	CWMP_LOG(INFO, cwmp->cwmp_periodic_time ? "Periodic time is %s" : "Periodic time is Unknown", local_time);
 	pthread_mutex_unlock(&(cwmp->mutex_periodic));
 	pthread_cond_signal(&(cwmp->threshold_periodic));
 	return CWMP_OK;

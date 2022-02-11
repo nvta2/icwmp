@@ -10,7 +10,6 @@
  */
 #include <unistd.h>
 #include <openssl/hmac.h>
-#include <openssl/evp.h>
 #include <netdb.h>
 #include <libubox/list.h>
 #include <sys/stat.h>
@@ -558,9 +557,9 @@ void sotfware_version_value_change(struct cwmp *cwmp, struct transfer_complete *
 void *thread_periodic_check_notify(void *v)
 {
 	struct cwmp *cwmp = (struct cwmp *)v;
-	static int periodic_interval;
-	static bool periodic_enable;
-	static struct timespec periodic_timeout = { 0, 0 };
+	int periodic_interval;
+	bool periodic_enable;
+	struct timespec periodic_timeout = { 0, 0 };
 	time_t current_time;
 	int is_notify = 0;
 

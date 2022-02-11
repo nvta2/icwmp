@@ -144,7 +144,11 @@ typedef struct cwmp {
 	time_t start_time;
 	struct session_status session_status;
 	unsigned int cwmp_id;
+	int event_id;
 	int cr_socket_desc;
+	int cwmp_period;
+	time_t cwmp_periodic_time;
+	bool cwmp_periodic_enable;
 	bool is_boot;
 	bool custom_notify_active;
 } cwmp;
@@ -485,7 +489,6 @@ bool icwmp_validate_int_in_range(char *arg, int min, int max);
 void load_forced_inform_json_file(struct cwmp *cwmp);
 void clean_custom_inform_parameters();
 char *string_to_hex(const unsigned char *str, size_t size);
-char *generate_random_string(size_t size);
 int copy_file(char *source_file, char *target_file);
 #ifndef FREE
 #define FREE(x)                                                                                                        \

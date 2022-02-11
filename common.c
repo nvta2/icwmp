@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <sys/file.h>
 #include <regex.h>
-#include <openssl/rand.h>
 
 #include "common.h"
 #include "cwmp_uci.h"
@@ -664,35 +663,6 @@ char *string_to_hex(const unsigned char *str, size_t size)
 
 	return hex;
 }
-
-char *generate_random_string(size_t size)
-{
-	unsigned char *buf = NULL;
-	char *hex = NULL;
-
-	buf = (unsigned char *)calloc(size + 1, sizeof(unsigned char));
-	if (buf == NULL) {
-		CWMP_LOG(ERROR, "Unable to allocate memory for buf string\n");
-		goto end;
-	}
-
-	int written = RAND_bytes(buf, size);
-	if (written != 1) {
-		printf("Failed to get random bytes");
-		goto end;
-	}
-
-	hex = string_to_hex(buf, size);
-	if (hex == NULL)
-			goto end;
-
-	hex[size] = '\0';
-
-end:
-	FREE(buf);
-	return hex;
-}
-
 
 int copy_file(char *source_file, char *target_file)
 {

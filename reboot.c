@@ -104,8 +104,8 @@ static void create_schedule_reboot_thread(struct cwmp *cwmp, bool thread_exist)
 
 void launch_reboot_methods(struct cwmp *cwmp)
 {
-	static int curr_delay_reboot = -1;
-	static time_t curr_schedule_redoot = 0;
+	int curr_delay_reboot = -1;
+	time_t curr_schedule_redoot = 0;
 
 	if (cwmp->conf.delay_reboot != curr_delay_reboot && cwmp->conf.delay_reboot > 0) {
 
