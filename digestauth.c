@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
+#include <openssl/rand.h>
 
 #include "common.h"
 #include "digestauth.h"
@@ -40,6 +41,34 @@
 #define MAX_NONCE_LENGTH 1024
 
 char *nonce_privacy_key = NULL;
+
+char *generate_random_string(size_t size)
+{
+	unsigned char *buf = NULL;
+	char *hex = NULL;
+
+	buf = (unsigned char *)calloc(size + 1, sizeof(unsigned char));
+	if (buf == NULL) {
+		CWMP_LOG(ERROR, "Unable to allocate memory for buf string\n");
+		goto end;
+	}
+
+	int written = RAND_bytes(buf, size);
+	if (written != 1) {
+		printf("Failed to get random bytes");
+		goto end;
+	}
+
+	hex = string_to_hex(buf, size);
+	if (hex == NULL)
+			goto end;
+
+	hex[size] = '\0';
+
+end:
+	FREE(buf);
+	return hex;
+}
 
 int generate_nonce_priv_key()
 {
@@ -116,7 +145,7 @@ static void calculate_nonce(uint32_t nonce_time, const char *method, const char 
 	md5_final(tmpnonce, &md5);
 	cvthex(tmpnonce, sizeof(tmpnonce), nonce);
 	cvthex(timestamp, 4, timestamphex);
-	strncat(nonce, timestamphex, 8);
+	strcat(nonce, timestamphex);
 }
 
 /**
@@ -166,13 +195,9 @@ static int lookup_sub_value(char *dest, size_t size, const char *data, const cha
 		}
 		if ((0 == strncasecmp(ptr, key, keylen)) && (eq == &ptr[keylen])) {
 			if (NULL == q2) {
-				len = strlen(q1) + 1;
-				if (size > len)
-					size = len;
-				size--;
-				strncpy(dest, q1, size);
-				dest[size] = '\0';
-				return size;
+				len = strlen(q1);
+				strcpy(dest, q1);
+				return len;
 			} else {
 				diff = (q2 - q1) + 1;
 				if (size > diff)

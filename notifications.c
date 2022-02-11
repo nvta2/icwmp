@@ -10,7 +10,6 @@
  */
 #include <unistd.h>
 #include <openssl/hmac.h>
-#include <openssl/evp.h>
 #include <netdb.h>
 #include <libubox/list.h>
 #include <sys/stat.h>

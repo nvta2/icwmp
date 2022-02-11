@@ -56,6 +56,7 @@ static int cwmp_handle_command(struct ubus_context *ctx, struct ubus_object *obj
 	if (!tb[COMMAND_NAME])
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
+	memset(&blob_command, 0, sizeof(struct blob_buf));
 	blob_buf_init(&blob_command, 0);
 
 	char *cmd = blobmsg_data(tb[COMMAND_NAME]);
@@ -156,6 +157,7 @@ static int cwmp_handle_status(struct ubus_context *ctx, struct ubus_object *obj 
 	time_t ntime = 0;
 	struct blob_buf blob_status;
 
+	memset(&blob_status, 0, sizeof(struct blob_buf));
 	blob_buf_init(&blob_status, 0);
 
 	c = blobmsg_open_table(&blob_status, "cwmp");
@@ -208,6 +210,7 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 	char *event = "";
 	struct blob_buf blob_inform;
 
+	memset(&blob_inform, 0, sizeof(struct blob_buf));
 	blob_buf_init(&blob_inform, 0);
 
 	blobmsg_parse(inform_policy, ARRAYSIZEOF(inform_policy), tb, blob_data(msg), blob_len(msg));
@@ -321,6 +324,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 	if (ubus_ctx == NULL)
 		return -1;
 
+	memset(&b, 0, sizeof(struct blob_buf));
 	blob_buf_init(&b, 0);
 	for (i = 0; i < u_args_size; i++) {
 		if (u_args[i].type == UBUS_String)
