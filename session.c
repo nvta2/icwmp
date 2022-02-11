@@ -525,6 +525,27 @@ int run_session_end_func(void)
 		}
 	}
 
+	if (end_session_flag & END_SESSION_SCHEDULE_DOWNLOAD) {
+		CWMP_LOG(INFO, "Trigger Uloop ScheduleDownaload Calls");
+		struct list_head *ilist;
+		list_for_each (ilist, &(list_schedule_download)) {
+			struct download *sched_download = list_entry(ilist, struct download, list);
+			time_t now = time(NULL);
+			int download_delay;
+			if (sched_download->timewindowstruct[0].windowstart > now)
+				download_delay = sched_download->timewindowstruct[0].windowstart - now;
+			else if (sched_download->timewindowstruct[0].windowstart <= now && sched_download->timewindowstruct[0].windowend >= now)
+				download_delay = 1;
+			else if (now < sched_download->timewindowstruct[1].windowstart)
+				download_delay = sched_download->timewindowstruct[1].windowstart - now;
+			else if (sched_download->timewindowstruct[1].windowstart <= now && sched_download->timewindowstruct[1].windowend >= now)
+				download_delay = 1;
+			else
+				download_delay = 1;
+
+			uloop_timeout_set(&sched_download->handler_timer, 1000 * download_delay);
+		}
+	}
 
 	if (end_session_flag & END_SESSION_UPLOAD) {
 		CWMP_LOG(INFO, "Trigger Uloop Upload Calls");

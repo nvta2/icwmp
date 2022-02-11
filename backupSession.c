@@ -446,79 +446,6 @@ void bkp_session_insert_schedule_download(struct download *pschedule_download)
 	pthread_mutex_unlock(&mutex_backup_session);
 }
 
-void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *papply_schedule_download)
-{
-	char delay[4][128];
-	int i;
-	char maxretrie[2][128];
-	mxml_node_t *b;
-
-	pthread_mutex_lock(&mutex_backup_session);
-
-	for (i = 0; i < 2; i++) {
-		sprintf(delay[2 * i], "%lld", (long long int)papply_schedule_download->timeintervals[i].windowstart);
-		sprintf(delay[2 * i + 1], "%lld", (long long int)papply_schedule_download->timeintervals[i].windowend);
-		sprintf(maxretrie[i], "%d", papply_schedule_download->timeintervals[i].maxretries);
-	}
-
-	struct search_keywords sched_download_insert_app_keys[9] = { { "command_key", papply_schedule_download->command_key },
-								     { "file_type", papply_schedule_download->file_type },
-								     { "start_time", papply_schedule_download->start_time },
-								     { "windowstart1", delay[0] },
-								     { "windowend1", delay[1] },
-								     { "maxretrie1", maxretrie[0] },
-								     { "windowstart2", delay[2] },
-								     { "windowend2", delay[3] },
-								     { "maxretrie2", maxretrie[1] } };
-
-	b = bkp_session_node_found(bkp_tree, "apply_schedule_download", sched_download_insert_app_keys, 9);
-	if (!b) {
-		CWMP_LOG(INFO, "New schedule download key %s file", papply_schedule_download->command_key);
-		b = bkp_session_insert(bkp_tree, "apply_schedule_download", NULL);
-		bkp_session_insert(b, "start_time", papply_schedule_download->start_time);
-		bkp_session_insert(b, "command_key", papply_schedule_download->command_key);
-		bkp_session_insert(b, "file_type", papply_schedule_download->file_type);
-		bkp_session_insert(b, "windowstart1", delay[0]);
-		bkp_session_insert(b, "windowend1", delay[1]);
-		bkp_session_insert(b, "maxretrie1", maxretrie[0]);
-
-		bkp_session_insert(b, "windowstart2", delay[2]);
-		bkp_session_insert(b, "windowend2", delay[3]);
-		bkp_session_insert(b, "maxretrie2", maxretrie[1]);
-	}
-	pthread_mutex_unlock(&mutex_backup_session);
-}
-
-void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *ps_download) //TODO
-{
-	char delay[4][128];
-	char maxretrie[2][128];
-	int i;
-	mxml_node_t *b;
-
-	pthread_mutex_lock(&mutex_backup_session);
-	for (i = 0; i < 2; i++) {
-		sprintf(delay[2 * i], "%lld", (long long int)ps_download->timeintervals[i].windowstart);
-		sprintf(delay[2 * i + 1], "%lld", (long long int)ps_download->timeintervals[i].windowend);
-		sprintf(maxretrie[i], "%d", ps_download->timeintervals[i].maxretries);
-	}
-	struct search_keywords sched_download_del_app_keys[9] = { { "start_time", ps_download->start_time },
-								  { "command_key", ps_download->command_key },
-								  { "file_type", ps_download->file_type },
-								  { "windowstart1", delay[0] },
-								  { "windowend1", delay[1] },
-								  { "maxretrie1", maxretrie[0] },
-								  { "windowstart2", delay[2] },
-								  { "windowend2", delay[3] },
-								  { "maxretrie2", maxretrie[1] } };
-
-	b = bkp_session_node_found(bkp_tree, "apply_schedule_download", sched_download_del_app_keys, 9);
-
-	if (b)
-		mxmlDelete(b);
-	pthread_mutex_unlock(&mutex_backup_session);
-}
-
 void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state)
 {
 	struct operations *p;
@@ -915,30 +842,6 @@ void load_schedule_download(mxml_node_t *tree)
 		count_download_queue++;
 }
 
-void load_apply_schedule_download(mxml_node_t *tree)
-{
-	struct apply_schedule_download *download_request = NULL;
-
-	download_request = calloc(1, sizeof(struct apply_schedule_download));
-
-	struct backup_attributes bkp_attrs = {
-		.command_key = &download_request->command_key,
-		.file_type = &download_request->file_type,
-		.start_time = &download_request->start_time,
-		.windowstart1 = &download_request->timeintervals[0].windowstart,
-		.windowend1 = &download_request->timeintervals[0].windowend,
-		.maxretrie1 = &download_request->timeintervals[0].maxretries,
-		.windowstart2 = &download_request->timeintervals[1].windowstart,
-		.windowend2 = &download_request->timeintervals[1].windowend,
-		.maxretrie2 = &download_request->timeintervals[1].maxretries,
-	};
-	load_specific_backup_attributes(tree, &bkp_attrs);
-
-	list_add_tail(&(download_request->list), &(list_apply_schedule_download));
-	if (download_request->timeintervals[0].windowstart != 0)
-		count_download_queue++;
-}
-
 void load_upload(mxml_node_t *tree)
 {
 	struct upload *upload_request = NULL;
@@ -1157,8 +1060,6 @@ int cwmp_load_saved_session(char **ret, enum backup_loading load)
 				load_du_state_change_complete(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_download") == 0) {
 				load_schedule_download(b);
-			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "apply_schedule_download") == 0) {
-				load_apply_schedule_download(b);
 			}
 		}
 		b = mxmlWalkNext(b, bkp_tree, MXML_NO_DESCEND);

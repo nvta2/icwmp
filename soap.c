@@ -2246,7 +2246,6 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc)
 		goto fault;
 
 	if (error == FAULT_CPE_NO_FAULT) {
-		pthread_mutex_lock(&mutex_schedule_download);
 		list_add_tail(&(schedule_download->list), &(list_schedule_download));
 		if (schedule_download_delay[0] != 0) {
 			count_download_queue++;
@@ -2256,6 +2255,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc)
 			schedule_download->timewindowstruct[i].windowstart = time(NULL) + schedule_download_delay[i * 2];
 			schedule_download->timewindowstruct[i].windowend = time(NULL) + schedule_download_delay[i * 2 + 1];
 		}
+		schedule_download->handler_timer.cb = cwmp_start_schedule_download;
 		bkp_session_insert_schedule_download(schedule_download);
 		bkp_session_save();
 		if (schedule_download_delay[0] != 0) {
@@ -2263,8 +2263,12 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc)
 		} else {
 			CWMP_LOG(INFO, "Schedule Download will start at the end of session");
 		}
-		pthread_mutex_unlock(&mutex_schedule_download);
-		pthread_cond_signal(&threshold_schedule_download);
+		time_t now = time(NULL);
+		if (schedule_download->timewindowstruct[0].windowstart < now && (schedule_download->timewindowstruct[0].windowstart > now || schedule_download->timewindowstruct[0].windowend < now) && (now >= schedule_download->timewindowstruct[1].windowstart) && (schedule_download->timewindowstruct[1].windowstart > now || schedule_download->timewindowstruct[1].windowend < now)) {
+			error = FAULT_CPE_INTERNAL_ERROR;
+			goto fault;
+		}
+		cwmp_set_end_session(END_SESSION_SCHEDULE_DOWNLOAD);
 	}
 
 	return 0;

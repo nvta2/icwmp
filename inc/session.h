@@ -60,7 +60,8 @@ enum end_session_enum
 	END_SESSION_RESTART_SERVICES = 1 << 13,
 	END_SESSION_INIT_NOTIFY = 1 << 14,
 	END_SESSION_DOWNLOAD = 1 << 15,
-	END_SESSION_UPLOAD = 1 << 16
+	END_SESSION_SCHEDULE_DOWNLOAD = 1 << 16,
+	END_SESSION_UPLOAD = 1 << 17
 };
 
 enum enum_session_status

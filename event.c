@@ -183,7 +183,6 @@ int cwmp_root_cause_event_bootstrap()
 		cwmp_scheduleInform_remove_all();
 		cwmp_scheduledDownload_remove_all();
 		cwmp_scheduled_Download_remove_all();
-		cwmp_apply_scheduled_Download_remove_all();
 		cwmp_scheduledUpload_remove_all();
 	} else {
 		FREE(acsurl);
@@ -201,7 +200,6 @@ int cwmp_root_cause_event_bootstrap()
 		save_acs_bkp_config(cwmp_main);
 		cwmp_scheduleInform_remove_all();
 		cwmp_scheduledDownload_remove_all();
-		cwmp_apply_scheduled_Download_remove_all();
 		cwmp_scheduled_Download_remove_all();
 		cwmp_scheduledUpload_remove_all();
 	}
