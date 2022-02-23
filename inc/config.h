@@ -20,7 +20,6 @@ extern pthread_mutex_t mutex_config_load;
 
 int global_conf_init();
 int get_global_config();
-int cwmp_get_deviceid();
 int cwmp_config_reload();
 
 #endif

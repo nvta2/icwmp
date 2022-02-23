@@ -36,13 +36,10 @@
 
 static struct http_client http_c;
 
-pthread_t http_cr_server_thread;
-
 static CURL *curl = NULL;
 
 char *fc_cookies = "/tmp/icwmp_cookies";
 
-struct uloop_fd http_event6;
 void http_set_timeout(void)
 {
 	if (curl)
@@ -464,32 +461,5 @@ void http_server_listen(void)
 	if (client_sock < 0) {
 		CWMP_LOG(ERROR, "Could not accept connections for Connection Requests!");
 		return;
-	}
-}
-
-void http_server_listen_uloop(struct uloop_fd *ufd __attribute__((unused)), unsigned events __attribute__((unused)))
-{
-	http_server_listen();
-}
-
-void http_server_start_uloop(void)
-{
-	http_server_init();
-	http_event6.fd = cwmp_main->cr_socket_desc;
-	http_event6.cb = http_server_listen_uloop;
-	uloop_fd_add(&http_event6, ULOOP_READ | ULOOP_EDGE_TRIGGER);
-}
-
-static void *thread_http_cr_server_listen(void *v __attribute__((unused)))
-{
-	http_server_listen();
-	return NULL;
-}
-
-void http_server_start(void)
-{
-	int error = pthread_create(&http_cr_server_thread, NULL, &thread_http_cr_server_listen, NULL);
-	if (error < 0) {
-		CWMP_LOG(ERROR, "Error when creating the http connection request server thread!");
 	}
 }

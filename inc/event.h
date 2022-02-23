@@ -68,7 +68,6 @@ enum event_idx_enum
 extern const struct EVENT_CONST_STRUCT EVENT_CONST[__EVENT_IDX_MAX];
 extern pthread_mutex_t add_event_mutext;
 
-struct event_container *cwmp_add_event_container(int event_idx, char *command_key);
 int event_remove_all_event_container(int rem_from);
 int event_remove_noretry_event_container();
 void cwmp_save_event_container(struct event_container *event_container);

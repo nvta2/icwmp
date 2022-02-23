@@ -22,6 +22,7 @@
 #include "ubus.h"
 #include "download.h"
 #include "upload.h"
+#include "cwmp_event.h"
 
 pthread_mutex_t start_session_mutext = PTHREAD_MUTEX_INITIALIZER;
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout);

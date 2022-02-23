@@ -20,6 +20,7 @@
 #include "ubus.h"
 #include "cwmp_uci.h"
 #include "log.h"
+#include "cwmp_event.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);

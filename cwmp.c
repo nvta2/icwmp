@@ -22,6 +22,7 @@
 #include "session.h"
 #include "backupSession.h"
 #include "http.h"
+#include "cwmp_http.h"
 #include "diagnostic.h"
 #include "config.h"
 #include "ubus.h"
@@ -35,6 +36,9 @@
 #include "digestauth.h"
 #include "soap.h"
 #include "netlink.h"
+#include "cwmp_http.h"
+#include "cwmp_config.h"
+#include "cwmp_http.h"
 
 void load_forced_inform_json_file()
 {

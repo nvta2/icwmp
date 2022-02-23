@@ -8,12 +8,15 @@ icwmpd_SOURCES =			\
 	../log.c				\
 	../cwmp_uci.c			\
 	../config.c				\
+	../cwmp_config.c				\
 	../session.c			\
 	../backupSession.c		\
 	../md5.c				\
 	../digestauth.c			\
 	../event.c				\
+	../cwmp_event.c			\
 	../http.c				\
+	../cwmp_http.c			\
 	../netlink.c			\
 	../ubus.c				\
 	../datamodel_interface.c \
@@ -26,7 +29,7 @@ icwmpd_SOURCES =			\
 	../upload.c				\
 	../sched_inform.c		\
 	../xml.c				\
-	../soap.c			\
+	../soap.c				\
 	../diagnostic.c			\
 	../reboot.c 			\
 	../cwmp.c	

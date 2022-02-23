@@ -12,7 +12,7 @@ VALGRIND = valgrind --leak-check=full --show-reachable=yes --show-leak-kinds=all
 libobj:
 	$(CC) $(LIBCFLAGS) ../../subprocess.c ../../download.c ../../upload.c ../../log.c ../../md5.c ../../digestauth.c ../../netlink.c ../../cwmp_cli.c ../../cwmp_du_state.c ../../sched_inform.c \
 	 ../../diagnostic.c ../../reboot.c ../../notifications.c ../../cwmp_zlib.c  ../../datamodel_interface.c ../../http.c ../../backupSession.c \
-	 ../../cwmp_time.c ../../config.c ../../event.c ../../session.c ../../ubus.c ../../common.c ../../xml.c ../../soap.c ../../cwmp_uci.c ../../cwmp.c $(LDFLAGS)  
+	 ../../cwmp_time.c ../../config.c ../../event.c ../../session.c ../../ubus.c ../../common.c ../../xml.c ../../soap.c ../../cwmp_uci.c ../../cwmp.c ../../cwmp_config.c ../../cwmp_event.c ../../cwmp_http.c $(LDFLAGS)  
 
 libicwmp: $(LIBOBJ)
 	$(CC) -shared -Wl,-soname,libicwmp.so.1 -o libicwmp.so.1.0 *.o

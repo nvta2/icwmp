@@ -22,6 +22,8 @@
 #include <libicwmp/log.h>
 #include <libicwmp/download.h>
 #include <libicwmp/cwmp_uci.h>
+#include <libicwmp/cwmp_config.h>
+#include <libicwmp/cwmp_event.h>
 
 #include "icwmp_soap_msg_unit_test.h"
 

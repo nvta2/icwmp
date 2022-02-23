@@ -25,6 +25,7 @@
 #include "upload.h"
 #include "http.h"
 #include "soap.h"
+#include "cwmp_event.h"
 
 static struct ubus_context *ctx = NULL;
 

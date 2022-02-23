@@ -13,6 +13,7 @@
 #include "log.h"
 #include "backupSession.h"
 #include "event.h"
+#include "cwmp_event.h"
 
 LIST_HEAD(list_schedule_inform);
 pthread_mutex_t mutex_schedule_inform = PTHREAD_MUTEX_INITIALIZER;

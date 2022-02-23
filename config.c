@@ -626,16 +626,6 @@ end:
 	return error;
 }
 
-int cwmp_get_deviceid()
-{
-	cwmp_get_leaf_value("Device.DeviceInfo.Manufacturer", &cwmp_main->deviceid.manufacturer);
-	cwmp_get_leaf_value("Device.DeviceInfo.SerialNumber", &cwmp_main->deviceid.serialnumber);
-	cwmp_get_leaf_value("Device.DeviceInfo.ProductClass", &cwmp_main->deviceid.productclass);
-	cwmp_get_leaf_value("Device.DeviceInfo.ManufacturerOUI", &cwmp_main->deviceid.oui);
-	cwmp_get_leaf_value("Device.DeviceInfo.SoftwareVersion", &cwmp_main->deviceid.softwareversion);
-	return CWMP_OK;
-}
-
 int cwmp_config_reload()
 {
 	memset(&cwmp_main->env, 0, sizeof(struct env));

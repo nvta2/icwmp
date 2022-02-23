@@ -22,6 +22,7 @@
 #include "soap.h"
 #include "upload.h"
 #include "sched_inform.h"
+#include "cwmp_event.h"
 
 static mxml_node_t *bkp_tree = NULL;
 pthread_mutex_t mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;

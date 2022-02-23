@@ -31,6 +31,7 @@
 #include "download.h"
 #include "upload.h"
 #include "sched_inform.h"
+#include "cwmp_event.h"
 
 #define DM_CONN_REQ_URL "Device.ManagementServer.ConnectionRequestURL"
 

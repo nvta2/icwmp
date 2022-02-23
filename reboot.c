@@ -5,7 +5,6 @@
  *	(at your option) any later version.
  *
  *	Copyright (C) 2021 iopsys Software Solutions AB
- *	  Author Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
