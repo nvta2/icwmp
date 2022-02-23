@@ -73,7 +73,7 @@ int event_remove_noretry_event_container();
 void cwmp_save_event_container(struct event_container *event_container);
 void connection_request_ip_value_change(int version);
 void connection_request_port_value_change(int port);
-int cwmp_get_int_event_code(char *code);
+int cwmp_get_int_event_code(const char *code);
 bool event_exist_in_list(int event);
 int cwmp_root_cause_events();
 int cwmp_root_cause_transfer_complete(struct transfer_complete *p);

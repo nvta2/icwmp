@@ -51,7 +51,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc);
 int cwmp_handle_rpc_cpe_change_du_state(struct rpc *rpc);
 int cwmp_handle_rpc_cpe_fault(struct rpc *rpc);
 
-int cwmp_rpc_acs_prepare_message_inform(struct rpc *rpc);
+int cwmp_rpc_acs_prepare_message_inform(const struct rpc *rpc);
 int cwmp_rpc_acs_parse_response_inform(struct rpc *rpc);
 int cwmp_rpc_acs_prepare_get_rpc_methods(struct rpc *rpc);
 int cwmp_rpc_acs_prepare_transfer_complete(struct rpc *rpc);

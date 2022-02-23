@@ -414,18 +414,16 @@ void load_custom_notify_json()
 	const struct blobmsg_policy p_notif[1] = { { "custom_notification", BLOBMSG_TYPE_ARRAY } };
 	struct blob_attr *tb_notif[1] = { NULL};
 	blobmsg_parse(p_notif, 1, tb_notif, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
-	if (!tb_notif[0]) {
-		creat(NOTIFY_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-		return;
-	}
-	custom_notify_list = tb_notif[0];
 
-	if (custom_notify_list == NULL) {
+	if (tb_notif[0] == NULL) {
 		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp_main->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		creat(NOTIFY_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
 	}
+
+	custom_notify_list = tb_notif[0];
+
 	const struct blobmsg_policy p[2] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notify_type", BLOBMSG_TYPE_STRING } };
 	blobmsg_for_each_attr(cur, custom_notify_list, rem)
 	{

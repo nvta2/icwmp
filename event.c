@@ -368,7 +368,7 @@ int cwmp_root_cause_events()
 	return CWMP_OK;
 }
 
-int cwmp_get_int_event_code(char *code)
+int cwmp_get_int_event_code(const char *code)
 {
 	if (code && code[0] == '1')
 		return EVENT_IDX_1BOOT;

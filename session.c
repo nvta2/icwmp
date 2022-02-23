@@ -535,11 +535,11 @@ int run_session_end_func(void)
 			int download_delay;
 			if (sched_download->timewindowstruct[0].windowstart > now)
 				download_delay = sched_download->timewindowstruct[0].windowstart - now;
-			else if (sched_download->timewindowstruct[0].windowstart <= now && sched_download->timewindowstruct[0].windowend >= now)
+			else if (sched_download->timewindowstruct[0].windowend >= now)
 				download_delay = 1;
 			else if (now < sched_download->timewindowstruct[1].windowstart)
 				download_delay = sched_download->timewindowstruct[1].windowstart - now;
-			else if (sched_download->timewindowstruct[1].windowstart <= now && sched_download->timewindowstruct[1].windowend >= now)
+			else if (sched_download->timewindowstruct[1].windowend >= now)
 				download_delay = 1;
 			else
 				download_delay = 1;

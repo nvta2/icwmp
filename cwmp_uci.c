@@ -375,8 +375,9 @@ void cwmp_free_uci_list(struct uci_list *list)
 {
 	struct uci_element *e = NULL, *tmp = NULL;
 
-	uci_foreach_element_safe(list, e, tmp)
+	uci_foreach_element_safe(list, e, tmp) {
 		cwmp_delete_uci_element_from_list(e);
+	}
 }
 
 char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
@@ -742,7 +743,7 @@ int cwmp_uci_export(const char *output_path, uci_config_paths uci_type)
 	char **configs = NULL;
 	char **p;
 
-	if ((uci_list_configs(uci_save_conf_paths[uci_type].uci_ctx, &configs) != UCI_OK) || !configs)
+	if ((uci_list_configs(uci_save_conf_paths[uci_type].uci_ctx, &configs) != UCI_OK))
 		return -1;
 
 	for (p = configs; *p; p++)

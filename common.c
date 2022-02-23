@@ -606,7 +606,7 @@ void icwmp_restart_services()
 		}
 	}
 	if (g_firewall_restart) {
-			CWMP_LOG(INFO, "Initiating Firewall restart")
+			CWMP_LOG(INFO, "Initiating Firewall restart");
 			cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "in_progress");
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 	}

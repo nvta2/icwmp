@@ -669,14 +669,14 @@ void cwmp_start_schedule_download(struct uloop_timeout *timeout)
 		delay = sched_download->timewindowstruct[0].windowstart - now;
 		uloop_timeout_set(&sched_download->handler_timer, 1000 * delay);
 		return;
-	} else if (sched_download->timewindowstruct[0].windowstart <= now && sched_download->timewindowstruct[0].windowend >= now) {
+	} else if (sched_download->timewindowstruct[0].windowend >= now) {
 		outdate = false;
 		window_index = 0;
 	} else if (sched_download->timewindowstruct[1].windowstart > now) {
 		delay = sched_download->timewindowstruct[1].windowstart - now;
 		uloop_timeout_set(&sched_download->handler_timer, 1000 * delay);
 		return;
-	} else if (sched_download->timewindowstruct[1].windowstart <= now && sched_download->timewindowstruct[1].windowend >= now) {
+	} else if (sched_download->timewindowstruct[1].windowend >= now) {
 		outdate = false;
 		window_index = 1;
 	} else {

@@ -154,7 +154,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	int error = FAULT_CPE_NO_FAULT;
 	char *upload_startTime;
 	struct transfer_complete *p;
-	char *name = "";
+	char *name = NULL;
 	upload_startTime = mix_get_time();
 	char file_path[128] = {'\0'};
 	bkp_session_delete_upload(pupload);

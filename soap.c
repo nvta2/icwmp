@@ -250,7 +250,7 @@ create_value:
 	return 0;
 }
 
-int cwmp_rpc_acs_prepare_message_inform(struct rpc *this)
+int cwmp_rpc_acs_prepare_message_inform(const struct rpc *this)
 {
 	struct cwmp_dm_parameter *dm_parameter;
 	struct event_container *event_container;
@@ -1134,8 +1134,9 @@ int cwmp_handle_rpc_cpe_set_parameter_values(struct rpc *rpc)
 		goto fault;
 
 	struct cwmp_dm_parameter *param_value;
-	list_for_each_entry (param_value, &list_set_param_value, list)
+	list_for_each_entry (param_value, &list_set_param_value, list) {
 		set_diagnostic_parameter_structure_value(param_value->name, param_value->value);
+	}
 
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 
@@ -1967,7 +1968,7 @@ int cwmp_handle_rpc_cpe_download(struct rpc *rpc)
 		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "CommandKey")) {
 			download->command_key = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileType")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileType")) {
 			if (download->file_type == NULL) {
 				download->file_type = strdup(b->value.opaque);
 				file_type = icwmp_strdup(b->value.opaque);
@@ -1979,20 +1980,20 @@ int cwmp_handle_rpc_cpe_download(struct rpc *rpc)
 				}
 			}
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "URL")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "URL")) {
 			download->url = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Username")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Username")) {
 			download->username = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Password")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Password")) {
 			download->password = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileSize")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileSize")) {
 			str_file_size = strdup(b->value.opaque ? b->value.opaque: "0");
 			download->file_size = atoi(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "DelaySeconds")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "DelaySeconds")) {
 			str_download_delay = strdup(b->value.opaque ? b->value.opaque: "0");
 			download_delay = atol(b->value.opaque);
 		}
@@ -2119,7 +2120,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc)
 		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "CommandKey")) {
 			schedule_download->command_key = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileType")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileType")) {
 			if (schedule_download->file_type != NULL) {
 				tmp = file_type;
 				if (cwmp_asprintf(&file_type, "%s %s", tmp, b->value.opaque) == -1) {
@@ -2131,21 +2132,21 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc)
 				file_type = icwmp_strdup(b->value.opaque);
 			}
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "URL")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "URL")) {
 			schedule_download->url = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Username")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Username")) {
 			schedule_download->username = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Password")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "Password")) {
 			schedule_download->password = strdup(b->value.opaque);
 		}
-		if (b && b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileSize")) {
+		if (b->type == MXML_OPAQUE && b->value.opaque && b->parent->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "FileSize")) {
 			str_file_size = strdup(b->value.opaque);
 			schedule_download->file_size = atoi(b->value.opaque);
 		}
 
-		if (b && b->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "TimeWindowList")) {
+		if (b->type == MXML_ELEMENT && !strcmp(b->parent->value.element.name, "TimeWindowList")) {
 			if (!t)
 				return -1; //TO CHECK*/
 			t = mxmlWalkNext(t, b, MXML_DESCEND);
@@ -2265,7 +2266,7 @@ int cwmp_handle_rpc_cpe_schedule_download(struct rpc *rpc)
 			CWMP_LOG(INFO, "Schedule Download will start at the end of session");
 		}
 		time_t now = time(NULL);
-		if (schedule_download->timewindowstruct[0].windowstart < now && (schedule_download->timewindowstruct[0].windowstart > now || schedule_download->timewindowstruct[0].windowend < now) && (now >= schedule_download->timewindowstruct[1].windowstart) && (schedule_download->timewindowstruct[1].windowstart > now || schedule_download->timewindowstruct[1].windowend < now)) {
+		if ((schedule_download->timewindowstruct[0].windowstart < now) ||(schedule_download->timewindowstruct[0].windowend < now && (now < schedule_download->timewindowstruct[1].windowstart || schedule_download->timewindowstruct[1].windowend < now) )) {
 			error = FAULT_CPE_INTERNAL_ERROR;
 			goto fault;
 		}
