@@ -2,6 +2,8 @@
 *.swo
 *.o
 *.lo
+*.log
+*.xml
 *.so
 bin/*
 !bin/Makefile.am

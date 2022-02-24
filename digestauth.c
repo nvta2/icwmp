@@ -14,12 +14,12 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
-#include <openssl/rand.h>
 
 #include "common.h"
 #include "digestauth.h"
 #include "md5.h"
 #include "log.h"
+#include "ssl_utils.h"
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
 
@@ -41,34 +41,6 @@
 #define MAX_NONCE_LENGTH 1024
 
 char *nonce_privacy_key = NULL;
-
-char *generate_random_string(size_t size)
-{
-	unsigned char *buf = NULL;
-	char *hex = NULL;
-
-	buf = (unsigned char *)calloc(size + 1, sizeof(unsigned char));
-	if (buf == NULL) {
-		CWMP_LOG(ERROR, "Unable to allocate memory for buf string\n");
-		goto end;
-	}
-
-	int written = RAND_bytes(buf, size);
-	if (written != 1) {
-		printf("Failed to get random bytes");
-		goto end;
-	}
-
-	hex = string_to_hex(buf, size);
-	if (hex == NULL)
-			goto end;
-
-	hex[size] = '\0';
-
-end:
-	FREE(buf);
-	return hex;
-}
 
 int generate_nonce_priv_key()
 {

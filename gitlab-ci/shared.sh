@@ -116,8 +116,8 @@ function build_icwmp()
 
 	# compile icwmp
 	autoreconf -i >/dev/null 2>&1
-	./configure CFLAGS="$COV_CFLAGS" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug >/dev/null 2>&1
-	make
+	./configure CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug >/dev/null 2>&1
+	make CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS"
 	check_ret $?
 }
 
@@ -126,7 +126,7 @@ function install_uspd()
 	# install uspd
 	cd /opt/dev
 	rm -rf uspd
-	exec_cmd git clone -b devel https://dev.iopsys.eu/iopsys/uspd.git
+	exec_cmd git clone https://dev.iopsys.eu/iopsys/uspd.git
 	cd /opt/dev/uspd
 	exec_cmd ./gitlab-ci/install-dependencies.sh
 	exec_cmd ./gitlab-ci/setup.sh
