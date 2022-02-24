@@ -105,7 +105,6 @@ AC_TYPE_UINT8_T
 # Makefiles
 AC_CONFIG_FILES([
 Makefile
-bin/Makefile
 ])
 
 AC_OUTPUT

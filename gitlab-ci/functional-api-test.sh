@@ -2,7 +2,7 @@
 
 echo "preparation script"
 pwd
-source ./gitlab-ci/shared.sh
+. ./gitlab-ci/shared.sh
 
 trap cleanup EXIT
 trap cleanup SIGINT

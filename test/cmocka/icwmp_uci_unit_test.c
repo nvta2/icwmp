@@ -16,11 +16,11 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/cwmp_uci.h>
+#include "common.h"
+#include "cwmp_uci.h"
 
 #define UCI_WRONG_PATH "cwmp.wrong_section.wrong_option"
-struct uci_list *list = NULL;
+static struct uci_list *list = NULL;
 
 static int cwmp_uci_unit_tests_init(void **state)
 {
@@ -81,6 +81,7 @@ static void cwmp_uci_get_tests(void **state)
 	error = cwmp_uci_get_value_by_section_string(s, "wrong_option", &value);
 	assert_null(value);
 	assert_int_equal(error, UCI_ERR_NOTFOUND);
+
 }
 
 static void cwmp_uci_set_tests(void **state)
@@ -137,6 +138,7 @@ static void cwmp_uci_set_tests(void **state)
 	error = cwmp_uci_get_option_value_string("cwmp", "wront_section", "wrong_option", UCI_VARSTATE_CONFIG, &value);
 	assert_int_equal(error, UCI_ERR_NOTFOUND);
 	assert_null(value);
+
 }
 
 static void cwmp_uci_add_tests(void **state)
@@ -170,7 +172,6 @@ static void cwmp_uci_add_tests(void **state)
 
 static void cwmp_uci_list_tests(void **state)
 {
-	struct uci_section *s = NULL;
 	int error = UCI_OK;
 	char *list_string = NULL;
 
@@ -200,9 +201,10 @@ static void cwmp_uci_list_tests(void **state)
 	assert_null(list_string);
 	if(list != NULL)
 		cwmp_free_uci_list(list);
+
 }
 
-int main(void)
+int icwmp_uci_test(void)
 {
 	const struct CMUnitTest tests[] = {
 		    cmocka_unit_test(cwmp_uci_get_tests),

@@ -14,14 +14,14 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/backupSession.h>
-#include <libicwmp/xml.h>
-#include <libicwmp/config.h>
-#include <libicwmp/cwmp_time.h>
-#include <libicwmp/event.h>
+#include "common.h"
+#include "backupSession.h"
+#include "xml.h"
+#include "config.h"
+#include "cwmp_time.h"
+#include "event.h"
 
-struct cwmp cwmp_main_test = { 0 };
+static struct cwmp cwmp_main_test = { 0 };
 
 static int bkp_session_unit_tests_clean(void **state)
 {
@@ -117,37 +117,6 @@ static void cwmp_backup_session_unit_test(void **state)
 	MXML_DELETE(backup_tree);
 	bkp_event1 = NULL;
 	bkp_event2 = NULL;
-
-	//case of two events with same id under the same queue
-#if 0
-	bkp_event1 = bkp_session_insert_event(EVENT_IDX_1BOOT, "1 BOOT", 0, "queue");
-	bkp_event2 = bkp_session_insert_event(EVENT_IDX_4VALUE_CHANGE, "4 VALUE CHANGE", 0, "queue");
-	bkp_session_save();
-	pFile = fopen(CWMP_BKP_FILE, "r");
-	backup_tree = mxmlLoadFile(NULL, pFile, MXML_OPAQUE_CALLBACK);
-	fclose(pFile);
-	assert_non_null(bkp_event1);
-	assert_non_null(bkp_event2);
-	queue_tree1 = mxmlFindElement(backup_tree, backup_tree, "queue_event", NULL, NULL, MXML_DESCEND);
-	queue_tree2 = mxmlFindElement(queue_tree1, backup_tree, "queue_event", NULL, NULL, MXML_DESCEND);
-
-	n = mxmlFindElement(queue_tree1, queue_tree1, "index", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	assert_int_equal(atoi(n->child->value.opaque), EVENT_IDX_1BOOT);
-	n = mxmlFindElement(queue_tree1, queue_tree1, "id", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	assert_int_equal(atoi(n->child->value.opaque), 0);
-	n = mxmlFindElement(queue_tree1, queue_tree1, "command_key", NULL, NULL, MXML_DESCEND);
-	assert_non_null(n);
-	assert_string_equal(n->child->value.opaque, "1 BOOT");
-
-	assert_null(queue_tree2);
-
-	MXML_DELETE(bkp_event1);
-	MXML_DELETE(bkp_event2);
-	bkp_session_save();
-	MXML_DELETE(backup_tree);
-#endif
 
 	//case of two events with same id under different queues
 	bkp_event1 = bkp_session_insert_event(EVENT_IDX_1BOOT, "1 BOOT", 0, "queue1");
@@ -295,7 +264,7 @@ static void cwmp_backup_session_unit_test(void **state)
 	bkp_tree_clean();
 }
 
-int main(void)
+int icwmp_backup_session_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(cwmp_backup_session_unit_test),

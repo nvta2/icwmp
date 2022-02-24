@@ -2,6 +2,7 @@
 *.swo
 *.o
 *.lo
+*.so
 bin/*
 !bin/Makefile.am
 .prepared*

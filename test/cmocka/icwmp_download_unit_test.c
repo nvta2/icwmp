@@ -15,17 +15,17 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#include <libicwmp/xml.h>
-#include <libicwmp/event.h>
-#include <libicwmp/session.h>
-#include <libicwmp/config.h>
-#include <libicwmp/backupSession.h>
-#include <libicwmp/log.h>
-#include <libicwmp/download.h>
+#include "xml.h"
+#include "event.h"
+#include "session.h"
+#include "config.h"
+#include "backupSession.h"
+#include "log.h"
+#include "download.h"
 
-struct transfer_complete *transfer_complete_test = NULL;
+static struct transfer_complete *transfer_complete_test = NULL;
 
-void free_transfer_complete(struct transfer_complete *p)
+static void free_transfer_complete(struct transfer_complete *p)
 {
 	FREE(p->command_key);
 	FREE(p->start_time);
@@ -34,7 +34,7 @@ void free_transfer_complete(struct transfer_complete *p)
 	FREE(p);
 }
 
-void free_download(struct download *p)
+static void free_download(struct download *p)
 {
 	if (p==NULL)
 		return;
@@ -181,7 +181,7 @@ static void cwmp_launch_download_unit_test(void **state)
 	remove(FIRMWARE_UPGRADE_IMAGE);
 }
 
-int main(void)
+int icwmp_download_unit_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 			cmocka_unit_test(cwmp_download_file_unit_test),

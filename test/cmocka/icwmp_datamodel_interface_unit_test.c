@@ -14,14 +14,14 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/config.h>
-#include <libicwmp/datamodel_interface.h>
-#include <libicwmp/event.h>
-#include <libicwmp/xml.h>
-#include <libicwmp/rpc_soap.h>
-#include <libicwmp/session.h>
-#include <libicwmp/log.h>
+#include "common.h"
+#include "config.h"
+#include "datamodel_interface.h"
+#include "event.h"
+#include "xml.h"
+#include "rpc_soap.h"
+#include "session.h"
+#include "log.h"
 
 static int dm_iface_unit_tests_clean(void **state)
 {
@@ -321,7 +321,7 @@ static void dm_get_parameter_names_test(void **state)
 	assert_string_equal(fault, "9005");
 }
 
-int main(void)
+int icwmp_datamodel_interface_test(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(dm_get_parameter_values_test), //

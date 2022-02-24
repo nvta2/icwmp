@@ -16,11 +16,11 @@
 #include <dirent.h>
 #include <stdbool.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/config.h>
-#include <libicwmp/rpc_soap.h>
+#include "common.h"
+#include "config.h"
+#include "rpc_soap.h"
 
-struct cwmp cwmp_main_test = { 0 };
+static struct cwmp cwmp_main_test = { 0 };
 
 static int verify_inform_parameter_in_list(char *parameter)
 {
@@ -32,7 +32,7 @@ static int verify_inform_parameter_in_list(char *parameter)
 	return 0;
 }
 
-void clean_config(struct cwmp *cwmp_test)
+static void clean_config(struct cwmp *cwmp_test)
 {
 	FREE(cwmp_test->deviceid.manufacturer);
 	FREE(cwmp_test->deviceid.serialnumber);
@@ -88,7 +88,7 @@ static void cwmp_custom_inform_unit_test(void **state)
 	icwmp_cleanmem();
 }
 
-int main(void)
+int icwmp_custom_inform_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(cwmp_custom_inform_unit_test),

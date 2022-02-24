@@ -14,13 +14,13 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/notifications.h>
-#include <libicwmp/cwmp_uci.h>
+#include "common.h"
+#include "notifications.h"
+#include "cwmp_uci.h"
 /*
  * Common functions
  */
-char *notifications_test[7] = {"disabled" , "passive", "active", "passive_lw", "passive_passive_lw", "active_lw", "passive_active_lw"};
+static char *notifications_test[7] = {"disabled" , "passive", "active", "passive_lw", "passive_passive_lw", "active_lw", "passive_active_lw"};
 
 LIST_HEAD(parameters_list);
 
@@ -38,10 +38,10 @@ static int cwmp_notifications_unit_tests_clean(void **state)
 	return 0;
 }
 
-int check_notify_file(char *param, int *ret_notification)
+static int check_notify_file(char *param, int *ret_notification)
 {
 	struct blob_buf bbuf;
-	char *parameter = NULL, *value = NULL;
+	char *parameter = NULL;
 	int notification = 0;
 	FILE *fp;
 	int nbre_iterations = 0;
@@ -80,7 +80,7 @@ int check_notify_file(char *param, int *ret_notification)
 	return nbre_iterations;
 }
 
-int get_parameter_notification_from_list_head(struct list_head *params_list, char *parameter_name)
+static int get_parameter_notification_from_list_head(struct list_head *params_list, char *parameter_name)
 {
 	struct cwmp_dm_parameter *param_iter = NULL;
 	list_for_each_entry (param_iter, params_list, list) {
@@ -90,7 +90,7 @@ int get_parameter_notification_from_list_head(struct list_head *params_list, cha
 	return 0;
 }
 
-int get_parameter_notification_from_notifications_uci_list(char *parameter_name)
+static int get_parameter_notification_from_notifications_uci_list(char *parameter_name)
 {
 	int i, notification = 0;
 	struct uci_list *list_notif;
@@ -114,7 +114,7 @@ int get_parameter_notification_from_notifications_uci_list(char *parameter_name)
 	return notification;
 }
 
-int get_parameter_in_list_value_change(char *parameter_name)
+static int get_parameter_in_list_value_change(char *parameter_name)
 {
 	struct cwmp_dm_parameter *param_iter = NULL;
 	list_for_each_entry (param_iter, &list_value_change, list) {
@@ -123,7 +123,6 @@ int get_parameter_in_list_value_change(char *parameter_name)
 	}
 	return 0;
 }
-////////////////////////////////////////////
 
 static void cwmp_init_list_param_notify_unit_test_default(void **state)
 {
@@ -267,7 +266,7 @@ static void cwmp_check_value_change_1_unit_test(void **state)
 	assert_int_equal(get_parameter_in_list_value_change("Device.DeviceInfo.UpTime"), 1);
 }
 
-int main(void)
+int icwmp_notifications_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(cwmp_init_list_param_notify_unit_test_default),

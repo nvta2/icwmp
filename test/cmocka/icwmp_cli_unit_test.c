@@ -15,21 +15,44 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <dirent.h>
+#include <unistd.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/backupSession.h>
-#include <libicwmp/xml.h>
-#include <libicwmp/config.h>
-#include <libicwmp/cwmp_time.h>
-#include <libicwmp/event.h>
-#include <libicwmp/cwmp_uci.h>
-#include <libicwmp/cwmp_cli.h>
+#include "common.h"
+#include "backupSession.h"
+#include "xml.h"
+#include "config.h"
+#include "cwmp_time.h"
+#include "event.h"
+#include "cwmp_uci.h"
+#include "cwmp_cli.h"
 
 static char *add_instance = NULL;
+static int outfd;
+static fpos_t pos;
+
+static void suppress_output()
+{
+	fflush(stdout);
+	fgetpos(stdout, &pos);
+	outfd = dup(fileno(stdout));
+	if (freopen("/tmp/out.txt", "w", stdout) == NULL) {
+		fprintf(stderr, "failed to freopen");
+	}
+}
+
+static void restore_output()
+{
+	fflush(stdout);
+	dup2(outfd, fileno(stdout));
+	close(outfd);
+	clearerr(stdout);
+	fsetpos(stdout, &pos);
+}
 
 static int cwmp_cli_unit_tests_init(void **state)
 {
 	cwmp_uci_init();
+	return 0;
 }
 
 static int cwmp_cli_unit_tests_clean(void **state)
@@ -38,6 +61,7 @@ static int cwmp_cli_unit_tests_clean(void **state)
 	FREE(add_instance);
 	icwmp_free_list_services();
 	cwmp_uci_exit();
+
 	return 0;
 }
 
@@ -45,6 +69,7 @@ static void cwmp_execute_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * One argument: Valid
 	 */
@@ -101,12 +126,15 @@ static void cwmp_execute_cli_unit_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9008");
 	FREE(fault);
+
+	restore_output();
 }
 
 static void cwmp_get_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * Get: input is NULL
 	 */
@@ -136,12 +164,14 @@ static void cwmp_get_cli_unit_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	//assert_int_equal((int)list_empty(cmd_get_out_3.param_list), 1);
+	restore_output();
 }
 
 static void cwmp_set_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * Set: both two inputs are null
 	 */
@@ -194,12 +224,14 @@ static void cwmp_set_cli_unit_test(void **state)
 	fault = cmd_set_exec_func(input1_ro, &cmd_set_out_6);
 	assert_non_null(fault);
 	assert_string_equal(fault, "9008");
+	restore_output();
 }
 
 static void cwmp_add_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * Add: input is null
 	 */
@@ -240,12 +272,14 @@ static void cwmp_add_cli_unit_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	assert_null(cmd_add_out_4.instance);
+	restore_output();
 }
 
 static void cwmp_del_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * Delete: input is null
 	 */
@@ -283,12 +317,14 @@ static void cwmp_del_cli_unit_test(void **state)
 	fault = cmd_del_exec_func(input_read_only_obj, &cmd_del_out_4);
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
+	restore_output();
 }
 
 static void cwmp_set_notif_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * SetAttributes: both two inputs are null
 	 */
@@ -333,12 +369,14 @@ static void cwmp_set_notif_cli_unit_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9003");
 
+	restore_output();
 }
 
 static void cwmp_get_notif_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * GetAttributes: input is NULL
 	 */
@@ -368,12 +406,14 @@ static void cwmp_get_notif_cli_unit_test(void **state)
 	assert_non_null(fault);
 	assert_string_equal(fault, "9005");
 	//assert_int_equal((int)list_empty(cmd_get_out_3.param_list), 1);
+	restore_output();
 }
 
 static void cwmp_get_names_cli_unit_test(void **state)
 {
 	char *fault = NULL;
 
+	suppress_output();
 	/*
 	 * GetNames: inputs are NULL
 	 */
@@ -443,10 +483,13 @@ static void cwmp_get_names_cli_unit_test(void **state)
 	assert_null(fault);
 	assert_int_equal((int)list_empty(cmd_getnames_out_7.param_list), 0);
 	cwmp_free_all_dm_parameter_list(cmd_getnames_out_7.param_list);
+	restore_output();
 }
 
-int main(void)
+int icwmp_cli_unit_test(void)
 {
+	int ret = 0;
+
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(cwmp_execute_cli_unit_test),
 			cmocka_unit_test(cwmp_get_cli_unit_test),
@@ -458,5 +501,7 @@ int main(void)
 			cmocka_unit_test(cwmp_get_names_cli_unit_test)
 	};
 
-	return cmocka_run_group_tests(tests, cwmp_cli_unit_tests_init, cwmp_cli_unit_tests_clean);
+	ret = cmocka_run_group_tests(tests, cwmp_cli_unit_tests_init, cwmp_cli_unit_tests_clean);
+
+	return ret;
 }
