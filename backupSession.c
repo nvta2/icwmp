@@ -122,7 +122,7 @@ int get_bkp_attribute_index_type(char *name)
 void load_specific_backup_attributes(mxml_node_t *tree, struct backup_attributes *bkp_attrs)
 {
 	mxml_node_t *b = tree, *c;
-	int idx = -1;
+	int idx;
 	void **ptr;
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);
@@ -213,7 +213,7 @@ mxml_node_t *bkp_session_node_found(mxml_node_t *tree, char *name, struct search
 				if (c->type == MXML_ELEMENT && strcmp(keys[i].name, c->value.element.name) == 0) {
 					d = c;
 					d = mxmlWalkNext(d, c, MXML_DESCEND);
-					if ((keys[i].value == NULL) || (d && d->type == MXML_OPAQUE && keys[i].value != NULL && strcmp(keys[i].value, d->value.opaque) == 0))
+					if ((keys[i].value == NULL) || (d && d->type == MXML_OPAQUE && STRCMP(keys[i].value, d->value.opaque) == 0))
 						i++;
 				}
 				c = mxmlWalkNext(c, b, MXML_NO_DESCEND);
@@ -521,7 +521,7 @@ void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *
 
 void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state)
 {
-	struct operations *p;
+	struct operations *p = NULL;
 	char schedule_time[128];
 	mxml_node_t *b, *n;
 
@@ -663,7 +663,7 @@ void bkp_session_delete_upload(struct upload *pupload)
 void bkp_session_insert_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete)
 {
 	char schedule_time[128], resolved[8], fault_code[8];
-	struct opresult *p;
+	struct opresult *p = NULL;
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
@@ -800,6 +800,7 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 	while (b) {
 		if (b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name, "command_key") == 0) {
+				// cppcheck-suppress knownConditionTrueFalse
 				if (idx != -1) {
 					if (EVENT_CONST[idx].RETRY & EVENT_RETRY_AFTER_REBOOT) {
 						event_container_save = cwmp_add_event_container(cwmp, idx, ((command_key != NULL) ? command_key : ""));

@@ -325,7 +325,7 @@ int run_session_end_func(void)
 
 static void cwmp_schedule_session(struct cwmp *cwmp)
 {
-	int t, error = CWMP_OK;
+	int t;
 	struct timespec time_to_wait = { 0, 0 };
 	bool retry = false;
 	char *exec_download = NULL;
@@ -335,6 +335,7 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 	while (1) {
 		struct list_head *ilist;
 		struct session *session;
+		int error;
 
 		pthread_mutex_lock(&(cwmp->mutex_session_send));
 		ilist = (&(cwmp->head_session_queue))->next;
@@ -460,14 +461,13 @@ void load_forced_inform_json_file(struct cwmp *cwmp)
 	const struct blobmsg_policy p[1] = { { "forced_inform", BLOBMSG_TYPE_ARRAY } };
 	struct blob_attr *tb[1] = { NULL };
 	blobmsg_parse(p, 1, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
-	if (!tb[0])
-		return;
-	custom_forced_inform_list = tb[0];
-	if (custom_forced_inform_list == NULL) {
+	if (tb[0] == NULL) {
 		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a forced inform parameters list", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		return;
 	}
+
+	custom_forced_inform_list = tb[0];
 
 	blobmsg_for_each_attr(cur, custom_forced_inform_list, rem)
 	{

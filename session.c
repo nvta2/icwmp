@@ -103,7 +103,8 @@ struct session *cwmp_add_queue_session(struct cwmp *cwmp)
 	INIT_LIST_HEAD(&(session->head_event_container));
 	INIT_LIST_HEAD(&(session->head_rpc_acs));
 	INIT_LIST_HEAD(&(session->head_rpc_cpe));
-	if ((rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM)) == NULL) {
+	rpc_acs = cwmp_add_session_rpc_acs_head(session, RPC_ACS_INFORM);
+	if (rpc_acs == NULL) {
 		FREE(session);
 		return NULL;
 	}

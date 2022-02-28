@@ -323,7 +323,7 @@ int uci_set_value_by_path(char *path, char *value, uci_config_paths uci_type)
 		CWMP_LOG(ERROR, "UCI delete not succeed %s", path);
 		return UCI_ERR_NOTFOUND;
 	}
-	return UCI_OK;
+	return ret;
 }
 
 int cwmp_uci_set_value_by_path(char *path, char *value)
@@ -499,7 +499,7 @@ int uci_add_list_value(char *cmd, uci_config_paths uci_type)
 		CWMP_LOG(ERROR, "UCI delete not succeed %s", cmd);
 		return UCI_ERR_NOTFOUND;
 	}
-	return UCI_OK;
+	return ret;
 }
 
 /*
@@ -587,7 +587,7 @@ int uci_delete_value(char *path, int uci_type)
 		CWMP_LOG(ERROR, "UCI delete not succeed %s", path);
 		return CWMP_GEN_ERR;
 	}
-	return CWMP_OK;
+	return ret;
 }
 
 int cwmp_uci_get_section_type(char *package, char *section, uci_config_paths uci_type, char **value)
@@ -742,12 +742,15 @@ int cwmp_uci_export(const char *output_path, uci_config_paths uci_type)
 	char **configs = NULL;
 	char **p;
 
-	if ((uci_list_configs(uci_save_conf_paths[uci_type].uci_ctx, &configs) != UCI_OK) || !configs)
+	if (uci_list_configs(uci_save_conf_paths[uci_type].uci_ctx, &configs) != UCI_OK)
+		return -1;
+
+	if (configs == NULL)
 		return -1;
 
 	for (p = configs; *p; p++)
 		cwmp_uci_export_package(*p, output_path, uci_type);
 
-	free(configs);
+	FREE(configs);
 	return 0;
 }

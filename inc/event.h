@@ -73,7 +73,7 @@ void cwmp_save_event_container(struct event_container *event_container);
 void *thread_event_periodic(void *v);
 void connection_request_ip_value_change(struct cwmp *cwmp, int version);
 void connection_request_port_value_change(struct cwmp *cwmp, int port);
-int cwmp_get_int_event_code(char *code);
+int cwmp_get_int_event_code(const char *code);
 bool event_exist_in_list(struct cwmp *cwmp, int event);
 int cwmp_root_cause_events(struct cwmp *cwmp);
 int cwmp_root_cause_transfer_complete(struct cwmp *cwmp, struct transfer_complete *p);

@@ -53,6 +53,7 @@
 #define FIREWALL_CWMP "/etc/firewall.cwmp"
 #define CWMP_VARSTATE_UCI_PACKAGE "/var/state/cwmp"
 
+#define STRCMP(S1, S2) ((S1 != NULL && S2 != NULL) ? strcmp(S1, S2) : -1)
 extern char *commandKey;
 extern bool thread_end;
 extern bool signal_exit;

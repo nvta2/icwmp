@@ -263,6 +263,7 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 bool parameter_is_other_notif_object_child(char *parent, char *parameter)
 {
 	struct list_head list_iter, *list_ptr;
+	// cppcheck-suppress unreadVariable
 	list_iter.next = list_param_obj_notify.next;
 	list_iter.prev = list_param_obj_notify.prev;
 	struct cwmp_dm_parameter *dm_parameter = NULL;
@@ -318,7 +319,7 @@ char* updated_list_param_leaf_notify_with_sub_parameter_list(struct list_head *l
 
 void create_list_param_leaf_notify(struct list_head *list_param_leaf_notify, void (*update_notify_file_line_arg)(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification), FILE* notify_file_arg)
 {
-	struct cwmp_dm_parameter *param_iter;
+	struct cwmp_dm_parameter *param_iter = NULL;
 	int i;
 
 	for (i = 0; i < (int)ARRAY_SIZE(forced_notifications_parameters); i++)
@@ -411,18 +412,14 @@ void load_custom_notify_json(struct cwmp *cwmp)
 	const struct blobmsg_policy p_notif[1] = { { "custom_notification", BLOBMSG_TYPE_ARRAY } };
 	struct blob_attr *tb_notif[1] = { NULL};
 	blobmsg_parse(p_notif, 1, tb_notif, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
-	if (!tb_notif[0]) {
-		creat(NOTIFY_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-		return;
-	}
-	custom_notify_list = tb_notif[0];
-
-	if (custom_notify_list == NULL) {
+	if (tb_notif[0] == NULL) {
 		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a notify parameters list", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		creat(NOTIFY_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		return;
 	}
+	custom_notify_list = tb_notif[0];
+
 	const struct blobmsg_policy p[2] = { { "parameter", BLOBMSG_TYPE_STRING }, { "notify_type", BLOBMSG_TYPE_STRING } };
 	blobmsg_for_each_attr(cur, custom_notify_list, rem)
 	{
@@ -561,7 +558,7 @@ void *thread_periodic_check_notify(void *v)
 	bool periodic_enable;
 	struct timespec periodic_timeout = { 0, 0 };
 	time_t current_time;
-	int is_notify = 0;
+	int is_notify;
 
 	periodic_interval = cwmp->conf.periodic_notify_interval;
 	periodic_enable = cwmp->conf.periodic_notify_enable;

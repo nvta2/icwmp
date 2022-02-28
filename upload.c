@@ -97,7 +97,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 	int error = FAULT_CPE_NO_FAULT;
 	char *upload_startTime;
 	struct transfer_complete *p;
-	char *name = "";
+	char *name = NULL;
 	upload_startTime = mix_get_time();
 	char file_path[128] = {'\0'};
 	bkp_session_delete_upload(pupload);
@@ -105,6 +105,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 
 	if (pupload->file_type[0] == '1' || pupload->file_type[0] == '3') {
 		if (pupload->f_instance && isdigit(pupload->f_instance[0])) {
+			name = NULL;
 			lookup_vcf_name(pupload->f_instance, &name);
 			if (name && strlen(name) > 0) {
 				snprintf(file_path, sizeof(file_path), "/tmp/%s", name);

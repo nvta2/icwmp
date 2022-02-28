@@ -362,7 +362,7 @@ void *thread_cwmp_rpc_cpe_download(void *v)
 	struct download *pdownload;
 	struct timespec download_timeout = { 0, 0 };
 	time_t current_time, stime;
-	int error = FAULT_CPE_NO_FAULT;
+	int error;
 	struct transfer_complete *ptransfer_complete;
 	long int time_of_grace = 3600, timeout;
 

@@ -17,6 +17,8 @@
 
 static pthread_t delay_reboot_thread;
 static pthread_t delay_schedule_thread;
+static int g_curr_delay_reboot = -1;
+static time_t g_curr_schedule_redoot = 0;
 
 static void *thread_delay_reboot(void *arg)
 {
@@ -104,18 +106,16 @@ static void create_schedule_reboot_thread(struct cwmp *cwmp, bool thread_exist)
 
 void launch_reboot_methods(struct cwmp *cwmp)
 {
-	int curr_delay_reboot = -1;
-	time_t curr_schedule_redoot = 0;
 
-	if (cwmp->conf.delay_reboot != curr_delay_reboot && cwmp->conf.delay_reboot > 0) {
+	if (cwmp->conf.delay_reboot != g_curr_delay_reboot && cwmp->conf.delay_reboot > 0) {
 
-		create_delay_reboot_thread(cwmp, (curr_delay_reboot != -1));
-		curr_delay_reboot = cwmp->conf.delay_reboot;
+		create_delay_reboot_thread(cwmp, (g_curr_delay_reboot != -1));
+		g_curr_delay_reboot = cwmp->conf.delay_reboot;
 	}
 
-	if (cwmp->conf.schedule_reboot != curr_schedule_redoot && (cwmp->conf.schedule_reboot - time(NULL)) > 0) {
+	if (cwmp->conf.schedule_reboot != g_curr_schedule_redoot && (cwmp->conf.schedule_reboot - time(NULL)) > 0) {
 
-		create_schedule_reboot_thread(cwmp, (curr_schedule_redoot != 0));
-		curr_schedule_redoot = cwmp->conf.schedule_reboot;
+		create_schedule_reboot_thread(cwmp, (g_curr_schedule_redoot != 0));
+		g_curr_schedule_redoot = cwmp->conf.schedule_reboot;
 	}
 }

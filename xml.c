@@ -35,7 +35,7 @@ mxmlFindElementOpaque(mxml_node_t *node, /* I - Current node */
 	node = mxmlWalkNext(node, top, descend);
 
 	while (node != NULL) {
-		if (node->type == MXML_OPAQUE && node->value.opaque && (!text || !strcmp(node->value.opaque, text))) {
+		if (node->type == MXML_OPAQUE && node->value.opaque && (!strcmp(node->value.opaque, text))) {
 			return (node);
 		}
 

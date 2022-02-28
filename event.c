@@ -386,7 +386,7 @@ void *thread_event_periodic(void *v)
 
 bool event_exist_in_list(struct cwmp *cwmp, int event)
 {
-	struct event_container *event_container;
+	struct event_container *event_container = NULL;
 	list_for_each_entry (event_container, cwmp->head_event_container, list) {
 		if (event_container->code == event)
 			return true;
@@ -507,7 +507,7 @@ int cwmp_root_cause_events(struct cwmp *cwmp)
 	return CWMP_OK;
 }
 
-int cwmp_get_int_event_code(char *code)
+int cwmp_get_int_event_code(const char *code)
 {
 	if (code && code[0] == '1')
 		return EVENT_IDX_1BOOT;
