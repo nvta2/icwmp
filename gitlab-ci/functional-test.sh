@@ -11,20 +11,27 @@ date +%s > timestamp.log
 echo "Compiling icmwp"
 build_icwmp
 
-echo "Starting all services"
+echo "Starting dependent services"
+supervisorctl status all
 supervisorctl update
-supervisorctl status all
 supervisorctl restart all
+supervisorctl stop icwmpd
 supervisorctl status all
-exec_cmd ubus wait_for usp.raw tr069
 
 echo "Configuring genieacs"
 configure_genieacs
 
+echo "Configuring ACS URL"
+configure_acs_url
+
+mkdir -p /var/state/icwmpd 
+
+echo "Starting icwmpd deamon"
+supervisorctl start icwmpd
+sleep 5
+
 echo "Checking cwmp status"
 check_cwmp_status
-
-mkdir -p /var/run/icwmpd
 
 [ -f funl-test-result.log ] && rm -f funl-test-result.log
 

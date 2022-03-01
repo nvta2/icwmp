@@ -19,6 +19,7 @@
 #include "digestauth.h"
 #include "md5.h"
 #include "log.h"
+#include "ssl_utils.h"
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
 

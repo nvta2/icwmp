@@ -48,7 +48,7 @@ function configure_genieacs()
 	check_ret $?
 
 	echo "add a new provision inform"
-	curl -X PUT 'http://localhost:7557/provisions/inform' --data-binary '@/builds/iopsys/icwmp/test/acs/connection_request_auth' >/dev/null 2>&1
+	curl -X PUT 'http://localhost:7557/provisions/inform' --data-binary '@/tmp/connection_request_auth' >/dev/null 2>&1
 	check_ret $?
 
 	#echo "get the supported provisions"
@@ -60,18 +60,24 @@ function configure_genieacs()
 	echo "Valid" > /tmp/firmware_v1.0.bin
 	curl -X PUT 'http://localhost:7557/files/firmware_v1.0.bin' --data-binary '@/tmp/firmware_v1.0.bin' --header "fileType: 1 Firmware Upgrade Image" --header "oui: XXX" --header "productClass: FirstClass" --header "version: 000000001" >/dev/null 2>&1
 	check_ret $?
+}
 
-	exec_cmd ubus call tr069 inform
-	sleep 5
-	echo "## Restarting cwmp client ##"
-	supervisorctl restart icwmpd
-	exec_cmd ubus wait_for tr069
+function configure_download_firmware()
+{
+	echo "Install lighttpd"
+
+	mkdir -p /tmp/firmware/
+	exec_cmd dd if=/dev/zero of=/tmp/firmware/firmware_v1.0.bin bs=25MB count=1
+	echo "Valid" > /tmp/firmware/firmware_v1.0.bin
+
+	exec_cmd dd if=/dev/zero of=/tmp/firmware/invalid_firmware_v1.0.bin bs=25MB count=1
+	echo "Invalid" > /tmp/firmware/invalid_firmware_v1.0.bin
 }
 
 function configure_acs_url()
 {
-	uci set cwmp.acs.url="http://127.0.0.1:7547"
-	uci set cwmp.cpe.interface="lo"
+	url="http://127.0.0.1:7547"
+	uci set cwmp.acs.url=$url
 	uci commit cwmp
 	echo "Current ACS URL=$url"
 }
@@ -79,7 +85,7 @@ function configure_acs_url()
 function check_cwmp_status()
 {
 	status=`ubus call tr069 status | jq -r ".cwmp.status"`
-	if [ $status != "up" ]; then
+	if [ "${status}" != "up" ]; then
 		echo "icwmpd is not started correctly, (the current status=$status)"
 		exit 1
 	fi
@@ -102,8 +108,7 @@ function clean_icwmp()
 
 function build_icwmp()
 {
-	#COV_CFLAGS='-g -O0'
-	COV_CFLAGS='-fprofile-arcs -ftest-coverage'
+	COV_CFLAGS='-g -O0 -fprofile-arcs -ftest-coverage'
 	COV_LDFLAGS='--coverage'
 
 	# clean icwmp
@@ -115,7 +120,20 @@ function build_icwmp()
 
 	# compile icwmp
 	autoreconf -i >/dev/null 2>&1
-	./configure CFLAGS="$COV_CFLAGS" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug >/dev/null 2>&1
-	make >/dev/null 2>&1
+	./configure CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug >/dev/null 2>&1
+	make CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS"
 	check_ret $?
+}
+
+function install_uspd()
+{
+	# install uspd
+	cd /opt/dev
+	rm -rf uspd
+	exec_cmd git clone https://dev.iopsys.eu/iopsys/uspd.git
+	cd /opt/dev/uspd
+	exec_cmd ./gitlab-ci/install-dependencies.sh
+	exec_cmd ./gitlab-ci/setup.sh
+	exec_cmd make
+	exec_cmd cp uspd /usr/sbin/uspd
 }

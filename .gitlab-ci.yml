@@ -2,18 +2,20 @@ include:
   - project: 'iopsys/gitlab-ci-pipeline'
     file: '/static-code-analysis.yml'
 
+variables:
+  DEBUG: 'TRUE'
+  COMMON_IMAGE: "iopsys/code-analysis:0.25"
+  RUN_CPPCHECK: "cppcheck --enable=all --inline-suppr --include=/usr/include/uci.h --suppress=unusedFunction -i ./test/"
+  SOURCE_FOLDER: "."
+
 stages:
     - static_code_analysis
     - unit_test
     - functional_test
     
-variables:
-  DEBUG: 'TRUE'
-  SOURCE_FOLDER: "."
-
 run_unit_test:
    stage: unit_test
-   image: iopsys/code-analysis:latest
+   image: "${COMMON_IMAGE}"
    allow_failure: false
    script:
    - "./gitlab-ci/install-dependencies.sh"
@@ -23,18 +25,12 @@ run_unit_test:
       when: always
       paths:
          - timestamp.log
-         - icwmp_datamodel_interface_unit_testd-mem-report.xml
-         - icwmp_soap_msg_unit_testd-mem-report.xml
-         - icwmp_backup_session_unit_testd-mem-report.xml
-         - icwmp_custom_inform_parameters_unit_testd-mem-report.xml
-         - icwmp_notifications_unit_testd-mem-report.xml
-         - icwmp_uci_unit_testd-mem-report.xml
-         - icwmp_cli_unit_testd-mem-report.xml
+         - memory-report.xml
          - unit-test-coverage.xml
          
 run_api_test:
     stage: functional_test
-    image: iopsys/code-analysis:latest
+    image: "${COMMON_IMAGE}"
     allow_failure: false
     script:
     - "./gitlab-ci/install-dependencies.sh"
@@ -53,7 +49,7 @@ run_api_test:
 
 run_functional_test:
     stage: functional_test
-    image: iopsys/code-analysis:latest
+    image: "${COMMON_IMAGE}"
     allow_failure: false
     script:
     - "./gitlab-ci/install-dependencies.sh"

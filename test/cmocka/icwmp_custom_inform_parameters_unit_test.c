@@ -16,9 +16,9 @@
 #include <dirent.h>
 #include <stdbool.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/config.h>
-#include <libicwmp/soap.h>
+#include "common.h"
+#include "config.h"
+#include "soap.h"
 
 static int custom_inform_unit_tests_init(void **state)
 {
@@ -27,7 +27,7 @@ static int custom_inform_unit_tests_init(void **state)
 	return 0;
 }
 
-void clean_config()
+static void clean_config()
 {
 	FREE(cwmp_main->deviceid.manufacturer);
 	FREE(cwmp_main->deviceid.serialnumber);
@@ -95,7 +95,7 @@ static void cwmp_custom_inform_unit_test(void **state)
 	clean_custom_inform_parameters();
 }
 
-int main(void)
+int icwmp_custom_inform_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(cwmp_custom_inform_unit_test),

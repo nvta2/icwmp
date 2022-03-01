@@ -14,15 +14,15 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/notifications.h>
-#include <libicwmp/cwmp_uci.h>
+#include "common.h"
+#include "notifications.h"
+#include "cwmp_uci.h"
 /*
  * Common functions
  */
 char *notifications_test[7] = {"disabled" , "passive", "active", "passive_lw", "passive_passive_lw", "active_lw", "passive_active_lw"};
 
-LIST_HEAD(parameters_list);
+static LIST_HEAD(parameters_list);
 
 static int cwmp_notifications_unit_tests_init(void **state)
 {
@@ -274,7 +274,7 @@ static void cwmp_check_value_change_1_unit_test(void **state)
 	clean_list_value_change();
 }
 
-int main(void)
+int icwmp_notifications_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(cwmp_init_list_param_notify_unit_test_default),

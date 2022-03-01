@@ -477,7 +477,6 @@ bool icwmp_validate_int_in_range(char *arg, int min, int max);
 void load_forced_inform_json_file();
 void clean_custom_inform_parameters();
 char *string_to_hex(const unsigned char *str, size_t size);
-char *generate_random_string(size_t size);
 int copy_file(char *source_file, char *target_file);
 int cwmp_get_session_retry_interval();
 int cwmp_apply_acs_changes();

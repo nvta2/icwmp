@@ -1,66 +1,37 @@
-CC = gcc
-CP = cp -f
-RM = rm -f
-MKDIR = mkdir
-CFLAGS = -g -Wall -I./inc
-LDFLAGS = -lmicroxml -luci -lblobmsg_json -lubox -ljson-c -lubus -lpthread -lcurl -lssl -lcrypto
-LIBCFLAGS = -g -Wall -fPIC -c -I../../inc
-LIBOBJ = libobj
-UNIT_TESTS = icwmp_datamodel_interface_unit_testd icwmp_soap_msg_unit_testd icwmp_backup_session_unit_testd icwmp_custom_inform_parameters_unit_testd icwmp_notifications_unit_testd icwmp_uci_unit_testd icwmp_cli_unit_testd
-VALGRIND = valgrind --leak-check=full --show-reachable=yes --show-leak-kinds=all --errors-for-leak-kinds=all
+include ../../Makefile.am
 
-libobj:
-	$(CC) $(LIBCFLAGS) ../../subprocess.c ../../download.c ../../upload.c ../../log.c ../../md5.c ../../digestauth.c ../../netlink.c ../../cwmp_cli.c ../../cwmp_du_state.c ../../sched_inform.c \
-	 ../../diagnostic.c ../../reboot.c ../../notifications.c ../../cwmp_zlib.c  ../../datamodel_interface.c ../../http.c ../../backupSession.c \
-	 ../../cwmp_time.c ../../config.c ../../event.c ../../session.c ../../ubus.c ../../common.c ../../xml.c ../../soap.c ../../cwmp_uci.c ../../cwmp.c ../../cwmp_config.c ../../cwmp_event.c ../../cwmp_http.c $(LDFLAGS)  
+LIB_LDFLAGS:= -lmicroxml -luci -lblobmsg_json -lubox\
+	      -ljson-c -lubus -lpthread -lcurl\
+	      -lwolfssl -lcrypto
+LIB_CFLAGS:= -fPIC -I../../inc -DWC_NO_HARDEN -g -O0
+UNIT_TESTS:= icwmp_unit_testd
 
-libicwmp: $(LIBOBJ)
-	$(CC) -shared -Wl,-soname,libicwmp.so.1 -o libicwmp.so.1.0 *.o
+VALGRIND = /usr/bin/valgrind --xml=yes --xml-file=memory-report.xml --leak-check=full --show-reachable=yes --show-leak-kinds=all --errors-for-leak-kinds=all
+
+ICWMP_SOURCES=$(patsubst ./%.c, ../../%.c, $(icwmpd_SOURCES))
+ICWMP_OBJS=$(patsubst ../../%.c, %.o, $(ICWMP_SOURCES))
+TEST_SRCS =  $(wildcard *.c)
+TEST_OBJS = $(TEST_SRCS:=.o)
+
+%.c.o: %.c
+	$(CC) -g -O0 -I../../inc -c -o $@ $<
+
+%.o: ../../%.c
+	$(CC) ${LIB_CFLAGS} -c -o $@ $<
+
+libunit: ${ICWMP_OBJS}
+	$(CC) ${LIB_CFLAGS} -shared -o libicwmp.so ${ICWMP_OBJS} ${LIB_LDFLAGS}
 	
-install:
-	$(CP) libicwmp.so.1.0 /usr/local/lib/
-	ln -sf /usr/local/lib/libicwmp.so.1.0 /usr/local/lib/libicwmp.so.1
-	ln -sf /usr/local/lib/libicwmp.so.1.0 /usr/local/lib/libicwmp.so
-	$(MKDIR) -p /usr/local/include/libicwmp/
-	$(CP) ../../inc/*.h /usr/local/include/libicwmp/
-
-uninstall:
-	$(RM) /usr/local/lib/libicwmp.so.1.0
-	$(RM) /usr/local/lib/libicwmp.so.1
-	$(RM) /usr/local/lib/libicwmp.so
-	$(RM) -r /usr/local/include/libicwmp/
+icwmp_unit_testd:
+	make ${TEST_OBJS}
+	$(CC) -o $@ ${TEST_OBJS} ${LIB_LDFLAGS} -lcmocka -L. -licwmp -Wl,-rpath=.
 	
-icwmp_datamodel_interface_unit_testd: icwmp_datamodel_interface_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
+all: libunit ${UNIT_TESTS}
+	$(VALGRIND) ./${UNIT_TESTS}
+	mv memory-report.xml ../../
+	echo "All test done"
 
-icwmp_soap_msg_unit_testd: icwmp_soap_msg_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-
-icwmp_backup_session_unit_testd: icwmp_backup_session_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-	
-icwmp_download_unit_testd: icwmp_download_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-
-icwmp_notifications_unit_testd: icwmp_notifications_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-
-icwmp_cli_unit_testd: icwmp_cli_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-
-icwmp_uci_unit_testd: icwmp_uci_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-
-icwmp_custom_inform_parameters_unit_testd: icwmp_custom_inform_parameters_unit_test.o
-	$(CC) -o $@ $^ -lcmocka -licwmp $(LDFLAGS) $(CFLAGS)
-	
-unit-test: $(UNIT_TESTS)
-	for testprog in $(UNIT_TESTS); do \
-		sudo $(VALGRIND) --xml=yes --xml-file=/builds/iopsys/icwmp/$$testprog-mem-report.xml ./$$testprog; \
-		cp ../files/etc/config/* /etc/config; \
-		cp ../files/var/state/* /var/state; \
-	done
-	
-.PHONY: clean
 clean:
-	rm -fv *.o libicwmp.so.1.0 $(UNIT_TESTS)
+	rm -fv *.o libicwmp.so ${UNIT_TESTS}
+
+.PHONY: clean unit-test

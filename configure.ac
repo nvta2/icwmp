@@ -1,4 +1,4 @@
-AC_INIT([icwmp], [0.1], [mohamed.kallel@pivasoftware.com])
+AC_INIT([icwmp], [1.1], [dev@iopsys.eu])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([cwmp.c])
 
@@ -83,7 +83,7 @@ AC_SUBST([LBLOBMSG_LIBS])
 LCRYPTO_LIBS='-lcrypto'
 AC_SUBST([LCRYPTO_LIBS])
 
-LSSL_LIBS='-lssl'
+LSSL_LIBS='-lwolfssl'
 AC_SUBST([LSSL_LIBS])
 
  PKG_CHECK_MODULES(LIBCURL, [libcurl])

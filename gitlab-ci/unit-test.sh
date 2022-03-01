@@ -7,23 +7,11 @@ source ./gitlab-ci/shared.sh
 trap cleanup EXIT
 trap cleanup SIGINT
 
-echo "Install lighttpd"
-apt-get update
-apt-get install -y lighttpd
-exec_cmd dd if=/dev/zero of=/builds/iopsys/icwmp/firmware_v1.0.bin bs=25MB count=1
-echo "Valid" > /builds/iopsys/icwmp/firmware_v1.0.bin
-exec_cmd cp /builds/iopsys/icwmp/firmware_v1.0.bin /var/www/html
-exec_cmd dd if=/dev/zero of=/builds/iopsys/icwmp/invalid_firmware_v1.0.bin bs=25MB count=1
-echo "Invalid" > /builds/iopsys/icwmp/invalid_firmware_v1.0.bin
-exec_cmd cp /builds/iopsys/icwmp/invalid_firmware_v1.0.bin /var/www/html
+echo "Configure download server"
+configure_download_firmware
 
-echo "Install Inform json files"
-exec_cmd mkdir -p /etc/icwmpd
-exec_cmd cp /builds/iopsys/icwmp/test/files/etc/icwmpd/* /etc/icwmpd
-
-exec_cmd mkdir -p /var/state
-mkdir -p /var/run/icwmpd
-exec_cmd cp /builds/iopsys/icwmp/test/files/var/state/cwmp /var/state
+rm /etc/supervisor/conf.d/*.conf
+cp ./gitlab-ci/iopsys-supervisord-unit.conf /etc/supervisor/conf.d/
 
 echo "Starting dependent services"
 supervisorctl status all
@@ -35,30 +23,10 @@ supervisorctl status all
 
 echo "Clean cmocka"
 make clean -C test/cmocka/
-make uninstall -C test/cmocka
 
-echo "Compiling libicmwp"
-make libicwmp -C test/cmocka
-
-echo "Installing libicwmp"
-make install -C test/cmocka
-ldconfig
-
-mkdir -p /etc/icwmpd
-mkdir -p /etc/config
-cp test/files/etc/config/* /etc/config/
-
-mkdir -p /etc/board-db/config/
-cp test/files/etc/board-db/config/device /etc/board-db/config/
-
-echo "Display cwmp config: "
-cat /etc/config/cwmp 
-
-echo "Running the unit test cases"
-make unit-test -C test/cmocka/
+echo "Running unit test"
+make -C test/cmocka all
 check_ret $?
-
-exec_cmd rm -rf /etc/icwmpd/*
 
 echo "Stop dependent services"
 supervisorctl stop all

@@ -9,8 +9,6 @@
  *
  */
 #include <unistd.h>
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
 #include <netdb.h>
 #include <libubox/list.h>
 #include <sys/stat.h>
@@ -21,6 +19,7 @@
 #include "cwmp_uci.h"
 #include "log.h"
 #include "cwmp_event.h"
+#include "ssl_utils.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
@@ -629,23 +628,6 @@ static void udplw_server_param(struct addrinfo **res)
 	hints.ai_socktype = SOCK_DGRAM;
 	snprintf(port, sizeof(port), "%d", conf->lw_notification_port);
 	getaddrinfo(conf->lw_notification_hostname, port, &hints, res);
-}
-
-static void message_compute_signature(char *msg_out, char *signature)
-{
-	int i;
-	int result_len = 20;
-	unsigned char *result;
-	struct config *conf = &(cwmp_main->conf);
-	/*	unsigned char *HMAC(const EVP_MD *evp_md, const void *key, int key_len,
-	                    const unsigned char *d, size_t n, unsigned char *md,
-	                    unsigned int *md_len);*/
-	result = HMAC(EVP_sha1(), conf->acs_passwd, strlen(conf->acs_passwd), (unsigned char *)msg_out, strlen(msg_out), NULL, NULL);
-	for (i = 0; i < result_len; i++) {
-		sprintf(&(signature[i * 2]), "%02X", result[i]);
-	}
-	signature[i * 2] = '\0';
-	FREE(result);
 }
 
 char *calculate_lwnotification_cnonce()

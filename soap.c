@@ -250,7 +250,7 @@ create_value:
 	return 0;
 }
 
-int cwmp_rpc_acs_prepare_message_inform(const struct rpc *this)
+int cwmp_rpc_acs_prepare_message_inform(struct rpc *this)
 {
 	struct cwmp_dm_parameter *dm_parameter;
 	struct event_container *event_container;

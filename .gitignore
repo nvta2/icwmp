@@ -3,6 +3,7 @@
 *.o
 *.lo
 bin/*
+/icwmpd
 !bin/Makefile.am
 .prepared*
 .built*

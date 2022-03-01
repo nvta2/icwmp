@@ -16,11 +16,11 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/common.h>
-#include <libicwmp/cwmp_uci.h>
+#include "common.h"
+#include "cwmp_uci.h"
 
 #define UCI_WRONG_PATH "cwmp.wrong_section.wrong_option"
-struct uci_list *list = NULL;
+static struct uci_list *list = NULL;
 
 static int cwmp_uci_unit_tests_init(void **state)
 {
@@ -197,7 +197,7 @@ static void cwmp_uci_list_tests(void **state)
 	assert_null(list_string);
 }
 
-int main(void)
+int icwmp_uci_test(void)
 {
 	const struct CMUnitTest tests[] = {
 		    cmocka_unit_test(cwmp_uci_get_tests),

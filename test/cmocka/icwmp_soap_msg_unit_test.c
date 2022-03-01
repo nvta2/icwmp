@@ -14,16 +14,17 @@
 #include <cmocka.h>
 #include <dirent.h>
 
-#include <libicwmp/soap.h>
-#include <libicwmp/event.h>
-#include <libicwmp/session.h>
-#include <libicwmp/config.h>
-#include <libicwmp/backupSession.h>
-#include <libicwmp/log.h>
-#include <libicwmp/download.h>
-#include <libicwmp/cwmp_uci.h>
-#include <libicwmp/cwmp_config.h>
-#include <libicwmp/cwmp_event.h>
+#include "soap.h"
+#include "event.h"
+#include "session.h"
+#include "config.h"
+#include "backupSession.h"
+#include "log.h"
+#include "download.h"
+#include "cwmp_uci.h"
+
+#include "cwmp_config.h"
+#include "cwmp_event.h"
 
 #include "icwmp_soap_msg_unit_test.h"
 
@@ -35,7 +36,7 @@ int instance = 0;
 /*
  * End test clean
  */
-void clean_config()
+static void clean_config()
 {
 	FREE(cwmp_main->deviceid.manufacturer);
 	FREE(cwmp_main->deviceid.serialnumber);
@@ -1089,7 +1090,7 @@ static void prepare_download_soap_request(char *url, char *file_type, char *user
 	n = mxmlNewOpaque(n, delay_second);
 }
 
-void free_download()
+static void free_download()
 {
 	if (list_download.next != &(list_download)) {
 		struct list_head *ilist, *q;
@@ -1328,7 +1329,7 @@ static void soap_download_message_test(void **state)          //TODO will be pro
 	clean_name_space();
 }
 
-int main(void)
+int icwmp_soap_msg_test(void)
 {
 	const struct CMUnitTest tests[] = { //
 		    cmocka_unit_test(get_config_test), cmocka_unit_test(get_deviceid_test),
