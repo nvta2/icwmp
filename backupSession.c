@@ -123,7 +123,7 @@ int get_bkp_attribute_index_type(char *name)
 void load_specific_backup_attributes(mxml_node_t *tree, struct backup_attributes *bkp_attrs)
 {
 	mxml_node_t *b = tree, *c;
-	int idx = -1;
+	int idx;
 	void **ptr;
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND);

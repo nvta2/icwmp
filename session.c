@@ -50,7 +50,8 @@ int cwmp_session_init()
 	cwmp_main->cwmp_cr_event = 0;
 
 	cwmp_uci_init();
-	if ((rpc_acs = cwmp_add_session_rpc_acs_head(RPC_ACS_INFORM)) == NULL)
+	rpc_acs = cwmp_add_session_rpc_acs_head(RPC_ACS_INFORM);
+	if (rpc_acs == NULL)
 		return CWMP_GEN_ERR;
 
 	set_cwmp_session_status(SESSION_RUNNING, 0);

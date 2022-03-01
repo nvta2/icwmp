@@ -4,8 +4,8 @@ include:
 
 variables:
   DEBUG: 'TRUE'
-  COMMON_IMAGE: "iopsys/code-analysis:0.27"
-  RUN_CPPCHECK: "cppcheck --enable=all --inline-suppr --include=/usr/include/uci.h --suppress=unusedFunction -i ./test/"
+  COMMON_IMAGE: "iopsys/code-analysis:0.25"
+  RUN_CPPCHECK: "cppcheck --enable=all --error-exitcode=1 -D_GNU_SOURCE --inline-suppr --include=/usr/include/uci.h --suppress=unusedFunction -i ./test/"
   SOURCE_FOLDER: "."
 
 stages:

@@ -265,6 +265,7 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 bool parameter_is_other_notif_object_child(char *parent, char *parameter)
 {
 	struct list_head list_iter, *list_ptr;
+	// cppcheck-suppress unreadVariable
 	list_iter.next = list_param_obj_notify.next;
 	list_iter.prev = list_param_obj_notify.prev;
 	struct cwmp_dm_parameter *dm_parameter = NULL;

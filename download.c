@@ -709,7 +709,7 @@ void cwmp_start_schedule_download(struct uloop_timeout *timeout)
 		CWMP_LOG(ERROR, "Schedule Download out of date");
 		ptransfer_complete = calloc(1, sizeof(struct transfer_complete));
 		if (ptransfer_complete == NULL) {
-			error = FAULT_CPE_INTERNAL_ERROR;
+			// error = FAULT_CPE_INTERNAL_ERROR;
 			return;
 		}
 

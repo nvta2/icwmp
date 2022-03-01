@@ -129,7 +129,7 @@ void puts_log(int severity, const char *fmt, ...)
 		}
 	}
 	va_start(args, fmt);
-	i += vsprintf(buf + i, (const char *)fmt, args);
+	vsprintf(buf + i, (const char *)fmt, args);
 	if (enable_log_file) {
 		CWMP_STRNCPY(buf_file, buf, sizeof(buf_file));
 		buf_file[strlen(buf)] = '\n';

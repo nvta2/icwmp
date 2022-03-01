@@ -323,7 +323,7 @@ int uci_set_value_by_path(char *path, char *value, uci_config_paths uci_type)
 		CWMP_LOG(ERROR, "UCI delete not succeed %s", path);
 		return UCI_ERR_NOTFOUND;
 	}
-	return UCI_OK;
+	return ret;
 }
 
 int cwmp_uci_set_value_by_path(char *path, char *value)
@@ -500,7 +500,7 @@ int uci_add_list_value(char *cmd, uci_config_paths uci_type)
 		CWMP_LOG(ERROR, "UCI delete not succeed %s", cmd);
 		return UCI_ERR_NOTFOUND;
 	}
-	return UCI_OK;
+	return ret;
 }
 
 /*
@@ -588,7 +588,7 @@ int uci_delete_value(char *path, int uci_type)
 		CWMP_LOG(ERROR, "UCI delete not succeed %s", path);
 		return CWMP_GEN_ERR;
 	}
-	return CWMP_OK;
+	return ret;
 }
 
 int cwmp_uci_get_section_type(char *package, char *section, uci_config_paths uci_type, char **value)
