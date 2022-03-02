@@ -22,5 +22,5 @@ int global_conf_init(struct cwmp *cwmp);
 int get_global_config(struct config *conf);
 int cwmp_get_deviceid(struct cwmp *cwmp);
 int cwmp_config_reload(struct cwmp *cwmp);
-
+int reload_networking_config();
 #endif
