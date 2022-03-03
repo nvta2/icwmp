@@ -19,6 +19,11 @@ AS_IF([test "x$enable_acs" = "xno"], [AC_DEFINE(ACS_MULTI)])
 AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging messages])], AC_DEFINE(WITH_CWMP_DEBUG),)
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(WITH_DEV_DEBUG),)
 
+AC_ARG_ENABLE(libopenssl, [AS_HELP_STRING([--enable-libopenssl], [enable libopenssl feature])], AC_DEFINE(LOPENSSL),)
+AM_CONDITIONAL([LOPENSSL],[test "x$enable_libopenssl" = "xyes"])
+
+AC_ARG_ENABLE(libwolfssl, [AS_HELP_STRING([--enable-libwolfssl], [enable libwolfssl feature])], AC_DEFINE(LWOLFSSL))
+AM_CONDITIONAL([LWOLFSSL],[test "x$enable_libwolfssl" = "xyes"])
 # checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -83,8 +88,18 @@ AC_SUBST([LBLOBMSG_LIBS])
 LCRYPTO_LIBS='-lcrypto'
 AC_SUBST([LCRYPTO_LIBS])
 
-LSSL_LIBS='-lwolfssl'
-AC_SUBST([LSSL_LIBS])
+AM_COND_IF([LWOLFSSL], [
+	LSSL_LIBS='-lwolfssl'
+	AC_SUBST([LSSL_LIBS])
+])
+
+AM_COND_IF([LOPENSSL], [
+	LSSL_LIBS='-lssl'
+	AC_SUBST([LSSL_LIBS])
+], [
+	LSSL_LIBS='-lwolfssl'
+	AC_SUBST([LSSL_LIBS])
+])
 
  PKG_CHECK_MODULES(LIBCURL, [libcurl])
  AC_SUBST(LIBCURL_CFLAGS)
