@@ -53,7 +53,7 @@ end:
 	return hex;
 }
 
-void message_compute_signature(char *msg_out, char *signature)
+void message_compute_signature(char *msg_out, char *signature, size_t len)
 {
 	int i;
 	int result_len = 20;
@@ -66,9 +66,11 @@ void message_compute_signature(char *msg_out, char *signature)
 	                    unsigned int *md_len);*/
 	result = HMAC(EVP_sha1(), conf->acs_passwd, strlen(conf->acs_passwd), (unsigned char *)msg_out, strlen(msg_out), NULL, NULL);
 	for (i = 0; i < result_len; i++) {
-		sprintf(&(signature[i * 2]), "%02X", result[i]);
+		if (len - strlen(signature) < 3) // each time 2 hex chars + '\0' at end so needed space is 3 bytes
+			break;
+
+		snprintf(&(signature[i * 2]), 3, "%02X", result[i]);
 	}
-	signature[i * 2] = '\0';
 	FREE(result);
 }
 
