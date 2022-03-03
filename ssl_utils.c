@@ -18,8 +18,9 @@
  * 02110-1301 USA
  */
 
-#include <wolfssl/openssl/ssl.h>
-#include <wolfssl/openssl/hmac.h>
+#include <openssl/ssl.h>
+#include <openssl/hmac.h>
+#include <openssl/rand.h>
 
 #include "common.h"
 #include "log.h"
