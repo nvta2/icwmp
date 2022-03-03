@@ -7,6 +7,10 @@ variables:
   COMMON_IMAGE: "iopsys/code-analysis:0.25"
   RUN_CPPCHECK: "cppcheck --enable=all --inline-suppr --include=/usr/include/uci.h --suppress=unusedFunction -i ./test/"
   SOURCE_FOLDER: "."
+  CWMP_WORKER_PROCESSES: 1
+  NBI_WORKER_PROCESSES: 1
+  FS_WORKER_PROCESSES: 1
+  UI_WORKER_PROCESSES: 1
 
 stages:
     - static_code_analysis
