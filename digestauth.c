@@ -92,12 +92,17 @@ static void cvthex(const unsigned char *bin, size_t len, char *hex)
  * @param realm A string of characters that describes the realm of auth.
  * @param nonce A pointer to a character array for the nonce to put in
  */
-static void calculate_nonce(uint32_t nonce_time, const char *method, const char *rnd, unsigned int rnd_size, const char *uri, const char *realm, char *nonce)
+static void calculate_nonce(uint32_t nonce_time, const char *method, const char *rnd, unsigned int rnd_size, const char *uri, const char *realm, char *nonce, size_t size)
 {
 	struct MD5Context md5;
 	unsigned char timestamp[4];
 	unsigned char tmpnonce[MD5_DIGEST_SIZE];
 	char timestamphex[sizeof(timestamp) * 2 + 1];
+
+	if (nonce == NULL)
+		return;
+
+	memset(nonce, 0, size);
 
 	md5_init(&md5);
 	timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
@@ -117,7 +122,8 @@ static void calculate_nonce(uint32_t nonce_time, const char *method, const char 
 	md5_final(tmpnonce, &md5);
 	cvthex(tmpnonce, sizeof(tmpnonce), nonce);
 	cvthex(timestamp, 4, timestamphex);
-	strcat(nonce, timestamphex);
+	size_t len = size - strlen(nonce) - 1;
+	strncat(nonce, timestamphex, len);
 }
 
 /**
@@ -168,15 +174,13 @@ static int lookup_sub_value(char *dest, size_t size, const char *data, const cha
 		if ((0 == strncasecmp(ptr, key, keylen)) && (eq == &ptr[keylen])) {
 			if (NULL == q2) {
 				len = strlen(q1);
-				strcpy(dest, q1);
+				snprintf(dest, size, "%s", q1);
 				return len;
 			} else {
 				diff = (q2 - q1) + 1;
 				if (size > diff)
 					size = diff;
-				size--;
-				memcpy(dest, q1, size);
-				dest[size] = '\0';
+				snprintf(dest, size, "%s", q1);
 				return size;
 			}
 		}
@@ -291,7 +295,7 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char
 
 	/* Generating the server nonce */
 	nonce_key_len = nonce_privacy_key ? strlen(nonce_privacy_key) : 0;
-	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, nonce_privacy_key, nonce_key_len, url, realm, nonce);
+	calculate_nonce((uint32_t)mhd_monotonic_time(), http_method, nonce_privacy_key, nonce_key_len, url, realm, nonce, sizeof(nonce));
 
 	/* Building the authentication header */
 	hlen = snprintf(NULL, 0, "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"", realm, nonce, opaque);
@@ -396,7 +400,7 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 				return MHD_INVALID_NONCE;
 		}
 		nonce_key_len = strlen(nonce_privacy_key);
-		calculate_nonce(nonce_time, http_method, nonce_privacy_key, nonce_key_len, url, realm, noncehashexp);
+		calculate_nonce(nonce_time, http_method, nonce_privacy_key, nonce_key_len, url, realm, noncehashexp, sizeof(noncehashexp));
 		
 		/*
 		 * Second level vetting for the nonce validity
