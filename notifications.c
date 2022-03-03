@@ -644,13 +644,18 @@ static void udplw_server_param(struct addrinfo **res)
 
 char *calculate_lwnotification_cnonce()
 {
-	int i;
-	char *cnonce = malloc(33 * sizeof(char));
-	srand((unsigned int)time(NULL));
-	for (i = 0; i < 4; i++) {
-		sprintf(&(cnonce[i * 8]), "%08x", rand());
+	char *cnonce = calloc(33, sizeof(char));
+	if (cnonce == NULL)
+		return NULL;
+
+	char *rand = generate_random_string(16);
+	if (rand == NULL) {
+		free(cnonce);
+		return NULL;
 	}
-	cnonce[i * 8] = '\0';
+
+	snprintf(cnonce, 33, "%s", rand);
+	free(rand);
 	return cnonce;
 }
 
@@ -693,7 +698,7 @@ void cwmp_lwnotification()
 
 	udplw_server_param(&servaddr);
 	xml_prepare_lwnotification_message(&msg_out);
-	message_compute_signature(msg_out, signature);
+	message_compute_signature(msg_out, signature, sizeof(signature));
 	snprintf(msg, sizeof(msg), "%s \n %s: %s \n %s: %s \n %s: %zu\n %s: %s\n\n%s", "POST /HTTPS/1.1", "HOST", conf->lw_notification_hostname, "Content-Type", "test/xml; charset=utf-8", "Content-Lenght", strlen(msg_out), "Signature", signature, msg_out);
 
 	send_udp_message(servaddr, msg);

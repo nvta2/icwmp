@@ -38,7 +38,7 @@ function exec_cmd()
 
 function configure_genieacs()
 {
-	sleep 3
+	sleep 10
 	echo "create a new user"
 	curl -X POST 'http://localhost:3000/init' -H "Content-Type: application/json" --data '{"users": true, "presets": true, "filters": true, "device": true, "index": true, "overview": true}' >/dev/null 2>&1
 	check_ret $?

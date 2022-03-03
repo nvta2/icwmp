@@ -292,9 +292,16 @@ const char *whitespace_cb(mxml_node_t *node, int where)
 			return NULL;
 		break;
 	case MXML_WS_BEFORE_OPEN:
-		tab_space[0] = '\0';
-		while ((node = node->parent))
-			strcat(tab_space, CWMP_MXML_TAB_SPACE);
+		memset(tab_space, 0, sizeof(tab_space));
+		int count = 0;
+		while ((node = node->parent)) {
+			count = count + 1;
+		}
+
+		if (count) {
+			snprintf(tab_space, sizeof(tab_space), "%*s", (int)(count * sizeof(CWMP_MXML_TAB_SPACE)), "");
+		}
+
 		return tab_space;
 	case MXML_WS_AFTER_OPEN:
 		return ((!node->child || node->child->type == MXML_ELEMENT) ? "\n" : NULL);
@@ -396,6 +403,8 @@ int xml_prepare_lwnotification_message(char **msg_out)
 		goto error;
 
 	c = (char *)calculate_lwnotification_cnonce();
+	if (!c)
+		goto error;
 	b = mxmlNewOpaque(b, c);
 	free(c);
 	if (!b)
