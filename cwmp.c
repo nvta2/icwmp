@@ -359,8 +359,6 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			ilist = (&(cwmp->head_session_queue))->next;
 			retry = false;
 		}
-		if (cwmp->session_status.last_status == SESSION_FAILURE)
-			global_conf_init(cwmp);
 		cwmp_uci_init();
 		session = list_entry(ilist, struct session, list);
 		if (file_exists(DM_ENABLED_NOTIFY)) {
@@ -414,7 +412,6 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			cwmp->session_status.last_status = SESSION_FAILURE;
 			cwmp->session_status.next_retry = time(NULL) + cwmp_get_retry_interval(cwmp);
 			cwmp->session_status.failure_session++;
-			global_conf_init(cwmp);
 			pthread_mutex_unlock(&(cwmp->mutex_session_send));
 			continue;
 		}
@@ -709,9 +706,6 @@ static int cwmp_init(int argc, char **argv, struct cwmp *cwmp)
 	cwmp_uci_init();
 	if ((error = global_conf_init(cwmp)))
 		return error;
-
-	/* Launch reboot methods if needed */
-	launch_reboot_methods(cwmp);
 
 	cwmp_get_deviceid(cwmp);
 	load_forced_inform_json_file(cwmp);
