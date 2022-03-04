@@ -22,6 +22,6 @@
 #define _SSL_UTILS
 
 char *generate_random_string(size_t size);
-void message_compute_signature(char *msg_out, char *signature, size_t len);
+void message_compute_signature(char *msg_out, char *signature);
 
 #endif

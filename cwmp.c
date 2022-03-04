@@ -34,7 +34,6 @@
 #include "sched_inform.h"
 #include "rpc_soap.h"
 #include "digestauth.h"
-#include "ssl_utils.h"
 
 static pthread_t periodic_event_thread;
 static pthread_t scheduleInform_thread;
@@ -51,7 +50,7 @@ bool g_firewall_restart = false;
 
 static int cwmp_get_retry_interval(struct cwmp *cwmp)
 {
-	unsigned int retry_count = 0;
+	int retry_count = 0;
 	double min = 0;
 	double max = 0;
 	int m = cwmp->conf.retry_min_wait_interval;
@@ -63,12 +62,8 @@ static int cwmp_get_retry_interval(struct cwmp *cwmp)
 		exp = 10;
 	min = pow(((double)k / 1000), (double)(exp - 1)) * m;
 	max = pow(((double)k / 1000), (double)exp) * m;
-	char *rand = generate_random_string(4);
-	if (rand) {
-		unsigned int dividend = (unsigned int)strtoul(rand, NULL, 16);
-		retry_count = dividend % ((unsigned int)max + 1 - (unsigned int)min) + (unsigned int)min;
-		free(rand);
-	}
+	srand(time(NULL));
+	retry_count = rand() % ((int)max + 1 - (int)min) + (int)min;
 	return (retry_count);
 }
 

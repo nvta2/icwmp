@@ -1005,7 +1005,8 @@ int cwmp_handle_rpc_cpe_get_parameter_attributes(struct session *session, struct
 					goto fault;
 
 				char notification[2];
-				snprintf(notification, sizeof(notification), "%d", param_value->notification);
+				sprintf(notification, "%d", param_value->notification);
+				notification[1] = '\0';
 				n = mxmlNewOpaque(n, notification);
 				if (!n)
 					goto fault;

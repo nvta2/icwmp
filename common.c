@@ -659,7 +659,7 @@ char *string_to_hex(const unsigned char *str, size_t size)
 	}
 
 	for (i = 0; i < size; i++)
-		snprintf(hex + (i * 2), 3, "%02X", str[i]);
+		sprintf(hex + (i * 2), "%02X", str[i]);
 
 	return hex;
 }
