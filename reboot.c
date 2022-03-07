@@ -9,11 +9,10 @@
  */
 
 #include <unistd.h>
-#include <pthread.h>
-#include "session.h"
+#include "reboot.h"
 #include "cwmp_uci.h"
 #include "log.h"
-#include "reboot.h"
+#include "session.h"
 
 static pthread_t delay_reboot_thread;
 static pthread_t delay_schedule_thread;

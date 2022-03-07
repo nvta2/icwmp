@@ -14,10 +14,8 @@
 #ifndef __RPC__SOAP__H_
 #define __RPC__SOAP__H_
 
-#include <microxml.h>
 #include "common.h"
 #include "session.h"
-#include "xml.h"
 
 #define MAX_NBRE_CUSTOM_INFORM 256
 extern char *custom_forced_inform_parameters[MAX_NBRE_CUSTOM_INFORM];

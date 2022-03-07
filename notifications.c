@@ -8,17 +8,17 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
-#include <unistd.h>
+
 #include <netdb.h>
-#include <libubox/list.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 
 #include "notifications.h"
-#include "ubus.h"
 #include "cwmp_uci.h"
-#include "log.h"
+#include "datamodel_interface.h"
 #include "ssl_utils.h"
+#include "log.h"
+#include "event.h"
+#include "xml.h"
 
 LIST_HEAD(list_value_change);
 LIST_HEAD(list_lw_value_change);
@@ -206,7 +206,9 @@ int get_parameter_leaf_notification_from_childs_list(char *parameter_name, struc
 {
 	char *parent = NULL;
 	int ret_notif = -1;
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
+	if (childs_list == NULL)
+		return -1;
 	list_for_each_entry (param_value, childs_list, list) {
 		if (strcmp(param_value->name, parameter_name) == 0) {
 			ret_notif = param_value->notification;
@@ -236,7 +238,7 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 		cwmp_free_all_dm_parameter_list(&childs_notifs);
 		return error;
 	}
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, &params_list, list) {
 		int notif_leaf;
 		notif_leaf = check_parameter_forced_notification(param_value->name);
@@ -263,11 +265,13 @@ char *cwmp_get_parameter_attributes(char *parameter_name, struct list_head *para
 bool parameter_is_other_notif_object_child(char *parent, char *parameter)
 {
 	struct list_head list_iter, *list_ptr;
-	// cppcheck-suppress unreadVariable
 	list_iter.next = list_param_obj_notify.next;
 	list_iter.prev = list_param_obj_notify.prev;
-	struct cwmp_dm_parameter *dm_parameter = NULL;
 	while (list_iter.prev != &list_param_obj_notify) {
+		struct cwmp_dm_parameter *dm_parameter;
+		if (list_iter.prev == NULL)
+			continue;
+
 		dm_parameter = list_entry(list_iter.prev, struct cwmp_dm_parameter, list);
 		list_ptr = list_iter.prev;
 		list_iter.prev = list_ptr->prev;
@@ -300,7 +304,7 @@ void create_list_param_obj_notify()
 
 char* updated_list_param_leaf_notify_with_sub_parameter_list(struct list_head *list_param_leaf_notify, struct cwmp_dm_parameter parent_parameter, void (*update_notify_file_line_arg)(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification), FILE* notify_file_arg)
 {
-	struct cwmp_dm_parameter *param_iter = NULL;
+	struct cwmp_dm_parameter *param_iter;
 	LIST_HEAD(params_list);
 	char *err = cwmp_get_parameter_values(parent_parameter.name, &params_list);
 	if (err)
@@ -319,7 +323,7 @@ char* updated_list_param_leaf_notify_with_sub_parameter_list(struct list_head *l
 
 void create_list_param_leaf_notify(struct list_head *list_param_leaf_notify, void (*update_notify_file_line_arg)(FILE *notify_file, char *param_name, char *param_type, char *param_value, int notification), FILE* notify_file_arg)
 {
-	struct cwmp_dm_parameter *param_iter = NULL;
+	struct cwmp_dm_parameter *param_iter;
 	int i;
 
 	for (i = 0; i < (int)ARRAY_SIZE(forced_notifications_parameters); i++)
@@ -453,7 +457,7 @@ void load_custom_notify_json(struct cwmp *cwmp)
  */
 void get_parameter_value_from_parameters_list(struct list_head *params_list, char *parameter_name, char **value, char **type)
 {
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, params_list, list) {
 		if (param_value->name == NULL)
 			continue;
@@ -682,6 +686,8 @@ static void free_all_list_lw_notify()
 {
 	while (list_lw_value_change.next != &list_lw_value_change) {
 		struct cwmp_dm_parameter *dm_parameter;
+		if (list_lw_value_change.next == NULL)
+			continue;
 		dm_parameter = list_entry(list_lw_value_change.next, struct cwmp_dm_parameter, list);
 		del_list_lw_notify(dm_parameter);
 	}

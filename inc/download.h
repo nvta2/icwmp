@@ -1,6 +1,8 @@
 #ifndef CWMP_DOWNLOAD_H
 #define CWMP_DOWNLOAD_H
 
+#include "common.h"
+
 #define DOWNLOAD_PROTOCOL_HTTP "http://"
 #define DOWNLOAD_PROTOCOL_HTTPS "https://"
 #define DOWNLOAD_PROTOCOL_FTP "ftp://"

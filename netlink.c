@@ -11,29 +11,20 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <syslog.h>
-#include <getopt.h>
-#include <limits.h>
-#include <locale.h>
-#include <unistd.h>
+#include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
-#include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
+#include <linux/netlink.h>
+#include <stddef.h>
 #include <libubox/uloop.h>
-#include <libubox/usock.h>
-#include "http.h"
-#include "log.h"
-#include "config.h"
-#include "event.h"
+#include <string.h>
+#include <stdlib.h>
+
+#include "netlink.h"
 #include "cwmp_uci.h"
+#include "log.h"
+#include "event.h"
 
 static int itfcmp(char *itf1, char *itf2);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);

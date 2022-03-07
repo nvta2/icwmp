@@ -11,17 +11,12 @@
  *
  */
 
-#include <pthread.h>
-
 #include "backupSession.h"
-#include "log.h"
 #include "event.h"
-#include "session.h"
-#include "cwmp_du_state.h"
-#include "download.h"
-#include "rpc_soap.h"
-#include "upload.h"
 #include "sched_inform.h"
+#include "download.h"
+#include "upload.h"
+#include "log.h"
 
 const struct EVENT_CONST_STRUCT EVENT_CONST[] = {[EVENT_IDX_0BOOTSTRAP] = { "0 BOOTSTRAP", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL | EVENT_RETRY_AFTER_REBOOT },
 						 [EVENT_IDX_1BOOT] = { "1 BOOT", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL },
@@ -62,17 +57,17 @@ void cwmp_save_event_container(struct event_container *event_container) //to be 
 struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_code, char *command_key)
 {
 	struct event_container *event_container;
-	struct session *session;
 	struct list_head *ilist;
 
 	if (cwmp->head_event_container == NULL) {
+		struct session *session;
 		session = cwmp_add_queue_session(cwmp);
 		if (session == NULL) {
 			return NULL;
 		}
 		cwmp->head_event_container = &(session->head_event_container);
 	}
-	session = list_entry(cwmp->head_event_container, struct session, head_event_container);
+	//session = list_entry(cwmp->head_event_container, struct session, head_event_container);
 	list_for_each (ilist, cwmp->head_event_container) {
 		event_container = list_entry(ilist, struct event_container, list);
 		if (event_container->code == event_code && EVENT_CONST[event_code].TYPE == EVENT_TYPE_SINGLE) {
@@ -386,7 +381,7 @@ void *thread_event_periodic(void *v)
 
 bool event_exist_in_list(struct cwmp *cwmp, int event)
 {
-	struct event_container *event_container = NULL;
+	struct event_container *event_container;
 	list_for_each_entry (event_container, cwmp->head_event_container, list) {
 		if (event_container->code == event)
 			return true;

@@ -11,15 +11,11 @@
 #ifndef __CCOMMON_H
 #define __CCOMMON_H
 
+#include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <libubox/list.h>
 #include <sys/time.h>
+#include <libubox/list.h>
 #include <pthread.h>
-#include <stdbool.h>
 
 #ifndef CWMP_VERSION
 #define CWMP_VERSION "3.0.0"
@@ -491,6 +487,7 @@ void load_forced_inform_json_file(struct cwmp *cwmp);
 void clean_custom_inform_parameters();
 char *string_to_hex(const unsigned char *str, size_t size);
 int copy_file(char *source_file, char *target_file);
+int get_connection_interface();
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

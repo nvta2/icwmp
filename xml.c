@@ -9,13 +9,13 @@
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
+
 #include "xml.h"
-#include "common.h"
 #include "log.h"
-#include "cwmp_zlib.h"
-#include "http.h"
 #include "notifications.h"
 #include "messages.h"
+#include "http.h"
+#include "cwmp_zlib.h"
 
 static const char *soap_env_url = "http://schemas.xmlsoap.org/soap/envelope/";
 static const char *soap_enc_url = "http://schemas.xmlsoap.org/soap/encoding/";

@@ -8,16 +8,15 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include <stdio.h>
 #include <libubox/blobmsg_json.h>
+#include <stdlib.h>
 
-#include "common.h"
-#include "ubus.h"
 #include "cwmp_du_state.h"
+#include "ubus.h"
 #include "log.h"
-#include "backupSession.h"
-#include "cwmp_time.h"
 #include "datamodel_interface.h"
+#include "cwmp_time.h"
+#include "backupSession.h"
 #include "event.h"
 
 LIST_HEAD(list_change_du_state);
@@ -117,7 +116,7 @@ static char *get_software_module_object_eq(char *param1, char *val1, char *param
 	if (err)
 		return NULL;
 
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	char instance[8];
 	list_for_each_entry (param_value, sw_parameters, list) {
 		snprintf(instance, (size_t)(strchr(param_value->name + strlen("Device.SoftwareModules.DeploymentUnit."), '.') - param_value->name - strlen("Device.SoftwareModules.DeploymentUnit.") + 1), "%s", (char *)(param_value->name + strlen("Device.SoftwareModules.DeploymentUnit.")));
@@ -138,7 +137,7 @@ static int get_deployment_unit_name_version(char *uuid, char **name, char **vers
 	snprintf(version_param, sizeof(version_param), "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
 	snprintf(environment_param, sizeof(environment_param), "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
 
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, &sw_parameters, list) {
 		if (strcmp(param_value->name, name_param) == 0) {
 			*name = strdup(param_value->value);
@@ -169,7 +168,7 @@ static char *get_softwaremodules_uuid(char *url)
 
 	snprintf(uuid_param, sizeof(uuid_param), "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
 
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, &sw_parameters, list) {
 		if (strcmp(param_value->name, uuid_param) == 0) {
 			uuid = strdup(param_value->value);
@@ -191,7 +190,7 @@ static char *get_softwaremodules_url(char *uuid)
 
 	snprintf(url_param, sizeof(url_param), "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
 
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, &sw_parameters, list) {
 		if (strcmp(param_value->name, url_param) == 0) {
 			url = strdup(param_value->value);
@@ -235,7 +234,7 @@ static char *get_exec_env_name(char *environment_path)
 	if (err)
 		return strdup("");
 
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	snprintf(env_param, sizeof(env_param), "%sName", environment_path);
 	list_for_each_entry (param_value, &environment_list, list) {
 		if (strcmp(param_value->name, env_param) == 0) {

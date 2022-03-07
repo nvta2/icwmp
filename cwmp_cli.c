@@ -8,13 +8,13 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include <stdio.h>
+#include <string.h>
 
 #include "common.h"
-#include "datamodel_interface.h"
-#include "notifications.h"
 #include "cwmp_cli.h"
+#include "datamodel_interface.h"
 #include "cwmp_uci.h"
+#include "notifications.h"
 
 LIST_HEAD(parameters_list);
 
@@ -64,7 +64,7 @@ void display_get_cmd_result(struct cmd_input in __attribute__((unused)), union c
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
 		return;
 	}
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, res.param_list, list) {
 		fprintf(stdout, "%s => %s\n", param_value->name, param_value->value);
 	}
@@ -89,7 +89,7 @@ char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__
 	int fault_idx = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_key", &flag, &faults_list);
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 	if (fault_idx != FAULT_CPE_NO_FAULT) {
-		struct cwmp_param_fault *param_fault = NULL;
+		struct cwmp_param_fault *param_fault;
 		char fault[5] = {0};
 		list_for_each_entry (param_fault, &faults_list, list) {
 			snprintf(fault, sizeof(fault), "%d", param_fault->fault);
@@ -204,7 +204,7 @@ void display_get_notif_cmd_result(struct cmd_input in __attribute__((unused)), u
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
 		return;
 	}
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, res.param_list, list) {
 		fprintf(stdout, "%s => %s\n", param_value->name, param_value->notification == 2 ? "active" : param_value->notification == 1 ? "passive" : "off");
 	}
@@ -266,7 +266,7 @@ void display_get_names_cmd_result(struct cmd_input in __attribute__((unused)), u
 		fprintf(stderr, "Fault %s: %s\n", fault, get_fault_message_by_fault_code(fault));
 		return;
 	}
-	struct cwmp_dm_parameter *param_value = NULL;
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, res.param_list, list) {
 		fprintf(stdout, "%s => %s\n", param_value->name, param_value->writable ? "writable" : "not-writable");
 	}

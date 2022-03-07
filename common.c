@@ -8,23 +8,20 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
-#include <stdio.h>
-#include <getopt.h>
-#include <sys/stat.h>
-#include <curl/curl.h>
-#include <unistd.h>
-#include <sys/reboot.h>
+
 #include <fcntl.h>
-#include <errno.h>
-#include <sys/file.h>
-#include <regex.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <stdarg.h>
 
 #include "common.h"
+#include "cwmp_cli.h"
 #include "cwmp_uci.h"
 #include "ubus.h"
 #include "log.h"
-#include "cwmp_cli.h"
-#include "cwmp_du_state.h"
+
 
 #ifndef CWMP_REVISION
 #define CWMP_REVISION "8.2.10"
@@ -586,7 +583,7 @@ void icwmp_restart_services()
 		}
 	}
 	if (g_firewall_restart) {
-			CWMP_LOG(INFO, "Initiating Firewall restart")
+			CWMP_LOG(INFO, "Initiating Firewall restart");
 			cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "in_progress");
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 	}
@@ -690,4 +687,34 @@ int copy_file(char *source_file, char *target_file)
 	fclose(source);
 	fclose(target);
 	return 0;
+}
+
+void ubus_network_interface_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
+{
+	const struct blobmsg_policy p[1] = { { "device", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
+	if (!tb[0]) {
+		cwmp_main.conf.interface = NULL;
+		CWMP_LOG(DEBUG, "CWMP IFACE - interface: NOT FOUND");
+		return;
+	}
+
+	FREE(cwmp_main.conf.interface);
+	cwmp_main.conf.interface = strdup(blobmsg_get_string(tb[0]));
+	CWMP_LOG(DEBUG, "CWMP IFACE - interface: %s", cwmp_main.conf.interface);
+}
+
+int get_connection_interface()
+{
+	int e = cwmp_ubus_call("network.interface", "status", CWMP_UBUS_ARGS{ { "interface", { .str_val = cwmp_main.conf.default_wan_iface }, UBUS_String } }, 1, ubus_network_interface_callback, NULL);
+	if (e != 0) {
+		CWMP_LOG(INFO, "Get network interface from network.interface ubus method failed. Ubus err code: %d", e);
+		return -1;
+	}
+	if (cwmp_main.conf.interface == NULL) {
+		CWMP_LOG(INFO, "Not able to get the network interface from network.interface ubus method.");
+		return -1;
+	}
+	return CWMP_OK;
 }

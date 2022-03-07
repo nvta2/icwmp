@@ -10,21 +10,18 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *	  Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
-
 #include <curl/curl.h>
-#include <pthread.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
-#include <errno.h>
 
-#include "log.h"
-#include "config.h"
-#include "event.h"
 #include "http.h"
-#include "digestauth.h"
 #include "cwmp_uci.h"
+#include "log.h"
+#include "event.h"
 #include "ubus.h"
+#include "config.h"
+#include "digestauth.h"
 
 #define REALM "authenticate@cwmp"
 #define OPAQUE "11733b200778ce33060f31c9af70a870ba96ddd4"

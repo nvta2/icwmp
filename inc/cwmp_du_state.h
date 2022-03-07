@@ -11,6 +11,8 @@
 #ifndef CWMP_DU_STATE_H
 #define CWMP_DU_STATE_H
 
+#include "common.h"
+
 extern struct list_head list_change_du_state;
 extern pthread_mutex_t mutex_change_du_state;
 extern pthread_cond_t threshold_change_du_state;

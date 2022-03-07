@@ -9,17 +9,13 @@
  *	  Author: Amin Ben Ramdhane <amin.benramdhane@pivasoftware.com>
  *	  Author: Omar Kallel <omar.kallel@pivasoftware.com>
  */
-#include <stdarg.h>
-#include <unistd.h>
+#include <string.h>
+
 #include "common.h"
 #include "diagnostic.h"
-#include "config.h"
-#include "datamodel_interface.h"
 #include "ubus.h"
-#include "cwmp_uci.h"
-#include "event.h"
-#include "rpc_soap.h"
 #include "log.h"
+#include "event.h"
 
 struct diagnostic_input {
 	char *input_name;

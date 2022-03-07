@@ -8,18 +8,17 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include <pthread.h>
 #include <curl/curl.h>
+#include <stdlib.h>
 
-#include "common.h"
 #include "upload.h"
-#include "datamodel_interface.h"
 #include "download.h"
-#include "log.h"
 #include "cwmp_time.h"
+#include "datamodel_interface.h"
+#include "log.h"
 #include "backupSession.h"
-#include "cwmp_uci.h"
 #include "event.h"
+#include "cwmp_uci.h"
 
 #define CURL_TIMEOUT 20
 
@@ -34,9 +33,11 @@ int lookup_vcf_name(char *instance, char **value)
 	char *err = NULL;
 	LIST_HEAD(vcf_parameters);
 	snprintf(vcf_name_parameter, sizeof(vcf_name_parameter), "Device.DeviceInfo.VendorConfigFile.%s.Name", instance);
-	if ((err = cwmp_get_parameter_values(vcf_name_parameter, &vcf_parameters)) != NULL)
+	if (cwmp_get_parameter_values(vcf_name_parameter, &vcf_parameters) != NULL) {
+		CWMP_LOG(ERROR, "Not able to get the value of the parameter %s : %s", vcf_name_parameter, err);
 		return -1;
-	struct cwmp_dm_parameter *param_value = NULL;
+	}
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, &vcf_parameters, list) {
 		*value = strdup(param_value->value);
 		break;
@@ -51,9 +52,11 @@ int lookup_vlf_name(char *instance, char **value)
 	char *err = NULL;
 	LIST_HEAD(vlf_parameters);
 	snprintf(vlf_name_parameter, sizeof(vlf_name_parameter), "Device.DeviceInfo.VendorLogFile.%s.Name", instance);
-	if ((err = cwmp_get_parameter_values(vlf_name_parameter, &vlf_parameters)) != NULL)
+	if (cwmp_get_parameter_values(vlf_name_parameter, &vlf_parameters) != NULL) {
+		CWMP_LOG(ERROR, "Not able to get the value of the parameter %s : %s", vlf_name_parameter, err);
 		return -1;
-	struct cwmp_dm_parameter *param_value = NULL;
+	}
+	struct cwmp_dm_parameter *param_value;
 	list_for_each_entry (param_value, &vlf_parameters, list) {
 		*value = strdup(param_value->value);
 		break;
@@ -108,6 +111,7 @@ int cwmp_launch_upload(struct upload *pupload, struct transfer_complete **ptrans
 			name = NULL;
 			lookup_vcf_name(pupload->f_instance, &name);
 			if (name && strlen(name) > 0) {
+				// cppcheck-suppress uninitvar
 				snprintf(file_path, sizeof(file_path), "/tmp/%s", name);
 				cwmp_uci_export_package(name, file_path, UCI_STANDARD_CONFIG);
 				FREE(name);

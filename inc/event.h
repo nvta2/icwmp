@@ -11,7 +11,9 @@
 
 #ifndef EVENT_H_
 #define EVENT_H_
+
 #include "common.h"
+#include "session.h"
 
 typedef struct event_container {
 	struct list_head list;
