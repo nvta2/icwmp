@@ -11,15 +11,12 @@
 
 #ifndef NOTIFICATIONS_H_
 #define NOTIFICATIONS_H_
-#include <sys/socket.h>
+
 #include <pthread.h>
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
 
 #include "common.h"
-#include "event.h"
-#include "datamodel_interface.h"
-#include "rpc_soap.h"
 
 enum NOTIFICATION_STATUS
 {

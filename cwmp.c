@@ -10,31 +10,32 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
-#include <pthread.h>
-#include <libubox/uloop.h>
-#include <sys/file.h>
 #include <math.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <sys/file.h>
 
 #include "common.h"
-#include "session.h"
-#include "backupSession.h"
-#include "http.h"
-#include "diagnostic.h"
-#include "config.h"
-#include "ubus.h"
-#include "log.h"
-#include "notifications.h"
-#include "cwmp_uci.h"
-#include "cwmp_du_state.h"
-#include "download.h"
-#include "upload.h"
-#include "sched_inform.h"
-#include "rpc_soap.h"
-#include "digestauth.h"
 #include "ssl_utils.h"
+#include "xml.h"
+#include "notifications.h"
+#include "event.h"
+#include "cwmp_uci.h"
+#include "log.h"
+#include "session.h"
+#include "diagnostic.h"
+#include "http.h"
+#include "rpc_soap.h"
+#include "config.h"
+#include "backupSession.h"
+#include "ubus.h"
+#include "digestauth.h"
+#include "upload.h"
+#include "download.h"
+#include "sched_inform.h"
+#include "datamodel_interface.h"
+#include "cwmp_du_state.h"
 
 static pthread_t periodic_event_thread;
 static pthread_t scheduleInform_thread;
@@ -154,7 +155,6 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 
 	while (1) {
 		list_for_each (ilist, &(session->head_rpc_acs)) {
-
 			rpc_acs = list_entry(ilist, struct rpc, list);
 			if (!rpc_acs->type || thread_end)
 				goto retry;
@@ -171,6 +171,11 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 				goto retry;
 
 			CWMP_LOG(INFO, "Get the %sResponse message from the ACS", rpc_acs_methods[rpc_acs->type].name);
+			/*
+			 * This condition is not always false.
+			 * while the value of idx can be changed to true in the exit of icwmp.
+			 */
+			// cppcheck-suppress knownConditionTrueFalse
 			if (rpc_acs_methods[rpc_acs->type].parse_response || thread_end)
 				if (rpc_acs_methods[rpc_acs->type].parse_response(cwmp, session, rpc_acs))
 					goto retry;
@@ -200,7 +205,6 @@ static int cwmp_schedule_rpc(struct cwmp *cwmp, struct session *session)
 			goto retry;
 
 		while (session->head_rpc_cpe.next != &(session->head_rpc_cpe)) {
-
 			rpc_cpe = list_entry(session->head_rpc_cpe.next, struct rpc, list);
 			if (!rpc_cpe->type || thread_end)
 				goto retry;
@@ -516,18 +520,18 @@ void load_boot_inform_json_file(struct cwmp *cwmp)
 		blob_buf_free(&bbuf);
 		return;
 	}
+
 	const struct blobmsg_policy p[1] = { { "boot_inform", BLOBMSG_TYPE_ARRAY } };
 	struct blob_attr *tb[1] = { NULL };
 	blobmsg_parse(p, 1, tb, blobmsg_data(bbuf.head), blobmsg_len(bbuf.head));
-	if (!tb[0])
-		return;
-	custom_boot_inform_list = tb[0];
 
-	if (custom_boot_inform_list == NULL) {
+	if (tb[0] == NULL) {
 		CWMP_LOG(WARNING, "The JSON file %s doesn't contain a boot inform parameters list", cwmp->conf.custom_notify_json);
 		blob_buf_free(&bbuf);
 		return;
 	}
+
+	custom_boot_inform_list = tb[0];
 
 	blobmsg_for_each_attr(cur, custom_boot_inform_list, rem)
 	{

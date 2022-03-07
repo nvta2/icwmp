@@ -13,6 +13,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <dirent.h>
+#include <string.h>
 
 #include "rpc_soap.h"
 #include "event.h"
@@ -22,6 +23,7 @@
 #include "log.h"
 #include "download.h"
 #include "cwmp_uci.h"
+#include "xml.h"
 
 #include "icwmp_soap_msg_unit_test.h"
 

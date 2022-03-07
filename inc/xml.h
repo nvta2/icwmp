@@ -2,10 +2,8 @@
 #define __XML__H_
 
 #include <microxml.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "session.h"
+#include "common.h"
 
 #define CWMP_MXML_TAB_SPACE "  "
 #define MAX_SCHEDULE_INFORM_QUEUE 10

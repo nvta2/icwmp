@@ -11,21 +11,22 @@
  *	Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
  */
 
+#include <json-c/json.h>
+#include <pthread.h>
 #include <sys/socket.h>
+#include <libubox/blobmsg_json.h>
 
 #include "ubus.h"
 #include "session.h"
 #include "log.h"
-#include "netlink.h"
-#include "cwmp_time.h"
-#include "event.h"
-#include "backupSession.h"
 #include "sched_inform.h"
-#include "cwmp_du_state.h"
+#include "http.h"
 #include "download.h"
 #include "upload.h"
-#include "http.h"
-#include "rpc_soap.h"
+#include "cwmp_du_state.h"
+#include "netlink.h"
+#include "event.h"
+#include "cwmp_time.h"
 
 static struct ubus_context *ctx = NULL;
 
@@ -354,7 +355,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 			}
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_List_Param_Set) {
-			struct cwmp_dm_parameter *param_value = NULL;
+			struct cwmp_dm_parameter *param_value;
 			void *a;
 			a = blobmsg_open_array(&b, u_args[i].key);
 			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
@@ -368,7 +369,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 			}
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_List_Param_Get) {
-			struct cwmp_dm_parameter *param_value = NULL;
+			struct cwmp_dm_parameter *param_value;
 			void *a;
 			a = blobmsg_open_array(&b, u_args[i].key);
 			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
@@ -378,7 +379,7 @@ int cwmp_ubus_call(const char *obj, const char *method, const struct cwmp_ubus_a
 			}
 			blobmsg_close_array(&b, a);
 		} else if (u_args[i].type == UBUS_Obj_Obj) {
-			struct cwmp_dm_parameter *param_value = NULL;
+			struct cwmp_dm_parameter *param_value;
 			json_object *input_json_obj = json_object_new_object();
 			list_for_each_entry (param_value, u_args[i].val.param_value_list, list) {
 				if (!param_value->name)

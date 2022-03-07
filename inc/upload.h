@@ -11,6 +11,8 @@
 #ifndef CWMP_UPLOAD_H
 #define CWMP_UPLOAD_H
 
+#include "common.h"
+
 extern struct list_head list_upload;
 extern pthread_mutex_t mutex_upload;
 extern pthread_cond_t threshold_upload;

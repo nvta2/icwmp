@@ -1,5 +1,6 @@
 #ifndef SRC_DATAMODELIFACE_H_
 #define SRC_DATAMODELIFACE_H_
+
 #include "common.h"
 
 #define DM_ROOT_OBJ "Device."

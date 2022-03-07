@@ -18,14 +18,11 @@
 #ifndef MD5_H
 #define MD5_H
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
 #ifdef WORDS_BIGENDIAN
 #define HIGHFIRST
 #endif
+
+#include <stdint.h>
 
 #define MD5_DIGEST_SIZE 16
 

@@ -21,6 +21,7 @@
 #include <openssl/ssl.h>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
+#include <string.h>
 
 #include "common.h"
 #include "log.h"
@@ -38,7 +39,7 @@ char *generate_random_string(size_t size)
 
 	int written = RAND_bytes(buf, size);
 	if (written != 1) {
-		printf("Failed to get random bytes");
+		CWMP_LOG(ERROR,"Failed to get random bytes");
 		goto end;
 	}
 

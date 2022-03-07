@@ -9,6 +9,9 @@
  */
 
 #include <zlib.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "common.h"
 #include "log.h"
 

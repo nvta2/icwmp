@@ -9,13 +9,13 @@
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
+#include <string.h>
+#include <stdlib.h>
 
 #include "config.h"
-#include "cwmp_uci.h"
 #include "log.h"
 #include "reboot.h"
 #include "datamodel_interface.h"
-#include "ubus.h"
 
 pthread_mutex_t mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
@@ -592,36 +592,6 @@ int get_global_config(struct config *conf)
 	return CWMP_OK;
 }
 
-void ubus_network_interface_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
-{
-	const struct blobmsg_policy p[1] = { { "device", BLOBMSG_TYPE_STRING } };
-	struct blob_attr *tb[1] = { NULL };
-	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
-	if (!tb[0]) {
-		cwmp_main.conf.interface = NULL;
-		CWMP_LOG(DEBUG, "CWMP IFACE - interface: NOT FOUND");
-		return;
-	}
-
-	FREE(cwmp_main.conf.interface);
-	cwmp_main.conf.interface = strdup(blobmsg_get_string(tb[0]));
-	CWMP_LOG(DEBUG, "CWMP IFACE - interface: %s", cwmp_main.conf.interface);
-}
-
-int get_connection_interface()
-{
-	int e = cwmp_ubus_call("network.interface", "status", CWMP_UBUS_ARGS{ { "interface", { .str_val = cwmp_main.conf.default_wan_iface }, UBUS_String } }, 1, ubus_network_interface_callback, NULL);
-	if (e != 0) {
-		CWMP_LOG(INFO, "Get network interface from network.interface ubus method failed. Ubus err code: %d", e);
-		return -1;
-	}
-	if (cwmp_main.conf.interface == NULL) {
-		CWMP_LOG(INFO, "Not able to get the network interface from network.interface ubus method.");
-		return -1;
-	}
-	return CWMP_OK;
-}
-
 int reload_networking_config()
 {
 	int error;
@@ -640,7 +610,7 @@ int reload_networking_config()
 		return error;
 	}
 
-	if ((error = get_connection_interface()))
+	if (get_connection_interface() == -1)
 		return -1;
 	return CWMP_OK;
 }

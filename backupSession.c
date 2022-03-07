@@ -11,17 +11,16 @@
  */
 
 #include <unistd.h>
-#include <fcntl.h>
 
 #include "backupSession.h"
 #include "log.h"
-#include "notifications.h"
 #include "event.h"
-#include "download.h"
-#include "cwmp_du_state.h"
-#include "rpc_soap.h"
-#include "upload.h"
 #include "sched_inform.h"
+#include "download.h"
+#include "upload.h"
+#include "cwmp_du_state.h"
+#include "notifications.h"
+#include "xml.h"
 
 static mxml_node_t *bkp_tree = NULL;
 pthread_mutex_t mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;
@@ -521,7 +520,7 @@ void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *
 
 void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state)
 {
-	struct operations *p = NULL;
+	struct operations *p;
 	char schedule_time[128];
 	mxml_node_t *b, *n;
 
@@ -530,7 +529,6 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 	b = bkp_session_insert(bkp_tree, "change_du_state", NULL);
 	bkp_session_insert(b, "command_key", pchange_du_state->command_key);
 	bkp_session_insert(b, "time", schedule_time);
-
 	list_for_each_entry (p, &(pchange_du_state->list_operation), list) {
 		if (p->type == DU_INSTALL) {
 			n = bkp_session_insert(b, "install", NULL);
@@ -663,7 +661,7 @@ void bkp_session_delete_upload(struct upload *pupload)
 void bkp_session_insert_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete)
 {
 	char schedule_time[128], resolved[8], fault_code[8];
-	struct opresult *p = NULL;
+	struct opresult *p;
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
@@ -800,6 +798,10 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 	while (b) {
 		if (b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name, "command_key") == 0) {
+				/*
+				 * This condition is not always false.
+				 * while the value of idx can be changed while call of load_specific_backup_attributes.
+				 */
 				// cppcheck-suppress knownConditionTrueFalse
 				if (idx != -1) {
 					if (EVENT_CONST[idx].RETRY & EVENT_RETRY_AFTER_REBOOT) {
@@ -830,7 +832,7 @@ void load_schedule_inform(mxml_node_t *tree)
 	char *command_key = NULL;
 	time_t scheduled_time = 0;
 	struct schedule_inform *schedule_inform = NULL;
-	struct list_head *ilist = NULL;
+	struct list_head *ilist;
 
 	struct backup_attributes bkp_attrs = { .command_key = &command_key, .time = &scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);

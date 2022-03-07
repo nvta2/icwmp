@@ -11,11 +11,15 @@
  */
 #ifndef _FREECWMP_UBUS_H__
 #define _FREECWMP_UBUS_H__
+#include <libubus.h>
+/*
 #include <json-c/json.h>
 #include <libubox/blobmsg_json.h>
-#include <libubus.h>
 
 #include "common.h"
+*/
+#include "common.h"
+
 #define ARRAY_MAX 8
 
 int cwmp_ubus_init(struct cwmp *cwmp);

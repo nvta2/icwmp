@@ -10,16 +10,16 @@
  *
  */
 
-#include <stdio.h>
 #include <errno.h>
-#include <time.h>
+#include <string.h>
+#include <stdlib.h>
 #include <limits.h>
 
+#include "log.h"
 #include "common.h"
 #include "digestauth.h"
-#include "md5.h"
-#include "log.h"
 #include "ssl_utils.h"
+#include "md5.h"
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
 

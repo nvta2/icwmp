@@ -8,10 +8,11 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
+#include <libubox/blobmsg_json.h>
+
 #include "datamodel_interface.h"
-#include "log.h"
 #include "ubus.h"
-#include "notifications.h"
+#include "log.h"
 
 int transaction_id = 0;
 

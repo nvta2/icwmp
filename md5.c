@@ -15,6 +15,9 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
+
+#include <string.h>
+
 #include "md5.h"
 
 #if __BYTE_ORDER == __BIG_ENDIAN

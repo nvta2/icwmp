@@ -13,8 +13,7 @@
 #ifndef _CONFIG_H__
 #define _CONFIG_H__
 
-#include <pthread.h>
-#include "common.h"
+#include "cwmp_uci.h"
 
 extern pthread_mutex_t mutex_config_load;
 

@@ -11,6 +11,7 @@
 #define _FREECWMP_HTTP_H__
 
 #include "common.h"
+
 extern char *fc_cookies;
 
 #define HTTP_TIMEOUT 30
