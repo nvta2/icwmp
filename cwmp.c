@@ -364,9 +364,9 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			ilist = (&(cwmp->head_session_queue))->next;
 			retry = false;
 		}
+		cwmp_uci_init();
 		if (cwmp->session_status.last_status == SESSION_FAILURE)
 			reload_networking_config();
-		cwmp_uci_init();
 		session = list_entry(ilist, struct session, list);
 		if (file_exists(DM_ENABLED_NOTIFY)) {
 			if (!event_exist_in_list(cwmp, EVENT_IDX_4VALUE_CHANGE))
@@ -411,6 +411,7 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 		}
 
 		if (session->error == CWMP_RETRY_SESSION && (!list_empty(&(session->head_event_container)) || (list_empty(&(session->head_event_container)) && cwmp->cwmp_cr_event == 0))) {
+			reload_networking_config();
 			run_session_end_func();
 			error = cwmp_move_session_to_session_queue(cwmp, session);
 			CWMP_LOG(INFO, "Retry session, retry count = %d, retry in %ds", cwmp->retry_count_session, cwmp_get_retry_interval(cwmp));
@@ -419,7 +420,6 @@ static void cwmp_schedule_session(struct cwmp *cwmp)
 			cwmp->session_status.last_status = SESSION_FAILURE;
 			cwmp->session_status.next_retry = time(NULL) + cwmp_get_retry_interval(cwmp);
 			cwmp->session_status.failure_session++;
-			reload_networking_config();
 			pthread_mutex_unlock(&(cwmp->mutex_session_send));
 			continue;
 		}
