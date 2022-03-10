@@ -2,7 +2,7 @@
 
 echo "preparation script"
 pwd
-. ./gitlab-ci/shared.sh
+source ./gitlab-ci/shared.sh
 
 trap cleanup EXIT
 trap cleanup SIGINT
@@ -39,9 +39,10 @@ echo "## Running script verification of functionalities ##"
 echo > ./funl-test-result.log
 echo > ./funl-test-debug.log
 test_num=0
-for test in $(ls -I "common.sh" -I "verify_custom_notifications.sh" test/script/); do
+for test in `cat test/script/test_seq.txt`; do
 	test_num=$(( test_num + 1 ))
-	if ./test/script/"${test}"; then
+	./test/script/${test}
+	if [ "$?" -eq 0 ]; then
 		echo "ok ${test_num} - ${test}" >> ./funl-test-result.log
 	else
 		echo "not ok ${test_num} - ${test}" >> ./funl-test-result.log
@@ -51,17 +52,18 @@ done
 echo "Stop all services"
 supervisorctl stop icwmpd
 
-cp test/files/etc/config/users /etc/config/
-cp test/files/etc/config/wireless /etc/config/
+#cp test/files/etc/config/users /etc/config/
+#cp test/files/etc/config/wireless /etc/config/
 
-echo "Verify Custom notifications"
-if ./test/script/verify_custom_notifications.sh; then
-	echo "ok - verify_custom_notifications" >> ./funl-test-result.log
-else
-	echo "not ok - verify_custom_notifications" >> ./funl-test-result.log
-fi
-
-test_num=$(( test_num + 1 ))
+#echo "Verify Custom notifications"
+#./test/script/verify_custom_notifications.sh
+#if [ "$?" -eq 0 ]; then
+#	echo "ok - verify_custom_notifications" >> ./funl-test-result.log
+#else
+#	echo "not ok - verify_custom_notifications" >> ./funl-test-result.log
+#fi
+#
+#test_num=$(( test_num + 1 ))
 echo "1..${test_num}" >> ./funl-test-result.log
 
 # Artefact

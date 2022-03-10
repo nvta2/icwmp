@@ -11,8 +11,6 @@
 #ifndef CWMP_SCHED_INFORM_H
 #define CWMP_SCHED_INFORM_H
 
-#include "common.h"
-
 extern struct list_head list_schedule_inform;
 extern pthread_mutex_t mutex_schedule_inform;
 extern pthread_cond_t threshold_schedule_inform;

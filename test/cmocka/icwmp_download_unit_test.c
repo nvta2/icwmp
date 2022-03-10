@@ -23,9 +23,9 @@
 #include "log.h"
 #include "download.h"
 
-static struct transfer_complete *transfer_complete_test = NULL;
+struct transfer_complete *transfer_complete_test = NULL;
 
-static void free_transfer_complete(struct transfer_complete *p)
+void free_transfer_complete(struct transfer_complete *p)
 {
 	FREE(p->command_key);
 	FREE(p->start_time);

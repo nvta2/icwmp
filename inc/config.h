@@ -13,13 +13,14 @@
 #ifndef _CONFIG_H__
 #define _CONFIG_H__
 
-#include "cwmp_uci.h"
+#include <pthread.h>
+#include "common.h"
 
 extern pthread_mutex_t mutex_config_load;
 
-int global_conf_init(struct cwmp *cwmp);
-int get_global_config(struct config *conf);
-int cwmp_get_deviceid(struct cwmp *cwmp);
-int cwmp_config_reload(struct cwmp *cwmp);
+int global_conf_init();
+int get_global_config();
+int cwmp_config_reload();
 int reload_networking_config();
+
 #endif

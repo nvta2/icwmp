@@ -11,7 +11,6 @@ date +%s > timestamp.log
 echo "Compiling icmwp"
 build_icwmp
 
-mkdir -p /var/state/icwmpd
 echo "Starting dependent services"
 supervisorctl status all
 supervisorctl update
@@ -23,9 +22,10 @@ echo "Running the api test cases"
 ubus-api-validator -f ./test/api/json/tr069.validation.json > ./api-test-result.log
 check_ret $?
 
+sleep 7
 echo "Stop all services"
-supervisorctl stop icwmpd
-
+supervisorctl stop all
+sleep 7
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./api-test-coverage.xml
 #GitLab-CI output

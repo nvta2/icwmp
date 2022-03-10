@@ -11,12 +11,21 @@
  *
  */
 
+#include <pthread.h>
+
 #include "backupSession.h"
-#include "event.h"
-#include "sched_inform.h"
-#include "download.h"
-#include "upload.h"
 #include "log.h"
+#include "event.h"
+#include "session.h"
+#include "cwmp_du_state.h"
+#include "download.h"
+#include "rpc_soap.h"
+#include "upload.h"
+#include "sched_inform.h"
+#include "ubus.h"
+#include "cwmp_event.h"
+
+pthread_mutex_t add_event_mutext = PTHREAD_MUTEX_INITIALIZER;
 
 const struct EVENT_CONST_STRUCT EVENT_CONST[] = {[EVENT_IDX_0BOOTSTRAP] = { "0 BOOTSTRAP", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL | EVENT_RETRY_AFTER_REBOOT },
 						 [EVENT_IDX_1BOOT] = { "1 BOOT", EVENT_TYPE_SINGLE, EVENT_RETRY_AFTER_TRANSMIT_FAIL },
@@ -54,84 +63,38 @@ void cwmp_save_event_container(struct event_container *event_container) //to be 
 	}
 }
 
-struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_code, char *command_key)
+void cwmp_root_cause_event_diagnostic(void)
 {
 	struct event_container *event_container;
-	struct list_head *ilist;
 
-	if (cwmp->head_event_container == NULL) {
-		struct session *session;
-		session = cwmp_add_queue_session(cwmp);
-		if (session == NULL) {
-			return NULL;
-		}
-		cwmp->head_event_container = &(session->head_event_container);
-	}
-	//session = list_entry(cwmp->head_event_container, struct session, head_event_container);
-	list_for_each (ilist, cwmp->head_event_container) {
-		event_container = list_entry(ilist, struct event_container, list);
-		if (event_container->code == event_code && EVENT_CONST[event_code].TYPE == EVENT_TYPE_SINGLE) {
-			return event_container;
-		}
-		if (event_container->code > event_code) {
-			break;
-		}
-	}
-	event_container = calloc(1, sizeof(struct event_container));
+	event_container = cwmp_add_event_container(EVENT_IDX_8DIAGNOSTICS_COMPLETE, "");
 	if (event_container == NULL) {
-		return NULL;
-	}
-	INIT_LIST_HEAD(&(event_container->head_dm_parameter));
-	list_add(&(event_container->list), ilist->prev);
-	event_container->code = event_code;
-	event_container->command_key = command_key ? strdup(command_key) : strdup("");
-	if ((cwmp->event_id < 0) || (cwmp->event_id >= MAX_INT_ID)) {
-		cwmp->event_id = 0;
-	}
-	cwmp->event_id++;
-	event_container->id = cwmp->event_id;
-	return event_container;
-}
-
-void cwmp_root_cause_event_ipdiagnostic(void)
-{
-	struct cwmp *cwmp = &cwmp_main;
-	struct event_container *event_container;
-
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_8DIAGNOSTICS_COMPLETE, "");
-	if (event_container == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 		return;
 	}
 	cwmp_save_event_container(event_container);
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-	pthread_cond_signal(&(cwmp->threshold_session_send));
+	cwmp_main->start_diagnostics = true;
 	return;
 }
 
-int cwmp_root_cause_event_boot(struct cwmp *cwmp)
+int cwmp_root_cause_event_boot()
 {
-	if (cwmp->env.boot == CWMP_START_BOOT) {
+	if (cwmp_main->env.boot == CWMP_START_BOOT) {
 		struct event_container *event_container;
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		cwmp->env.boot = 0;
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_1BOOT, "");
+		cwmp_main->env.boot = 0;
+		event_container = cwmp_add_event_container(EVENT_IDX_1BOOT, "");
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 		cwmp_save_event_container(event_container);
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	}
 	return CWMP_OK;
 }
 
-int event_remove_all_event_container(struct session *session, int rem_from)
+int event_remove_all_event_container(int rem_from)
 {
-	while (session->head_event_container.next != &(session->head_event_container)) {
+	while (cwmp_main->session->events.next != &cwmp_main->session->events) {
 		struct event_container *event_container;
-		event_container = list_entry(session->head_event_container.next, struct event_container, list);
+		event_container = list_entry(cwmp_main->session->events.next, struct event_container, list);
 		bkp_session_delete_event(event_container->id, rem_from ? "send" : "queue");
 		free(event_container->command_key);
 		cwmp_free_all_dm_parameter_list(&(event_container->head_dm_parameter));
@@ -142,16 +105,16 @@ int event_remove_all_event_container(struct session *session, int rem_from)
 	return CWMP_OK;
 }
 
-int event_remove_noretry_event_container(struct session *session, struct cwmp *cwmp)
+int event_remove_noretry_event_container()
 {
 	struct list_head *ilist, *q;
 
-	list_for_each_safe (ilist, q, &(session->head_event_container)) {
+	list_for_each_safe (ilist, q, &cwmp_main->session->events) {
 		struct event_container *event_container;
 		event_container = list_entry(ilist, struct event_container, list);
 
 		if (EVENT_CONST[event_container->code].CODE[0] == '6')
-			cwmp->cwmp_cr_event = 1;
+			cwmp_main->cwmp_cr_event = 1;
 
 		if (EVENT_CONST[event_container->code].RETRY == 0) {
 			free(event_container->command_key);
@@ -163,247 +126,153 @@ int event_remove_noretry_event_container(struct session *session, struct cwmp *c
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_event_bootstrap(struct cwmp *cwmp)
+int cwmp_root_cause_event_bootstrap()
 {
 
 	struct event_container *event_container;
 	char *acsurl = NULL;
 	int cmp = 0;
 
-	cwmp_load_saved_session(cwmp, &acsurl, ACS);
+	cwmp_load_saved_session(&acsurl, ACS);
 
 	if (acsurl == NULL)
-		save_acs_bkp_config(cwmp);
+		save_acs_bkp_config();
 
-	if (acsurl == NULL || ((cmp = strcmp(cwmp->conf.acsurl, acsurl)) != 0)) {
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		if (cwmp->head_event_container != NULL && cwmp->head_session_queue.next != &(cwmp->head_session_queue)) {
-			struct session *session;
-			session = list_entry(cwmp->head_event_container, struct session, head_event_container);
-			event_remove_all_event_container(session, RPC_QUEUE);
-		}
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_0BOOTSTRAP, "");
+	if (acsurl == NULL || ((cmp = strcmp(cwmp_main->conf.acsurl, acsurl)) != 0)) {
+		event_container = cwmp_add_event_container(EVENT_IDX_0BOOTSTRAP, "");
 		FREE(acsurl);
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 		cwmp_save_event_container(event_container);
 		cwmp_scheduleInform_remove_all();
 		cwmp_scheduledDownload_remove_all();
 		cwmp_scheduled_Download_remove_all();
-		cwmp_apply_scheduled_Download_remove_all();
 		cwmp_scheduledUpload_remove_all();
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	} else {
 		FREE(acsurl);
 	}
 
 	if (cmp) {
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+		event_container = cwmp_add_event_container(EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 
 		char buf[64] = "Device.ManagementServer.URL";
 		add_dm_parameter_to_list(&(event_container->head_dm_parameter), buf, NULL, NULL, 0, false);
 		cwmp_save_event_container(event_container);
-		save_acs_bkp_config(cwmp);
+		save_acs_bkp_config(cwmp_main);
 		cwmp_scheduleInform_remove_all();
 		cwmp_scheduledDownload_remove_all();
-		cwmp_apply_scheduled_Download_remove_all();
 		cwmp_scheduled_Download_remove_all();
 		cwmp_scheduledUpload_remove_all();
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	}
 
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_transfer_complete(struct cwmp *cwmp, struct transfer_complete *p)
+int cwmp_root_cause_transfer_complete(struct transfer_complete *p)
 {
 	struct event_container *event_container;
-	struct session *session;
 	struct rpc *rpc_acs;
 
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_7TRANSFER_COMPLETE, "");
+	event_container = cwmp_add_event_container(EVENT_IDX_7TRANSFER_COMPLETE, "");
 	if (event_container == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+		return CWMP_MEM_ERR;
+	}
+	if ((rpc_acs = cwmp_add_session_rpc_acs(RPC_ACS_TRANSFER_COMPLETE)) == NULL) {
 		return CWMP_MEM_ERR;
 	}
 	switch (p->type) {
 	case TYPE_DOWNLOAD:
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_M_Download, p->command_key ? p->command_key : "");
+		event_container = cwmp_add_event_container(EVENT_IDX_M_Download, p->command_key ? p->command_key : "");
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 		break;
 	case TYPE_UPLOAD:
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_M_Upload, p->command_key ? p->command_key : "");
+		event_container = cwmp_add_event_container(EVENT_IDX_M_Upload, p->command_key ? p->command_key : "");
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 		break;
 	case TYPE_SCHEDULE_DOWNLOAD:
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_M_Schedule_Download, p->command_key ? p->command_key : "");
+		event_container = cwmp_add_event_container(EVENT_IDX_M_Schedule_Download, p->command_key ? p->command_key : "");
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 		break;
 	}
-	session = list_entry(cwmp->head_event_container, struct session, head_event_container);
-	if ((rpc_acs = cwmp_add_session_rpc_acs(session, RPC_ACS_TRANSFER_COMPLETE)) == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-		return CWMP_MEM_ERR;
-	}
+
 	rpc_acs->extra_data = (void *)p;
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_changedustate_complete(struct cwmp *cwmp, struct du_state_change_complete *p)
+int cwmp_root_cause_changedustate_complete(struct du_state_change_complete *p)
 {
 	struct event_container *event_container;
-	struct session *session;
 	struct rpc *rpc_acs;
 
-	pthread_mutex_lock(&(cwmp->mutex_session_queue));
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_11DU_STATE_CHANGE_COMPLETE, "");
+	event_container = cwmp_add_event_container(EVENT_IDX_11DU_STATE_CHANGE_COMPLETE, "");
 	if (event_container == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 		return CWMP_MEM_ERR;
 	}
 
-	event_container = cwmp_add_event_container(cwmp, EVENT_IDX_M_ChangeDUState, p->command_key ? p->command_key : "");
+	event_container = cwmp_add_event_container(EVENT_IDX_M_ChangeDUState, p->command_key ? p->command_key : "");
 	if (event_container == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 		return CWMP_MEM_ERR;
 	}
-	session = list_entry(cwmp->head_event_container, struct session, head_event_container);
-	if ((rpc_acs = cwmp_add_session_rpc_acs(session, RPC_ACS_DU_STATE_CHANGE_COMPLETE)) == NULL) {
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+	if ((rpc_acs = cwmp_add_session_rpc_acs(RPC_ACS_DU_STATE_CHANGE_COMPLETE)) == NULL) {
 		return CWMP_MEM_ERR;
 	}
 	rpc_acs->extra_data = (void *)p;
-	pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	return CWMP_OK;
 }
 
-int cwmp_root_cause_get_rpc_method(struct cwmp *cwmp)
+int cwmp_root_cause_get_rpc_method()
 {
-	if (cwmp->env.periodic == CWMP_START_PERIODIC) {
+	if (cwmp_main->env.periodic == CWMP_START_PERIODIC) {
 		struct event_container *event_container;
-		struct session *session;
 
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		cwmp->env.periodic = 0;
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_2PERIODIC, "");
+		cwmp_main->env.periodic = 0;
+		event_container = cwmp_add_event_container(EVENT_IDX_2PERIODIC, "");
 		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return CWMP_MEM_ERR;
 		}
 		cwmp_save_event_container(event_container);
-		session = list_entry(cwmp->head_event_container, struct session, head_event_container);
-		if (cwmp_add_session_rpc_acs(session, RPC_ACS_GET_RPC_METHODS) == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
+		if (cwmp_add_session_rpc_acs(RPC_ACS_GET_RPC_METHODS) == NULL) {
 			return CWMP_MEM_ERR;
 		}
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 	}
 
 	return CWMP_OK;
 }
 
-void *thread_event_periodic(void *v)
+bool event_exist_in_list(int event)
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
-	struct event_container *event_container;
-	int periodic_interval;
-	bool periodic_enable;
-	time_t periodic_time;
-	struct timespec periodic_timeout = { 0, 0 };
-	time_t current_time;
-	long int delta_time;
-
-	periodic_interval = cwmp->conf.period;
-	periodic_enable = cwmp->conf.periodic_enable;
-	periodic_time = cwmp->conf.time;
-
-	for (;;) {
-		pthread_mutex_lock(&(cwmp->mutex_periodic));
-		if (cwmp->conf.periodic_enable) {
-			current_time = time(NULL);
-			if (periodic_time != 0) {
-				delta_time = (current_time - periodic_time) % periodic_interval;
-				if (delta_time >= 0)
-					periodic_timeout.tv_sec = current_time + periodic_interval - delta_time;
-				else
-					periodic_timeout.tv_sec = current_time - delta_time;
-			} else {
-				periodic_timeout.tv_sec = current_time + periodic_interval;
-			}
-			cwmp->session_status.next_periodic = periodic_timeout.tv_sec;
-			pthread_cond_timedwait(&(cwmp->threshold_periodic), &(cwmp->mutex_periodic), &periodic_timeout);
-		} else {
-			cwmp->session_status.next_periodic = 0;
-			pthread_cond_wait(&(cwmp->threshold_periodic), &(cwmp->mutex_periodic));
-		}
-		pthread_mutex_unlock(&(cwmp->mutex_periodic));
-
-		if (thread_end)
-			break;
-
-		if (periodic_interval != cwmp->conf.period || periodic_enable != cwmp->conf.periodic_enable || periodic_time != cwmp->conf.time) {
-			periodic_enable = cwmp->conf.periodic_enable;
-			periodic_interval = cwmp->conf.period;
-			periodic_time = cwmp->conf.time;
-			continue;
-		}
-		CWMP_LOG(INFO, "Periodic thread: add periodic event in the queue");
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_2PERIODIC, "");
-		if (event_container == NULL) {
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-			continue;
-		}
-		cwmp_save_event_container(event_container);
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-		pthread_cond_signal(&(cwmp->threshold_session_send));
-	}
-	return NULL;
-}
-
-bool event_exist_in_list(struct cwmp *cwmp, int event)
-{
-	struct event_container *event_container;
-	list_for_each_entry (event_container, cwmp->head_event_container, list) {
+	struct event_container *event_container = NULL;
+	list_for_each_entry (event_container, &cwmp_main->session->events, list) {
 		if (event_container->code == event)
 			return true;
 	}
 	return false;
 }
 
-int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
+int cwmp_root_cause_event_periodic()
 {
 	char local_time[27] = { 0 };
 	struct tm *t_tm;
 
-	if (cwmp->cwmp_period == cwmp->conf.period && cwmp->cwmp_periodic_enable == cwmp->conf.periodic_enable && cwmp->cwmp_periodic_time == cwmp->conf.time)
+	if (cwmp_main->cwmp_period == cwmp_main->conf.period && cwmp_main->cwmp_periodic_enable == cwmp_main->conf.periodic_enable && cwmp_main->cwmp_periodic_time == cwmp_main->conf.time)
 		return CWMP_OK;
 
-	pthread_mutex_lock(&(cwmp->mutex_periodic));
-	cwmp->cwmp_period = cwmp->conf.period;
-	cwmp->cwmp_periodic_enable = cwmp->conf.periodic_enable;
-	cwmp->cwmp_periodic_time = cwmp->conf.time;
-	CWMP_LOG(INFO, cwmp->cwmp_periodic_enable ? "Periodic event is enabled. Interval period = %ds" : "Periodic event is disabled", cwmp->cwmp_period);
+	cwmp_main->cwmp_period = cwmp_main->conf.period;
+	cwmp_main->cwmp_periodic_enable = cwmp_main->conf.periodic_enable;
+	cwmp_main->cwmp_periodic_time = cwmp_main->conf.time;
+	CWMP_LOG(INFO, cwmp_main->cwmp_periodic_enable ? "Periodic event is enabled. Interval period = %ds" : "Periodic event is disabled", cwmp_main->cwmp_period);
 
-	t_tm = localtime(&cwmp->cwmp_periodic_time);
+	t_tm = localtime(&cwmp_main->cwmp_periodic_time);
 	if (t_tm == NULL)
 		return CWMP_GEN_ERR;
 
@@ -415,22 +284,20 @@ int cwmp_root_cause_event_periodic(struct cwmp *cwmp)
 	local_time[22] = ':';
 	local_time[26] = '\0';
 
-	CWMP_LOG(INFO, cwmp->cwmp_periodic_time ? "Periodic time is %s" : "Periodic time is Unknown", local_time);
-	pthread_mutex_unlock(&(cwmp->mutex_periodic));
-	pthread_cond_signal(&(cwmp->threshold_periodic));
+	CWMP_LOG(INFO, cwmp_main->cwmp_periodic_time ? "Periodic time is %s" : "Periodic time is Unknown", local_time);
 	return CWMP_OK;
 }
 
-void connection_request_ip_value_change(struct cwmp *cwmp, int version)
+void connection_request_ip_value_change(int version)
 {
 	char *bip = NULL;
 	char *ip_version = (version == IPv6) ? "ipv6" : "ip";
-	char *ip_value = (version == IPv6) ? cwmp->conf.ipv6 : cwmp->conf.ip;
+	char *ip_value = (version == IPv6) ? cwmp_main->conf.ipv6 : cwmp_main->conf.ip;
 
 	if (version == IPv6)
-		cwmp_load_saved_session(cwmp, &bip, CR_IPv6);
+		cwmp_load_saved_session(&bip, CR_IPv6);
 	else
-		cwmp_load_saved_session(cwmp, &bip, CR_IP);
+		cwmp_load_saved_session(&bip, CR_IP);
 
 	if (bip == NULL) {
 		bkp_session_simple_insert_in_parent("connection_request", ip_version, ip_value);
@@ -439,30 +306,26 @@ void connection_request_ip_value_change(struct cwmp *cwmp, int version)
 	}
 	if (strcmp(bip, ip_value) != 0) {
 		struct event_container *event_container;
-		pthread_mutex_lock(&(cwmp->mutex_session_queue));
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+		event_container = cwmp_add_event_container(EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL) {
 			FREE(bip);
-			pthread_mutex_unlock(&(cwmp->mutex_session_queue));
 			return;
 		}
 		cwmp_save_event_container(event_container);
 		bkp_session_simple_insert_in_parent("connection_request", ip_version, ip_value);
 		bkp_session_save();
-		pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-		pthread_cond_signal(&(cwmp->threshold_session_send));
 	}
 	FREE(bip);
 }
 
-void connection_request_port_value_change(struct cwmp *cwmp, int port)
+void connection_request_port_value_change(int port)
 {
 	char *bport = NULL;
 	char bufport[16];
 
 	snprintf(bufport, sizeof(bufport), "%d", port);
 
-	cwmp_load_saved_session(cwmp, &bport, CR_PORT);
+	cwmp_load_saved_session(&bport, CR_PORT);
 
 	if (bport == NULL) {
 		bkp_session_simple_insert_in_parent("connection_request", "port", bufport);
@@ -471,7 +334,7 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port)
 	}
 	if (strcmp(bport, bufport) != 0) {
 		struct event_container *event_container;
-		event_container = cwmp_add_event_container(cwmp, EVENT_IDX_4VALUE_CHANGE, "");
+		event_container = cwmp_add_event_container(EVENT_IDX_4VALUE_CHANGE, "");
 		if (event_container == NULL) {
 			FREE(bport);
 			return;
@@ -483,20 +346,20 @@ void connection_request_port_value_change(struct cwmp *cwmp, int port)
 	FREE(bport);
 }
 
-int cwmp_root_cause_events(struct cwmp *cwmp)
+int cwmp_root_cause_events()
 {
 	int error;
 
-	if ((error = cwmp_root_cause_event_bootstrap(cwmp)))
+	if ((error = cwmp_root_cause_event_bootstrap()))
 		return error;
 
-	if ((error = cwmp_root_cause_event_boot(cwmp)))
+	if ((error = cwmp_root_cause_event_boot()))
 		return error;
 
-	if ((error = cwmp_root_cause_get_rpc_method(cwmp)))
+	if ((error = cwmp_root_cause_get_rpc_method()))
 		return error;
 
-	if ((error = cwmp_root_cause_event_periodic(cwmp)))
+	if ((error = cwmp_root_cause_event_periodic()))
 		return error;
 
 	return CWMP_OK;

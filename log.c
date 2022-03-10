@@ -10,14 +10,13 @@
  *
  */
 
-#include <syslog.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <sys/stat.h>
-
-#include "log.h"
+#include <stdarg.h>
+#include <syslog.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "common.h"
+#include "log.h"
 
 static char *SEVERITY_NAMES[8] = { "[EMERG]  ", "[ALERT]  ", "[CRITIC] ", "[ERROR]  ", "[WARNING]", "[NOTICE] ", "[INFO]   ", "[DEBUG]  " };
 static int log_severity = DEFAULT_LOG_SEVERITY;

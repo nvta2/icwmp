@@ -14,8 +14,6 @@
 
 #include <uci.h>
 
-#include "common.h"
-
 //struct uci_context *cwmp_uci_ctx = ((void *)0);
 #define UCI_DHCP_DISCOVERY_PATH "cwmp.acs.dhcp_discovery"
 #define UCI_ACS_URL_PATH "cwmp.acs.url"

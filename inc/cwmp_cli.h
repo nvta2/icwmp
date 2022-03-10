@@ -11,6 +11,7 @@ struct cmd_input {
 	char *second_input;
 };
 
+
 char *cmd_get_exec_func(struct cmd_input in, union cmd_result *res);
 char *cmd_set_exec_func(struct cmd_input in, union cmd_result *res __attribute__((unused)));
 char *cmd_add_exec_func(struct cmd_input in, union cmd_result *res);

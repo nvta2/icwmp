@@ -11,9 +11,8 @@
 
 #ifndef EVENT_H_
 #define EVENT_H_
-
 #include "common.h"
-#include "session.h"
+#include "event.h"
 
 typedef struct event_container {
 	struct list_head list;
@@ -67,18 +66,17 @@ enum event_idx_enum
 };
 
 extern const struct EVENT_CONST_STRUCT EVENT_CONST[__EVENT_IDX_MAX];
+extern pthread_mutex_t add_event_mutext;
 
-struct event_container *cwmp_add_event_container(struct cwmp *cwmp, int event_idx, char *command_key);
-int event_remove_all_event_container(struct session *session, int rem_from);
-int event_remove_noretry_event_container(struct session *session, struct cwmp *cwmp);
+int event_remove_all_event_container(int rem_from);
+int event_remove_noretry_event_container();
 void cwmp_save_event_container(struct event_container *event_container);
-void *thread_event_periodic(void *v);
-void connection_request_ip_value_change(struct cwmp *cwmp, int version);
-void connection_request_port_value_change(struct cwmp *cwmp, int port);
+void connection_request_ip_value_change(int version);
+void connection_request_port_value_change(int port);
 int cwmp_get_int_event_code(const char *code);
-bool event_exist_in_list(struct cwmp *cwmp, int event);
-int cwmp_root_cause_events(struct cwmp *cwmp);
-int cwmp_root_cause_transfer_complete(struct cwmp *cwmp, struct transfer_complete *p);
-int cwmp_root_cause_changedustate_complete(struct cwmp *cwmp, struct du_state_change_complete *p);
-void cwmp_root_cause_event_ipdiagnostic(void);
+bool event_exist_in_list(int event);
+int cwmp_root_cause_events();
+int cwmp_root_cause_transfer_complete(struct transfer_complete *p);
+int cwmp_root_cause_changedustate_complete(struct du_state_change_complete *p);
+void cwmp_root_cause_event_diagnostic(void);
 #endif /* SRC_INC_EVENT_H_ */

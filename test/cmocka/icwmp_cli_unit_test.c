@@ -51,17 +51,20 @@ static void restore_output()
 
 static int cwmp_cli_unit_tests_init(void **state)
 {
-	cwmp_uci_init();
+	cwmp_main = (struct cwmp*)calloc(1, sizeof(struct cwmp));
+	create_cwmp_session_structure();
+	memcpy(&(cwmp_main->env), &cwmp_main, sizeof(struct env));
+	cwmp_session_init();
 	return 0;
 }
 
 static int cwmp_cli_unit_tests_clean(void **state)
 {
-	icwmp_cleanmem();
-	FREE(add_instance);
 	icwmp_free_list_services();
-	cwmp_uci_exit();
-
+	cwmp_session_exit();
+	FREE(cwmp_main->session);
+	FREE(cwmp_main);
+	FREE(add_instance);
 	return 0;
 }
 

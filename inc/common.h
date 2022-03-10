@@ -11,11 +11,17 @@
 #ifndef __CCOMMON_H
 #define __CCOMMON_H
 
-#include <stdbool.h>
 #include <stdio.h>
-#include <sys/time.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <math.h>
 #include <libubox/list.h>
+#include <sys/time.h>
 #include <pthread.h>
+#include <stdbool.h>
+#include <libubox/uloop.h>
 
 #ifndef CWMP_VERSION
 #define CWMP_VERSION "3.0.0"
@@ -48,12 +54,15 @@
 #define MAX_NBRE_SERVICES 256
 #define FIREWALL_CWMP "/etc/firewall.cwmp"
 #define CWMP_VARSTATE_UCI_PACKAGE "/var/state/cwmp"
-
 #define STRCMP(S1, S2) ((S1 != NULL && S2 != NULL) ? strcmp(S1, S2) : -1)
+
 extern char *commandKey;
-extern bool thread_end;
-extern bool signal_exit;
+extern bool cwmp_stop;
 extern bool ubus_exit;
+extern struct uloop_timeout session_timer;
+extern struct uloop_timeout priodic_session_timer;
+extern struct uloop_timeout retry_session_timer;
+extern bool g_firewall_restart;
 
 typedef struct env {
 	unsigned short boot;
@@ -109,45 +118,25 @@ struct deviceid {
 	char *softwareversion;
 };
 
-typedef struct session_status {
-	time_t last_start_time;
-	time_t last_end_time;
-	int last_status;
-	time_t next_periodic;
-	time_t next_retry;
-	unsigned int success_session;
-	unsigned int failure_session;
-} session_status;
-
 typedef struct cwmp {
 	struct env env;
 	struct config conf;
 	struct deviceid deviceid;
-	struct list_head head_session_queue;
-	pthread_mutex_t mutex_session_queue;
-	struct session *session_send;
+	struct session *session;
 	bool cwmp_cr_event;
-	pthread_mutex_t mutex_session_send;
-	pthread_cond_t threshold_session_send;
-	pthread_mutex_t mutex_periodic;
-	pthread_mutex_t mutex_notify_periodic;
-	pthread_cond_t threshold_periodic;
-	pthread_cond_t threshold_notify_periodic;
-	pthread_cond_t threshold_handle_notify;
 	int count_handle_notify;
 	int retry_count_session;
-	struct list_head *head_event_container;
 	FILE *pid_file;
 	time_t start_time;
-	struct session_status session_status;
 	unsigned int cwmp_id;
-	int event_id;
 	int cr_socket_desc;
+	int event_id;
 	int cwmp_period;
 	time_t cwmp_periodic_time;
 	bool cwmp_periodic_enable;
 	bool is_boot;
 	bool custom_notify_active;
+	bool start_diagnostics;
 } cwmp;
 
 enum action {
@@ -155,6 +144,11 @@ enum action {
 	START,
 	STOP,
 	RESTART,
+};
+
+enum auth_type_enum {
+	AUTH_BASIC,
+	AUTH_DIGEST
 };
 
 enum cwmp_start { CWMP_START_BOOT = 1, CWMP_START_PERIODIC = 2 };
@@ -321,15 +315,15 @@ enum client_server_faults { FAULT_CPE_TYPE_CLIENT, FAULT_CPE_TYPE_SERVER };
 
 struct rpc_cpe_method {
 	const char *name;
-	int (*handler)(struct session *session, struct rpc *rpc);
+	int (*handler)(struct rpc *rpc);
 	int amd;
 };
 
 struct rpc_acs_method {
 	const char *name;
-	int (*prepare_message)(struct cwmp *cwmp, struct session *session, struct rpc *rpc);
-	int (*parse_response)(struct cwmp *cwmp, struct session *session, struct rpc *rpc);
-	int (*extra_clean)(struct session *session, struct rpc *rpc);
+	int (*prepare_message)(struct rpc *rpc);
+	int (*parse_response)(struct rpc *rpc);
+	int (*extra_clean)(struct rpc *rpc);
 };
 
 typedef struct FAULT_CPE {
@@ -355,6 +349,7 @@ typedef struct timewindow {
 
 typedef struct download {
 	struct list_head list;
+	struct uloop_timeout handler_timer ;
 	time_t scheduled_time;
 	int file_size;
 	char *command_key;
@@ -399,6 +394,7 @@ typedef struct operations {
 
 typedef struct upload {
 	struct list_head list;
+	struct uloop_timeout handler_timer ;
 	time_t scheduled_time;
 	char *command_key;
 	char *file_type;
@@ -441,7 +437,7 @@ typedef struct opfault {
 	char *fault_string;
 } opfault;
 
-extern struct cwmp cwmp_main;
+extern struct cwmp *cwmp_main;
 extern long int flashsize;
 extern struct FAULT_CPE FAULT_CPE_ARRAY[];
 extern struct cwmp_namespaces ns;
@@ -483,11 +479,15 @@ bool icwmp_validate_string_length(char *arg, int max_length);
 bool icwmp_validate_boolean_value(char *arg);
 bool icwmp_validate_unsignedint(char *arg);
 bool icwmp_validate_int_in_range(char *arg, int min, int max);
-void load_forced_inform_json_file(struct cwmp *cwmp);
+void load_forced_inform_json_file();
 void clean_custom_inform_parameters();
 char *string_to_hex(const unsigned char *str, size_t size);
 int copy_file(char *source_file, char *target_file);
-int get_connection_interface();
+int cwmp_get_session_retry_interval();
+int cwmp_apply_acs_changes();
+void check_firewall_restart_state();
+void cwmp_end_handler(int signal_num __attribute__((unused)));
+
 #ifndef FREE
 #define FREE(x)                                                                                                        \
 	do {                                                                                                           \

@@ -8,12 +8,9 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 #include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "common.h"
-#include "cwmp_uci.h"
 #include "log.h"
+#include "cwmp_uci.h"
 
 struct uci_paths uci_save_conf_paths[] = {
 		[UCI_STANDARD_CONFIG] = { "/etc/config", "/tmp/.uci", NULL },
@@ -216,7 +213,7 @@ int cwmp_uci_get_value_by_section_string(struct uci_section *s, char *option, ch
 	struct uci_option *o;
 
 	*value = NULL;
-	if (s == NULL || &s->options == NULL || option == NULL)
+	if (s == NULL || option == NULL)
 		goto not_found;
 
 	uci_foreach_element(&s->options, e)
@@ -377,16 +374,14 @@ void cwmp_delete_uci_element_from_list(struct uci_element *e)
 void cwmp_free_uci_list(struct uci_list *list)
 {
 	struct uci_element *e = NULL, *tmp = NULL;
-	if (list == NULL)
-		return;
-	uci_foreach_element_safe(list, e, tmp)
+
+	uci_foreach_element_safe(list, e, tmp) {
 		cwmp_delete_uci_element_from_list(e);
+	}
 }
 
 char *cwmp_uci_list_to_string(struct uci_list *list, char *delimitor)
 {
-	if (delimitor == NULL)
-		return NULL;
 	if (list && !uci_list_empty(list)) {
 		struct uci_element *e = NULL;
 		char list_val[512] = { 0 };
@@ -470,10 +465,8 @@ int cwmp_uci_add_list_value(char *package, char *section, char *option, char *va
 		return UCI_ERR_PARSE;
 
 	error = uci_add_list(uci_save_conf_paths[uci_type].uci_ctx, &ptr);
-	if (error != UCI_OK)
-		return error;
 
-	return UCI_OK;
+	return error;
 }
 
 int cwmp_uci_del_list_value(char *package, char *section, char *option, char *value, uci_config_paths uci_type)
@@ -700,7 +693,7 @@ int cwmp_uci_import(char *package_name, const char *input_path, uci_config_paths
 {
 	struct uci_package *package = NULL;
 	struct uci_element *e = NULL;
-	int ret = CWMP_OK;
+	int ret = UCI_OK;
 	FILE *input = fopen(input_path, "r");
 	if (!input)
 		return -1;
@@ -710,10 +703,6 @@ int cwmp_uci_import(char *package_name, const char *input_path, uci_config_paths
 		goto end;
 	}
 
-	if (uci_save_conf_paths[uci_type].uci_ctx == NULL) {
-		ret = -1;
-		goto end;
-	}
 	uci_foreach_element(&uci_save_conf_paths[uci_type].uci_ctx->root, e)
 	{
 		struct uci_package *p = uci_to_package(e);
@@ -752,7 +741,7 @@ int cwmp_uci_export(const char *output_path, uci_config_paths uci_type)
 	char **configs = NULL;
 	char **p;
 
-	if (uci_list_configs(uci_save_conf_paths[uci_type].uci_ctx, &configs) != UCI_OK)
+	if ((uci_list_configs(uci_save_conf_paths[uci_type].uci_ctx, &configs) != UCI_OK))
 		return -1;
 
 	if (configs == NULL)

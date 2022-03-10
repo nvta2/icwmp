@@ -114,6 +114,10 @@ function build_icwmp()
 	# clean icwmp
 	clean_icwmp
 
+	mkdir -p /var/state
+	mkdir -p /var/run
+	mkdir -p /var/run/icwmpd
+
 	# compile icwmp
 	autoreconf -i >/dev/null 2>&1
 	./configure CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug --enable-libopenssl >/dev/null 2>&1
