@@ -3,7 +3,7 @@
 echo "install dependencies for unit-test script"
 pwd
 
-. ./gitlab-ci/shared.sh
+source ./gitlab-ci/shared.sh
 
 # install required packages
 exec_cmd apt update

@@ -8,15 +8,16 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
+#include <stdio.h>
 #include <libubox/blobmsg_json.h>
-#include <stdlib.h>
 
-#include "cwmp_du_state.h"
+#include "common.h"
 #include "ubus.h"
+#include "cwmp_du_state.h"
 #include "log.h"
-#include "datamodel_interface.h"
-#include "cwmp_time.h"
 #include "backupSession.h"
+#include "cwmp_time.h"
+#include "datamodel_interface.h"
 #include "event.h"
 
 LIST_HEAD(list_change_du_state);
@@ -116,7 +117,7 @@ static char *get_software_module_object_eq(char *param1, char *val1, char *param
 	if (err)
 		return NULL;
 
-	struct cwmp_dm_parameter *param_value;
+	struct cwmp_dm_parameter *param_value = NULL;
 	char instance[8];
 	list_for_each_entry (param_value, sw_parameters, list) {
 		snprintf(instance, (size_t)(strchr(param_value->name + strlen("Device.SoftwareModules.DeploymentUnit."), '.') - param_value->name - strlen("Device.SoftwareModules.DeploymentUnit.") + 1), "%s", (char *)(param_value->name + strlen("Device.SoftwareModules.DeploymentUnit.")));
@@ -137,7 +138,7 @@ static int get_deployment_unit_name_version(char *uuid, char **name, char **vers
 	snprintf(version_param, sizeof(version_param), "Device.SoftwareModules.DeploymentUnit.%s.Version", sw_by_uuid_instance);
 	snprintf(environment_param, sizeof(environment_param), "Device.SoftwareModules.DeploymentUnit.%s.ExecutionEnvRef", sw_by_uuid_instance);
 
-	struct cwmp_dm_parameter *param_value;
+	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &sw_parameters, list) {
 		if (strcmp(param_value->name, name_param) == 0) {
 			*name = strdup(param_value->value);
@@ -168,7 +169,7 @@ static char *get_softwaremodules_uuid(char *url)
 
 	snprintf(uuid_param, sizeof(uuid_param), "Device.SoftwareModules.DeploymentUnit.%s.UUID", sw_by_url_instance);
 
-	struct cwmp_dm_parameter *param_value;
+	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &sw_parameters, list) {
 		if (strcmp(param_value->name, uuid_param) == 0) {
 			uuid = strdup(param_value->value);
@@ -190,7 +191,7 @@ static char *get_softwaremodules_url(char *uuid)
 
 	snprintf(url_param, sizeof(url_param), "Device.SoftwareModules.DeploymentUnit.%s.URL", sw_by_uuid_instance);
 
-	struct cwmp_dm_parameter *param_value;
+	struct cwmp_dm_parameter *param_value = NULL;
 	list_for_each_entry (param_value, &sw_parameters, list) {
 		if (strcmp(param_value->name, url_param) == 0) {
 			url = strdup(param_value->value);
@@ -234,7 +235,7 @@ static char *get_exec_env_name(char *environment_path)
 	if (err)
 		return strdup("");
 
-	struct cwmp_dm_parameter *param_value;
+	struct cwmp_dm_parameter *param_value = NULL;
 	snprintf(env_param, sizeof(env_param), "%sName", environment_path);
 	list_for_each_entry (param_value, &environment_list, list) {
 		if (strcmp(param_value->name, env_param) == 0) {
@@ -317,9 +318,8 @@ static int cwmp_launch_du_uninstall(char *package_name, char *package_env, struc
 	return error;
 }
 
-void *thread_cwmp_rpc_cpe_change_du_state(void *v)
+void *thread_cwmp_rpc_cpe_change_du_state(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct timespec change_du_state_timeout = { 50, 0 };
 	int error = FAULT_CPE_NO_FAULT;
 	struct du_state_change_complete *pdu_state_change_complete;
@@ -336,7 +336,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 
 	for (;;) {
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 		
 		if (list_change_du_state.next != &(list_change_du_state)) {
@@ -364,7 +364,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					}
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_changedustate_complete(cwmp, pdu_state_change_complete);
+					cwmp_root_cause_changedustate_complete(pdu_state_change_complete);
 				}
 				list_del(&(pchange_du_state->list));
 				cwmp_free_change_du_state_request(pchange_du_state);
@@ -373,7 +373,6 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 			}
 
 			if ((timeout >= 0) && (timeout <= time_of_grace)) {
-				pthread_mutex_lock(&(cwmp->mutex_session_send));
 				pdu_state_change_complete = calloc(1, sizeof(struct du_state_change_complete));
 				if (pdu_state_change_complete != NULL) {
 					error = FAULT_CPE_NO_FAULT;
@@ -501,17 +500,13 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 					bkp_session_save();
 					bkp_session_insert_du_state_change_complete(pdu_state_change_complete);
 					bkp_session_save();
-					cwmp_root_cause_changedustate_complete(cwmp, pdu_state_change_complete);
+					cwmp_root_cause_changedustate_complete(pdu_state_change_complete);
 				}
 			}
 
 			pthread_mutex_lock(&mutex_change_du_state);
 			pthread_cond_timedwait(&threshold_change_du_state, &mutex_change_du_state, &change_du_state_timeout);
 			pthread_mutex_unlock(&mutex_change_du_state);
-
-			pthread_mutex_unlock(&(cwmp->mutex_session_send));
-			pthread_cond_signal(&(cwmp->threshold_session_send));
-
 			pthread_mutex_lock(&mutex_change_du_state);
 			list_del(&(pchange_du_state->list));
 			cwmp_free_change_du_state_request(pchange_du_state);
@@ -526,7 +521,7 @@ void *thread_cwmp_rpc_cpe_change_du_state(void *v)
 	return NULL;
 }
 
-int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct session *session __attribute__((unused)), struct rpc *rpc)
+int cwmp_rpc_acs_destroy_data_du_state_change_complete(struct rpc *rpc)
 {
 	if (rpc->extra_data != NULL) {
 		struct du_state_change_complete *p;

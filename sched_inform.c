@@ -8,10 +8,12 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
 
+#include "common.h"
 #include "sched_inform.h"
+#include "log.h"
 #include "backupSession.h"
 #include "event.h"
-#include "log.h"
+#include "cwmp_event.h"
 
 LIST_HEAD(list_schedule_inform);
 pthread_mutex_t mutex_schedule_inform = PTHREAD_MUTEX_INITIALIZER;
@@ -19,9 +21,8 @@ pthread_cond_t threshold_schedule_inform;
 
 int count_schedule_inform_queue = 0;
 
-void *thread_cwmp_rpc_cpe_scheduleInform(void *v)
+void *thread_cwmp_rpc_cpe_scheduleInform(void *v __attribute__((unused)))
 {
-	struct cwmp *cwmp = (struct cwmp *)v;
 	struct event_container *event_container;
 	struct schedule_inform *schedule_inform;
 	struct timespec si_timeout = { 0, 0 };
@@ -30,7 +31,7 @@ void *thread_cwmp_rpc_cpe_scheduleInform(void *v)
 
 	for (;;) {
 
-		if (thread_end)
+		if (cwmp_stop)
 			break;
 
 		if (list_schedule_inform.next != &(list_schedule_inform)) {
@@ -49,18 +50,15 @@ void *thread_cwmp_rpc_cpe_scheduleInform(void *v)
 					pthread_mutex_unlock(&mutex_schedule_inform);
 					continue;
 				}
-				pthread_mutex_lock(&(cwmp->mutex_session_queue));
 				CWMP_LOG(INFO, "Schedule Inform thread: add ScheduleInform event in the queue");
-				event_container = cwmp_add_event_container(cwmp, EVENT_IDX_3SCHEDULED, "");
+				event_container = cwmp_add_event_container(EVENT_IDX_3SCHEDULED, "");
 				if (event_container != NULL) {
 					cwmp_save_event_container(event_container);
 				}
-				event_container = cwmp_add_event_container(cwmp, EVENT_IDX_M_ScheduleInform, schedule_inform->commandKey);
+				event_container = cwmp_add_event_container(EVENT_IDX_M_ScheduleInform, schedule_inform->commandKey);
 				if (event_container != NULL) {
 					cwmp_save_event_container(event_container);
 				}
-				pthread_mutex_unlock(&(cwmp->mutex_session_queue));
-				pthread_cond_signal(&(cwmp->threshold_session_send));
 				pthread_mutex_lock(&mutex_schedule_inform);
 				list_del(&(schedule_inform->list));
 				if (schedule_inform->commandKey != NULL) {

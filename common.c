@@ -8,35 +8,38 @@
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  *
  */
-
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 #include <getopt.h>
-#include <stdarg.h>
+#include <sys/stat.h>
+#include <curl/curl.h>
+#include <unistd.h>
+#include <sys/reboot.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/file.h>
+#include <regex.h>
 
 #include "common.h"
-#include "cwmp_cli.h"
 #include "cwmp_uci.h"
 #include "ubus.h"
 #include "log.h"
-
+#include "cwmp_cli.h"
+#include "cwmp_du_state.h"
+#include "ssl_utils.h"
 
 #ifndef CWMP_REVISION
 #define CWMP_REVISION "8.2.10"
 #endif
 
 char *commandKey = NULL;
-bool thread_end = false;
-bool signal_exit = false;
+bool cwmp_stop = false;
 bool ubus_exit = false;
 long int flashsize = 256000000;
-struct cwmp cwmp_main = { 0 };
+struct cwmp *cwmp_main = NULL;
 static int nbre_services = 0;
 static char *list_services[MAX_NBRE_SERVICES] = { 0 };
+bool g_firewall_restart = false;
 LIST_HEAD(cwmp_memory_list);
-extern bool g_firewall_restart;
 
 struct cwmp_mem {
 	struct list_head list;
@@ -51,51 +54,33 @@ struct option cwmp_long_options[] = {
 
 struct FAULT_CPE FAULT_CPE_ARRAY[] = {
 	[FAULT_CPE_METHOD_NOT_SUPPORTED] = { "9000", FAULT_9000, FAULT_CPE_TYPE_SERVER, "Method not supported" },
-	[FAULT_CPE_REQUEST_DENIED] = { "9001", FAULT_9001, FAULT_CPE_TYPE_SERVER,
-				       "Request denied (no reason specified)" },
+	[FAULT_CPE_REQUEST_DENIED] = { "9001", FAULT_9001, FAULT_CPE_TYPE_SERVER, "Request denied (no reason specified)" },
 	[FAULT_CPE_INTERNAL_ERROR] = { "9002", FAULT_9002, FAULT_CPE_TYPE_SERVER, "Internal error" },
 	[FAULT_CPE_INVALID_ARGUMENTS] = { "9003", FAULT_9003, FAULT_CPE_TYPE_CLIENT, "Invalid arguments" },
 	[FAULT_CPE_RESOURCES_EXCEEDED] = { "9004", FAULT_9004, FAULT_CPE_TYPE_SERVER, "Resources exceeded" },
 	[FAULT_CPE_INVALID_PARAMETER_NAME] = { "9005", FAULT_9005, FAULT_CPE_TYPE_CLIENT, "Invalid parameter name" },
 	[FAULT_CPE_INVALID_PARAMETER_TYPE] = { "9006", FAULT_9006, FAULT_CPE_TYPE_CLIENT, "Invalid parameter type" },
 	[FAULT_CPE_INVALID_PARAMETER_VALUE] = { "9007", FAULT_9007, FAULT_CPE_TYPE_CLIENT, "Invalid parameter value" },
-	[FAULT_CPE_NON_WRITABLE_PARAMETER] = { "9008", FAULT_9008, FAULT_CPE_TYPE_CLIENT,
-					       "Attempt to set a non-writable parameter" },
-	[FAULT_CPE_NOTIFICATION_REJECTED] = { "9009", FAULT_9009, FAULT_CPE_TYPE_SERVER,
-					      "Notification request rejected" },
+	[FAULT_CPE_NON_WRITABLE_PARAMETER] = { "9008", FAULT_9008, FAULT_CPE_TYPE_CLIENT, "Attempt to set a non-writable parameter" },
+	[FAULT_CPE_NOTIFICATION_REJECTED] = { "9009", FAULT_9009, FAULT_CPE_TYPE_SERVER, "Notification request rejected" },
 	[FAULT_CPE_DOWNLOAD_FAILURE] = { "9010", FAULT_9010, FAULT_CPE_TYPE_SERVER, "Download failure" },
 	[FAULT_CPE_UPLOAD_FAILURE] = { "9011", FAULT_9011, FAULT_CPE_TYPE_SERVER, "Upload failure" },
-	[FAULT_CPE_FILE_TRANSFER_AUTHENTICATION_FAILURE] = { "9012", FAULT_9012, FAULT_CPE_TYPE_SERVER,
-							     "File transfer server authentication failure" },
-	[FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL] = { "9013", FAULT_9013, FAULT_CPE_TYPE_SERVER,
-							   "Unsupported protocol for file transfer" },
-	[FAULT_CPE_DOWNLOAD_FAIL_MULTICAST_GROUP] = { "9014", FAULT_9014, FAULT_CPE_TYPE_SERVER,
-						      "Download failure: unable to join multicast group" },
-	[FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER] = { "9015", FAULT_9015, FAULT_CPE_TYPE_SERVER,
-						     "Download failure: unable to contact file server" },
-	[FAULT_CPE_DOWNLOAD_FAIL_ACCESS_FILE] = { "9016", FAULT_9016, FAULT_CPE_TYPE_SERVER,
-						  "Download failure: unable to access file" },
-	[FAULT_CPE_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD] = { "9017", FAULT_9017, FAULT_CPE_TYPE_SERVER,
-							"Download failure: unable to complete download" },
-	[FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED] = { "9018", FAULT_9018, FAULT_CPE_TYPE_SERVER,
-						     "Download failure: file corrupted" },
-	[FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION] = { "9019", FAULT_9019, FAULT_CPE_TYPE_SERVER,
-							  "Download failure: file authentication failure" },
-	[FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW] = { "9020", FAULT_9020, FAULT_CPE_TYPE_SERVER,
-							 "Download failure: unable to complete download" },
-	[FAULT_CPE_DUPLICATE_DEPLOYMENT_UNIT] = { "9026", FAULT_9026, FAULT_CPE_TYPE_SERVER,
-						  "Duplicate deployment unit" },
-	[FAULT_CPE_SYSTEM_RESOURCES_EXCEEDED] = { "9027", FAULT_9027, FAULT_CPE_TYPE_SERVER,
-						  "System ressources exceeded" },
+	[FAULT_CPE_FILE_TRANSFER_AUTHENTICATION_FAILURE] = { "9012", FAULT_9012, FAULT_CPE_TYPE_SERVER, "File transfer server authentication failure" },
+	[FAULT_CPE_FILE_TRANSFER_UNSUPPORTED_PROTOCOL] = { "9013", FAULT_9013, FAULT_CPE_TYPE_SERVER, "Unsupported protocol for file transfer" },
+	[FAULT_CPE_DOWNLOAD_FAIL_MULTICAST_GROUP] = { "9014", FAULT_9014, FAULT_CPE_TYPE_SERVER, "Download failure: unable to join multicast group" },
+	[FAULT_CPE_DOWNLOAD_FAIL_CONTACT_SERVER] = { "9015", FAULT_9015, FAULT_CPE_TYPE_SERVER, "Download failure: unable to contact file server" },
+	[FAULT_CPE_DOWNLOAD_FAIL_ACCESS_FILE] = { "9016", FAULT_9016, FAULT_CPE_TYPE_SERVER, "Download failure: unable to access file" },
+	[FAULT_CPE_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD] = { "9017", FAULT_9017, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download" },
+	[FAULT_CPE_DOWNLOAD_FAIL_FILE_CORRUPTED] = { "9018", FAULT_9018, FAULT_CPE_TYPE_SERVER, "Download failure: file corrupted" },
+	[FAULT_CPE_DOWNLOAD_FAIL_FILE_AUTHENTICATION] = { "9019", FAULT_9019, FAULT_CPE_TYPE_SERVER, "Download failure: file authentication failure" },
+	[FAULT_CPE_DOWNLOAD_FAIL_WITHIN_TIME_WINDOW] = { "9020", FAULT_9020, FAULT_CPE_TYPE_SERVER, "Download failure: unable to complete download" },
+	[FAULT_CPE_DUPLICATE_DEPLOYMENT_UNIT] = { "9026", FAULT_9026, FAULT_CPE_TYPE_SERVER, "Duplicate deployment unit" },
+	[FAULT_CPE_SYSTEM_RESOURCES_EXCEEDED] = { "9027", FAULT_9027, FAULT_CPE_TYPE_SERVER, "System ressources exceeded" },
 	[FAULT_CPE_UNKNOWN_DEPLOYMENT_UNIT] = { "9028", FAULT_9028, FAULT_CPE_TYPE_SERVER, "Unknown deployment unit" },
-	[FAULT_CPE_INVALID_DEPLOYMENT_UNIT_STATE] = { "9029", FAULT_9029, FAULT_CPE_TYPE_SERVER,
-						      "Invalid deployment unit state" },
-	[FAULT_CPE_INVALID_DOWNGRADE_REJECTED] = { "9030", FAULT_9030, FAULT_CPE_TYPE_SERVER,
-						   "Invalid deployment unit Update: Downgrade not permitted" },
-	[FAULT_CPE_INVALID_UPDATE_VERSION_UNSPECIFIED] = { "9031", FAULT_9031, FAULT_CPE_TYPE_SERVER,
-							   "Invalid deployment unit Update: Version not specified" },
-	[FAULT_CPE_INVALID_UPDATE_VERSION_EXIST] = { "9031", FAULT_9032, FAULT_CPE_TYPE_SERVER,
-						     "Invalid deployment unit Update: Version already exist" }
+	[FAULT_CPE_INVALID_DEPLOYMENT_UNIT_STATE] = { "9029", FAULT_9029, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit state" },
+	[FAULT_CPE_INVALID_DOWNGRADE_REJECTED] = { "9030", FAULT_9030, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Downgrade not permitted" },
+	[FAULT_CPE_INVALID_UPDATE_VERSION_UNSPECIFIED] = { "9031", FAULT_9031, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Version not specified" },
+	[FAULT_CPE_INVALID_UPDATE_VERSION_EXIST] = { "9031", FAULT_9032, FAULT_CPE_TYPE_SERVER, "Invalid deployment unit Update: Version already exist" }
 };
 
 static void show_help(void)
@@ -286,6 +271,44 @@ void get_firewall_zone_name_by_wan_iface(char *if_wan, char **zone_name)
 			net = strtok(NULL, " ");
 		}
 		icwmp_free(network);
+	}
+}
+
+int get_firewall_restart_state(char **state)
+{
+	cwmp_uci_reinit();
+	return uci_get_state_value(UCI_CPE_FIREWALL_RESTART_STATE, state);
+}
+
+// wait till firewall restart is not complete or 5 sec, whichever is less
+void check_firewall_restart_state()
+{
+	int count = 0;
+	bool init = false;
+
+	do {
+		char *state = NULL;
+
+		if (get_firewall_restart_state(&state) != CWMP_OK)
+			break;
+
+		if (state != NULL && strcmp(state, "init") == 0) {
+			init = true;
+			FREE(state);
+			break;
+		}
+
+		usleep(500 * 1000);
+		FREE(state);
+		count++;
+	} while(count < 10);
+
+	// mark the firewall restart as done
+	g_firewall_restart = false;
+	if (init == false) { // In case of timeout reset the firewall_restart flag
+		CWMP_LOG(ERROR, "Firewall restart took longer than usual");
+		cwmp_uci_set_varstate_value("cwmp", "cpe", "firewall_restart", "init");
+		cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
 	}
 }
 
@@ -687,34 +710,4 @@ int copy_file(char *source_file, char *target_file)
 	fclose(source);
 	fclose(target);
 	return 0;
-}
-
-void ubus_network_interface_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
-{
-	const struct blobmsg_policy p[1] = { { "device", BLOBMSG_TYPE_STRING } };
-	struct blob_attr *tb[1] = { NULL };
-	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
-	if (!tb[0]) {
-		cwmp_main.conf.interface = NULL;
-		CWMP_LOG(DEBUG, "CWMP IFACE - interface: NOT FOUND");
-		return;
-	}
-
-	FREE(cwmp_main.conf.interface);
-	cwmp_main.conf.interface = strdup(blobmsg_get_string(tb[0]));
-	CWMP_LOG(DEBUG, "CWMP IFACE - interface: %s", cwmp_main.conf.interface);
-}
-
-int get_connection_interface()
-{
-	int e = cwmp_ubus_call("network.interface", "status", CWMP_UBUS_ARGS{ { "interface", { .str_val = cwmp_main.conf.default_wan_iface }, UBUS_String } }, 1, ubus_network_interface_callback, NULL);
-	if (e != 0) {
-		CWMP_LOG(INFO, "Get network interface from network.interface ubus method failed. Ubus err code: %d", e);
-		return -1;
-	}
-	if (cwmp_main.conf.interface == NULL) {
-		CWMP_LOG(INFO, "Not able to get the network interface from network.interface ubus method.");
-		return -1;
-	}
-	return CWMP_OK;
 }

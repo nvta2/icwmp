@@ -2,7 +2,7 @@
 
 echo "preparation script"
 pwd
-. ./gitlab-ci/shared.sh
+source ./gitlab-ci/shared.sh
 
 trap cleanup EXIT
 trap cleanup SIGINT
@@ -24,7 +24,7 @@ ubus-api-validator -f ./test/api/json/tr069.validation.json > ./api-test-result.
 check_ret $?
 
 echo "Stop all services"
-supervisorctl stop icwmpd
+supervisorctl stop all
 
 # Artefact
 gcovr -r . 2> /dev/null --xml -o ./api-test-coverage.xml

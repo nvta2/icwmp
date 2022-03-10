@@ -38,7 +38,7 @@ function exec_cmd()
 
 function configure_genieacs()
 {
-	sleep 10
+	sleep 3
 	echo "create a new user"
 	curl -X POST 'http://localhost:3000/init' -H "Content-Type: application/json" --data '{"users": true, "presets": true, "filters": true, "device": true, "index": true, "overview": true}' >/dev/null 2>&1
 	check_ret $?
@@ -76,7 +76,7 @@ function configure_download_firmware()
 
 function configure_acs_url()
 {
-	url="http://$(hostname -i):7547"
+	url="http://127.0.0.1:7547"
 	uci set cwmp.acs.url=$url
 	uci commit cwmp
 	echo "Current ACS URL=$url"
@@ -85,7 +85,7 @@ function configure_acs_url()
 function check_cwmp_status()
 {
 	status=`ubus call tr069 status | jq -r ".cwmp.status"`
-	if [ $status != "up" ]; then
+	if [ "${status}" != "up" ]; then
 		echo "icwmpd is not started correctly, (the current status=$status)"
 		exit 1
 	fi
@@ -101,7 +101,7 @@ function clean_icwmp()
 		find -name '*.gcov' -exec rm {} -fv \;
 		find -name '*.deps' -exec rm {} -rfv \;
 		find -name '*.so' -exec rm {} -fv \;
-		rm -f *.o *.log *.xml vgcore.* firmware_v1.0.bin
+		rm -f *.o *.log *.xml firmware_v1.0.bin
 		rm -rf report
 	fi
 }
@@ -114,9 +114,13 @@ function build_icwmp()
 	# clean icwmp
 	clean_icwmp
 
+	mkdir -p /var/state
+	mkdir -p /var/run
+	mkdir -p /var/run/icwmpd
+
 	# compile icwmp
 	autoreconf -i >/dev/null 2>&1
-	./configure CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug --enable-libopenssl >/dev/null 2>&1
+	./configure CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS" --enable-acs=multi --enable-debug >/dev/null 2>&1
 	make CFLAGS="$COV_CFLAGS -DWC_NO_HARDEN" LDFLAGS="$COV_LDFLAGS"
 	check_ret $?
 }

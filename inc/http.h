@@ -11,7 +11,6 @@
 #define _FREECWMP_HTTP_H__
 
 #include "common.h"
-
 extern char *fc_cookies;
 
 #define HTTP_TIMEOUT 30
@@ -23,12 +22,12 @@ struct http_client {
 
 void http_set_timeout(void);
 
-int http_client_init(struct cwmp *cwmp);
+int http_client_init();
 void http_client_exit(void);
-int http_send_message(struct cwmp *cwmp, char *msg_out, int msg_out_len, char **msg_in);
+int http_send_message(char *msg_out, int msg_out_len, char **msg_in);
 
+int http_cr_server_init(void);
+void http_success_cr(void);
 void http_server_init(void);
 void http_server_listen(void);
-void http_success_cr(void);
-
 #endif

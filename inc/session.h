@@ -15,11 +15,24 @@
 #include <microxml.h>
 #include "common.h"
 
+extern struct uloop_timeout retry_session_timer;
+extern pthread_mutex_t start_session_mutext;
+
+typedef struct session_status {
+	time_t last_start_time;
+	time_t last_end_time;
+	int last_status;
+	time_t next_periodic;
+	time_t next_retry;
+	unsigned int success_session;
+	unsigned int failure_session;
+} session_status;
+
 typedef struct session {
-	struct list_head list;
-	struct list_head head_event_container;
 	struct list_head head_rpc_cpe;
 	struct list_head head_rpc_acs;
+	struct list_head events;
+	struct session_status session_status;
 	mxml_node_t *tree_in;
 	mxml_node_t *tree_out;
 	mxml_node_t *body_in;
@@ -45,7 +58,10 @@ enum end_session_enum
 	END_SESSION_SERVERSELECTION_DIAGNOSTIC = 1 << 11,
 	END_SESSION_SET_NOTIFICATION_UPDATE = 1 << 12,
 	END_SESSION_RESTART_SERVICES = 1 << 13,
-	END_SESSION_INIT_NOTIFY = 1 << 14
+	END_SESSION_INIT_NOTIFY = 1 << 14,
+	END_SESSION_DOWNLOAD = 1 << 15,
+	END_SESSION_SCHEDULE_DOWNLOAD = 1 << 16,
+	END_SESSION_UPLOAD = 1 << 17
 };
 
 enum enum_session_status
@@ -59,13 +75,19 @@ enum enum_session_status
 extern unsigned int end_session_flag;
 
 void cwmp_set_end_session(unsigned int flag);
-struct rpc *cwmp_add_session_rpc_cpe(struct session *session, int type);
-struct session *cwmp_add_queue_session(struct cwmp *cwmp);
-struct rpc *cwmp_add_session_rpc_acs(struct session *session, int type);
-int cwmp_apply_acs_changes();
-int cwmp_move_session_to_session_send(struct cwmp *cwmp, struct session *session);
-struct rpc *cwmp_add_session_rpc_acs_head(struct session *session, int type);
+struct rpc *cwmp_add_session_rpc_cpe(int type);
+struct rpc *cwmp_add_session_rpc_acs(int type);
+struct rpc *cwmp_add_session_rpc_acs_head(int type);
 int cwmp_session_rpc_destructor(struct rpc *rpc);
-int cwmp_session_destructor(struct session *session);
-int cwmp_move_session_to_session_queue(struct cwmp *cwmp, struct session *session);
+void trigger_cwmp_session_timer();
+void trigger_session_by_ubus(char *event);
+void initiate_cwmp_periodic_session_feature();
+int run_session_end_func(void);
+void cwmp_schedule_session(struct uloop_timeout *timeout);
+void start_cwmp_session();
+int create_cwmp_session_structure();
+int clean_cwmp_session_structure();
+void set_cwmp_session_status(int status, int retry_time);
+int cwmp_session_init();
+int cwmp_session_exit();
 #endif /* SRC_INC_SESSION_H_ */

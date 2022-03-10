@@ -11,16 +11,18 @@
  */
 
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "backupSession.h"
 #include "log.h"
-#include "event.h"
-#include "sched_inform.h"
-#include "download.h"
-#include "upload.h"
-#include "cwmp_du_state.h"
 #include "notifications.h"
-#include "xml.h"
+#include "event.h"
+#include "download.h"
+#include "cwmp_du_state.h"
+#include "soap.h"
+#include "upload.h"
+#include "sched_inform.h"
+#include "cwmp_event.h"
 
 static mxml_node_t *bkp_tree = NULL;
 pthread_mutex_t mutex_backup_session = PTHREAD_MUTEX_INITIALIZER;
@@ -445,82 +447,9 @@ void bkp_session_insert_schedule_download(struct download *pschedule_download)
 	pthread_mutex_unlock(&mutex_backup_session);
 }
 
-void bkp_session_insert_apply_schedule_download(struct apply_schedule_download *papply_schedule_download)
-{
-	char delay[4][128];
-	int i;
-	char maxretrie[2][128];
-	mxml_node_t *b;
-
-	pthread_mutex_lock(&mutex_backup_session);
-
-	for (i = 0; i < 2; i++) {
-		snprintf(delay[2 * i], sizeof(delay[i]), "%lld", (long long int)papply_schedule_download->timeintervals[i].windowstart);
-		snprintf(delay[2 * i + 1], sizeof(delay[i]), "%lld", (long long int)papply_schedule_download->timeintervals[i].windowend);
-		snprintf(maxretrie[i], sizeof(maxretrie[i]), "%d", papply_schedule_download->timeintervals[i].maxretries);
-	}
-
-	struct search_keywords sched_download_insert_app_keys[9] = { { "command_key", papply_schedule_download->command_key },
-								     { "file_type", papply_schedule_download->file_type },
-								     { "start_time", papply_schedule_download->start_time },
-								     { "windowstart1", delay[0] },
-								     { "windowend1", delay[1] },
-								     { "maxretrie1", maxretrie[0] },
-								     { "windowstart2", delay[2] },
-								     { "windowend2", delay[3] },
-								     { "maxretrie2", maxretrie[1] } };
-
-	b = bkp_session_node_found(bkp_tree, "apply_schedule_download", sched_download_insert_app_keys, 9);
-	if (!b) {
-		CWMP_LOG(INFO, "New schedule download key %s file", papply_schedule_download->command_key);
-		b = bkp_session_insert(bkp_tree, "apply_schedule_download", NULL);
-		bkp_session_insert(b, "start_time", papply_schedule_download->start_time);
-		bkp_session_insert(b, "command_key", papply_schedule_download->command_key);
-		bkp_session_insert(b, "file_type", papply_schedule_download->file_type);
-		bkp_session_insert(b, "windowstart1", delay[0]);
-		bkp_session_insert(b, "windowend1", delay[1]);
-		bkp_session_insert(b, "maxretrie1", maxretrie[0]);
-
-		bkp_session_insert(b, "windowstart2", delay[2]);
-		bkp_session_insert(b, "windowend2", delay[3]);
-		bkp_session_insert(b, "maxretrie2", maxretrie[1]);
-	}
-	pthread_mutex_unlock(&mutex_backup_session);
-}
-
-void bkp_session_delete_apply_schedule_download(struct apply_schedule_download *ps_download) //TODO
-{
-	char delay[4][128];
-	char maxretrie[2][128];
-	int i;
-	mxml_node_t *b;
-
-	pthread_mutex_lock(&mutex_backup_session);
-	for (i = 0; i < 2; i++) {
-		snprintf(delay[2 * i], sizeof(delay[i]), "%lld", (long long int)ps_download->timeintervals[i].windowstart);
-		snprintf(delay[2 * i + 1], sizeof(delay[i]), "%lld", (long long int)ps_download->timeintervals[i].windowend);
-		snprintf(maxretrie[i], sizeof(maxretrie[i]), "%d", ps_download->timeintervals[i].maxretries);
-	}
-	struct search_keywords sched_download_del_app_keys[9] = { { "start_time", ps_download->start_time },
-								  { "command_key", ps_download->command_key },
-								  { "file_type", ps_download->file_type },
-								  { "windowstart1", delay[0] },
-								  { "windowend1", delay[1] },
-								  { "maxretrie1", maxretrie[0] },
-								  { "windowstart2", delay[2] },
-								  { "windowend2", delay[3] },
-								  { "maxretrie2", maxretrie[1] } };
-
-	b = bkp_session_node_found(bkp_tree, "apply_schedule_download", sched_download_del_app_keys, 9);
-
-	if (b)
-		mxmlDelete(b);
-	pthread_mutex_unlock(&mutex_backup_session);
-}
-
 void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state)
 {
-	struct operations *p;
+	struct operations *p = NULL;
 	char schedule_time[128];
 	mxml_node_t *b, *n;
 
@@ -529,6 +458,7 @@ void bkp_session_insert_change_du_state(struct change_du_state *pchange_du_state
 	b = bkp_session_insert(bkp_tree, "change_du_state", NULL);
 	bkp_session_insert(b, "command_key", pchange_du_state->command_key);
 	bkp_session_insert(b, "time", schedule_time);
+
 	list_for_each_entry (p, &(pchange_du_state->list_operation), list) {
 		if (p->type == DU_INSTALL) {
 			n = bkp_session_insert(b, "install", NULL);
@@ -661,7 +591,7 @@ void bkp_session_delete_upload(struct upload *pupload)
 void bkp_session_insert_du_state_change_complete(struct du_state_change_complete *pdu_state_change_complete)
 {
 	char schedule_time[128], resolved[8], fault_code[8];
-	struct opresult *p;
+	struct opresult *p = NULL;
 	mxml_node_t *b;
 
 	pthread_mutex_lock(&mutex_backup_session);
@@ -751,11 +681,9 @@ void bkp_session_delete_transfer_complete(struct transfer_complete *ptransfer_co
 	pthread_mutex_unlock(&mutex_backup_session);
 }
 
-int save_acs_bkp_config(struct cwmp *cwmp)
+int save_acs_bkp_config()
 {
-	struct config *conf;
-
-	conf = &(cwmp->conf);
+	struct config *conf = &(cwmp_main->conf);
 	bkp_session_simple_insert("acs", "url", conf->acsurl);
 	bkp_session_save();
 	return CWMP_OK;
@@ -783,11 +711,11 @@ char *load_child_value(mxml_node_t *tree, char *sub_name)
 	return value;
 }
 
-void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
+void load_queue_event(mxml_node_t *tree)
 {
 	char *command_key = NULL;
 	mxml_node_t *b = tree, *c;
-	int idx = -1, id = -1;
+	int idx, id = -1;
 	struct event_container *event_container_save = NULL;
 
 	struct backup_attributes bkp_attrs = { .index = &idx, .id = &id, .command_key = &command_key };
@@ -798,14 +726,10 @@ void load_queue_event(mxml_node_t *tree, struct cwmp *cwmp)
 	while (b) {
 		if (b->type == MXML_ELEMENT) {
 			if (strcmp(b->value.element.name, "command_key") == 0) {
-				/*
-				 * This condition is not always false.
-				 * while the value of idx can be changed while call of load_specific_backup_attributes.
-				 */
 				// cppcheck-suppress knownConditionTrueFalse
 				if (idx != -1) {
 					if (EVENT_CONST[idx].RETRY & EVENT_RETRY_AFTER_REBOOT) {
-						event_container_save = cwmp_add_event_container(cwmp, idx, ((command_key != NULL) ? command_key : ""));
+						event_container_save = cwmp_add_event_container(idx, ((command_key != NULL) ? command_key : ""));
 						if (event_container_save != NULL) {
 							event_container_save->id = id;
 						}
@@ -832,7 +756,7 @@ void load_schedule_inform(mxml_node_t *tree)
 	char *command_key = NULL;
 	time_t scheduled_time = 0;
 	struct schedule_inform *schedule_inform = NULL;
-	struct list_head *ilist;
+	struct list_head *ilist = NULL;
 
 	struct backup_attributes bkp_attrs = { .command_key = &command_key, .time = &scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);
@@ -867,6 +791,7 @@ void load_download(mxml_node_t *tree)
 					       .file_size = &download_request->file_size,
 					       .time = &download_request->scheduled_time };
 	load_specific_backup_attributes(tree, &bkp_attrs);
+	download_request->handler_timer.cb = cwmp_start_download;
 
 	list_for_each (ilist, &(list_download)) {
 		idownload_request = list_entry(ilist, struct download, list);
@@ -877,6 +802,7 @@ void load_download(mxml_node_t *tree)
 	list_add(&(download_request->list), ilist->prev);
 	if (download_request->scheduled_time != 0)
 		count_download_queue++;
+	cwmp_set_end_session(END_SESSION_DOWNLOAD);
 }
 
 void load_schedule_download(mxml_node_t *tree)
@@ -915,30 +841,6 @@ void load_schedule_download(mxml_node_t *tree)
 	}
 	list_add(&(download_request->list), ilist->prev);
 	if (download_request->timewindowstruct[0].windowstart != 0)
-		count_download_queue++;
-}
-
-void load_apply_schedule_download(mxml_node_t *tree)
-{
-	struct apply_schedule_download *download_request = NULL;
-
-	download_request = calloc(1, sizeof(struct apply_schedule_download));
-
-	struct backup_attributes bkp_attrs = {
-		.command_key = &download_request->command_key,
-		.file_type = &download_request->file_type,
-		.start_time = &download_request->start_time,
-		.windowstart1 = &download_request->timeintervals[0].windowstart,
-		.windowend1 = &download_request->timeintervals[0].windowend,
-		.maxretrie1 = &download_request->timeintervals[0].maxretries,
-		.windowstart2 = &download_request->timeintervals[1].windowstart,
-		.windowend2 = &download_request->timeintervals[1].windowend,
-		.maxretrie2 = &download_request->timeintervals[1].maxretries,
-	};
-	load_specific_backup_attributes(tree, &bkp_attrs);
-
-	list_add_tail(&(download_request->list), &(list_apply_schedule_download));
-	if (download_request->timeintervals[0].windowstart != 0)
 		count_download_queue++;
 }
 
@@ -1006,7 +908,7 @@ void load_change_du_state(mxml_node_t *tree)
 	list_add_tail(&(change_du_state_request->list_operation), &(list_change_du_state));
 }
 
-void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
+void load_du_state_change_complete(mxml_node_t *tree)
 {
 	mxml_node_t *b = tree;
 	struct du_state_change_complete *du_state_change_complete_request = NULL;
@@ -1040,10 +942,10 @@ void load_du_state_change_complete(mxml_node_t *tree, struct cwmp *cwmp)
 		}
 		b = mxmlWalkNext(b, tree, MXML_NO_DESCEND);
 	}
-	cwmp_root_cause_changedustate_complete(cwmp, du_state_change_complete_request);
+	cwmp_root_cause_changedustate_complete(du_state_change_complete_request);
 }
 
-void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
+void load_transfer_complete(mxml_node_t *tree)
 {
 	struct transfer_complete *ptransfer_complete;
 
@@ -1057,8 +959,8 @@ void load_transfer_complete(mxml_node_t *tree, struct cwmp *cwmp)
 					       .type = &ptransfer_complete->type };
 	load_specific_backup_attributes(tree, &bkp_attrs);
 
-	cwmp_root_cause_transfer_complete(cwmp, ptransfer_complete);
-	sotfware_version_value_change(cwmp, ptransfer_complete);
+	cwmp_root_cause_transfer_complete(ptransfer_complete);
+	sotfware_version_value_change(ptransfer_complete);
 }
 
 void bkp_session_create_file()
@@ -1103,16 +1005,16 @@ int bkp_session_check_file()
 	return 0;
 }
 
-int cwmp_init_backup_session(struct cwmp *cwmp, char **ret, enum backup_loading load)
+int cwmp_init_backup_session(char **ret, enum backup_loading load)
 {
 	int error;
 	if (bkp_session_check_file())
 		return 0;
-	error = cwmp_load_saved_session(cwmp, ret, load);
+	error = cwmp_load_saved_session(ret, load);
 	return error;
 }
 
-int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading load)
+int cwmp_load_saved_session(char **ret, enum backup_loading load)
 {
 	mxml_node_t *b;
 
@@ -1145,23 +1047,21 @@ int cwmp_load_saved_session(struct cwmp *cwmp, char **ret, enum backup_loading l
 		}
 		if (load == ALL) {
 			if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "queue_event") == 0) {
-				load_queue_event(b, cwmp);
+				load_queue_event(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "download") == 0) {
 				load_download(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "upload") == 0) {
 				load_upload(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "transfer_complete") == 0) {
-				load_transfer_complete(b, cwmp);
+				load_transfer_complete(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_inform") == 0) {
 				load_schedule_inform(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "change_du_state") == 0) {
 				load_change_du_state(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "du_state_change_complete") == 0) {
-				load_du_state_change_complete(b, cwmp);
+				load_du_state_change_complete(b);
 			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "schedule_download") == 0) {
 				load_schedule_download(b);
-			} else if (b->type == MXML_ELEMENT && strcmp(b->value.element.name, "apply_schedule_download") == 0) {
-				load_apply_schedule_download(b);
 			}
 		}
 		b = mxmlWalkNext(b, bkp_tree, MXML_NO_DESCEND);

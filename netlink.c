@@ -11,20 +11,29 @@
  *
  */
 
-#include <netinet/in.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <getopt.h>
+#include <limits.h>
+#include <locale.h>
+#include <unistd.h>
 #include <net/if.h>
 #include <arpa/inet.h>
-#include <linux/rtnetlink.h>
 #include <linux/netlink.h>
-#include <stddef.h>
-#include <libubox/uloop.h>
-#include <string.h>
-#include <stdlib.h>
+#include <linux/rtnetlink.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-#include "netlink.h"
-#include "cwmp_uci.h"
+#include <libubox/uloop.h>
+#include <libubox/usock.h>
+#include "http.h"
 #include "log.h"
+#include "config.h"
 #include "event.h"
+#include "cwmp_uci.h"
 
 static int itfcmp(char *itf1, char *itf2);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
@@ -108,18 +117,18 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 			}
 
 			if_indextoname(ifa->ifa_index, if_name);
-			if (itfcmp(cwmp_main.conf.interface, if_name)) {
+			if (itfcmp(cwmp_main->conf.interface, if_name)) {
 				rth = RTA_NEXT(rth, rtl);
 				continue;
 			}
 
 			inet_ntop(AF_INET, &(addr), if_addr, INET_ADDRSTRLEN);
 
-			FREE(cwmp_main.conf.ip);
-			cwmp_main.conf.ip = strdup(if_addr);
-			cwmp_uci_set_varstate_value("cwmp", "cpe", "ip", cwmp_main.conf.ip);
+			FREE(cwmp_main->conf.ip);
+			cwmp_main->conf.ip = strdup(if_addr);
+			cwmp_uci_set_varstate_value("cwmp", "cpe", "ip", cwmp_main->conf.ip);
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
-			connection_request_ip_value_change(&cwmp_main, IPv4);
+			connection_request_ip_value_change(IPv4);
 			break;
 		}
 	} else { //CASE IPv6
@@ -131,16 +140,16 @@ static void freecwmp_netlink_interface(struct nlmsghdr *nlh)
 			}
 			inet_ntop(AF_INET6, RTA_DATA(rth), pradd_v6, sizeof(pradd_v6));
 			if_indextoname(ifa->ifa_index, if_name);
-			if (strncmp(cwmp_main.conf.interface, if_name, IFNAMSIZ)) {
+			if (strncmp(cwmp_main->conf.interface, if_name, IFNAMSIZ)) {
 				rth = RTA_NEXT(rth, rtl);
 				continue;
 			}
 
-			FREE(cwmp_main.conf.ipv6);
-			cwmp_main.conf.ipv6 = strdup(pradd_v6);
-			cwmp_uci_set_varstate_value("cwmp", "cpe", "ipv6", cwmp_main.conf.ip);
+			FREE(cwmp_main->conf.ipv6);
+			cwmp_main->conf.ipv6 = strdup(pradd_v6);
+			cwmp_uci_set_varstate_value("cwmp", "cpe", "ipv6", cwmp_main->conf.ip);
 			cwmp_commit_package("cwmp", UCI_VARSTATE_CONFIG);
-			connection_request_ip_value_change(&cwmp_main, IPv6);
+			connection_request_ip_value_change(IPv6);
 			break;
 		}
 	}
@@ -276,4 +285,17 @@ int netlink_init(void)
 	netlink_new_msg(&dummy_event, 0);
 
 	return 0;
+}
+
+void cwmp_netlink_init(void)
+{
+	if (netlink_init()) {
+		CWMP_LOG(ERROR, "netlink initialization failed");
+	}
+
+	if (cwmp_main->conf.ipv6_enable) {
+		if (netlink_init_v6()) {
+			CWMP_LOG(ERROR, "netlink initialization failed");
+		}
+	}
 }

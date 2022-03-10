@@ -9,18 +9,19 @@
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
-#include <string.h>
-#include <stdlib.h>
 
 #include "config.h"
+#include "cwmp_uci.h"
 #include "log.h"
 #include "reboot.h"
 #include "datamodel_interface.h"
+#include "ubus.h"
 
 pthread_mutex_t mutex_config_load = PTHREAD_MUTEX_INITIALIZER;
 
-static int check_global_config(struct config *conf)
+static int check_global_config()
 {
+	struct config *conf = &(cwmp_main->conf);
 	if (conf->acsurl == NULL) {
 		conf->acsurl = strdup(DEFAULT_ACSURL);
 	}
@@ -43,11 +44,13 @@ static time_t convert_datetime_to_timestamp(char *value)
 	return mktime(&tm);
 }
 
-int get_global_config(struct config *conf)
+int get_global_config()
 {
+	struct config *conf = &(cwmp_main->conf);
 	int error, error2, error3;
 	char *value = NULL, *value2 = NULL, *value3 = NULL;
 
+	//cwmp_main->conf.cr_auth_type = AUTH_DIGEST;
 	if ((error = uci_get_value(UCI_CPE_LOG_FILE_NAME, &value)) == CWMP_OK) {
 		if (value != NULL) {
 			log_set_log_file_name(value);
@@ -592,46 +595,75 @@ int get_global_config(struct config *conf)
 	return CWMP_OK;
 }
 
+void ubus_network_interface_callback(struct ubus_request *req __attribute__((unused)), int type __attribute__((unused)), struct blob_attr *msg)
+{
+	const struct blobmsg_policy p[1] = { { "device", BLOBMSG_TYPE_STRING } };
+	struct blob_attr *tb[1] = { NULL };
+	blobmsg_parse(p, 1, tb, blobmsg_data(msg), blobmsg_len(msg));
+	if (!tb[0]) {
+		cwmp_main->conf.interface = NULL;
+		CWMP_LOG(DEBUG, "CWMP IFACE - interface: NOT FOUND");
+		return;
+	}
+
+	FREE(cwmp_main->conf.interface);
+	cwmp_main->conf.interface = strdup(blobmsg_get_string(tb[0]));
+	CWMP_LOG(DEBUG, "CWMP IFACE - interface: %s", cwmp_main->conf.interface);
+}
+
+int get_connection_interface()
+{
+	int e = cwmp_ubus_call("network.interface", "status", CWMP_UBUS_ARGS{ { "interface", { .str_val = cwmp_main->conf.default_wan_iface }, UBUS_String } }, 1, ubus_network_interface_callback, NULL);
+	if (e != 0) {
+		CWMP_LOG(INFO, "Get network interface from network.interface ubus method failed. Ubus err code: %d", e);
+		return -1;
+	}
+	if (cwmp_main->conf.interface == NULL) {
+		CWMP_LOG(INFO, "Not able to get the network interface from network.interface ubus method.");
+		return -1;
+	}
+	return CWMP_OK;
+}
+
 int reload_networking_config()
 {
 	int error;
 	char *value = NULL;
 	if ((error = uci_get_value(UCI_CPE_DEFAULT_WAN_IFACE, &value)) == CWMP_OK) {
-		FREE(cwmp_main.conf.default_wan_iface);
+		FREE(cwmp_main->conf.default_wan_iface);
 		if (value != NULL) {
-			cwmp_main.conf.default_wan_iface = strdup(value);
+			cwmp_main->conf.default_wan_iface = strdup(value);
 			FREE(value);
 		} else {
-			cwmp_main.conf.default_wan_iface = strdup("wan");
+			cwmp_main->conf.default_wan_iface = strdup("wan");
 		}
 
-		CWMP_LOG(DEBUG, "CWMP CONFIG - default wan interface: %s", cwmp_main.conf.default_wan_iface ? cwmp_main.conf.default_wan_iface : "");
+		CWMP_LOG(DEBUG, "CWMP CONFIG - default wan interface: %s", cwmp_main->conf.default_wan_iface ? cwmp_main->conf.default_wan_iface : "");
 	} else {
 		return error;
 	}
 
-	if (get_connection_interface() == -1)
+	if ((error = get_connection_interface()))
 		return -1;
 	return CWMP_OK;
 }
 
-int global_conf_init(struct cwmp *cwmp)
+int global_conf_init()
 {
 	int error = CWMP_OK;
 
 	pthread_mutex_lock(&mutex_config_load);
-
-	if ((error = get_global_config(&(cwmp->conf))))
+	if ((error = get_global_config(&(cwmp_main->conf))))
 		goto end;
 
-	if ((error = check_global_config(&(cwmp->conf))))
+	if ((error = check_global_config(&(cwmp_main->conf))))
 		goto end;
 
 	if ((error = get_connection_interface()))
 		return -1;
 
 	/* Launch reboot methods if needed */
-	launch_reboot_methods(cwmp);
+	launch_reboot_methods();
 
 end:
 	pthread_mutex_unlock(&mutex_config_load);
@@ -639,20 +671,11 @@ end:
 	return error;
 }
 
-int cwmp_get_deviceid(struct cwmp *cwmp)
+int cwmp_config_reload()
 {
-	cwmp_get_leaf_value("Device.DeviceInfo.Manufacturer", &cwmp->deviceid.manufacturer);
-	cwmp_get_leaf_value("Device.DeviceInfo.SerialNumber", &cwmp->deviceid.serialnumber);
-	cwmp_get_leaf_value("Device.DeviceInfo.ProductClass", &cwmp->deviceid.productclass);
-	cwmp_get_leaf_value("Device.DeviceInfo.ManufacturerOUI", &cwmp->deviceid.oui);
-	cwmp_get_leaf_value("Device.DeviceInfo.SoftwareVersion", &cwmp->deviceid.softwareversion);
-	return CWMP_OK;
-}
+	memset(&cwmp_main->env, 0, sizeof(struct env));
 
-int cwmp_config_reload(struct cwmp *cwmp)
-{
-	memset(&cwmp->env, 0, sizeof(struct env));
-	int err = global_conf_init(cwmp);
+	int err = global_conf_init();
 	if (err != CWMP_OK)
 		return err;
 

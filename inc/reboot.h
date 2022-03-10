@@ -13,7 +13,7 @@
 
 #include "common.h"
 
-void launch_reboot_methods(struct cwmp *cwmp);
+void launch_reboot_methods();
 
 #endif //_REBOOT_H__
 

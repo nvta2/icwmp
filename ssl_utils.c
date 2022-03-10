@@ -21,7 +21,6 @@
 #include <openssl/ssl.h>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
-#include <string.h>
 
 #include "common.h"
 #include "log.h"
@@ -39,7 +38,7 @@ char *generate_random_string(size_t size)
 
 	int written = RAND_bytes(buf, size);
 	if (written != 1) {
-		CWMP_LOG(ERROR,"Failed to get random bytes");
+		printf("Failed to get random bytes");
 		goto end;
 	}
 
@@ -59,9 +58,8 @@ void message_compute_signature(char *msg_out, char *signature, size_t len)
 	int i;
 	int result_len = 20;
 	unsigned char *result;
-	struct cwmp *cwmp = &cwmp_main;
 	struct config *conf;
-	conf = &(cwmp->conf);
+	conf = &(cwmp_main->conf);
 	/*	unsigned char *HMAC(const EVP_MD *evp_md, const void *key, int key_len,
 	                    const unsigned char *d, size_t n, unsigned char *md,
 	                    unsigned int *md_len);*/
@@ -74,4 +72,3 @@ void message_compute_signature(char *msg_out, char *signature, size_t len)
 	}
 	FREE(result);
 }
-

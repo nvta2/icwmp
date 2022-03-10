@@ -2,10 +2,8 @@
 *.swo
 *.o
 *.lo
-*.log
-*.xml
-*.so
 bin/*
+/icwmpd
 !bin/Makefile.am
 .prepared*
 .built*
@@ -14,6 +12,7 @@ bin/*
 ABOUT-NLS
 INSTALL
 Makefile.in
+/Makefile
 aclocal.m4
 autom4te.cache/
 compile
@@ -35,5 +34,6 @@ missing
 /ltmain.sh
 *.gcno
 *.gcda
-/icwmpd
-/Makefile
+/*.log
+/*.xml
+/report

@@ -10,16 +10,16 @@
  *
  */
 
+#include <stdio.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
+#include <time.h>
 #include <limits.h>
 
-#include "log.h"
 #include "common.h"
 #include "digestauth.h"
-#include "ssl_utils.h"
 #include "md5.h"
+#include "log.h"
+#include "ssl_utils.h"
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
 
@@ -329,9 +329,9 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method, const char
  */
 int http_digest_auth_check(const char *http_method, const char *url, const char *header, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
 {
-	size_t len;
+	size_t len = 0;
 	char *end;
-	char nonce[MAX_NONCE_LENGTH];
+	char nonce[MAX_NONCE_LENGTH] = {0};
 	size_t left; /* number of characters left in 'header' for 'uri' */
 
 	DD(DEBUG, "%s: header: %s", __FUNCTION__, header);
@@ -339,7 +339,7 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 	left = strlen(header);
 
 	{
-		char un[MAX_USERNAME_LENGTH];
+		char un[MAX_USERNAME_LENGTH] = {0};
 
 		len = lookup_sub_value(un, sizeof(un), header, "username");
 		if (0 != strcmp(username, un))
@@ -348,7 +348,7 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 	}
 
 	{
-		char r[MAX_REALM_LENGTH];
+		char r[MAX_REALM_LENGTH] = {0};
 
 		len = lookup_sub_value(r, sizeof(r), header, "realm");
 		if ((0 == len) || (0 != strcmp(realm, r)))
@@ -362,13 +362,14 @@ int http_digest_auth_check(const char *http_method, const char *url, const char 
 
 	{
 		char uri[left];
-		char cnonce[MAX_NONCE_LENGTH];
-		char qop[15]; /* auth,auth-int */
-		char nc[20];
-		char response[MAX_AUTH_RESPONSE_LENGTH];
-		char ha1[HASH_MD5_HEX_LEN + 1];
-		char respexp[HASH_MD5_HEX_LEN + 1];
-		char noncehashexp[HASH_MD5_HEX_LEN + 9];
+		memset( uri, 0, sizeof(uri) );
+		char cnonce[MAX_NONCE_LENGTH]  = {0};
+		char qop[15] = {0}; /* auth,auth-int */
+		char nc[20] = {0};
+		char response[MAX_AUTH_RESPONSE_LENGTH] = {0};
+		char ha1[HASH_MD5_HEX_LEN + 1] = {0};
+		char respexp[HASH_MD5_HEX_LEN + 1] = {0};
+		char noncehashexp[HASH_MD5_HEX_LEN + 9] = {0};
 		uint32_t nonce_time;
 		unsigned long int nci;
 		uint32_t t;

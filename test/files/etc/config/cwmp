@@ -14,12 +14,13 @@ config acs 'acs'
 	option https_ssl_capath ''
 	option ipv6_enable '0'
 	option ip_version '4'
+	option url 'http://127.0.0.1:7547'
 
 config cpe 'cpe'
-	option interface 'eth0'
+	option interface 'lo'
 	option default_wan_interface 'wan'
 	option log_to_console 'disable'
-	option log_to_syslog 'disable'
+	option log_to_syslog 'enable'
 	option log_to_file 'enable'
 	# log_severity: INFO (Default)	
 	# log_severity possible configs: EMERG, ALERT, CRITIC ,ERROR, WARNING, NOTICE, INFO, DEBUG

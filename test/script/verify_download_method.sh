@@ -19,11 +19,15 @@ if [ "$status" != "1" ]; then
 	exit 1
 fi
 
-rm /etc/icwmpd/dm_enabled_notify
+rm /var/run/icwmpd/dm_enabled_notify
 remove_icwmp_log
-echo "Restarting icwmpd in order to apply the new firmware"  >> ./funl-test-debug.log
-supervisorctl restart icwmpd  >> ./funl-test-debug.log
 sleep 5
+echo "Restarting icwmpd in order to apply the new firmware"  >> ./funl-test-debug.log
+#/builds/iopsys/icwmp/bin/icwmpd -b &
+supervisorctl stop icwmpd
+sleep 3
+supervisorctl start icwmpd  >> ./funl-test-debug.log
+sleep 10
 check_session "TransferComplete"
 received_command_key=$(print_tag_value "cwmp:TransferComplete" "CommandKey")
 if [ "$sent_command_key" != "$received_command_key" ]; then

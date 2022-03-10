@@ -19,13 +19,50 @@
 #include "datamodel_interface.h"
 #include "event.h"
 #include "xml.h"
-#include "rpc_soap.h"
+#include "soap.h"
 #include "session.h"
 #include "log.h"
 
+static LIST_HEAD(list_set_param_value);
+static LIST_HEAD(faults_list);
+static LIST_HEAD(parameters_list);
+
+static int dm_iface_unit_tests_init(void **state)
+{
+	cwmp_main = (struct cwmp*)calloc(1, sizeof(struct cwmp));
+	create_cwmp_session_structure();
+	global_conf_init();
+	return 0;
+}
+
 static int dm_iface_unit_tests_clean(void **state)
 {
+	icwmp_free_list_services();
 	icwmp_cleanmem();
+	clean_cwmp_session_structure();
+	FREE(cwmp_main->deviceid.manufacturer);
+	FREE(cwmp_main->deviceid.serialnumber);
+	FREE(cwmp_main->deviceid.productclass);
+	FREE(cwmp_main->deviceid.oui);
+	FREE(cwmp_main->deviceid.softwareversion);
+	FREE(cwmp_main->conf.lw_notification_hostname);
+	FREE(cwmp_main->conf.ip);
+	FREE(cwmp_main->conf.ipv6);
+	FREE(cwmp_main->conf.acsurl);
+	FREE(cwmp_main->conf.acs_userid);
+	FREE(cwmp_main->conf.acs_passwd);
+	FREE(cwmp_main->conf.interface);
+	FREE(cwmp_main->conf.cpe_userid);
+	FREE(cwmp_main->conf.cpe_passwd);
+	FREE(cwmp_main->conf.ubus_socket);
+	FREE(cwmp_main->conf.connection_request_path);
+	FREE(cwmp_main->conf.default_wan_iface);
+	FREE(cwmp_main->conf.forced_inform_json_file);
+	FREE(cwmp_main->conf.custom_notify_json);
+	FREE(cwmp_main->conf.boot_inform_json_file);
+	FREE(cwmp_main);
+	cwmp_free_all_list_param_fault(&faults_list);
+	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 	return 0;
 }
 
@@ -35,7 +72,7 @@ static int dm_iface_unit_tests_clean(void **state)
 static void dm_get_parameter_values_test(void **state)
 {
 	char *fault = NULL;
-	LIST_HEAD(parameters_list);
+
 	/*
 	 * Test of valid parameter path
 	 */
@@ -89,15 +126,13 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	int fault_code = 0;
 	char *fault_name = NULL;
 	struct cwmp_param_fault *param_fault = NULL;
-	LIST_HEAD(list_set_param_value);
-	LIST_HEAD(faults_array);
 
 	/*
 	 * Test of one valid parameter
 	 */
 	add_dm_parameter_to_list(&list_set_param_value, "Device.WiFi.SSID.1.Alias", "wifi_alias_1", NULL, 0, false);
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssid_alias", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssid_alias", &flag, &faults_list);
 	assert_int_equal(fault, 0);
 	assert_in_set(flag, flag_values, 15);
 	cwmp_transaction_commit();
@@ -106,7 +141,7 @@ static void dm_set_multiple_parameter_values_test(void **state)
 
 	add_dm_parameter_to_list(&list_set_param_value, "Device.ManagementServer.Username", "iopsys_user", NULL, 0, false); //for other flag value
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "mngt_server_user", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "mngt_server_user", &flag, &faults_list);
 	assert_int_equal(fault, 0);
 	assert_in_set(flag, flag_values, 15);
 	cwmp_transaction_commit();
@@ -119,9 +154,9 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	 */
 	add_dm_parameter_to_list(&list_set_param_value, "Device.WiFi.SSID.1.Alis", "wifi_alias_1", NULL, 0, false);
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssid_alias", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssid_alias", &flag, &faults_list);
 	assert_non_null(fault);
-	list_for_each_entry (param_fault, &faults_array, list) {
+	list_for_each_entry (param_fault, &faults_list, list) {
 		fault_code = param_fault->fault;
 		fault_name = param_fault->name;
 		break;
@@ -131,7 +166,7 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	assert_non_null(fault_name);
 	cwmp_transaction_abort();
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
-	cwmp_free_all_list_param_fault(&faults_array);
+	cwmp_free_all_list_param_fault(&faults_list);
 	fault_code = 0;
 	fault_name = NULL;
 	param_fault = NULL;
@@ -142,9 +177,9 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	 */
 	add_dm_parameter_to_list(&list_set_param_value, "Device.ATM.Link.1.Status", "Up", NULL, 0, false);
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_atm_link_status", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_atm_link_status", &flag, &faults_list);
 	assert_int_not_equal(fault, 0);
-	list_for_each_entry (param_fault, &faults_array, list) {
+	list_for_each_entry (param_fault, &faults_list, list) {
 		fault_code = param_fault->fault;
 		fault_name = param_fault->name;
 		break;
@@ -154,7 +189,7 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	assert_non_null(fault_name);
 	cwmp_transaction_abort();
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
-	cwmp_free_all_list_param_fault(&faults_array);
+	cwmp_free_all_list_param_fault(&faults_list);
 	fault = 0;
 	fault_code = 0;
 	fault_name = NULL;
@@ -165,9 +200,9 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	 */
 	add_dm_parameter_to_list(&list_set_param_value, "Device.WiFi.SSID.1.Enable", "tre", NULL, 0, false);
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssid_alias", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssid_alias", &flag, &faults_list);
 	assert_non_null(fault);
-	list_for_each_entry (param_fault, &faults_array, list) {
+	list_for_each_entry (param_fault, &faults_list, list) {
 		fault_code = param_fault->fault;
 		fault_name = param_fault->name;
 		break;
@@ -177,7 +212,7 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	assert_non_null(fault_name);
 	cwmp_transaction_abort();
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
-	cwmp_free_all_list_param_fault(&faults_array);
+	cwmp_free_all_list_param_fault(&faults_list);
 	fault_code = 0;
 	fault_name = NULL;
 	param_fault = NULL;
@@ -190,7 +225,7 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	add_dm_parameter_to_list(&list_set_param_value, "Device.WiFi.SSID.1.SSID", "wifi_ssid_2", NULL, 0, false);
 	add_dm_parameter_to_list(&list_set_param_value, "Device.ManagementServer.Username", "iopsys_user_1", NULL, 0, false);
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssids_aliases", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wifi_ssids_aliases", &flag, &faults_list);
 	assert_int_equal(fault, 0);
 	assert_in_set(flag, flag_values, 15);
 	cwmp_transaction_commit();
@@ -204,12 +239,13 @@ static void dm_set_multiple_parameter_values_test(void **state)
 	add_dm_parameter_to_list(&list_set_param_value, "Device.WiFi.SSID.2.Alis", "wifi_2", NULL, 0, false);
 	add_dm_parameter_to_list(&list_set_param_value, "Device.ATM.Link.1.Status", "Up", NULL, 0, false);
 	cwmp_transaction_start("cwmp");
-	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wrongs", &flag, &faults_array);
+	fault = cwmp_set_multiple_parameters_values(&list_set_param_value, "set_wrongs", &flag, &faults_list);
 	assert_int_not_equal(fault, 0);
-	list_for_each_entry (param_fault, &faults_array, list) {
+	list_for_each_entry (param_fault, &faults_list, list) {
 		assert_in_set(param_fault->fault, faults_values, 3);
 	}
 	cwmp_transaction_commit();
+	cwmp_free_all_list_param_fault(&faults_list);
 	cwmp_free_all_dm_parameter_list(&list_set_param_value);
 }
 
@@ -331,5 +367,5 @@ int icwmp_datamodel_interface_test(void)
 		cmocka_unit_test(dm_get_parameter_names_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, dm_iface_unit_tests_clean);
+	return cmocka_run_group_tests(tests, dm_iface_unit_tests_init, dm_iface_unit_tests_clean);
 }

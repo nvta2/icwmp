@@ -9,13 +9,13 @@
  *	  Author Ahmed Zribi <ahmed.zribi@pivasoftware.com>
  *	  Author Omar Kallel <omar.kallel@pivasoftware.com>
  */
-
 #include "xml.h"
+#include "common.h"
 #include "log.h"
+#include "cwmp_zlib.h"
+#include "http.h"
 #include "notifications.h"
 #include "messages.h"
-#include "http.h"
-#include "cwmp_zlib.h"
 
 static const char *soap_env_url = "http://schemas.xmlsoap.org/soap/envelope/";
 static const char *soap_enc_url = "http://schemas.xmlsoap.org/soap/encoding/";
@@ -116,19 +116,19 @@ void xml_exit(void)
 	FREE(ns.cwmp);
 }
 
-int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc)
+int xml_send_message(struct rpc *rpc)
 {
 	char *s, *msg_out = NULL, *msg_in = NULL;
 	char c[512];
 	int msg_out_len = 0, f, r = 0;
 	mxml_node_t *b;
 
-	if (session->tree_out) {
+	if (cwmp_main->session->tree_out) {
 		unsigned char *zmsg_out;
-		msg_out = mxmlSaveAllocString(session->tree_out, whitespace_cb);
+		msg_out = mxmlSaveAllocString(cwmp_main->session->tree_out, whitespace_cb);
 		CWMP_LOG_XML_MSG(DEBUG, msg_out, XML_MSG_OUT);
-		if (cwmp->conf.compression != COMP_NONE) {
-			if (zlib_compress(msg_out, &zmsg_out, &msg_out_len, cwmp->conf.compression)) {
+		if (cwmp_main->conf.compression != COMP_NONE) {
+			if (zlib_compress(msg_out, &zmsg_out, &msg_out_len, cwmp_main->conf.compression)) {
 				return -1;
 			}
 			FREE(msg_out);
@@ -139,7 +139,7 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 	}
 	while (1) {
 		f = 0;
-		if (http_send_message(cwmp, msg_out, msg_out_len, &msg_in)) {
+		if (http_send_message(msg_out, msg_out_len, &msg_in)) {
 			goto error;
 		}
 		if (msg_in) {
@@ -167,31 +167,31 @@ int xml_send_message(struct cwmp *cwmp, struct session *session, struct rpc *rpc
 		}
 	}
 
-	session->tree_in = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
-	if (!session->tree_in)
+	cwmp_main->session->tree_in = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
+	if (!cwmp_main->session->tree_in)
 		goto error;
 
-	xml_recreate_namespace(session->tree_in);
+	xml_recreate_namespace(cwmp_main->session->tree_in);
 
 	/* get NoMoreRequests or HolRequest*/
-	session->hold_request = false;
+	cwmp_main->session->hold_request = false;
 
 	if (snprintf(c, sizeof(c), "%s:%s", ns.cwmp, "NoMoreRequests") == -1)
 		goto error;
-	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
+	b = mxmlFindElement(cwmp_main->session->tree_in, cwmp_main->session->tree_in, c, NULL, NULL, MXML_DESCEND);
 	if (b) {
-		b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
+		b = mxmlWalkNext(b, cwmp_main->session->tree_in, MXML_DESCEND_FIRST);
 		if (b && b->type == MXML_OPAQUE && b->value.opaque)
-			session->hold_request = atoi(b->value.opaque);
+			cwmp_main->session->hold_request = (atoi(b->value.opaque)) ? true : false;
 	} else {
 		if (snprintf(c, sizeof(c), "%s:%s", ns.cwmp, "HoldRequests") == -1)
 			goto error;
 
-		b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
+		b = mxmlFindElement(cwmp_main->session->tree_in, cwmp_main->session->tree_in, c, NULL, NULL, MXML_DESCEND);
 		if (b) {
-			b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
+			b = mxmlWalkNext(b, cwmp_main->session->tree_in, MXML_DESCEND_FIRST);
 			if (b && b->type == MXML_OPAQUE && b->value.opaque)
-				session->hold_request = atoi(b->value.opaque);
+				cwmp_main->session->hold_request = (atoi(b->value.opaque)) ? true : false;
 		}
 	}
 
@@ -206,36 +206,34 @@ error:
 	return -1;
 }
 
-int xml_prepare_msg_out(struct session *session)
+int xml_prepare_msg_out()
 {
-	struct cwmp *cwmp = &cwmp_main;
-	struct config *conf;
-	conf = &(cwmp->conf);
+	struct config *conf = &(cwmp_main->conf);
 	mxml_node_t *n;
 
-	session->tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
-	n = mxmlFindElement(session->tree_out, session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
+	cwmp_main->session->tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
+	n = mxmlFindElement(cwmp_main->session->tree_out, cwmp_main->session->tree_out, "soap_env:Envelope", NULL, NULL, MXML_DESCEND);
 	if (!n) {
 		return -1;
 	}
 
 	mxmlElementSetAttr(n, "xmlns:cwmp", cwmp_urls[(conf->amd_version) - 1]);
-	if (!session->tree_out)
+	if (!cwmp_main->session->tree_out)
 		return -1;
 
 	return 0;
 }
 
-int xml_set_cwmp_id(struct session *session)
+int xml_set_cwmp_id()
 {
 	char c[32];
 	mxml_node_t *b;
 
 	/* define cwmp id */
-	if (snprintf(c, sizeof(c), "%u", ++(cwmp_main.cwmp_id)) == -1)
+	if (snprintf(c, sizeof(c), "%u", ++(cwmp_main->cwmp_id)) == -1)
 		return -1;
 
-	b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	b = mxmlFindElement(cwmp_main->session->tree_out, cwmp_main->session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 	if (!b)
 		return -1;
 
@@ -246,7 +244,7 @@ int xml_set_cwmp_id(struct session *session)
 	return 0;
 }
 
-int xml_set_cwmp_id_rpc_cpe(struct session *session)
+int xml_set_cwmp_id_rpc_cpe()
 {
 	char c[512];
 	mxml_node_t *b;
@@ -255,16 +253,16 @@ int xml_set_cwmp_id_rpc_cpe(struct session *session)
 	if (snprintf(c, sizeof(c), "%s:%s", ns.cwmp, "ID") == -1)
 		return -1;
 
-	b = mxmlFindElement(session->tree_in, session->tree_in, c, NULL, NULL, MXML_DESCEND);
+	b = mxmlFindElement(cwmp_main->session->tree_in, cwmp_main->session->tree_in, c, NULL, NULL, MXML_DESCEND);
 
 	if (b) {
 		/* ACS send ID parameter */
-		b = mxmlWalkNext(b, session->tree_in, MXML_DESCEND_FIRST);
+		b = mxmlWalkNext(b, cwmp_main->session->tree_in, MXML_DESCEND_FIRST);
 		if (!b || b->type != MXML_OPAQUE || !b->value.opaque)
 			return 0;
 		snprintf(c, sizeof(c), "%s", b->value.opaque);
 
-		b = mxmlFindElement(session->tree_out, session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+		b = mxmlFindElement(cwmp_main->session->tree_out, cwmp_main->session->tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 		if (!b)
 			return -1;
 
@@ -273,7 +271,7 @@ int xml_set_cwmp_id_rpc_cpe(struct session *session)
 			return -1;
 	} else {
 		/* ACS does not send ID parameter */
-		int r = xml_set_cwmp_id(session);
+		int r = xml_set_cwmp_id(cwmp_main->session);
 		return r;
 	}
 	return 0;
@@ -370,9 +368,7 @@ error:
 int xml_prepare_lwnotification_message(char **msg_out)
 {
 	mxml_node_t *lw_tree, *b, *parameter_list;
-	struct cwmp *cwmp = &cwmp_main;
-	struct config *conf;
-	conf = &(cwmp->conf);
+	struct config *conf = &(cwmp_main->conf);
 	char *c = NULL;
 
 	lw_tree = mxmlLoadString(NULL, CWMP_LWNOTIFICATION_MESSAGE, MXML_OPAQUE_CALLBACK);
@@ -414,7 +410,7 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	if (!b)
 		goto error;
 
-	b = mxmlNewOpaque(b, cwmp->deviceid.oui);
+	b = mxmlNewOpaque(b, cwmp_main->deviceid.oui);
 	if (!b)
 		goto error;
 
@@ -422,7 +418,7 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	if (!b)
 		goto error;
 
-	b = mxmlNewOpaque(b, cwmp->deviceid.productclass ? cwmp->deviceid.productclass : "");
+	b = mxmlNewOpaque(b, cwmp_main->deviceid.productclass ? cwmp_main->deviceid.productclass : "");
 	if (!b)
 		goto error;
 
@@ -430,7 +426,7 @@ int xml_prepare_lwnotification_message(char **msg_out)
 	if (!b)
 		goto error;
 
-	b = mxmlNewOpaque(b, cwmp->deviceid.serialnumber ? cwmp->deviceid.serialnumber : "");
+	b = mxmlNewOpaque(b, cwmp_main->deviceid.serialnumber ? cwmp_main->deviceid.serialnumber : "");
 	if (!b)
 		goto error;
 

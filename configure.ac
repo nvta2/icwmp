@@ -1,4 +1,4 @@
-AC_INIT([icwmp], [1.0], [dev@iopsys.eu])
+AC_INIT([icwmp], [1.1], [dev@iopsys.eu])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([cwmp.c])
 
@@ -95,9 +95,6 @@ AM_COND_IF([LWOLFSSL], [
 
 AM_COND_IF([LOPENSSL], [
 	LSSL_LIBS='-lssl'
-	AC_SUBST([LSSL_LIBS])
-], [
-	LSSL_LIBS='-lwolfssl'
 	AC_SUBST([LSSL_LIBS])
 ])
 

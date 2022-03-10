@@ -50,12 +50,7 @@ function check_session()
 
 function remove_icwmp_log()
 {
-	rm -f $icwmp_log_file
-
-	if [ -f "$icwmp_log_file" ]; then
-		echo "$icwmp_log_file exists" >> ./funl-test-debug.log
-		exit 1
-	fi
+	echo "" > $icwmp_log_file
 }
 
 function print_tag_value()
