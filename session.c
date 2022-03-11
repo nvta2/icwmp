@@ -335,6 +335,27 @@ void cwmp_schedule_session(struct uloop_timeout *timeout  __attribute__((unused)
 	}
 }
 
+void trigger_cwmp_session_timer_with_event(struct uloop_timeout *timeout)
+{
+	uloop_timeout_cancel(timeout);
+	uloop_timeout_set(timeout, 10);
+}
+
+void cwmp_schedule_session_with_event(struct uloop_timeout *timeout)
+{
+	struct session_timer_event *session_event = container_of(timeout, struct session_timer_event, session_timer_evt);
+	struct event_container *event_container = NULL;
+
+	if (session_event->event >= 0) {
+		event_container = cwmp_add_event_container(session_event->event, "");
+		if (event_container == NULL) {
+			CWMP_LOG(ERROR, "Not able to add the event %s for the new session", EVENT_CONST[session_event->event].CODE);
+		}
+	}
+	start_cwmp_session();
+	session_event->event = -1;
+}
+
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout  __attribute__((unused)))
 {
 	if (cwmp_main->conf.periodic_enable && cwmp_main->conf.period > 0) {

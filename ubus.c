@@ -29,6 +29,8 @@
 
 static struct ubus_context *ctx = NULL;
 
+static struct session_timer_event ubus_inform_event = {.session_timer_evt = {.cb = cwmp_schedule_session_with_event}, .event = -1};
+
 static const char *arr_session_status[] = {
 		[SESSION_WAITING] = "waiting",
 		[SESSION_RUNNING] = "running",
@@ -198,6 +200,7 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 	bool grm = false;
 	char *event = "";
 	static struct blob_buf blob_inform;
+	int event_code;
 
 	blob_buf_init(&blob_inform, 0);
 
@@ -211,13 +214,7 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 	}
 
 	if (grm) {
-		struct event_container *event_container;
-
-		event_container = cwmp_add_event_container(EVENT_IDX_2PERIODIC, "");
-		if (event_container == NULL)
-			return 0;
-
-		cwmp_save_event_container(event_container);
+		event_code = EVENT_IDX_2PERIODIC;
 		//session = list_entry(cwmp_main.head_event_container, struct session, head_event_container);
 		if (cwmp_add_session_rpc_acs(RPC_ACS_GET_RPC_METHODS) == NULL)
 			return 0;
@@ -225,7 +222,7 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 		blobmsg_add_u32(&blob_inform, "status", 1);
 		blobmsg_add_string(&blob_inform, "info", "Session with GetRPCMethods will start");
 	} else {
-		int event_code = cwmp_get_int_event_code(event);
+		event_code = cwmp_get_int_event_code(event);
 		cwmp_add_event_container(event_code, "");
 		if (cwmp_main->session->session_status.last_status == SESSION_RUNNING) {
 			blobmsg_add_u32(&blob_inform, "status", -1);
@@ -235,7 +232,8 @@ static int cwmp_handle_inform(struct ubus_context *ctx, struct ubus_object *obj 
 			blobmsg_add_string(&blob_inform, "info", "Session started");
 		}
 	}
-	trigger_cwmp_session_timer();
+	ubus_inform_event.event = event_code;
+	trigger_cwmp_session_timer_with_event(&ubus_inform_event.session_timer_evt);
 	ubus_send_reply(ctx, req, blob_inform.head);
 	blob_buf_free(&blob_inform);
 	return 0;

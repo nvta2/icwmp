@@ -42,6 +42,11 @@ typedef struct session {
 	int error;
 } session;
 
+struct session_timer_event {
+	struct uloop_timeout session_timer_evt;
+	int event;
+};
+
 enum end_session_enum
 {
 	END_SESSION_REBOOT = 1,
@@ -84,6 +89,8 @@ void trigger_session_by_ubus(char *event);
 void initiate_cwmp_periodic_session_feature();
 int run_session_end_func(void);
 void cwmp_schedule_session(struct uloop_timeout *timeout);
+void cwmp_schedule_session_with_event(struct uloop_timeout *timeout);
+void trigger_cwmp_session_timer_with_event(struct uloop_timeout *timeout);
 void start_cwmp_session();
 int create_cwmp_session_structure();
 int clean_cwmp_session_structure();
