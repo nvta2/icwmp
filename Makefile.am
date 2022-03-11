@@ -40,7 +40,7 @@ icwmpd_CFLAGS =			\
 	$(LIBUBUS_CFLAGS)	\
 	$(MICROXML_CFLAGS)	\
 	$(LIBCURL_CFLAGS) 	\
-	-Wall -Wextra 		\
+	-Wall -Wextra -Werror   \
 	-Wformat
 
 icwmpd_LDFLAGS =		\
