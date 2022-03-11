@@ -25,7 +25,6 @@
 #include "cwmp_event.h"
 #include "ssl_utils.h"
 
-pthread_mutex_t start_session_mutext = PTHREAD_MUTEX_INITIALIZER;
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout);
 struct uloop_timeout session_timer = { .cb = cwmp_schedule_session };
 struct uloop_timeout priodic_session_timer = { .cb = cwmp_priodic_session_timer };
@@ -326,17 +325,12 @@ void trigger_cwmp_session_timer()
 
 void cwmp_schedule_session(struct uloop_timeout *timeout  __attribute__((unused)))
 {
-	pthread_mutex_lock(&start_session_mutext);
 	start_cwmp_session();
-	pthread_mutex_unlock(&start_session_mutext);
-	if (cwmp_main->start_diagnostics) {
-		cwmp_main->start_diagnostics = false;
-		trigger_cwmp_session_timer();
-	}
 }
 
 void trigger_cwmp_session_timer_with_event(struct uloop_timeout *timeout)
 {
+	uloop_timeout_cancel(&retry_session_timer);
 	uloop_timeout_cancel(timeout);
 	uloop_timeout_set(timeout, 10);
 }
@@ -346,14 +340,14 @@ void cwmp_schedule_session_with_event(struct uloop_timeout *timeout)
 	struct session_timer_event *session_event = container_of(timeout, struct session_timer_event, session_timer_evt);
 	struct event_container *event_container = NULL;
 
-	if (session_event->event >= 0) {
+	if (session_event && session_event->event >= 0) {
 		event_container = cwmp_add_event_container(session_event->event, "");
 		if (event_container == NULL) {
 			CWMP_LOG(ERROR, "Not able to add the event %s for the new session", EVENT_CONST[session_event->event].CODE);
 		}
+		session_event->event = -1;
 	}
 	start_cwmp_session();
-	session_event->event = -1;
 }
 
 static void cwmp_priodic_session_timer(struct uloop_timeout *timeout  __attribute__((unused)))
@@ -493,36 +487,43 @@ int run_session_end_func(void)
 	if (end_session_flag & END_SESSION_NSLOOKUP_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing nslookupdiagnostic: end session request");
 		cwmp_nslookup_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_TRACEROUTE_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing traceroutediagnostic: end session request");
 		cwmp_traceroute_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_UDPECHO_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing udpechodiagnostic: end session request");
 		cwmp_udp_echo_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_SERVERSELECTION_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing serverselectiondiagnostic: end session request");
 		cwmp_serverselection_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_IPPING_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing ippingdiagnostic: end session request");
 		cwmp_ip_ping_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_DOWNLOAD_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing download diagnostic: end session request");
 		cwmp_download_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_UPLOAD_DIAGNOSTIC) {
 		CWMP_LOG(INFO, "Executing upload diagnostic: end session request");
 		cwmp_upload_diagnostics();
+		trigger_cwmp_session_timer();
 	}
 
 	if (end_session_flag & END_SESSION_REBOOT) {

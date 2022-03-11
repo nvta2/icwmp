@@ -136,7 +136,6 @@ typedef struct cwmp {
 	bool cwmp_periodic_enable;
 	bool is_boot;
 	bool custom_notify_active;
-	bool start_diagnostics;
 } cwmp;
 
 enum action {

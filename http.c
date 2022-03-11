@@ -283,7 +283,7 @@ error:
 
 void http_success_cr(void)
 {
-	CWMP_LOG(INFO, "Connection Request thread: add connection request event in the queue");
+	CWMP_LOG(INFO, "Connection Request triggering ...");
 	cwmp_ubus_call("tr069", "inform", CWMP_UBUS_ARGS{ {} }, 0, NULL, NULL);
 }
 

@@ -16,7 +16,6 @@
 #include "common.h"
 
 extern struct uloop_timeout retry_session_timer;
-extern pthread_mutex_t start_session_mutext;
 
 typedef struct session_status {
 	time_t last_start_time;

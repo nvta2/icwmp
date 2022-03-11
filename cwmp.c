@@ -345,7 +345,6 @@ static int cwmp_init(int argc, char **argv)
 	cwmp_uci_exit();
 	generate_nonce_priv_key();
 	cwmp_main->start_time = time(NULL);
-	cwmp_main->start_diagnostics = false;
 	cwmp_main->event_id = 0;
 	cwmp_main->cwmp_period = 0;
 	cwmp_main->cwmp_periodic_time = 0;

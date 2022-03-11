@@ -72,7 +72,6 @@ void cwmp_root_cause_event_diagnostic(void)
 		return;
 	}
 	cwmp_save_event_container(event_container);
-	cwmp_main->start_diagnostics = true;
 	return;
 }
 
