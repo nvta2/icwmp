@@ -10,6 +10,7 @@
  *
  */
 
+#include <sys/stat.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/types.h>
